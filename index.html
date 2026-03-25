@@ -1,5 +1,65 @@
 <!DOCTYPE html>
-<html>
-<head><title>Jonathan Britton Art</title></head>
-<body><h1>Coming Soon</h1></body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jonathan Britton Art</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .hero-bg {
+            background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('hero-art.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+    <div id="landing" class="hero-bg h-screen w-full flex flex-col items-center justify-center transition-opacity duration-1000">
+        <h1 class="text-white text-4xl md:text-6xl tracking-widest font-light mb-8 uppercase">Jonathan Britton</h1>
+        <button onclick="enterSite()" class="border border-white text-white px-8 py-3 hover:bg-white hover:text-black transition-all tracking-widest uppercase text-sm">
+            Enter
+        </button>
+    </div>
+
+    <div id="main-content" class="hidden flex flex-col md:flex-row h-screen">
+        
+        <nav class="w-full md:w-64 p-8 md:border-r border-gray-100 flex flex-col space-y-8">
+            <h2 class="text-xl tracking-tighter font-bold uppercase cursor-pointer" onclick="location.reload()">JB Art</h2>
+            <ul class="space-y-4 text-sm tracking-widest uppercase text-gray-500">
+                <li><a href="#" class="hover:text-black transition-colors">Works</a></li>
+                <li><a href="#" class="hover:text-black transition-colors">About</a></li>
+                <li><a href="#" class="hover:text-black transition-colors">Shop</a></li>
+                <li><a href="#" class="hover:text-black transition-colors">Contact</a></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="group cursor-pointer">
+                    <div class="aspect-[4/5] bg-gray-200 overflow-hidden">
+                        <img src="hero-art.jpg" alt="Artwork 1" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <p class="mt-4 text-xs tracking-widest uppercase text-gray-400">Series One, 2026</p>
+                </div>
+                <div class="group cursor-pointer">
+                    <div class="aspect-[4/5] bg-gray-200"></div>
+                    <p class="mt-4 text-xs tracking-widest uppercase text-gray-400">Coming Soon</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function enterSite() {
+            document.getElementById('landing').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('landing').style.display = 'none';
+                document.getElementById('main-content').classList.remove('hidden');
+            }, 1000);
+        }
+    </script>
+</body>
 </html>
