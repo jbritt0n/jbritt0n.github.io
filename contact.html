@@ -130,29 +130,74 @@
 </footer>
 
 <script>
-// Autofill from ?painting=Title URL param (set by "Inquire" buttons on work pages)
+// Autofill from ?painting=Title URL param (set by "Inquire" buttons on works page)
 (function() {
   var params = new URLSearchParams(window.location.search);
   var painting = params.get('painting');
   if (painting) {
     var msg = document.getElementById('cfMessage');
     var subj = document.getElementById('cfSubject');
-    if (msg) msg.value = "Hi Jonathan,\n\nI'm interested in "" + painting + "" — could you tell me more about it?\n\nThanks,";
+    if (msg) msg.value = "Hi Jonathan,\n\nI'm interested in \u201c" + painting + "\u201d \u2014 could you tell me more about it?\n\nThanks,";
     if (subj) subj.value = 'inquiry';
-    // Scroll to form smoothly
     setTimeout(function() {
       var form = document.getElementById('contactForm');
       if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 400);
+    }, 300);
   }
 })();
-
-function submitForm(e) {
+ 
+// Form submission — posts to Cloudflare Pages Function at /api/contact
+document.getElementById('contactForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  // In production, replace this with Formspree or your backend.
-  // For now it just shows the success message.
-  document.getElementById('contactForm').style.display = 'none';
-  document.getElementById('cfSuccess').style.display = 'block';
+ 
+  var btn = this.querySelector('.cf-submit');
+  var originalText = btn.textContent;
+ 
+  // Collect values
+  var name    = document.getElementById('cfName').value.trim();
+  var email   = document.getElementById('cfEmail').value.trim();
+  var subject = document.getElementById('cfSubject').value;
+  var message = document.getElementById('cfMessage').value.trim();
+ 
+  // Disable button while sending
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  btn.style.color = 'var(--dim)';
+ 
+  fetch('/api/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, email: email, subject: subject, message: message }),
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      // Success — hide form, show confirmation
+      document.getElementById('contactForm').style.display = 'none';
+      document.getElementById('cfSuccess').style.display = 'block';
+    } else {
+      // Server returned an error
+      showError(btn, originalText, data.error || 'Something went wrong. Please try again.');
+    }
+  })
+  .catch(function() {
+    showError(btn, originalText, 'Could not send — please email hello@jonathanbrittonart.com directly.');
+  });
+});
+ 
+function showError(btn, originalText, msg) {
+  btn.textContent = originalText;
+  btn.disabled = false;
+  btn.style.color = '';
+ 
+  var existing = document.getElementById('cfError');
+  if (existing) existing.remove();
+ 
+  var err = document.createElement('p');
+  err.id = 'cfError';
+  err.style.cssText = 'font-family:"Jost",sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:#8a3a2a;margin-top:1rem;';
+  err.textContent = msg;
+  btn.insertAdjacentElement('afterend', err);
 }
 </script>
 
