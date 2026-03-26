@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="header">
+  <a href="index.html" class="site-name">Jonathan Britton</a>
+  <nav class="site-nav">
+    <div class="nav-group">
+      <a href="works.html">Works ↓</a>
+      <div class="nav-dropdown">
+        <a href="works.html#painting">Oil &amp; Acrylic</a>
+        <a href="works.html#works-on-paper">Watercolor &amp; Gouache</a>
+        <a href="works.html#charcoal-pastel">Charcoal &amp; Pastel</a>
+        <a href="works.html#encaustic">Encaustic</a>
+        <a href="works.html#collage">Collage</a>
+        <a href="works.html#printmaking">Printmaking</a>
+        <a href="works.html#studies">Studies</a>
+      </div>
+    </div>
+    <a href="about.html">About</a>
+    <a href="contact.html" class="active">Contact</a>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title">Get in Touch</h1>
+  </div>
+
+  <div class="contact-layout">
+
+    <!-- Left: info -->
+    <div class="contact-info">
+      <p class="contact-intro">
+        Questions about works, commissions, gallery inquiries, or just wanting to say hello — all welcome. I try to reply within a few days.
+      </p>
+
+      <div class="contact-detail">
+        <a href="mailto:hello@jonathanbrittonart.com">hello@jonathanbrittonart.com</a><br>
+        Northview, Michigan<br>
+        jonathanbrittonart.com
+      </div>
+
+      <div class="payment-note">
+        <strong>Purchasing works</strong><br>
+        Payment is via <strong>PayPal</strong> or <strong>Venmo</strong>.<br>
+        I'll send you an invoice once we've confirmed the details.<br>
+        Shipping within the US included for smaller works.<br>
+        Larger pieces arranged case by case.
+      </div>
+
+      <div class="payment-note" style="margin-top:1rem; border-color:transparent; padding-left:0;">
+        <span style="font-family:'Jost',sans-serif;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim)">Also find me at</span><br>
+        <a href="https://instagram.com/yourhandle" style="color:var(--pale);font-family:'Jost',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;" target="_blank" rel="noopener">Instagram →</a>&ensp;
+        <a href="https://jonathanbritton.substack.com" style="color:var(--pale);font-family:'Jost',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;" target="_blank" rel="noopener">Substack →</a>
+      </div>
+    </div>
+
+    <!-- Right: form -->
+    <div>
+      <form class="contact-form" id="contactForm" onsubmit="submitForm(event)">
+        <div class="cf-group">
+          <label>Name</label>
+          <input type="text" id="cfName" placeholder="Your name" required>
+        </div>
+        <div class="cf-group">
+          <label>Email</label>
+          <input type="email" id="cfEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="cf-group">
+          <label>Subject</label>
+          <select id="cfSubject">
+            <option value="inquiry">Inquiry about a work</option>
+            <option value="commission">Commission</option>
+            <option value="gallery">Gallery / exhibition</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="cf-group">
+          <label>Message</label>
+          <textarea id="cfMessage" placeholder="What's on your mind…" required></textarea>
+        </div>
+        <button type="submit" class="cf-submit">Send →</button>
+      </form>
+      <div class="cf-success" id="cfSuccess">
+        Thanks — I'll be back to you soon.
+      </div>
+
+      <!--
+      ════════════════════════════════════════════════════════
+      CONNECTING THIS FORM TO YOUR EMAIL
+
+      Since this is a static site, the form needs a backend
+      to actually send emails. The easiest options:
+
+      1. FORMSPREE (free tier, easiest):
+         - Sign up at formspree.io
+         - Create a form, get your form ID (e.g. xpzvabcd)
+         - Change the <form> tag to:
+           <form action="https://formspree.io/f/YOURFORMID" method="POST">
+         - Remove the onsubmit attribute and this script
+         - Formspree will forward submissions to hello@jonathanbrittonart.com
+
+      2. CLOUDFLARE PAGES FUNCTIONS (stays on your domain):
+         - More setup, but keeps everything on jonathanbrittonart.com
+         - Ask me and I'll write the function for you
+
+      ════════════════════════════════════════════════════════
+      -->
+    </div>
+  </div>
+</main>
+
+<footer id="footer">
+  <span class="footer-copy">© Jonathan Britton · hello@jonathanbrittonart.com</span>
+  <ul class="footer-links">
+    <li><a href="works.html">Works</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</footer>
+
+<script>
+// Autofill from ?painting=Title URL param (set by "Inquire" buttons on work pages)
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var painting = params.get('painting');
+  if (painting) {
+    var msg = document.getElementById('cfMessage');
+    var subj = document.getElementById('cfSubject');
+    if (msg) msg.value = "Hi Jonathan,\n\nI'm interested in "" + painting + "" — could you tell me more about it?\n\nThanks,";
+    if (subj) subj.value = 'inquiry';
+    // Scroll to form smoothly
+    setTimeout(function() {
+      var form = document.getElementById('contactForm');
+      if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 400);
+  }
+})();
+
+function submitForm(e) {
+  e.preventDefault();
+  // In production, replace this with Formspree or your backend.
+  // For now it just shows the success message.
+  document.getElementById('contactForm').style.display = 'none';
+  document.getElementById('cfSuccess').style.display = 'block';
+}
+</script>
+
+<script src="nav.js"></script>
+</body>
+</html>

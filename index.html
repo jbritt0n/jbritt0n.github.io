@@ -1,64 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jonathan Britton Art</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .hero-bg {
-            background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('hero-art.jpg');
-            background-size: cover;
-            background-position: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jonathan Britton — Paintings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { overflow: hidden; }
+  /* On index, header uses a lighter mix */
+  #header { mix-blend-mode: difference; }
+</style>
 </head>
-<body class="bg-white text-gray-900">
+<body>
 
-    <div id="landing" class="hero-bg h-screen w-full flex flex-col items-center justify-center transition-opacity duration-1000">
-        <h1 class="text-white text-4xl md:text-6xl tracking-widest font-light mb-8 uppercase">Jonathan Britton</h1>
-        <button onclick="enterSite()" class="border border-white text-white px-8 py-3 hover:bg-white hover:text-black transition-all tracking-widest uppercase text-sm">
-            Enter
-        </button>
+<header id="header">
+  <a href="index.html" class="site-name">Jonathan Britton</a>
+  <nav class="site-nav">
+    <div class="nav-group">
+      <a href="works.html">Works ↓</a>
+      <div class="nav-dropdown">
+        <a href="works.html#painting">Oil &amp; Acrylic</a>
+        <a href="works.html#works-on-paper">Watercolor &amp; Gouache</a>
+        <a href="works.html#charcoal-pastel">Charcoal &amp; Pastel</a>
+        <a href="works.html#encaustic">Encaustic</a>
+        <a href="works.html#collage">Collage</a>
+        <a href="works.html#printmaking">Printmaking</a>
+        <a href="works.html#studies">Studies</a>
+      </div>
     </div>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
 
-    <div id="main-content" class="hidden flex flex-col md:flex-row h-screen">
-        
-        <nav class="w-full md:w-64 p-8 md:border-r border-gray-100 flex flex-col space-y-8">
-            <h2 class="text-xl tracking-tighter font-bold uppercase cursor-pointer" onclick="location.reload()">J Britton</h2>
-            <ul class="space-y-4 text-sm tracking-widest uppercase text-gray-500">
-                <li><a href="Works" class="hover:text-black transition-colors">Works</a></li>
-                <li><a href="About" class="hover:text-black transition-colors">About</a></li>
-                <li><a href="Contact" class="hover:text-black transition-colors">Contact</a></li>
-            </ul>
-        </nav>
+<main class="index-body">
+  <!-- Full-bleed painting background -->
+  <div class="index-painting">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg1" cx="38%" cy="48%" r="65%">
+          <stop offset="0%" stop-color="#2a3d52"/>
+          <stop offset="50%" stop-color="#1a2535"/>
+          <stop offset="100%" stop-color="#0d0c0a"/>
+        </radialGradient>
+        <radialGradient id="bg2" cx="75%" cy="28%" r="45%">
+          <stop offset="0%" stop-color="#7a4a2a" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="transparent"/>
+        </radialGradient>
+        <filter id="sf"><feGaussianBlur stdDeviation="22"/></filter>
+        <filter id="sf2"><feGaussianBlur stdDeviation="10"/></filter>
+      </defs>
+      <rect width="1600" height="900" fill="url(#bg1)"/>
+      <rect width="1600" height="900" fill="url(#bg2)"/>
+      <ellipse cx="420" cy="380" rx="350" ry="280" fill="#1e3a5c" opacity="0.55" filter="url(#sf)"/>
+      <ellipse cx="1100" cy="260" rx="280" ry="220" fill="#8b5c2a" opacity="0.4" filter="url(#sf)"/>
+      <ellipse cx="780" cy="580" rx="420" ry="180" fill="#152840" opacity="0.65" filter="url(#sf2)"/>
+      <path d="M 150 700 Q 550 350 980 620 Q 1280 800 1600 520" stroke="#5d8aad" stroke-width="3" fill="none" opacity="0.18" filter="url(#sf2)"/>
+      <path d="M 0 280 Q 380 160 700 340 Q 1050 520 1350 260 Q 1520 160 1600 280" stroke="#c4894a" stroke-width="2" fill="none" opacity="0.22" filter="url(#sf2)"/>
+      <rect width="1600" height="900" fill="rgba(13,12,10,0.25)"/>
+    </svg>
+  </div>
 
-        <main class="flex-1 p-8 overflow-y-auto bg-gray-50">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="group cursor-pointer">
-                    <div class="aspect-[4/5] bg-gray-200 overflow-hidden">
-                        <img src="hero-art.jpg" alt="Artwork 1" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500">
-                    </div>
-                    <p class="mt-4 text-xs tracking-widest uppercase text-gray-400">Series One, 2026</p>
-                </div>
-                <div class="group cursor-pointer">
-                    <div class="aspect-[4/5] bg-gray-200"></div>
-                    <p class="mt-4 text-xs tracking-widest uppercase text-gray-400">Coming Soon</p>
-                </div>
-            </div>
-        </main>
-    </div>
+  <div class="index-content">
+    <h1 class="index-name">Jonathan Britton</h1>
+    <p class="index-tagline">Paintings &amp; Works on Paper</p>
+    <nav class="index-nav">
+      <a href="works.html">Works</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </div>
+</main>
 
-    <script>
-        function enterSite() {
-            document.getElementById('landing').classList.add('opacity-0');
-            setTimeout(() => {
-                document.getElementById('landing').style.display = 'none';
-                document.getElementById('main-content').classList.remove('hidden');
-            }, 1000);
-        }
-    </script>
+<script src="nav.js"></script>
 </body>
 </html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Works — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Empty section */
+  .empty-section {
+    padding: 4rem 2.5rem;
+    border-top: 1px solid var(--stone);
+    margin: 2rem 2.5rem 0;
+  }
+  .empty-title { font-style: italic; font-size: 1rem; color: var(--dim); margin-bottom: 0.6rem; }
+  .empty-note {
+    font-family: 'Jost', sans-serif; font-size: 0.6rem;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--stone); line-height: 2;
+  }
+  /* Studies denser grid */
+  .studies-grid-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 1.1rem 1rem;
+    margin-bottom: 3rem;
+  }
+  /* Sub-note line */
+  #groupNote {
+    padding: 0.7rem 2.5rem 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.54rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--stone);
+    display: none;
+  }
+  @media(max-width:640px){
+    .empty-section { padding: 2.5rem 1.5rem; margin: 1.5rem 1.5rem 0; }
+    #groupNote { padding: 0.7rem 1.5rem 0; }
+  }
+</style>
+</head>
+<body>
+
+<header id="header">
+  <a href="index.html" class="site-name">Jonathan Britton</a>
+  <nav class="site-nav">
+    <div class="nav-group">
+      <a href="works.html" class="active">Works ↓</a>
+      <div class="nav-dropdown">
+        <a href="#painting"        onclick="sw('painting',this);return false;">Oil &amp; Acrylic</a>
+        <a href="#works-on-paper"  onclick="sw('works-on-paper',this);return false;">Watercolor &amp; Gouache</a>
+        <a href="#charcoal-pastel" onclick="sw('charcoal-pastel',this);return false;">Charcoal &amp; Pastel</a>
+        <a href="#encaustic"       onclick="sw('encaustic',this);return false;">Encaustic</a>
+        <a href="#collage"         onclick="sw('collage',this);return false;">Collage</a>
+        <a href="#printmaking"     onclick="sw('printmaking',this);return false;">Printmaking</a>
+        <a href="#studies"         onclick="sw('studies',this);return false;">Studies</a>
+      </div>
+    </div>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title" id="pageTitle">Oil &amp; Acrylic</h1>
+    <span class="page-count" id="pageCount"></span>
+  </div>
+
+  <nav class="medium-nav" id="mediumNav">
+    <a href="#painting"        onclick="sw('painting',this);return false;">Oil &amp; Acrylic</a>
+    <a href="#works-on-paper"  onclick="sw('works-on-paper',this);return false;">Watercolor &amp; Gouache</a>
+    <a href="#charcoal-pastel" onclick="sw('charcoal-pastel',this);return false;">Charcoal &amp; Pastel</a>
+    <a href="#encaustic"       onclick="sw('encaustic',this);return false;">Encaustic</a>
+    <a href="#collage"         onclick="sw('collage',this);return false;">Collage</a>
+    <a href="#printmaking"     onclick="sw('printmaking',this);return false;">Printmaking</a>
+    <a href="#studies"         onclick="sw('studies',this);return false;">Studies</a>
+  </nav>
+
+  <div id="groupNote"></div>
+  <div id="worksContainer"></div>
+</main>
+
+<!-- Lightbox -->
+<div class="lb" id="lb" onclick="lbBg(event)">
+  <button class="lb-close" onclick="closeLb()">Close ×</button>
+  <div class="lb-inner" id="lbInner"></div>
+</div>
+
+<footer id="footer">
+  <span class="footer-copy">© Jonathan Britton</span>
+  <ul class="footer-links">
+    <li><a href="works.html">Works</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+// WORKS DATA
+// To add real images, change the work object to include: img: 'images/filename.jpg'
+// The build() function checks for w.img and uses <img> instead of SVG if present.
+// medium: be specific — 'Acrylic underpainting, oil on linen' etc.
+// aspect: '' = portrait (4:5), 'landscape' = 5:4, 'square' = 1:1
+// ─────────────────────────────────────────────────────────────────────────
+const WORKS = {
+
+  painting: {
+    label: 'Oil & Acrylic',
+    note: 'Including mixed media — acrylic underpainting, oil on top, and other combinations',
+    years: [
+      { year: 2025, works: [
+        { title: 'Untitled (Convergence)', medium: 'Oil on canvas',                         size: '64 × 72 in.', available: true,  price: 3800, aspect: '' },
+        { title: 'Late Evening, Studio',   medium: 'Oil on linen',                           size: '24 × 36 in.', available: true,  price: 1400, aspect: 'landscape' },
+      ]},
+      { year: 2024, works: [
+        { title: 'Figure Study (Seated)',  medium: 'Oil on canvas board',                    size: '18 × 24 in.', available: true,  price: 820,  aspect: '' },
+        { title: 'Blue Ground',            medium: 'Acrylic underpainting, oil on canvas',   size: '30 × 40 in.', available: false, price: null, aspect: 'landscape' },
+        { title: 'The Quiet Room',         medium: 'Oil on panel',                           size: '20 × 20 in.', available: true,  price: 960,  aspect: 'square' },
+      ]},
+      { year: 2023, works: [
+        { title: 'Still Life with Yellow', medium: 'Oil on linen',                           size: '16 × 20 in.', available: false, price: null, aspect: 'landscape' },
+        { title: 'Portrait of No One',     medium: 'Oil on canvas',                          size: '24 × 30 in.', available: true,  price: 1100, aspect: '' },
+      ]},
+      { year: 2022, works: [
+        { title: 'Nocturne',               medium: 'Oil on canvas',                          size: '48 × 60 in.', available: false, price: null, aspect: '' },
+      ]},
+    ]
+  },
+
+  'works-on-paper': {
+    label: 'Watercolor & Gouache',
+    note: 'Works on paper — watercolor, gouache, and mixed',
+    years: [
+      { year: 2025, works: [
+        { title: 'Small Landscape I',   medium: 'Gouache on paper',    size: '9 × 12 in.',  available: true,  price: 240, aspect: 'landscape' },
+        { title: 'Small Landscape II',  medium: 'Gouache on paper',    size: '9 × 12 in.',  available: true,  price: 240, aspect: 'landscape' },
+      ]},
+      { year: 2024, works: [
+        { title: 'Two Figures',         medium: 'Gouache on paper',    size: '11 × 14 in.', available: true,  price: 380, aspect: '' },
+        { title: 'Colour Study (Red)',  medium: 'Watercolor on paper', size: '8 × 8 in.',   available: false, price: null, aspect: 'square' },
+      ]},
+      { year: 2023, works: [
+        { title: 'Winter Study',        medium: 'Gouache on paper',    size: '14 × 18 in.', available: true,  price: 420, aspect: 'landscape' },
+        { title: 'River, Morning',      medium: 'Watercolor on paper', size: '10 × 14 in.', available: false, price: null, aspect: 'landscape' },
+      ]},
+    ]
+  },
+
+  'charcoal-pastel': {
+    label: 'Charcoal & Pastel',
+    note: 'Drawings on paper — charcoal, soft pastel, and combined',
+    years: [
+      { year: 2025, works: [
+        { title: 'Portrait of J.',             medium: 'Charcoal on paper',                  size: '18 × 24 in.', available: true,  price: 520, aspect: '' },
+        { title: 'Seated Figure',              medium: 'Charcoal and soft pastel on paper',  size: '18 × 24 in.', available: true,  price: 480, aspect: '' },
+      ]},
+      { year: 2024, works: [
+        { title: 'Hands (after Holbein)',      medium: 'Charcoal on paper',                  size: '12 × 16 in.', available: false, price: null, aspect: 'landscape' },
+        { title: 'Interior (dusk)',            medium: 'Charcoal and soft pastel on paper',  size: '24 × 30 in.', available: true,  price: 640, aspect: '' },
+      ]},
+      { year: 2023, works: [
+        { title: 'Self-portrait (attempting)', medium: 'Charcoal on paper',                  size: '14 × 18 in.', available: true,  price: 380, aspect: '' },
+      ]},
+    ]
+  },
+
+  encaustic: {
+    label: 'Encaustic',
+    note: 'Wax and pigment on board',
+    empty: true,
+    emptyMessage: 'Works in progress — I\'m new to encaustic and taking my time with it. Check back.',
+    years: []
+  },
+
+  collage: {
+    label: 'Collage',
+    note: 'Paper collage, and collage used as ground for painting',
+    years: [
+      { year: 2025, works: [
+        { title: 'Cut Paper Study I',    medium: 'Collage on board',              size: '12 × 16 in.', available: true,  price: 320, aspect: 'landscape' },
+        { title: 'Cut Paper Study II',   medium: 'Collage on board',              size: '12 × 16 in.', available: true,  price: 320, aspect: 'landscape' },
+      ]},
+      { year: 2024, works: [
+        { title: 'Found & Arranged',     medium: 'Collage and oil on canvas',     size: '16 × 20 in.', available: true,  price: 480, aspect: '' },
+        { title: 'Layered Interior',     medium: 'Collage, acrylic, oil on board',size: '20 × 24 in.', available: false, price: null, aspect: 'landscape' },
+      ]},
+    ]
+  },
+
+  printmaking: {
+    label: 'Printmaking',
+    note: 'Linocut, cyanotype, and other print processes — edition sizes noted per piece',
+    years: [
+      { year: 2025, works: [
+        { title: 'Forest Edge',         medium: 'Linocut on Japanese tissue · edition of 10', size: '8 × 10 in.',  available: true,  price: 180, aspect: '' },
+        { title: 'Figure Standing',     medium: 'Linocut on paper · edition of 8',             size: '12 × 16 in.', available: true,  price: 240, aspect: '' },
+        { title: 'Cyanotype Study I',   medium: 'Cyanotype on paper',                           size: '8 × 10 in.',  available: true,  price: 140, aspect: '' },
+        { title: 'Cyanotype Study II',  medium: 'Cyanotype on paper',                           size: '8 × 10 in.',  available: true,  price: 140, aspect: '' },
+      ]},
+      { year: 2024, works: [
+        { title: 'Dark Treeline',       medium: 'Linocut on tissue · edition of 12',           size: '6 × 8 in.',   available: false, price: null, aspect: 'landscape' },
+      ]},
+    ]
+  },
+
+  studies: {
+    label: 'Selected Studies',
+    note: 'Smaller works, quick observations, things made without too much intention',
+    isStudies: true,
+    years: [
+      { year: 2025, works: [
+        { title: 'Quick portrait',           medium: 'Oil · 6 × 8 in.',         available: true,  price: 120 },
+        { title: 'Colour sketch',            medium: 'Gouache · 5 × 7 in.',     available: true,  price: 80  },
+        { title: 'Evening light',            medium: 'Charcoal · 8 × 10 in.',   available: true,  price: 95  },
+        { title: 'Landscape (moving train)', medium: 'Pen · 5 × 7 in.',         available: true,  price: 60  },
+      ]},
+      { year: 2024, works: [
+        { title: 'Hands, again',             medium: 'Charcoal · 9 × 12 in.',   available: false, price: null },
+        { title: 'Colour test (yellow)',     medium: 'Oil · 4 × 4 in.',         available: true,  price: 75  },
+        { title: 'Still life (apple)',       medium: 'Gouache · 5 × 7 in.',     available: true,  price: 80  },
+        { title: 'After Morandi',            medium: 'Oil · 6 × 8 in.',         available: false, price: null },
+        { title: 'Street, overcast',         medium: 'Watercolor · 7 × 9 in.',  available: true,  price: 95  },
+        { title: 'Figure reclining',         medium: 'Charcoal · 12 × 16 in.', available: false, price: null },
+      ]},
+      { year: 2023, works: [
+        { title: 'Interior, early morning',  medium: 'Ink · 5 × 7 in.',         available: true,  price: 70  },
+        { title: 'Leaf study',               medium: 'Watercolor · 5 × 5 in.',  available: true,  price: 55  },
+        { title: 'Portrait (ten minutes)',   medium: 'Charcoal · 8 × 10 in.',   available: true,  price: 110 },
+        { title: 'Dusk',                     medium: 'Oil · 5 × 7 in.',         available: false, price: null },
+      ]},
+    ]
+  },
+
+};
+
+// SVG colour palettes per group
+const PAL = {
+  painting:         [['#2a3d52','#1a2535','#8b5c2a'],['#3a1e14','#1e1008','#7a3020'],['#1e2e1e','#0e1808','#4a6a30'],['#2a2040','#151020','#6040a0']],
+  'works-on-paper': [['#3a4020','#1e2210','#6a7030'],['#3a2030','#1e1018','#704050'],['#4a3828','#281e14','#8a6040']],
+  'charcoal-pastel':[['#282420','#141210','#605848'],['#201c18','#100e0c','#504038'],['#281c18','#140e0c','#604038']],
+  encaustic:        [['#5a4020','#2e2010','#c0901a']],
+  collage:          [['#3a3028','#201a14','#706040'],['#2a2e20','#141810','#506030'],['#302830','#181418','#605060']],
+  printmaking:      [['#181410','#0c0a08','#3a3028'],['#101210','#080a08','#202820']],
+  studies:          [['#2a3040','#141820','#506070'],['#3a2818','#1c1408','#706040'],['#2a2030','#141018','#504060'],['#203020','#101810','#405040'],['#302018','#180e0c','#705030'],['#1a2820','#0c1410','#305040']],
+};
+
+function mkSvg(group, aspect, idx) {
+  var p = (PAL[group]||PAL.painting)[idx % (PAL[group]||PAL.painting).length];
+  var isLand = aspect === 'landscape', isSq = aspect === 'square';
+  var w = isLand ? 500 : 400, h = isLand ? 380 : isSq ? 400 : 500;
+  var id = 's' + idx + (Math.random()*1e6|0);
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+    <defs>
+      <radialGradient id="${id}" cx="44%" cy="42%" r="65%">
+        <stop offset="0%" stop-color="${p[0]}"/>
+        <stop offset="100%" stop-color="#080706"/>
+      </radialGradient>
+      <filter id="f${id}"><feGaussianBlur stdDeviation="12"/></filter>
+    </defs>
+    <rect width="${w}" height="${h}" fill="url(#${id})"/>
+    <ellipse cx="${(w*.47)|0}" cy="${(h*.43)|0}" rx="${(w*.43)|0}" ry="${(h*.38)|0}" fill="${p[1]}" opacity="0.5" filter="url(#f${id})"/>
+    <ellipse cx="${(w*.72)|0}" cy="${(h*.71)|0}" rx="${(w*.3)|0}" ry="${(h*.26)|0}" fill="${p[2]}" opacity="0.28" filter="url(#f${id})"/>
+    <rect width="${w}" height="${h}" fill="rgba(8,7,6,0.15)"/>
+  </svg>`;
+}
+
+var allWorks = [];
+
+function build(group) {
+  var container = document.getElementById('worksContainer');
+  container.innerHTML = '';
+  allWorks = [];
+
+  var def = WORKS[group];
+  var isStudies = !!def.isStudies;
+  var total = def.years.reduce(function(a,y){return a+y.works.length;},0);
+
+  document.getElementById('pageTitle').innerHTML = def.label;
+  document.getElementById('pageCount').textContent = def.empty ? '' : (total + ' work' + (total!==1?'s':''));
+
+  var noteEl = document.getElementById('groupNote');
+  if (def.note) { noteEl.textContent = def.note; noteEl.style.display = 'block'; }
+  else noteEl.style.display = 'none';
+
+  if (def.empty) {
+    container.innerHTML = `<div class="empty-section">
+      <p class="empty-title">Nothing here yet.</p>
+      <p class="empty-note">${def.emptyMessage||''}</p>
+    </div>`;
+    return;
+  }
+
+  var idx = 0;
+  def.years.forEach(function(yr) {
+    var block = document.createElement('div');
+    block.className = 'works-year-block';
+    var lbl = document.createElement('div');
+    lbl.className = 'year-label';
+    lbl.textContent = yr.year;
+    block.appendChild(lbl);
+
+    var grid = document.createElement('div');
+    grid.className = 'works-grid' + (isStudies ? ' studies-grid-inner' : '');
+
+    yr.works.forEach(function(w) {
+      var wi = idx++;
+      allWorks.push({work:w, group:group, idx:wi});
+
+      var card = document.createElement('div');
+      card.className = 'work-card';
+
+      var thumb = document.createElement('div');
+      var asp = isStudies ? '' : (w.aspect||'');
+      thumb.className = 'work-thumb' + (asp ? ' '+asp : '');
+
+      // Use real image if provided, otherwise SVG placeholder
+      if (w.img) {
+        thumb.innerHTML = `<img src="${w.img}" alt="${w.title}" loading="lazy">`;
+      } else {
+        thumb.innerHTML = mkSvg(group, asp, wi);
+      }
+
+      var ov = document.createElement('div');
+      ov.className = 'work-thumb-overlay';
+      ov.innerHTML = '<span class="inquire-hint">View</span>';
+      thumb.appendChild(ov);
+
+      var meta = document.createElement('div');
+      meta.className = 'work-card-meta';
+      meta.innerHTML = `
+        <div class="work-card-title">${w.title}</div>
+        <div class="work-card-info">
+          ${w.medium}${!isStudies && w.size ? ' · '+w.size : ''}<br>
+          <span class="${w.available?'avail':'sold'}">${w.available?(w.price?'£'+w.price.toLocaleString()+' — available':'Available'):'Sold'}</span>
+        </div>`;
+
+      card.appendChild(thumb);
+      card.appendChild(meta);
+      card.addEventListener('click', (function(i){return function(){openLb(i);};})(wi));
+      grid.appendChild(card);
+    });
+
+    block.appendChild(grid);
+    container.appendChild(block);
+  });
+}
+
+function openLb(idx) {
+  var item = allWorks.find(function(x){return x.idx===idx;});
+  if (!item) return;
+  var w = item.work, g = item.group, def = WORKS[g];
+  var isStudies = !!def.isStudies;
+  var visual = w.img
+    ? `<img src="${w.img}" alt="${w.title}" style="max-height:70vh;width:auto;max-width:100%;display:block;">`
+    : mkSvg(g, isStudies?'':(w.aspect||''), idx);
+
+  var inquireHref = w.available ? 'contact.html?painting='+encodeURIComponent(w.title) : null;
+  var note = isStudies
+    ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
+    : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work has been sold. Similar commissions considered on request.');
+
+  document.getElementById('lbInner').innerHTML = `
+    <div class="lb-image">${visual}</div>
+    <div class="lb-info">
+      <div class="lb-title">${w.title}</div>
+      <div class="lb-meta">
+        <span>${w.medium}</span>
+        ${!isStudies&&w.size?`<span>${w.size}</span>`:''}
+      </div>
+      ${w.available&&w.price?`<div class="lb-price">£${w.price.toLocaleString()}</div>`:''}
+      <div class="lb-note">${note}</div>
+      ${inquireHref
+        ? `<a href="${inquireHref}" class="lb-inquire">Inquire about this work</a>`
+        : `<span style="font-family:'Jost',sans-serif;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">Sold</span>`}
+    </div>`;
+  document.getElementById('lb').classList.add('open');
+}
+
+function closeLb() { document.getElementById('lb').classList.remove('open'); }
+function lbBg(e) { if (e.target===document.getElementById('lb')) closeLb(); }
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLb();});
+
+function sw(group, el) {
+  document.querySelectorAll('.medium-nav a, .nav-dropdown a').forEach(function(a){a.classList.remove('active');});
+  document.querySelectorAll('[href="#'+group+'"]').forEach(function(a){a.classList.add('active');});
+  history.replaceState(null,'','#'+group);
+  build(group);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+var valid = ['painting','works-on-paper','charcoal-pastel','encaustic','collage','printmaking','studies'];
+var hash = window.location.hash.replace('#','') || 'painting';
+if (!valid.includes(hash)) hash = 'painting';
+build(hash);
+document.querySelectorAll('[href="#'+hash+'"]').forEach(function(a){a.classList.add('active');});
+</script>
+
+<script src="nav.js"></script>
+</body>
+</html>
