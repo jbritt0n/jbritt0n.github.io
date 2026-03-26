@@ -70,16 +70,16 @@
     <form class="contact-form" id="contactForm" action="https://formspree.io/f/xeepogbg" method="POST">
         <div class="cf-group">
           <label>Name</label>
-          <input type="text" id="cfName" placeholder="Your name" required>
+          <input type="text" id="cfName" name="name" placeholder="Your name" required>
         </div>
         <div class="cf-group">
           <label>Email</label>
-          <input type="email" id="cfEmail" placeholder="your@email.com" required>
+      <input type="email" id="cfEmail" name="_replyto" placeholder="your@email.com" required>
         </div>
-      <input type="hidden" name="_replyto" value="hello@jonathanbrittonart.com">
+      <input type="hidden" name="_subject" value="New message via jonathanbrittonart.com">
         <div class="cf-group">
           <label>Subject</label>
-          <select id="cfSubject">
+          <select id="cfSubject" name="subject">
             <option value="inquiry">Inquiry about a work</option>
             <option value="commission">Commission</option>
             <option value="gallery">Gallery / exhibition</option>
@@ -88,7 +88,7 @@
         </div>
         <div class="cf-group">
           <label>Message</label>
-          <textarea id="cfMessage" placeholder="What's on your mind…" required></textarea>
+          <textarea id="cfMessage" name="message" placeholder="What's on your mind…" required></textarea>
         </div>
         <button type="submit" class="cf-submit">Send →</button>
       </form>
