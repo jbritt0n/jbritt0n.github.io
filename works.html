@@ -114,7 +114,7 @@ const WORKS = {
     note: 'Including mixed media — acrylic underpainting, oil on top, and other combinations',
     years: [
       { year: 2025, works: [
-        { title: 'Self-Portrait in Profile', image: 'images/selfportraitprofile.jpg', medium: 'Oil on Paper',                         size: '11 × 14 in.', available: false,  price: null, aspect: '' },
+        { title: 'Self-Portrait in Profile', img: 'images/selfportraitprofile.jpg', medium: 'Oil on Paper',                         size: '11 × 14 in.', available: false,  price: null, aspect: '' },
         { title: 'Late Evening, Studio',   medium: 'Oil on linen',                           size: '24 × 36 in.', available: true,  price: 1400, aspect: 'landscape' },
       ]},
       { year: 2024, works: [
@@ -362,7 +362,7 @@ function openLb(idx) {
   var inquireHref = w.available ? 'contact.html?painting='+encodeURIComponent(w.title) : null;
   var note = isStudies
     ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
-    : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work has been sold. Similar commissions considered on request.');
+    : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work is unavailable. Similar commissions considered on request.');
 
   document.getElementById('lbInner').innerHTML = `
     <div class="lb-image">${visual}</div>
