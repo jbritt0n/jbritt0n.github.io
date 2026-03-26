@@ -341,7 +341,7 @@ function build(group) {
         <div class="work-card-title">${w.title}</div>
         <div class="work-card-info">
           ${w.medium}${!isStudies && w.size ? ' · '+w.size : ''}<br>
-          <span class="${w.available?'avail':'sold'}">${w.available?(w.price?'£'+w.price.toLocaleString()+' — available':'Available'):'Sold'}</span>
+          <span class="${w.available?'avail':'private collection'}">${w.available?(w.price?'$'+w.price.toLocaleString()+' — available':'Available'):'Private Collection'}</span>
         </div>`;
 
       card.appendChild(thumb);
@@ -377,7 +377,7 @@ function openLb(idx) {
         <span>${w.medium}</span>
         ${!isStudies&&w.size?`<span>${w.size}</span>`:''}
       </div>
-      ${w.available&&w.price?`<div class="lb-price">£${w.price.toLocaleString()}</div>`:''}
+      ${w.available&&w.price?`<div class="lb-price">$${w.price.toLocaleString()}</div>`:''}
       <div class="lb-note">${note}</div>
       ${inquireHref
         ? `<a href="${inquireHref}" class="lb-inquire">Inquire about this work</a>`
