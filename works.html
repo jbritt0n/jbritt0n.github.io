@@ -368,9 +368,11 @@ function openLb(idx) {
     : mkSvg(g, isStudies?'':(w.aspect||''), idx);
 
   var inquireHref = w.available ? 'contact.html?painting='+encodeURIComponent(w.title) : null;
-  var note = isStudies
-    ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
-    : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work is unavailable. Similar commissions considered on request.');
+var defaultNote = isStudies
+  ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
+  : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work has been sold. Similar commissions considered on request.');
+
+var note = w.note || defaultNote;
 
   document.getElementById('lbInner').innerHTML = `
     <div class="lb-image">${visual}</div>
