@@ -20,7 +20,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
   display: flex;          /* Added for centering */
   align-items: center;    /* Added for centering */
   justify-content: center; /* Added for centering */
-  padding: 2rem;          /* Optional: adds a 'frame' around the canvas */
+  /*padding: 2rem;           Optional: adds a 'frame' around the canvas */
 }
 #canvas-wrap canvas{display:block}
 #panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
@@ -913,7 +913,30 @@ let sk = function(p){
     save:  function(){p.saveCanvas('studio-export','png');},
     play:  function(){S.playing=!S.playing;if(S.playing)p.loop();else p.noLoop();return S.playing;},
     rd:    function(){if(!S.playing)p.redraw();},
-    rsz:   function(w,h){p.resizeCanvas(w,h);initRain(w,h);initTess(w,h);initMatrix(w,h);buildComp(S.compPreset,w,h);if(!S.playing)p.redraw();},
+   // rsz:   function(w,h){p.resizeCanvas(w,h);initRain(w,h);initTess(w,h);initMatrix(w,h);buildComp(S.compPreset,w,h);if(!S.playing)p.redraw();},
+    // Replace your existing rsz function with this:
+rsz(w, h) {
+  let finalW, finalH;
+  let wrap = document.getElementById('canvas-wrap');
+
+  if (w === 'full') {
+    // This looks at the actual available space in the browser
+    finalW = wrap.offsetWidth;
+    finalH = wrap.offsetHeight;
+  } else {
+    finalW = w;
+    finalH = h;
+  }
+  // Update p5 canvas size
+  p.resizeCanvas(finalW, finalH);
+  // Re-initialize any grids that depend on size
+  initRain(finalW, finalH);
+  initTess(finalW, finalH);
+  initMatrix(finalW, finalH);
+  if (S.compEnabled) buildComp(S.compPreset, finalW, finalH);
+  // Redraw
+  this.rd(); 
+}
     ri:    function(){initRain(p.width,p.height);initTess(p.width,p.height);initMatrix(p.width,p.height);initShatter(p.width,p.height);},
     rc:    function(pr){S.compPreset=pr;buildComp(pr,p.width,p.height);if(!S.playing)p.redraw();},
   };
@@ -1064,18 +1087,20 @@ document.getElementById('btnInvert').addEventListener('click',function(){
 });
 
 // Canvas size
-document.getElementById('sizeGrid').addEventListener('click',function(e){
-  let b=e.target.closest('[data-size]');if(!b)return;
-  document.querySelectorAll('#sizeGrid [data-size]').forEach(function(x){x.classList.remove('active');});
+document.getElementById('sizeGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('[data-size]');
+  if (!b) return;
+  document.querySelectorAll('#sizeGrid [data-size]').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  let sz=b.dataset.size;
-  document.getElementById('customSizeRow').style.display=sz==='custom'?'flex':'none';
-  if(sz!=='custom'){let pts=sz.split(',');window._st.rsz(+pts[0],+pts[1]);}
+  let sz = b.dataset.size;
+  if (sz === 'full') {
+    window._st.rsz('full', 'full'); // This triggers the new logic above
+  } else {
+    let pts = sz.split(',');
+    window._st.rsz(+pts[0], +pts[1]);
+  }
 });
-document.getElementById('applySizeBtn').addEventListener('click',function(){
-  let w=+document.getElementById('cwInput').value, h=+document.getElementById('chInput').value;
-  if(w>=200&&h>=200) window._st.rsz(w,h);
-});
+
 
 // Actions
 document.getElementById('btnPlay').addEventListener('click',function(){
