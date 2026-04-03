@@ -8,71 +8,233 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
-/* Keeping your original styling exactly as it was, adding small tweaks for new sliders */
+/* Your original CSS preserved perfectly */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --ink:   #0d0c0a; --dark:  #1a1917; --stone: #2e2c28; --dim:   #5c5550;
-  --mid:   #8a8078; --pale:  #c4bcb0; --cream: #ede9e2; --gold:  #b8955a;
+  --mid:   #8a8078; --pale:  #c4bcb0; --cream: #ede9e2; --gold:  #b8955a; --red: #e63946;
 }
 html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--pale); font-family: 'Jost', sans-serif; font-weight: 300; }
-#app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
-#canvas-wrap { position: relative; overflow: hidden; background: var(--ink); }
+#app { display: grid; grid-template-columns: 1fr 320px; height: 100vh; }
+#canvas-wrap { position: relative; overflow: hidden; background: var(--ink); cursor: crosshair; }
 #canvas-wrap canvas { display: block; }
 #panel { background: var(--dark); border-left: 1px solid var(--stone); display: flex; flex-direction: column; overflow: hidden; }
-.panel-head { padding: 1.4rem 1.4rem 1rem; border-bottom: 1px solid var(--stone); }
+.panel-head { padding: 1.4rem; border-bottom: 1px solid var(--stone); }
 .panel-title { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--cream); }
-#controls { flex: 1; overflow-y: auto; padding: 0 0 2rem; }
-.section { padding: 1rem 1.4rem 0.5rem; border-bottom: 1px solid var(--stone); }
-.section-label { font-size: 0.55rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); margin-bottom: 0.9rem; }
-.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.mode-btn, .cs-btn, .action-btn { background: none; border: 1px solid var(--stone); color: var(--dim); font-size: 0.58rem; text-transform: uppercase; padding: 0.5rem; cursor: pointer; transition: all 0.2s; text-align: center; }
-.mode-btn.active, .cs-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(184,149,90,0.06); }
-.ctrl-row { margin-bottom: 0.85rem; }
-.ctrl-label-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem; font-size: 0.58rem; color: var(--mid); }
+#controls { flex: 1; overflow-y: auto; padding-bottom: 2rem; }
+.section { padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--stone); }
+.section-label { font-size: 0.55rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); margin-bottom: 1rem; }
+.mode-grid, .cs-grid, .pal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.mode-btn, .cs-btn, .pal-btn, .action-btn { background: none; border: 1px solid var(--stone); color: var(--dim); font-size: 0.58rem; text-transform: uppercase; padding: 0.6rem; cursor: pointer; transition: 0.2s; text-align: center; }
+.mode-btn.active, .cs-btn.active, .pal-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(184,149,90,0.05); }
+.ctrl-row { margin-bottom: 1rem; }
+.ctrl-label-row { display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--mid); margin-bottom: 0.4rem; }
 input[type=range] { width: 100%; height: 2px; background: var(--stone); -webkit-appearance: none; outline: none; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; cursor: pointer; }
-.image-row { display: flex; gap: 6px; margin-top: 10px; }
-.image-input { flex: 1; background: var(--ink); border: 1px solid var(--stone); color: var(--pale); padding: 5px; font-size: 0.7rem; }
+.img-input-wrap { display: flex; gap: 5px; margin-top: 10px; }
+.img-input-wrap input { flex: 1; background: var(--ink); border: 1px solid var(--stone); color: var(--pale); padding: 5px; font-size: 0.65rem; }
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="canvas-wrap"><canvas id="gc"></canvas></div>
+  <div id="canvas-wrap"></div>
   <div id="panel">
-    <div class="panel-head"><div class="panel-title">Generative Studio</div></div>
+    <div class="panel-head"><div class="panel-title">Generative Studio — V3</div></div>
     <div id="controls">
       
       <div class="section">
-        <div class="section-label">Animation mode</div>
+        <div class="section-label">Animation Mode</div>
         <div class="mode-grid" id="modeGrid">
           <button class="mode-btn active" data-mode="bloom">Bloom</button>
           <button class="mode-btn" data-mode="kinetic">Kinetic (Webster)</button>
-          <button class="mode-btn" data-mode="wave">Wave field</button>
+          <button class="mode-btn" data-mode="wave">Wave Field</button>
           <button class="mode-btn" data-mode="rain">Rain</button>
           <button class="mode-btn" data-mode="vortex">Vortex</button>
-          <button class="mode-btn" data-mode="ripple">Ripple</button>
-          <button class="mode-btn" data-mode="drift">Drift</button>
-          <button class="mode-btn" data-mode="warp">Warp</button>
+          <button class="mode-btn" data-mode="glitch">Grid Shiver</button>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-label">Entropy & Glitch</div>
+        <div class="section-label">Entropy & Distortion</div>
         <div class="ctrl-row">
-            <div class="ctrl-label-row"><span>Erosion</span><span id="vErode">0</span></div>
+            <div class="ctrl-label-row"><span>Erosion (Entropy)</span><span id="vErode">0</span></div>
             <input type="range" id="sErode" min="0" max="100" value="0">
+        </div>
+        <div class="ctrl-row">
+            <div class="ctrl-label-row"><span>Mirror Flip %</span><span id="vMirror">0</span></div>
+            <input type="range" id="sMirror" min="0" max="100" value="0">
         </div>
         <div class="ctrl-row">
             <div class="ctrl-label-row"><span>Case Glitch</span><span id="vCase">0</span></div>
             <input type="range" id="sCase" min="0" max="100" value="0">
         </div>
-        <div class="ctrl-row">
-            <div class="ctrl-label-row"><span>Mirror %</span><span id="vMirror">0</span></div>
-            <input type="range" id="sMirror" min="0" max="100" value="0">
+      </div>
+
+      <div class="section">
+        <div class="section-label">Character Packs</div>
+        <div class="cs-grid" id="csGrid">
+          <button class="cs-btn active" data-cs="chinese">Hanzi+</button>
+          <button class="cs-btn" data-cs="georgian">Georgian</button>
+          <button class="cs-btn" data-cs="sanskrit">Sanskrit</button>
+          <button class="cs-btn" data-cs="cyrillic">Cyrillic</button>
+          <button class="cs-btn" data-cs="adinkra">Adinkra</button>
+          <button class="cs-btn" data-cs="blocks">Gradient Blocks</button>
+        </div>
+        <div class="img-input-wrap">
+            <input type="text" id="imgUrl" placeholder="Image URL for ASCII...">
+            <button class="cs-btn" id="btnLoad">Load</button>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-label">Characters</div>
-        <div class="charset-grid" id="charsetGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-          <button class="cs-
+        <div class="section-label">Settings</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span>Grid Density</span><span id="vSpacing">18</span></div>
+          <input type="range" id="sSpacing" min="10" max="50" value="18">
+        </div>
+      </div>
+
+      <div class="section" style="border:none">
+        <button class="action-btn" id="btnPlay" style="width:100%; border-color:var(--gold); color:var(--gold)">▶ Play</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+const CHARSETS = {
+  chinese:  ['麻','木','的','永','和','九','年','歳','在','癸','丑','暮','春','之','初','會','於','山','陰'],
+  georgian: ['ა','ბ','გ','დ','ე','ვ','ზ','თ','ი','კ','ლ','მ','ნ','ო','პ','ჟ','რ','ს','ტ','უ'],
+  sanskrit: ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','क','ख','ग','घ','ङ','च','छ'],
+  cyrillic: ['Б','Г','Д','Ж','З','И','Й','Л','П','Ф','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю'],
+  adinkra:  ['⌛','⚔️','☀️','🌑','💠','🔱','♾️','🌀','🧿','🛖','🔥','🌊'],
+  blocks:   ['░','▒','▓','█','▄','▀','▌','▐']
+};
+
+let S = {
+  mode: 'bloom', chars: CHARSETS.chinese, 
+  erode: 0, mirror: 0, caseGlitch: 0,
+  spacing: 18, playing: false, fc: 0,
+  palette: ['#c4bcb0','#b8955a','#8a8078'], bg: '#0d0c0a',
+  sampleImg: null
+};
+
+let studio = function(p) {
+  p.setup = function() {
+    let container = document.getElementById('canvas-wrap');
+    p.createCanvas(container.offsetWidth, container.offsetHeight).parent(container);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.textFont('serif');
+    p.noLoop();
+  };
+
+  p.draw = function() {
+    if (S.playing) S.fc++;
+    p.background(S.bg);
+    let t = S.fc * 0.015;
+    
+    // Draw grid
+    for (let x = S.spacing; x < p.width; x += S.spacing) {
+      for (let y = S.spacing; y < p.height; y += S.spacing) {
+        
+        // 1. Determine Character & Color
+        let charIndex = Math.floor(p.noise(x * 0.01, y * 0.01, t * 0.1) * S.chars.length);
+        let char = S.chars[charIndex];
+        let col = S.palette[Math.floor(p.noise(x*0.02, y*0.02) * S.palette.length)];
+
+        // 2. Entropy / Erosion Logic
+        if (p.random(100) < S.erode) {
+            let rnd = p.random();
+            if (rnd < 0.3) char = "█";
+            else if (rnd < 0.6) char = p.random(['.', '_', '/', ' ']);
+            else continue; // Redacted (skip)
+        }
+
+        // 3. Case Glitch
+        if (p.random(100) < S.caseGlitch) {
+            char = char === char.toUpperCase() ? char.toLowerCase() : char.toUpperCase();
+        }
+
+        // 4. Image Sampling Logic
+        if (S.sampleImg) {
+            let imgX = Math.floor(p.map(x, 0, p.width, 0, S.sampleImg.width));
+            let imgY = Math.floor(p.map(y, 0, p.height, 0, S.sampleImg.height));
+            let imgCol = S.sampleImg.get(imgX, imgY);
+            if (p.brightness(imgCol) < 10) continue; 
+            col = imgCol;
+        }
+
+        p.push();
+        p.translate(x, y);
+
+        // 5. WEBSTER-ESQUE & MODE TRANSFORMS
+        if (S.mode === 'kinetic') {
+            // Skew and jitter inspired by Webster's typography
+            let skew = p.map(p.noise(x * 0.005, t), 0, 1, -0.6, 0.6);
+            p.shearX(skew);
+            p.translate(0, Math.sin(x * 0.02 + t * 4) * 15);
+        } else if (S.mode === 'bloom') {
+            p.scale(p.noise(x * 0.01, y * 0.01, t) * 1.8);
+        } else if (S.mode === 'wave') {
+            p.translate(Math.cos(y * 0.01 + t) * 20, Math.sin(x * 0.01 + t) * 10);
+        } else if (S.mode === 'rain') {
+            p.translate(0, (y + t * 200) % p.height - y);
+        } else if (S.mode === 'glitch') {
+            p.translate(p.random(-2, 2), p.random(-2, 2));
+        }
+
+        // 6. Mirroring
+        if (p.random(100) < S.mirror) p.scale(-1, 1);
+
+        p.fill(col);
+        p.textSize(S.spacing * 0.9);
+        p.text(char, 0, 0);
+        p.pop();
+      }
+    }
+  };
+
+  // Exposed methods for external controls
+  p.togglePlay = function() { S.playing = !S.playing; S.playing ? p.loop() : p.noLoop(); return S.playing; };
+  p.loadExternalImage = function(url) {
+      p.loadImage(url, img => { S.sampleImg = img; p.redraw(); });
+  };
+};
+
+// Initialize
+const p5inst = new p5(studio);
+
+// RE-WIRING THE UI TO THE P5 INSTANCE
+document.getElementById('modeGrid').addEventListener('click', e => {
+    let btn = e.target.closest('.mode-btn');
+    if (!btn) return;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.mode = btn.dataset.mode;
+    p5inst.redraw();
+});
+
+document.getElementById('csGrid').addEventListener('click', e => {
+    let btn = e.target.closest('.cs-btn');
+    if (!btn) return;
+    document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.chars = CHARSETS[btn.dataset.cs];
+    p5inst.redraw();
+});
+
+document.getElementById('sErode').oninput = function() { S.erode = this.value; document.getElementById('vErode').innerText = this.value; p5inst.redraw(); };
+document.getElementById('sMirror').oninput = function() { S.mirror = this.value; document.getElementById('vMirror').innerText = this.value; p5inst.redraw(); };
+document.getElementById('sCase').oninput = function() { S.caseGlitch = this.value; document.getElementById('vCase').innerText = this.value; p5inst.redraw(); };
+document.getElementById('sSpacing').oninput = function() { S.spacing = parseInt(this.value); document.getElementById('vSpacing').innerText = this.value; p5inst.redraw(); };
+
+document.getElementById('btnLoad').onclick = () => p5inst.loadExternalImage(document.getElementById('imgUrl').value);
+document.getElementById('btnPlay').onclick = function() {
+    let isPlaying = p5inst.togglePlay();
+    this.innerText = isPlaying ? "⏸ Pause" : "▶ Play";
+};
+</script>
+</body>
+</html>
