@@ -94,7 +94,7 @@ new p5(function(p) {
         var pinkNoise = p.noise(x*0.028, y*0.028, t*0.7 + 99);
         var cVal = p.noise(x*0.12, y*0.12, t);
         var col;
-        if (pinkNoise > 0.50) {
+        if (pinkNoise > 0.65) {
           col = '#e63946';
         } else {
           var ci = cVal > 0.65 ? 1 : cVal > 0.45 ? 2 : cVal > 0.28 ? 0 : 4;
