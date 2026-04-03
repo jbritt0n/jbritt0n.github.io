@@ -779,7 +779,7 @@ function pickColor(p, x, y, t) {
     if (n1 > (1 - S.accentAmt)) return S.accent;
   }
   
-  // Check Accent 2 (using a different noise offset so they don't overlap perfectly)
+  // Check Accent 2
   if (S.accent2 !== 'none') {
     let n2 = p.noise(x * 0.02, y * 0.02, t + 1000); 
     if (n2 > (1 - S.accentAmt2)) return S.accent2;
@@ -791,49 +791,54 @@ function pickColor(p, x, y, t) {
   return S.palette[ci % S.palette.length];
 }
 
-  window._studio = {
-    regen: () => { S.fc = 0; p.redraw(); },
-    save:  () => p.saveCanvas('studio_' + S.mode, 'png'),
-    play:  () => { S.playing = !S.playing; S.playing ? p.loop() : p.noLoop(); return S.playing; },
-    redraw: () => { if (!S.playing) p.redraw(); },
-    reinitRain: () => initRain(p.width, p.height),
-    reinitTess: () => initTess(p.width, p.height)
-  };
-};
+// ── UI WIRING ──────────────────────────────────────────────────
+window._studio = new p5(sk);
 
-new p5(sk);
+function wireSlider(id, valId, stateKey, mapFn = v => v) {
+  const s = document.getElementById(id);
+  const v = document.getElementById(valId);
+  if (!s || !v) return;
+  s.addEventListener('input', function() {
+    v.textContent = this.value;
+    S[stateKey] = mapFn(parseFloat(this.value));
+    if (!S.playing) window._studio.redraw();
+  });
+}
 
-// ── UI WIRING ────────────────────────────────────────────────────
+// Motion & Field Sliders
+wireSlider('sSpeed',   'vSpeed',   'speed',      v => v * 0.001);
+wireSlider('sWave',    'vWave',    'wave');
+wireSlider('sTurb',    'vTurb',    'turb',       v => v * 0.001);
+wireSlider('sDens',    'vDens',    'density',    v => 1 - (v * 0.1));
+wireSlider('sSpacing', 'vSpacing', 'spacing');
+wireSlider('sMaxSize', 'vMaxSize', 'maxSize');
+wireSlider('sNoise',   'vNoise',   'noiseScale', v => v * 0.002);
+wireSlider('sRot',     'vRot',     'charRotation');
+wireSlider('sFlip',    'vFlip',    'flipH');
+
+// Accent Sliders
+wireSlider('sAccent1', 'vAccent1', 'accentAmt',  v => v / 100);
+wireSlider('sAccent2', 'vAccent2', 'accentAmt2', v => v / 100);
+
+// Mode Grid
 document.getElementById('modeGrid').addEventListener('click', e => {
   let btn = e.target.closest('.mode-btn');
   if (!btn) return;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  
   S.mode = btn.dataset.mode;
-  document.getElementById('modeLabel').textContent = btn.textContent;
-  
-  // FIX: Check if the mode contains 'rain' (matches "rain 1" and "rain 2")
-  if (S.mode.includes('rain')) window._studio.reinitRain();
-  
-  if (S.mode === 'tess') window._studio.reinitTess();
+  document.getElementById('modeLabel').textContent = S.mode;
   window._studio.redraw();
 });
-  
+
+// Charset Grid
 document.getElementById('charsetGrid').addEventListener('click', e => {
   let btn = e.target.closest('.cs-btn');
   if (!btn) return;
   document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  let cs = btn.dataset.cs;
-  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
-  if (cs !== 'custom') { S.chars = CHARSETS[cs]; window._studio.redraw(); }
-});
-
-document.getElementById('customApply').addEventListener('click', () => {
-  let val = document.getElementById('customInput').value.trim();
-  if (!val) return;
-  S.chars = val.split('').filter(c => c.trim() !== '');
+  S.chars = CHARSETS[btn.dataset.cs];
+  document.getElementById('customRow').style.display = (btn.dataset.cs === 'custom') ? 'flex' : 'none';
   window._studio.redraw();
 });
 
@@ -856,31 +861,8 @@ document.getElementById('accentRow2').addEventListener('click', e => {
   S.accent2 = sw.dataset.accent;
   window._studio.redraw();
 });
-  
-function wireSlider(id, valId, key, transform) {
-  let slider = document.getElementById(id);
-  let label  = document.getElementById(valId);
-  slider.addEventListener('input', function() {
-    let v = +this.value;
-    label.textContent = v;
-    S[key] = transform(v);
-    if (key === 'spacing') { window._studio.reinitRain(); window._studio.reinitTess(); }
-    window._studio.redraw();
-  });
-}
 
-wireSlider('sSpeed',   'vSpeed',   'speed',      v => v * 0.001);
-wireSlider('sWave',    'vWave',    'wave',       v => v);
-wireSlider('sTurb',    'vTurb',    'turb',       v => v * 0.001);
-wireSlider('sDens',    'vDens',    'density',    v => 0.8 - (v * 0.07));
-wireSlider('sSpacing', 'vSpacing', 'spacing',    v => v);
-wireSlider('sMaxSize', 'vMaxSize', 'maxSize',    v => v);
-wireSlider('sRot',  'vRot',  'charRotation', v => v);
-wireSlider('sFlip', 'vFlip', 'flipH',        v => v);
-wireSlider('sNoise',   'vNoise',   'noiseScale', v => v * 0.002);
-wireSlider('sAccent1', 'vAccent1', 'accentAmt',  v => v / 100);
-wireSlider('sAccent2', 'vAccent2', 'accentAmt2', v => v / 100);
-
+// Palette Grid
 document.getElementById('palGrid').addEventListener('click', e => {
   let btn = e.target.closest('.pal-btn');
   if (!btn) return;
@@ -890,15 +872,7 @@ document.getElementById('palGrid').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-document.getElementById('accentRow').addEventListener('click', e => {
-  let sw = e.target.closest('.accent-swatch');
-  if (!sw) return;
-  document.querySelectorAll('#accentRow .accent-swatch').forEach(b => b.classList.remove('active'));
-  sw.classList.add('active');
-  S.accent = sw.dataset.accent;
-  window._studio.redraw();
-});
-
+// Background Swatches
 document.getElementById('bgRow').addEventListener('click', e => {
   let sw = e.target.closest('.accent-swatch');
   if (!sw) return;
@@ -908,11 +882,25 @@ document.getElementById('bgRow').addEventListener('click', e => {
   window._studio.redraw();
 });
 
+// Play/Pause
 document.getElementById('btnPlay').addEventListener('click', function() {
-  this.textContent = window._studio.play() ? '⏸ Pause' : '▶ Play';
+  S.playing = !S.playing;
+  this.textContent = S.playing ? '⏸ Pause' : '▶ Play';
+  if (S.playing) window._studio.loop();
+  else window._studio.noLoop();
 });
-document.getElementById('btnRegen').addEventListener('click', () => window._studio.regen());
-document.getElementById('btnSave').addEventListener('click', () => window._studio.save());
+
+// Regen
+document.getElementById('btnRegen').addEventListener('click', () => {
+  S.fc = Math.floor(Math.random() * 10000);
+  window._studio.redraw();
+});
+
+// Save
+document.getElementById('btnSave').addEventListener('click', () => {
+  window._studio.saveCanvas('studio-export', 'png');
+});
+
 </script>
 </body>
 </html>
