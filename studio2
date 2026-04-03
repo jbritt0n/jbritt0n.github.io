@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio — Jonathan Britton (V2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+/* CSS remains largely the same with small additions for new inputs */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:   #0d0c0a; --dark:  #1a1917; --stone: #2e2c28; --dim:   #5c5550;
+  --mid:   #8a8078; --pale:  #c4bcb0; --cream: #ede9e2; --gold:  #b8955a;
+}
+html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--pale); font-family: 'Jost', sans-serif; font-weight: 300; }
+#app { display: grid; grid-template-columns: 1fr 320px; height: 100vh; }
+#canvas-wrap { position: relative; overflow: hidden; background: var(--ink); }
+#canvas-wrap canvas { display: block; }
+#panel { background: var(--dark); border-left: 1px solid var(--stone); display: flex; flex-direction: column; overflow: hidden; }
+.panel-head { padding: 1.4rem; border-bottom: 1px solid var(--stone); }
+.panel-title { font-family: 'EB Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--cream); }
+#controls { flex: 1; overflow-y: auto; padding-bottom: 2rem; }
+.section { padding: 1rem 1.4rem; border-bottom: 1px solid var(--stone); }
+.section-label { font-size: 0.55rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); margin-bottom: 0.9rem; }
+.mode-grid, .charset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; }
+.mode-btn, .cs-btn, .action-btn { background: none; border: 1px solid var(--stone); color: var(--dim); font-size: 0.55rem; text-transform: uppercase; padding: 0.5rem; cursor: pointer; transition: 0.2s; }
+.mode-btn.active, .cs-btn.active { border-color: var(--gold); color: var(--gold); }
+.ctrl-row { margin-bottom: 0.8rem; }
+.ctrl-label-row { display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--mid); margin-bottom: 0.3rem; }
+input[type=range] { width: 100%; height: 2px; background: var(--stone); -webkit-appearance: none; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--gold); border-radius: 50%; cursor: pointer; }
+.image-input-row { display: flex; gap: 5px; margin-top: 10px; }
+.image-input-row input { flex: 1; background: var(--ink); border: 1px solid var(--stone); color: var(--pale); padding: 4px; font-size: 0.7rem; }
+@media (max-width: 700px) { #app { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap"><canvas id="gc"></canvas></div>
+  <div id="panel">
+    <div class="panel-head"><div class="panel-title">Generative Studio V2</div></div>
+    <div id="controls">
+      <div class="section">
+        <div class="section-label">Animation Mode</div>
+        <div class="mode-grid" id="modeGrid">
+          <button class="mode-btn active" data-mode="bloom">Bloom</button>
+          <button class="mode-btn" data-mode="ascension">Ascension</button>
+          <button class="mode-btn" data-mode="shiver">Grid Shiver</button>
+          <button class="mode-btn" data-mode="rain">Rain</button>
+          <button class="mode-btn" data-mode="vortex">Vortex</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Glitch & Entropy</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span>Erosion (Entropy)</span><span id="vErode">0</span></div>
+          <input type="range" id="sErode" min="0" max="100" value="0">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span>Case Jitter</span><span id="vCase">0</span></div>
+          <input type="range" id="sCase" min="0" max="100" value="0">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span>Mirror Flip %</span><span id="vFlip">0</span></div>
+          <input type="range" id="sFlip" min="0" max="100" value="0">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Characters</div>
+        <div class="charset-grid" id="charsetGrid">
+          <button class="cs-btn active" data-cs="chinese">Hanzi</button>
+          <button class="cs-btn" data-cs="georgian">Georgian</button>
+          <button class="cs-btn" data-cs="sanskrit">Sanskrit</button>
+          <button class="cs-btn" data-cs="cyrillic">Cyrillic</button>
+          <button class="cs-btn" data-cs="blocks">Blocks</button>
+          <button class="cs-btn" data-cs="adinkra">Adinkra</button>
+        </div>
+        <div class="image-input-row">
+            <input type="text" id="imgUrl" placeholder="Image URL for sampling...">
+            <button class="cs-btn" id="loadImg">Load</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Settings</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span>Spacing</span><span id="vSpacing">15</span></div>
+          <input type="range" id="sSpacing" min="8" max="40" value="15">
+        </div>
+      </div>
+
+      <div class="section" style="border:none">
+        <button class="action-btn" id="btnPlay" style="width:100%; border-color:var(--gold); color:var(--gold)">▶ Play</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+const CHARSETS = {
+  chinese:  ['永','和','九','年','歳','在','癸','丑','暮','春','之','初','會','於','會','稽','山','陰'],
+  georgian: ['ა','ბ','გ','დ','ე','ვ','ზ','თ','ი','კ','ლ','მ','ნ','ო','პ','ჟ','რ','ს','ტ','უ'],
+  sanskrit: ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','क','ख','ग','घ','ङ','च','छ'],
+  cyrillic: ['Б','Г','Д','Ж','З','И','Й','Л','П','Ф','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю','Я'],
+  blocks:   ['█','▓','▒','░','▄','▀','▌','▐'],
+  adinkra:  ['⌛','⚔️','☀️','🌑','💠','🔱','♾️','🌀','🧿'] // Representative symbols
+};
+
+let S = {
+  mode: 'bloom', chars: CHARSETS.chinese, erode: 0, caseJitter: 0, flip: 0,
+  spacing: 15, playing: false, fc: 0, palette: ['#c4bcb0','#b8955a','#8a8078'],
+  bg: '#0d0c0a', sampleImg: null
+};
+
+let sk = function(p) {
+  p.setup = function() {
+    let wrap = document.getElementById('canvas-wrap');
+    p.createCanvas(wrap.offsetWidth, wrap.offsetHeight).parent('canvas-wrap');
+    p.textAlign(p.CENTER, p.CENTER);
+    p.noLoop();
+  };
+
+  p.draw = function() {
+    if (S.playing) S.fc++;
+    p.background(S.bg);
+    let t = S.fc * 0.01;
+
+    let cols = Math.floor(p.width / S.spacing);
+    let rows = Math.floor(p.height / S.spacing);
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        let x = i * S.spacing + S.spacing/2;
+        let y = j * S.spacing + S.spacing/2;
+        
+        // Image Sampling Logic
+        if (S.sampleImg) {
+            let imgX = p.map(x, 0, p.width, 0, S.sampleImg.width);
+            let imgY = p.map(y, 0, p.height, 0, S.sampleImg.height);
+            let c = S.sampleImg.get(imgX, imgY);
+            if (p.brightness(c) < 10) continue; // Skip dark areas
+            p.fill(c);
+        } else {
+            p.fill(S.palette[i % S.palette.length]);
+        }
+
+        let char = getProcessedChar(p, i, j, t);
+        if (char === "REDACTED") continue;
+
+        p.push();
+        p.translate(x, y);
+        
+        // Mode specific motion
+        applyModeTransform(p, x, y, t);
+        
+        // Mirroring
+        if (p.random(100) < S.flip) p.scale(-1, 1);
+        
+        p.textSize(S.spacing * 0.8);
+        p.text(char, 0, 0);
+        p.pop();
+      }
+    }
+  };
+
+  function getProcessedChar(p, i, j, t) {
+    // Erosion / Entropy
+    if (p.random(100) < S.erode) {
+        if (p.random() > 0.5) return "REDACTED"; 
+        return p.random(['█', '_', '.', '/']);
+    }
+
+    let char = S.chars[(i + j) % S.chars.length];
+    
+    // Case Jitter
+    if (p.random(100) < S.caseJitter) {
+        return char === char.toUpperCase() ? char.toLowerCase() : char.toUpperCase();
+    }
+    return char;
+  }
+
+  function applyModeTransform(p, x, y, t) {
+    if (S.mode === 'ascension') {
+        p.translate(0, -( (y + t * 50) % p.height) + y);
+    } else if (S.mode === 'shiver') {
+        p.translate(p.random(-2, 2), p.random(-2, 2));
+    } else if (S.mode === 'bloom') {
+        let n = p.noise(x * 0.01, y * 0.01, t);
+        p.scale(n * 1.5);
+    }
+  }
+
+  window.loadSampleImage = function(url) {
+      p.loadImage(url, img => { S.sampleImg = img; p.redraw(); });
+  };
+};
+
+new p5(sk);
+
+// UI Logic
+document.getElementById('modeGrid').addEventListener('click', e => {
+    if(e.target.dataset.mode) {
+        S.mode = e.target.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        if (!S.playing) redraw();
+    }
+});
+
+document.getElementById('charsetGrid').addEventListener('click', e => {
+    if(e.target.dataset.cs) {
+        S.chars = CHARSETS[e.target.dataset.cs];
+        document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+    }
+});
+
+document.getElementById('sErode').oninput = function() { S.erode = this.value; document.getElementById('vErode').innerText = this.value; };
+document.getElementById('sCase').oninput = function() { S.caseJitter = this.value; document.getElementById('vCase').innerText = this.value; };
+document.getElementById('sFlip').oninput = function() { S.flip = this.value; document.getElementById('vFlip').innerText = this.value; };
+document.getElementById('sSpacing').oninput = function() { S.spacing = parseInt(this.value); document.getElementById('vSpacing').innerText = this.value; };
+document.getElementById('loadImg').onclick = () => { window.loadSampleImage(document.getElementById('imgUrl').value); };
+document.getElementById('btnPlay').onclick = function() { 
+    S.playing = !S.playing; 
+    this.innerText = S.playing ? "⏸ Pause" : "▶ Play";
+    S.playing ? loop() : noLoop();
+};
+</script>
+</body>
+</html>
