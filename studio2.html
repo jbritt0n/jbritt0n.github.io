@@ -487,7 +487,8 @@ let sk = function(p) {
     switch(S.mode) {
       case 'bloom':   drawBloom(p, t);   break;
       case 'wave':    drawWave(p, t);    break;
-      case 'rain':    drawRain(p, t);    break;
+      case 'rain 1':    drawRain1(p, t);    break;
+      case 'rain 2':    drawRain2(p, t);    break;  
       case 'vortex':  drawVortex(p, t);  break;
       case 'ripple':  drawRipple(p, t);  break;
       case 'drift':   drawDrift(p, t);   break;
@@ -534,7 +535,33 @@ let sk = function(p) {
     }
   }
 
-  function drawRain(p, t) {
+
+  // ── RAIN 1─────────────────────────────────────────────────────
+  function drawRain1(p, t) {
+    if (S.playing) {
+      rainDrops.forEach(function(d) {
+        d.y += d.speed * (S.speed * 250 + 1);
+        if (d.y > p.height + S.spacing * 2) {
+          d.y = -S.spacing * (2 + Math.random() * 8);
+          d.speed = 1 + Math.random() * 3;
+        }
+      });
+    }
+    rainDrops.forEach(function(d, i) {
+      let trailLen = Math.floor(3 + (S.wave / 20));
+      for (let j = 0; j < trailLen; j++) {
+        let ty = d.y - j * S.spacing;
+        if (ty < 0 || ty > p.height) continue;
+        let alpha = p.map(j, 0, trailLen, 255, 30);
+        let col = j === 0 ? accentOrPal(p, i, t) : palColor(p, i);
+        p.fill(p.red(p.color(col)), p.green(p.color(col)), p.blue(p.color(col)), alpha);
+        p.textSize(j === 0 ? S.maxSize * 0.8 : S.maxSize * 0.5);
+        p.text(pickChar(p, i, j), d.x, ty);
+      }
+    });
+  }
+  // ── RAIN 2───────────────────────────────────────────────────── 
+  function drawRain2(p, t) {
     if (S.playing) {
       rainDrops.forEach(d => {
         d.y += d.speed * (S.speed * 500 + 2);
