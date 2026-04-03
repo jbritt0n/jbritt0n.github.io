@@ -36,11 +36,70 @@
   </nav>
 </header>
 -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+new p5(function(p) {
+  var chars = ['麻','木','的'];
+  var siteCols = ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'];
+  var fc = 0;
+
+  p.setup = function() {
+    var el = document.getElementById('genCanvas');
+    p.createCanvas(el.offsetWidth, el.offsetHeight).parent(el.parentElement);
+    el.remove();
+    p.textAlign(p.CENTER, p.CENTER);
+    p.noStroke();
+  };
+
+  p.draw = function() {
+    fc++;
+    var t = fc * 0.004;
+    p.background('#0d0c0a');
+    var spacing = 12, margin = 20;
+
+    for (var x = margin; x < p.width - margin; x += spacing) {
+      for (var y = margin; y < p.height - margin; y += spacing) {
+        var density = p.noise(x*0.01, y*0.01, t);
+        if (density <= 0.4) continue;
+
+        var angle = p.noise(x*0.005, y*0.005, t*0.5) * p.TWO_PI * 4;
+        var ch = chars[p.floor(p.noise(x*0.1, y*0.1) * chars.length)];
+
+        p.push();
+        p.translate(x, y);
+        p.rotate(angle);
+
+        var pinkNoise = p.noise(x*0.018, y*0.018, t*0.7 + 99);
+        var cVal = p.noise(x*0.02, y*0.02, t);
+        var col;
+        if (pinkNoise > 0.80) {
+          col = '#e63946';
+        } else {
+          var ci = cVal > 0.65 ? 1 : cVal > 0.45 ? 2 : cVal > 0.28 ? 0 : 4;
+          col = siteCols[ci];
+        }
+
+        p.fill(col);
+        p.textSize(p.map(density, 0.4, 1, 2, 20));
+        p.text(ch, 0, 0);
+        p.pop();
+      }
+    }
+  };
+});
+</script>
+
+<!-- BACKGROUND IMAGE HERE -->
+<!--  
 <main class="index-body">
   <div class="index-painting">
   <img src="images/donkey1.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center; background: rgba(13,12,10,0.75);">
 </div>
 
+-->
+
+  
   <div class="index-content">
     <h1 class="index-name">Jonathan Britton</h1>
     <p class="index-tagline">Paintings &amp; Works on Paper</p>
