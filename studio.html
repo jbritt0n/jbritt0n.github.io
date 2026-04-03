@@ -12,7 +12,16 @@
 :root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--red:#e63946}
 html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',"Microsoft YaHei","SimSun","Malgun Gothic","Noto Sans",sans-serif;font-weight:300}
 #app{display:grid;grid-template-columns:1fr 300px;height:100vh}
-#canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
+  
+#canvas-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  display: flex;          /* Added for centering */
+  align-items: center;    /* Added for centering */
+  justify-content: center; /* Added for centering */
+  padding: 2rem;          /* Optional: adds a 'frame' around the canvas */
+}
 #canvas-wrap canvas{display:block}
 #panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
 .panel-head{padding:1.4rem 1.4rem 1rem;border-bottom:1px solid var(--stone);flex-shrink:0}
@@ -353,7 +362,8 @@ select option{background:var(--ink)}
       <div class="section">
         <div class="section-label">Canvas size</div>
         <div class="charset-grid" id="sizeGrid">
-          <button class="cs-btn active" data-size="800,600">800×600</button>
+          <button class="cs-btn active" data-size="full">Full</button>
+          <button class="cs-btn" data-size="800,600">800×600</button>
           <button class="cs-btn" data-size="800,800">Square</button>
           <button class="cs-btn" data-size="1200,800">1200×800</button>
           <button class="cs-btn" data-size="1080,1080">1080 sq</button>
@@ -449,6 +459,37 @@ let S = {
   playing:false, fc:0,
 };
 
+// --- NEW STATE PROPERTIES ---
+S.scrollers = [
+  { text: "INFINITE", y: 0.2, speed: 2, amp: 10, freq: 0.05, size: 40, col: '#fff' },
+  { text: "VOID", y: 0.8, speed: -1.5, amp: 20, freq: 0.02, size: 60, col: '#b8955a' }
+];
+
+// --- CORE FUNCTION TO RENDER WEBSTER-STYLE TEXT ---
+function drawScrollers() {
+  push();
+  for (let s of S.scrollers) {
+    let yBase = height * s.y;
+    let xOffset = (frameCount * s.speed) % (width + textWidth(s.text) * 2);
+    
+    fill(s.col);
+    textSize(s.size);
+    textFont(S.font);
+    
+    let xPos = width - xOffset;
+    
+    // Split text to apply wave to each letter
+    for (let i = 0; i < s.text.length; i++) {
+      let charX = xPos + (i * s.size * 0.8);
+      // The "Wave" math: sin curve based on X position and time
+      let charY = yBase + sin(charX * s.freq + frameCount * 0.05) * s.amp;
+      
+      text(s.text[i], charX, charY);
+    }
+  }
+  pop();
+}
+  
 let imgPix=null, imgW=0, imgH=0;
 let rainDrops=[], tessGrid=[], matrixCols=[], shatterParts=[], compBlocks=[];
 
@@ -928,11 +969,16 @@ document.getElementById('charsetGrid').addEventListener('click',function(e){
   document.getElementById('customRow').style.display=cs==='custom'?'flex':'none';
   if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
 });
-document.getElementById('customApply').addEventListener('click',function(){
-  let v=document.getElementById('customInput').value.trim();if(!v)return;
-  let parts=v.split(/[\s,]+/).filter(function(x){return x.length>0;});
-  S.chars=parts.length>1?parts:v.split('').filter(function(c){return c.trim()!=='';});
-  if(!S.chars.length)S.chars=['?'];
+document.getElementById('customApply').addEventListener('click', function() {
+  let v = document.getElementById('customInput').value.trim();
+  if (!v) return;
+  // If the input contains spaces, treat as a list of words.
+  // If it's one word, treat the whole string as the character set.
+  if (v.includes(' ')) {
+    S.chars = v.split(/[\s,]+/).filter(x => x.length > 0);
+  } else {
+    S.chars = [v]; // Treat the whole string "INFINITE" as one 'character'
+  }
   window._st.rd();
 });
 document.getElementById('customInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('customApply').click();});
