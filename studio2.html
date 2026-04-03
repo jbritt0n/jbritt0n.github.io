@@ -561,18 +561,24 @@ let sk = function(p) {
         }
       });
     }
+
     rainDrops.forEach(function(d, i) {
       let trailLen = Math.floor(3 + (S.wave / 20));
       for (let j = 0; j < trailLen; j++) {
         let ty = d.y - j * S.spacing;
         if (ty < 0 || ty > p.height) continue;
+        
         let alpha = p.map(j, 0, trailLen, 255, 30);
-        //
-        let col = j === 0 ? pickColor(p, d.x, ty, t) : S.palette[i % S.palette.length];
-        //
-        p.fill(p.red(p.color(col)), p.green(p.color(col)), p.blue(p.color(col)), alpha);
+        
+        // Fix: Ensure we have a valid color string from the palette or accent
+        let rawCol = j === 0 ? pickColor(p, d.x, ty, t) : S.palette[i % S.palette.length];
+        let colObj = p.color(rawCol); 
+
+        // Fix: Use the color object to set the fill with alpha
+        p.fill(p.red(colObj), p.green(colObj), p.blue(colObj), alpha);
+        
         p.textSize(j === 0 ? S.maxSize * 0.8 : S.maxSize * 0.5);
-        p.text(pickChar(p, i, j), d.x, ty);
+        p.text(pickChar(p, i, j, t), d.x, ty); // Added 't' to match your pickChar signature
       }
     });
   }
