@@ -547,26 +547,27 @@ let sk = function(p) {
     }
   }
 // ── WAVE ─────────────────────────────────────────────────────
-  function drawWave(p, t) {
-    let sp = S.spacing;
-    for (let x = sp; x < p.width; x += sp) {
-      for (let y = sp; y < p.height; y += sp) {
-        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
-        if (n < S.density) continue;
+function drawWave(p, t) {
+  let sp = S.spacing;
+  for (let x = sp; x < p.width; x += sp) {
+    for (let y = sp; y < p.height; y += sp) {
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
 
-        let wx = Math.sin(y * S.turb * 10 + t * 2) * S.wave;
-        let wy = Math.cos(x * S.turb * 10 + t * 1.5) * S.wave * 0.6;
-        p.push();
-        p.rotate(angle + p.radians(S.charRotation));
-        p.scale(S.flipH, 1);
-        p.translate(x + wx, y + wy);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(p.map(n, S.density, 1, 6, S.maxSize));
-        p.text(pickChar(p, x, y, t), 0, 0);
-        p.pop();
-      }
+      let wx = Math.sin(y * S.turb * 10 + t * 2) * S.wave;
+      let wy = Math.cos(x * S.turb * 10 + t * 1.5) * S.wave * 0.6;
+      
+      p.push();
+      p.translate(x + wx, y + wy); // Translate first
+      p.rotate(p.radians(S.charRotation)); // Then rotate
+      p.scale(S.flipH, 1); // Then flip
+      p.fill(pickColor(p, x, y, t));
+      p.textSize(p.map(n, S.density, 1, 6, S.maxSize));
+      p.text(pickChar(p, x, y, t), 0, 0);
+      p.pop();
     }
   }
+}
 
 
   // ── RAIN 1 ─────────────────────────────────────────────────────
@@ -644,77 +645,83 @@ let sk = function(p) {
     }
   }
 // ── RIPPLE ─────────────────────────────────────────────────────
-  function drawRipple(p, t) {
-    let cx = p.width / 2, cy = p.height / 2;
-    for (let x = 0; x < p.width; x += S.spacing) {
-      for (let y = 0; y < p.height; y += S.spacing) {
-        let d = p.dist(x, y, cx, cy);
-        let ripple = Math.sin(d * S.turb * 10 - t * 5) * S.wave;
-        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
-        if (n < S.density) continue;
+function drawRipple(p, t) {
+  let cx = p.width / 2, cy = p.height / 2;
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      let d = p.dist(x, y, cx, cy);
+      let ripple = Math.sin(d * S.turb * 10 - t * 5) * S.wave;
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
 
-        p.push();
-        p.rotate(angle + p.radians(S.charRotation));
-        p.scale(S.flipH, 1);
-        p.translate(x, y + ripple);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(S.maxSize);
-        p.text(pickChar(p, x, y, t), 0, 0);
-        p.pop();
-      }
-    }
-  }
-// ── DRIFT ─────────────────────────────────────────────────────
-  function drawDrift(p, t) {
-    for (let x = 0; x < p.width; x += S.spacing) {
-      for (let y = 0; y < p.height; y += S.spacing) {
-        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
-        if (n < S.density) continue;
-
-        let offX = p.noise(x * 0.005, t) * S.wave * 2;
-        let offY = p.noise(y * 0.005, t) * S.wave * 2;
-        p.push();
-        p.rotate(angle + p.radians(S.charRotation));
-        p.scale(S.flipH, 1);
-        p.translate(x + offX, y + offY);
-        p.fill(pickColor(p, x, y, t));
-        p.text(pickChar(p, x, y, t), 0, 0);
-        p.pop();
-      }
-    }
-  }
-// ── TESSELATION ─────────────────────────────────────────────────────
-  function drawTess(p, t) {
-    tessGrid.forEach((cell, i) => {
-      let n = p.noise(cell.x * S.noiseScale, cell.y * S.noiseScale, t);
-      if (n < S.density) return;
       p.push();
-      p.translate(cell.x, cell.y);
-      p.rotate(angle + p.radians(S.charRotation));
+      p.translate(x, y + ripple);
+      p.rotate(p.radians(S.charRotation));
       p.scale(S.flipH, 1);
-      p.fill(pickColor(p, cell.x, cell.y, t));
+      p.fill(pickColor(p, x, y, t));
       p.textSize(S.maxSize);
-      p.text(pickChar(p, i, t, t), 0, 0);
+      p.text(pickChar(p, x, y, t), 0, 0);
       p.pop();
-    });
-  }
-// ── WARP ─────────────────────────────────────────────────────
-  function drawWarp(p, t) {
-    for (let x = 0; x < p.width; x += S.spacing) {
-      for (let y = 0; y < p.height; y += S.spacing) {
-        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
-        if (n < S.density) continue;
-        let warp = p.noise(x * 0.002, y * 0.002, t) * S.wave * 4;
-        p.push();
-        p.rotate(angle + p.radians(S.charRotation));
-        p.scale(S.flipH, 1);
-        p.translate(x + warp, y + warp);
-        p.fill(pickColor(p, x, y, t));
-        p.text(pickChar(p, x, y, t), 0, 0);
-        p.pop();
-      }
     }
   }
+}
+// ── DRIFT ─────────────────────────────────────────────────────
+function drawDrift(p, t) {
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+
+      let offX = p.noise(x * 0.005, t) * S.wave * 2;
+      let offY = p.noise(y * 0.005, t) * S.wave * 2;
+      p.push();
+      p.translate(x + offX, y + offY);
+      p.rotate(p.radians(S.charRotation));
+      p.scale(S.flipH, 1);
+      p.fill(pickColor(p, x, y, t));
+      p.textSize(S.maxSize);
+      p.text(pickChar(p, x, y, t), 0, 0);
+      p.pop();
+    }
+  }
+}
+
+// ── TESSELATION ─────────────────────────────────────────────────────
+function drawTess(p, t) {
+  tessGrid.forEach((cell, i) => {
+    let n = p.noise(cell.x * S.noiseScale, cell.y * S.noiseScale, t);
+    if (n < S.density) return;
+    p.push();
+    p.translate(cell.x, cell.y);
+    p.rotate(p.radians(S.charRotation));
+    p.scale(S.flipH, 1);
+    p.fill(pickColor(p, cell.x, cell.y, t));
+    p.textSize(S.maxSize);
+    p.text(pickChar(p, i, t, t), 0, 0);
+    p.pop();
+  });
+}
+
+// ── WARP ─────────────────────────────────────────────────────
+function drawWarp(p, t) {
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      let warp = p.noise(x * 0.002, y * 0.002, t) * S.wave * 4;
+      p.push();
+      p.translate(x + warp, y + warp);
+      p.rotate(p.radians(S.charRotation));
+      p.scale(S.flipH, 1);
+      p.fill(pickColor(p, x, y, t));
+      p.textSize(S.maxSize); // Added textSize which was missing
+      p.text(pickChar(p, x, y, t), 0, 0);
+      p.pop();
+    }
+  }
+}
+
+  
 
   function pickChar(p, x, y, t) {
     let i = Math.floor(p.noise(x * 0.1, y * 0.1, t * 0.2) * S.chars.length);
