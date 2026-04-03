@@ -174,6 +174,8 @@ input[type=range]::-webkit-slider-thumb {
   cursor: pointer;
   transition: transform 0.15s;
 }
+
+  
 input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
 
 /* ── COLOR PALETTE ── */
@@ -324,7 +326,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         </div>
       </div>
 
-      <!-- DENSITY & SIZE -->
+      <!-- FIELD: DENSITY ORIENTATION & SIZE -->
       <div class="section">
         <div class="section-label">Field</div>
         <div class="ctrl-row">
@@ -342,6 +344,16 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         <div class="ctrl-row">
           <div class="ctrl-label-row"><span class="ctrl-name">Noise scale</span><span class="ctrl-val" id="vNoise">5</span></div>
           <input type="range" id="sNoise" min="1" max="20" value="5" step="1">
+                  <div class="ctrl-row">
+          <div class="ctrl-label-row">
+            <span class="ctrl-name">Rotation</span><span class="ctrl-val" id="vRot">0</span></div>
+          <input type="range" id="sRot" min="0" max="360" value="0" step="5">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Flip H</span><span class="ctrl-val" id="vFlip">1</span></div>
+          <input type="range" id="sFlip" min="-1" max="1" value="1" step="2">
+        </div>
         </div>
       </div>
 
@@ -450,6 +462,8 @@ let S = {
   spacing:   12,
   maxSize:   20,
   noiseScale:0.01,
+  charRotation: 0,
+  flipH: 1,
   playing:   false,
   fc:        0,
 };
@@ -523,7 +537,8 @@ let sk = function(p) {
         let angle = p.noise(x*S.noiseScale*0.5, y*S.noiseScale*0.5, t*0.5) * p.TWO_PI * 4;
         p.push();
         p.translate(x, y);
-        p.rotate(angle);
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.fill(pickColor(p, x, y, t));
         p.textSize(p.map(n, S.density, 1, 2, S.maxSize));
         p.text(pickChar(p, x, y, t), 0, 0);
@@ -542,6 +557,8 @@ let sk = function(p) {
         let wx = Math.sin(y * S.turb * 10 + t * 2) * S.wave;
         let wy = Math.cos(x * S.turb * 10 + t * 1.5) * S.wave * 0.6;
         p.push();
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.translate(x + wx, y + wy);
         p.fill(pickColor(p, x, y, t));
         p.textSize(p.map(n, S.density, 1, 6, S.maxSize));
@@ -617,7 +634,8 @@ let sk = function(p) {
 
         p.push();
         p.translate(x, y);
-        p.rotate(angle + p.HALF_PI);
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.fill(pickColor(p, x, y, t));
         p.textSize(p.map(n, S.density, 1, 4, S.maxSize));
         p.text(pickChar(p, i, r, t), 0, 0);
@@ -636,6 +654,8 @@ let sk = function(p) {
         if (n < S.density) continue;
 
         p.push();
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.translate(x, y + ripple);
         p.fill(pickColor(p, x, y, t));
         p.textSize(S.maxSize);
@@ -654,6 +674,8 @@ let sk = function(p) {
         let offX = p.noise(x * 0.005, t) * S.wave * 2;
         let offY = p.noise(y * 0.005, t) * S.wave * 2;
         p.push();
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.translate(x + offX, y + offY);
         p.fill(pickColor(p, x, y, t));
         p.text(pickChar(p, x, y, t), 0, 0);
@@ -668,7 +690,8 @@ let sk = function(p) {
       if (n < S.density) return;
       p.push();
       p.translate(cell.x, cell.y);
-      p.rotate(t + cell.phase);
+      p.rotate(angle + p.radians(S.charRotation));
+      p.scale(S.flipH, 1);
       p.fill(pickColor(p, cell.x, cell.y, t));
       p.textSize(S.maxSize);
       p.text(pickChar(p, i, t, t), 0, 0);
@@ -683,6 +706,8 @@ let sk = function(p) {
         if (n < S.density) continue;
         let warp = p.noise(x * 0.002, y * 0.002, t) * S.wave * 4;
         p.push();
+        p.rotate(angle + p.radians(S.charRotation));
+        p.scale(S.flipH, 1);
         p.translate(x + warp, y + warp);
         p.fill(pickColor(p, x, y, t));
         p.text(pickChar(p, x, y, t), 0, 0);
@@ -770,6 +795,8 @@ wireSlider('sTurb',    'vTurb',    'turb',       v => v * 0.001);
 wireSlider('sDens',    'vDens',    'density',    v => 0.8 - (v * 0.07));
 wireSlider('sSpacing', 'vSpacing', 'spacing',    v => v);
 wireSlider('sMaxSize', 'vMaxSize', 'maxSize',    v => v);
+wireSlider('sRot',  'vRot',  'charRotation', v => v);
+wireSlider('sFlip', 'vFlip', 'flipH',        v => v);
 wireSlider('sNoise',   'vNoise',   'noiseScale', v => v * 0.002);
 wireSlider('sAccent',  'vAccent',  'accentAmt',  v => v / 100);
 
