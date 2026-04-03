@@ -496,7 +496,7 @@ let sk = function(p) {
       case 'warp':    drawWarp(p, t);    break;
     }
   };
-
+// ── BLOOM ─────────────────────────────────────────────────────
   function drawBloom(p, t) {
     let sp = S.spacing;
     for (let x = 0; x < p.width; x += sp) {
@@ -515,7 +515,7 @@ let sk = function(p) {
       }
     }
   }
-
+// ── WAVE ─────────────────────────────────────────────────────
   function drawWave(p, t) {
     let sp = S.spacing;
     for (let x = sp; x < p.width; x += sp) {
@@ -536,7 +536,7 @@ let sk = function(p) {
   }
 
 
-  // ── RAIN 1─────────────────────────────────────────────────────
+  // ── RAIN 1 ─────────────────────────────────────────────────────
   function drawRain1(p, t) {
     if (S.playing) {
       rainDrops.forEach(function(d) {
@@ -560,7 +560,7 @@ let sk = function(p) {
       }
     });
   }
-  // ── RAIN 2───────────────────────────────────────────────────── 
+  // ── RAIN 2 ───────────────────────────────────────────────────── 
   function drawRain2(p, t) {
     if (S.playing) {
       rainDrops.forEach(d => {
@@ -574,7 +574,7 @@ let sk = function(p) {
       p.text(pickChar(p, i, d.y, t), d.x, d.y);
     });
   }
-
+// ── VORTEX ─────────────────────────────────────────────────────
   function drawVortex(p, t) {
     let cx = p.width / 2, cy = p.height / 2;
     let maxR = Math.max(p.width, p.height) * 0.6;
@@ -598,7 +598,7 @@ let sk = function(p) {
       }
     }
   }
-
+// ── RIPPLE ─────────────────────────────────────────────────────
   function drawRipple(p, t) {
     let cx = p.width / 2, cy = p.height / 2;
     for (let x = 0; x < p.width; x += S.spacing) {
@@ -617,7 +617,7 @@ let sk = function(p) {
       }
     }
   }
-
+// ── DRIFT ─────────────────────────────────────────────────────
   function drawDrift(p, t) {
     for (let x = 0; x < p.width; x += S.spacing) {
       for (let y = 0; y < p.height; y += S.spacing) {
@@ -634,7 +634,7 @@ let sk = function(p) {
       }
     }
   }
-
+// ── TESSELATION ─────────────────────────────────────────────────────
   function drawTess(p, t) {
     tessGrid.forEach((cell, i) => {
       let n = p.noise(cell.x * S.noiseScale, cell.y * S.noiseScale, t);
@@ -648,7 +648,7 @@ let sk = function(p) {
       p.pop();
     });
   }
-
+// ── WARP ─────────────────────────────────────────────────────
   function drawWarp(p, t) {
     for (let x = 0; x < p.width; x += S.spacing) {
       for (let y = 0; y < p.height; y += S.spacing) {
