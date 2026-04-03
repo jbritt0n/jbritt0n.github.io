@@ -6,233 +6,75 @@
 <title>Studio — Jonathan Britton</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&family=VT323&family=Special+Elite&family=Bebas+Neue&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --ink:   #0d0c0a;
-  --dark:  #1a1917;
-  --stone: #2e2c28;
-  --dim:   #5c5550;
-  --mid:   #8a8078;
-  --pale:  #c4bcb0;
-  --cream: #ede9e2;
-  --gold:  #b8955a;
-  --red:   #e63946;
-}
-html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--pale); font-family: 'Jost', sans-serif; font-weight: 300; }
-
-/* ── LAYOUT ── */
-#app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
-#canvas-wrap { position: relative; overflow: hidden; background: var(--ink); }
-#canvas-wrap canvas { display: block; }
-#panel { background: var(--dark); border-left: 1px solid var(--stone); display: flex; flex-direction: column; overflow: hidden; }
-
-/* ── PANEL HEADER ── */
-.panel-head {
-  padding: 1.4rem 1.4rem 1rem;
-  border-bottom: 1px solid var(--stone);
-  flex-shrink: 0;
-}
-.panel-title {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.1rem;
-  color: var(--cream);
-  margin-bottom: 0.2rem;
-}
-.panel-sub {
-  font-size: 0.58rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-/* ── SCROLLABLE CONTROLS ── */
-#controls { flex: 1; overflow-y: auto; padding: 0 0 2rem; }
-#controls::-webkit-scrollbar { width: 4px; }
-#controls::-webkit-scrollbar-track { background: transparent; }
-#controls::-webkit-scrollbar-thumb { background: var(--stone); }
-
-/* ── SECTION ── */
-.section { padding: 1rem 1.4rem 0.5rem; border-bottom: 1px solid var(--stone); }
-.section-label {
-  font-size: 0.55rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin-bottom: 0.9rem;
-}
-
-/* ── MODE BUTTONS ── */
-.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 0.5rem; }
-.mode-btn {
-  background: none;
-  border: 1px solid var(--stone);
-  color: var(--dim);
-  font-family: 'Jost', sans-serif;
-  font-size: 0.58rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 0.5rem 0.4rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-}
-.mode-btn:hover { border-color: var(--mid); color: var(--pale); }
-.mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(184,149,90,0.06); }
-
-/* ── CHARSET BUTTONS ── */
-.charset-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 0.5rem; }
-.cs-btn {
-  background: none;
-  border: 1px solid var(--stone);
-  color: var(--dim);
-  font-family: 'Jost', sans-serif;
-  font-size: 0.55rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.35rem 0.7rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.cs-btn:hover { border-color: var(--mid); color: var(--pale); }
-.cs-btn.active { border-color: var(--pale); color: var(--pale); }
-
-/* ── CUSTOM CHARS ── */
-.custom-row { display: flex; gap: 6px; margin-top: 0.6rem; }
-.custom-input {
-  flex: 1;
-  background: var(--ink);
-  border: 1px solid var(--stone);
-  color: var(--pale);
-  font-family: 'EB Garamond', serif;
-  font-size: 1rem;
-  padding: 0.4rem 0.6rem;
-  outline: none;
-  min-width: 0;
-  transition: border-color 0.2s;
-}
-.custom-input:focus { border-color: var(--pale); }
-.custom-input::placeholder { color: var(--stone); font-style: italic; }
-.custom-apply {
-  background: none;
-  border: 1px solid var(--stone);
-  color: var(--dim);
-  font-family: 'Jost', sans-serif;
-  font-size: 0.55rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 0 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.custom-apply:hover { border-color: var(--pale); color: var(--pale); }
-
-/* ── SLIDERS ── */
-.ctrl-row { margin-bottom: 0.85rem; }
-.ctrl-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.3rem;
-}
-.ctrl-name {
-  font-size: 0.58rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--mid);
-}
-.ctrl-val {
-  font-family: 'EB Garamond', serif;
-  font-size: 0.85rem;
-  color: var(--pale);
-  min-width: 36px;
-  text-align: right;
-}
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 2px;
-  background: var(--stone);
-  outline: none;
-  cursor: pointer;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: var(--gold);
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
-
-/* ── COLOR PALETTE ── */
-.palette-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem; }
-.pal-btn {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-}
-.pal-btn:hover { transform: scale(1.2); }
-.pal-btn.active { border-color: var(--cream); }
-
-/* ── ACCENT COLOR ── */
-.accent-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0.5rem; }
-.accent-swatch {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-.accent-swatch:hover { transform: scale(1.2); }
-.accent-swatch.active { border-color: var(--cream); }
-
-/* ── ACTION BUTTONS ── */
-.action-row { display: flex; gap: 6px; padding: 1rem 1.4rem 0; }
-.action-btn {
-  flex: 1;
-  background: none;
-  border: 1px solid var(--stone);
-  color: var(--dim);
-  font-family: 'Jost', sans-serif;
-  font-size: 0.58rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 0.65rem 0;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-}
-.action-btn:hover { border-color: var(--pale); color: var(--pale); }
-.action-btn.play { border-color: var(--gold); color: var(--gold); }
-.action-btn.play:hover { background: rgba(184,149,90,0.08); }
-
-/* ── CANVAS OVERLAY ── */
-.canvas-corner {
-  position: absolute;
-  bottom: 1.5rem; left: 1.8rem;
-  font-family: 'Jost', sans-serif;
-  font-size: 0.55rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(90,85,80,0.6);
-  pointer-events: none;
-}
-
-/* ── MOBILE: stack vertically ── */
-@media (max-width: 700px) {
-  #app { grid-template-columns: 1fr; grid-template-rows: 55vw 1fr; }
-  #canvas-wrap { height: 55vw; }
-  #panel { border-left: none; border-top: 1px solid var(--stone); overflow-y: auto; }
-  html, body { overflow: auto; }
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--red:#e63946}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',"Microsoft YaHei","SimSun","Malgun Gothic","Noto Sans",sans-serif;font-weight:300}
+#app{display:grid;grid-template-columns:1fr 300px;height:100vh}
+#canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
+#canvas-wrap canvas{display:block}
+#panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:1.4rem 1.4rem 1rem;border-bottom:1px solid var(--stone);flex-shrink:0}
+.panel-title{font-family:'EB Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:.2rem}
+.panel-sub{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+#controls{flex:1;overflow-y:auto;padding:0 0 2rem}
+#controls::-webkit-scrollbar{width:4px}
+#controls::-webkit-scrollbar-track{background:transparent}
+#controls::-webkit-scrollbar-thumb{background:var(--stone)}
+.section{padding:1rem 1.4rem .5rem;border-bottom:1px solid var(--stone)}
+.section-label{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:.9rem}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:.5rem}
+.mode-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding:.5rem .4rem;cursor:pointer;transition:all .2s;text-align:center}
+.mode-btn:hover{border-color:var(--mid);color:var(--pale)}
+.mode-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.06)}
+.charset-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem}
+.cs-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .7rem;cursor:pointer;transition:all .2s}
+.cs-btn:hover{border-color:var(--mid);color:var(--pale)}
+.cs-btn.active{border-color:var(--pale);color:var(--pale)}
+.custom-row{display:flex;gap:6px;margin-top:.6rem}
+.custom-input{flex:1;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'EB Garamond',serif;font-size:1rem;padding:.4rem .6rem;outline:none;min-width:0;transition:border-color .2s}
+.custom-input:focus{border-color:var(--pale)}
+.custom-input::placeholder{color:var(--stone);font-style:italic}
+.custom-apply{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.55rem;letter-spacing:.15em;text-transform:uppercase;padding:0 .8rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.custom-apply:hover{border-color:var(--pale);color:var(--pale)}
+.ctrl-row{margin-bottom:.85rem}
+.ctrl-label-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem}
+.ctrl-name{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mid)}
+.ctrl-val{font-family:'EB Garamond',serif;font-size:.85rem;color:var(--pale);min-width:36px;text-align:right}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--stone);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+.palette-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem}
+.pal-btn{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s;flex-shrink:0}
+.pal-btn:hover{transform:scale(1.2)}
+.pal-btn.active{border-color:var(--cream)}
+.accent-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.5rem}
+.accent-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s;flex-shrink:0}
+.accent-swatch:hover{transform:scale(1.2)}
+.accent-swatch.active{border-color:var(--cream)}
+.action-row{display:flex;gap:6px;padding:1rem 1.4rem 0}
+.action-btn{flex:1;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;padding:.65rem 0;cursor:pointer;transition:all .2s;text-align:center}
+.action-btn:hover{border-color:var(--pale);color:var(--pale)}
+.action-btn.play{border-color:var(--gold);color:var(--gold)}
+.action-btn.play:hover{background:rgba(184,149,90,.08)}
+.canvas-corner{position:absolute;bottom:1.5rem;left:1.8rem;font-family:'Jost',sans-serif;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;color:rgba(90,85,80,.6);pointer-events:none}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem}
+.toggle-label{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mid)}
+.toggle-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;padding:.28rem .7rem;cursor:pointer;transition:all .2s}
+.toggle-btn.on{border-color:var(--gold);color:var(--gold)}
+select{width:100%;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.6rem;padding:.45rem .55rem;outline:none;cursor:pointer;transition:border-color .2s;margin-bottom:.3rem;-webkit-appearance:none}
+select:focus{border-color:var(--pale)}
+select option{background:var(--ink)}
+.img-upload-btn{width:100%;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.55rem;letter-spacing:.15em;text-transform:uppercase;padding:.6rem;cursor:pointer;transition:all .2s;text-align:center;margin-bottom:.5rem;display:block}
+.img-upload-btn:hover{border-color:var(--pale);color:var(--pale)}
+.img-status{font-size:.56rem;letter-spacing:.1em;color:var(--dim);font-style:italic;margin-bottom:.5rem}
+.hint{font-size:.5rem;letter-spacing:.09em;color:var(--stone);line-height:1.7;margin-top:.3rem}
+.num-row{display:flex;align-items:center;gap:6px;margin-top:.5rem}
+.num-input{background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.7rem;padding:.38rem .5rem;outline:none;width:65px;text-align:center;transition:border-color .2s}
+.num-input:focus{border-color:var(--pale)}
+.num-x{font-size:.6rem;color:var(--dim)}
+@media(max-width:700px){#app{grid-template-columns:1fr;grid-template-rows:55vw 1fr}#canvas-wrap{height:55vw}#panel{border-left:none;border-top:1px solid var(--stone);overflow-y:auto}html,body{overflow:auto}}
 </style>
 </head>
 <body>
@@ -241,33 +83,40 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
     <canvas id="gc"></canvas>
     <div class="canvas-corner" id="modeLabel">Bloom</div>
   </div>
-
   <div id="panel">
     <div class="panel-head">
       <div class="panel-title">Generative Studio</div>
       <div class="panel-sub">jonathanbrittonart.com / studio</div>
     </div>
-
     <div id="controls">
 
-      <!-- ANIMATION MODE -->
+      <!-- MODE -->
       <div class="section">
         <div class="section-label">Animation mode</div>
         <div class="mode-grid" id="modeGrid">
           <button class="mode-btn active" data-mode="bloom">Bloom</button>
           <button class="mode-btn" data-mode="wave">Wave field</button>
-          <button class="mode-btn" data-mode="rain">Rain</button>
+          <button class="mode-btn" data-mode="rain1">Rain 1</button>
+          <button class="mode-btn" data-mode="rain2">Rain 2</button>
           <button class="mode-btn" data-mode="vortex">Vortex</button>
           <button class="mode-btn" data-mode="ripple">Ripple</button>
           <button class="mode-btn" data-mode="drift">Drift</button>
           <button class="mode-btn" data-mode="tess">Tessellation</button>
           <button class="mode-btn" data-mode="warp">Warp</button>
+          <button class="mode-btn" data-mode="glitch">Glitch RGB</button>
+          <button class="mode-btn" data-mode="webster">Blocks</button>
+          <button class="mode-btn" data-mode="matrix">Matrix</button>
+          <button class="mode-btn" data-mode="orbit">Orbit</button>
+          <button class="mode-btn" data-mode="spiral">Spiral</button>
+          <button class="mode-btn" data-mode="scan">Scan</button>
+          <button class="mode-btn" data-mode="halftone">Halftone</button>
+          <button class="mode-btn" data-mode="shatter">Shatter</button>
+          <button class="mode-btn" data-mode="weave">Weave</button>
+          <button class="mode-btn" data-mode="imgtext">Image→Text</button>
         </div>
       </div>
 
-      <!-- CHARACTER SET -->
-
-      
+      <!-- CHARACTERS -->
       <div class="section">
         <div class="section-label">Characters</div>
         <div class="charset-grid" id="charsetGrid">
@@ -279,20 +128,43 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
           <button class="cs-btn" data-cs="georgian">Georgian</button>
           <button class="cs-btn" data-cs="cyrillic">Cyrillic</button>
           <button class="cs-btn" data-cs="sanskrit">Sanskrit</button>
+          <button class="cs-btn" data-cs="arcane">Arcane</button>
           <button class="cs-btn" data-cs="ascii">ASCII</button>
           <button class="cs-btn" data-cs="symbols">Symbols</button>
+          <button class="cs-btn" data-cs="shapes">Shapes</button>
           <button class="cs-btn" data-cs="gradients">Gradients</button>
+          <button class="cs-btn" data-cs="daggers">Daggers</button>
           <button class="cs-btn" data-cs="scissors">Scissors</button>
           <button class="cs-btn" data-cs="squares">Squares</button>
+          <button class="cs-btn" data-cs="circles">Circles</button>
           <button class="cs-btn" data-cs="triangles">Triangles</button>
           <button class="cs-btn" data-cs="dots">Dots</button>
           <button class="cs-btn" data-cs="lines">Lines</button>
-          <button class="cs-btn" data-cs="custom">Custom</button>
+          <button class="cs-btn" data-cs="custom">Custom ↓</button>
         </div>
         <div class="custom-row" id="customRow" style="display:none">
-          <input class="custom-input" id="customInput" placeholder="type characters or words…" maxlength="60">
+          <input class="custom-input" id="customInput" placeholder="chars or words, space-separated…" maxlength="120">
           <button class="custom-apply" id="customApply">Set</button>
         </div>
+      </div>
+
+      <!-- FONT -->
+      <div class="section">
+        <div class="section-label">Font</div>
+        <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal pixel</option>
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="mono">Monospace</option>
+          <option value="serif">Serif</option>
+          <option value="sansserif">Sans-serif</option>
+        </select>
       </div>
 
       <!-- MOTION -->
@@ -312,7 +184,7 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         </div>
       </div>
 
-      <!-- DENSITY & SIZE -->
+      <!-- FIELD -->
       <div class="section">
         <div class="section-label">Field</div>
         <div class="ctrl-row">
@@ -325,11 +197,44 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label-row"><span class="ctrl-name">Max size</span><span class="ctrl-val" id="vMaxSize">20</span></div>
-          <input type="range" id="sMaxSize" min="6" max="60" value="20" step="2">
+          <input type="range" id="sMaxSize" min="6" max="80" value="20" step="2">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label-row"><span class="ctrl-name">Noise scale</span><span class="ctrl-val" id="vNoise">5</span></div>
           <input type="range" id="sNoise" min="1" max="20" value="5" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Rotation</span><span class="ctrl-val" id="vRot">0</span></div>
+          <input type="range" id="sRot" min="0" max="360" value="0" step="5">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Flip H</span><span class="ctrl-val" id="vFlip">1</span></div>
+          <input type="range" id="sFlip" min="-1" max="1" value="1" step="2">
+        </div>
+      </div>
+
+      <!-- ENTROPY -->
+      <div class="section">
+        <div class="section-label">Entropy &amp; Glitch</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Entropy / degradation</span><span class="ctrl-val" id="vEntropy">0</span></div>
+          <input type="range" id="sEntropy" min="0" max="100" value="0" step="2">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Case glitch</span><span class="ctrl-val" id="vCase">0</span></div>
+          <input type="range" id="sCase" min="0" max="100" value="0" step="2">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Flip / mirror chance</span><span class="ctrl-val" id="vFlipChance">0</span></div>
+          <input type="range" id="sFlipChance" min="0" max="100" value="0" step="2">
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Flip horizontal</span>
+          <button class="toggle-btn" id="btnFlipH">Off</button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Flip vertical</span>
+          <button class="toggle-btn" id="btnFlipV">Off</button>
         </div>
       </div>
 
@@ -337,40 +242,129 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
       <div class="section">
         <div class="section-label">Palette</div>
         <div class="palette-grid" id="palGrid">
-          <div class="pal-btn active" data-pal="site" style="background:linear-gradient(135deg,#c4bcb0,#b8955a)" title="Site"></div>
-          <div class="pal-btn" data-pal="ember" style="background:linear-gradient(135deg,#c8632a,#e08040)" title="Ember"></div>
-          <div class="pal-btn" data-pal="frost" style="background:linear-gradient(135deg,#8aaccc,#c8d8ec)" title="Frost"></div>
-          <div class="pal-btn" data-pal="jade" style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)" title="Jade"></div>
-          <div class="pal-btn" data-pal="dusk" style="background:linear-gradient(135deg,#7a5a8a,#c890d8)" title="Dusk"></div>
-          <div class="pal-btn" data-pal="mono" style="background:linear-gradient(135deg,#505048,#a0a098)" title="Mono"></div>
-          <div class="pal-btn" data-pal="fire" style="background:linear-gradient(135deg,#e63946,#f4a261)" title="Fire"></div>
-          <div class="pal-btn" data-pal="white" style="background:linear-gradient(135deg,#e8e0d4,#fff)" title="White"></div>
+          <div class="pal-btn active" data-pal="site"       style="background:linear-gradient(135deg,#c4bcb0,#b8955a)" title="Site"></div>
+          <div class="pal-btn" data-pal="ember"      style="background:linear-gradient(135deg,#c8632a,#e08040)" title="Ember"></div>
+          <div class="pal-btn" data-pal="frost"      style="background:linear-gradient(135deg,#8aaccc,#c8d8ec)" title="Frost"></div>
+          <div class="pal-btn" data-pal="jade"       style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)" title="Jade"></div>
+          <div class="pal-btn" data-pal="dusk"       style="background:linear-gradient(135deg,#7a5a8a,#c890d8)" title="Dusk"></div>
+          <div class="pal-btn" data-pal="mono"       style="background:linear-gradient(135deg,#505048,#a0a098)" title="Mono"></div>
+          <div class="pal-btn" data-pal="fire"       style="background:linear-gradient(135deg,#e63946,#f4a261)" title="Fire"></div>
+          <div class="pal-btn" data-pal="ghost"      style="background:linear-gradient(135deg,#f8f9fa,#495057)" title="Ghost"></div>
+          <div class="pal-btn" data-pal="abyss"      style="background:linear-gradient(135deg,#003566,#ffd60a)" title="Abyss"></div>
+          <div class="pal-btn" data-pal="sakura"     style="background:linear-gradient(135deg,#ffb7c5,#b97375)" title="Sakura"></div>
+          <div class="pal-btn" data-pal="moss"       style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)" title="Moss"></div>
+          <div class="pal-btn" data-pal="neon"       style="background:linear-gradient(135deg,#f72585,#4cc9f0)" title="Neon"></div>
+          <div class="pal-btn" data-pal="terracotta" style="background:linear-gradient(135deg,#e27396,#b3dee2)" title="Terracotta"></div>
+          <div class="pal-btn" data-pal="white"      style="background:linear-gradient(135deg,#e8e0d4,#fff)" title="White"></div>
+          <div class="pal-btn" data-pal="matrix"     style="background:linear-gradient(135deg,#003300,#00cc00)" title="Matrix"></div>
         </div>
 
-        <div class="section-label" style="margin-top:.8rem">Accent</div>
-        <div class="accent-row" id="accentRow">
-          <div class="accent-swatch active" data-accent="#e63946" style="background:#e63946" title="Red"></div>
-          <div class="accent-swatch" data-accent="#f4a261" style="background:#f4a261" title="Amber"></div>
-          <div class="accent-swatch" data-accent="#ede66c" style="background:#ede66c" title="Yellow"></div>
-          <div class="accent-swatch" data-accent="#90d4a0" style="background:#90d4a0" title="Green"></div>
-          <div class="accent-swatch" data-accent="#80b8e8" style="background:#80b8e8" title="Blue"></div>
-          <div class="accent-swatch" data-accent="#d890d8" style="background:#d890d8" title="Pink"></div>
-          <div class="accent-swatch" data-accent="none" style="background:var(--stone);border:1px dashed var(--dim)" title="None"></div>
+        <div class="section-label" style="margin-top:.8rem">Accent 1</div>
+        <div class="accent-row" id="accentRow1">
+          <div class="accent-swatch active" data-accent="#e63946" style="background:#e63946"></div>
+          <div class="accent-swatch" data-accent="#f4a261"   style="background:#f4a261"></div>
+          <div class="accent-swatch" data-accent="#ede66c"   style="background:#ede66c"></div>
+          <div class="accent-swatch" data-accent="#90d4a0"   style="background:#90d4a0"></div>
+          <div class="accent-swatch" data-accent="#80b8e8"   style="background:#80b8e8"></div>
+          <div class="accent-swatch" data-accent="#d890d8"   style="background:#d890d8"></div>
+          <div class="accent-swatch" data-accent="#ffffff"   style="background:#fff;border:1px solid #555"></div>
+          <div class="accent-swatch" data-accent="none"      style="background:var(--stone);border:1px dashed var(--dim)"></div>
+        </div>
+        <div class="ctrl-row" style="margin-top:.4rem">
+          <div class="ctrl-label-row"><span class="ctrl-name">Amt 1</span><span class="ctrl-val" id="vAccent1">10</span></div>
+          <input type="range" id="sAccent1" min="0" max="50" value="10" step="2">
         </div>
 
-        <div class="ctrl-row" style="margin-top:.9rem">
-          <div class="ctrl-label-row"><span class="ctrl-name">Accent amount</span><span class="ctrl-val" id="vAccent">10</span></div>
-          <input type="range" id="sAccent" min="0" max="50" value="10" step="2">
+        <div class="section-label" style="margin-top:.8rem">Accent 2</div>
+        <div class="accent-row" id="accentRow2">
+          <div class="accent-swatch" data-a2="#e63946"  style="background:#e63946"></div>
+          <div class="accent-swatch" data-a2="#f4a261"  style="background:#f4a261"></div>
+          <div class="accent-swatch" data-a2="#ede66c"  style="background:#ede66c"></div>
+          <div class="accent-swatch" data-a2="#90d4a0"  style="background:#90d4a0"></div>
+          <div class="accent-swatch" data-a2="#80b8e8"  style="background:#80b8e8"></div>
+          <div class="accent-swatch" data-a2="#d890d8"  style="background:#d890d8"></div>
+          <div class="accent-swatch" data-a2="#ff6b35"  style="background:#ff6b35"></div>
+          <div class="accent-swatch active" data-a2="none" style="background:var(--stone);border:1px dashed var(--dim)"></div>
+        </div>
+        <div class="ctrl-row" style="margin-top:.4rem">
+          <div class="ctrl-label-row"><span class="ctrl-name">Amt 2</span><span class="ctrl-val" id="vAccent2">10</span></div>
+          <input type="range" id="sAccent2" min="0" max="50" value="10" step="2">
         </div>
 
         <div class="section-label" style="margin-top:.8rem">Background</div>
         <div class="accent-row" id="bgRow">
-          <div class="accent-swatch active" data-bg="#0d0c0a" style="background:#0d0c0a;border:1px solid var(--stone)" title="Ink"></div>
-          <div class="accent-swatch" data-bg="#234b09" style="background:#234b09" title="Forest"></div>
-          <div class="accent-swatch" data-bg="#0a0c14" style="background:#0a0c14" title="Night"></div>
-          <div class="accent-swatch" data-bg="#1a1008" style="background:#1a1008" title="Umber"></div>
-          <div class="accent-swatch" data-bg="#f2ede6" style="background:#f2ede6" title="Paper"></div>
-          <div class="accent-swatch" data-bg="#14101e" style="background:#14101e" title="Void"></div>
+          <div class="accent-swatch active" data-bg="#0d0c0a" style="background:#0d0c0a;border:1px solid var(--stone)"></div>
+          <div class="accent-swatch" data-bg="#234b09"  style="background:#234b09"></div>
+          <div class="accent-swatch" data-bg="#0a0c14"  style="background:#0a0c14"></div>
+          <div class="accent-swatch" data-bg="#1a1008"  style="background:#1a1008"></div>
+          <div class="accent-swatch" data-bg="#f2ede6"  style="background:#f2ede6"></div>
+          <div class="accent-swatch" data-bg="#14101e"  style="background:#14101e"></div>
+          <div class="accent-swatch" data-bg="#2e2c28"  style="background:#2e2c28"></div>
+          <div class="accent-swatch" data-bg="#3c3836"  style="background:#3c3836"></div>
+          <div class="accent-swatch" data-bg="#1d2021"  style="background:#1d2021"></div>
+          <div class="accent-swatch" data-bg="#282028"  style="background:#282028"></div>
+          <div class="accent-swatch" data-bg="#f9f5d7"  style="background:#f9f5d7"></div>
+          <div class="accent-swatch" data-bg="#076678"  style="background:#076678"></div>
+          <div class="accent-swatch" data-bg="#d0e1f9"  style="background:#d0e1f9"></div>
+          <div class="accent-swatch" data-bg="#f4dadd"  style="background:#f4dadd"></div>
+          <div class="accent-swatch" data-bg="#1a2b3c"  style="background:#1a2b3c"></div>
+          <div class="accent-swatch" data-bg="#2d1b2d"  style="background:#2d1b2d"></div>
+          <div class="accent-swatch" data-bg="#000000"  style="background:#000"></div>
+          <div class="accent-swatch" data-bg="#333333"  style="background:#333"></div>
+        </div>
+      </div>
+
+      <!-- COMPOSITION BLOCKS -->
+      <div class="section">
+        <div class="section-label">Composition blocks</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Overlay blocks on all modes</span>
+          <button class="toggle-btn" id="btnComp">Off</button>
+        </div>
+        <div class="charset-grid" id="compRow">
+          <button class="cs-btn active" data-comp="0">H-Split</button>
+          <button class="cs-btn" data-comp="1">Diagonal</button>
+          <button class="cs-btn" data-comp="2">Quads</button>
+          <button class="cs-btn" data-comp="3">Center</button>
+          <button class="cs-btn" data-comp="4">Scatter</button>
+          <button class="cs-btn" data-comp="rand">Random ↺</button>
+        </div>
+        <p class="hint">Blocks mode uses these as colored zones. Overlay applies them to any mode.</p>
+      </div>
+
+      <!-- IMAGE TO TEXT -->
+      <div class="section">
+        <div class="section-label">Image → Text</div>
+        <input type="file" id="imgFile" accept="image/*" style="display:none">
+        <button class="img-upload-btn" onclick="document.getElementById('imgFile').click()">Upload image</button>
+        <div class="img-status" id="imgStatus">No image loaded</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Stretch to fill</span>
+          <button class="toggle-btn" id="btnStretch">Off</button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Invert brightness</span>
+          <button class="toggle-btn" id="btnInvert">Off</button>
+        </div>
+        <p class="hint">Switch to Image→Text mode after uploading. Adjust spacing to change resolution.</p>
+      </div>
+
+      <!-- CANVAS SIZE -->
+      <div class="section">
+        <div class="section-label">Canvas size</div>
+        <div class="charset-grid" id="sizeGrid">
+          <button class="cs-btn active" data-size="800,600">800×600</button>
+          <button class="cs-btn" data-size="800,800">Square</button>
+          <button class="cs-btn" data-size="1200,800">1200×800</button>
+          <button class="cs-btn" data-size="1080,1080">1080 sq</button>
+          <button class="cs-btn" data-size="1080,1920">Story</button>
+          <button class="cs-btn" data-size="custom">Custom</button>
+        </div>
+        <div class="num-row" id="customSizeRow" style="display:none">
+          <input type="number" class="num-input" id="cwInput" value="800" min="200" max="3000">
+          <span class="num-x">×</span>
+          <input type="number" class="num-input" id="chInput" value="600" min="200" max="3000">
+          <button class="custom-apply" id="applySizeBtn">Set</button>
         </div>
       </div>
 
@@ -381,455 +375,668 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         <button class="action-btn" id="btnSave">Save PNG</button>
       </div>
 
-    </div><!-- /controls -->
-  </div><!-- /panel -->
-</div><!-- /app -->
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
-// ── CHARACTER SETS ─────────────────────────────────────────────
+// ── CHARACTER SETS ────────────────────────────────────────────────────────
 const CHARSETS = {
-  chinese:  ['麻','木','的','水','火','山','人','心','月','日','風','雨','花','道','光','龍','和','龍','義','愛','永','福','和','電','機','學','國','慶','體','道','書','美','善','心','力','明','天','地','男','女','高','大','小','中','水','火','山'],
-  hiragana: ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','セ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ','を','ん'],
-  katakana: ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ','サ','シ','ス','セ','ソ','タ','チ','ツ','テ','ト','ナ','ニ','ヌ','ネ','ノ','ハ','ヒ','フ','ヘ','ホ','マ','ミ','ム','メ','モ','ヤ','ユ','ヨ','ラ','リ','ル','レ','ロ','ワ','ヲ','ン','ヴ','ヵ','ヶ'],
-  kanji:    ['木','火','土','金','水','日','月','風','雷','氷','空','星','海','森','花','草','石','岩','光','闇'],
-  korean:   ['가','나','다','라','마','바','사','아','자','차','카','타','파','하','한','국','어','시','간','마','음','빛','물','불','산','꿈','사람','사랑','하늘','바다','해','달','별','꽃','강','잎','흙','길','집'],
-  georgian: ['ა','ბ','გ','დ','ე','ვ','ზ','თ','ი','კ','ლ','მ','ნ','ო','პ','ჟ','რ','ს','ტ','უ','ფ','ქ','ღ','ყ','შ','ჩ','ც','ძ','წ','ჭ','ხ','ჯ','ჰ'],
-  cyrillic: ['А','Б','В','Г','Д','Е','Ё','Ж','З','И','Й','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю','Я','Ґ','Є','І','Ї','Ѳ','Ѵ'],
-  sanskrit: ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','क','ख','ग','घ','ङ','च','छ','ज','झ','ञ','ट','ठ','ड','ढ','ण','त','थ','द','ध','न','प','फ','ब','भ','म','य','र','ल','व','श','ष','स','ह','ॐ','।','॥'],
-  ascii:    ['@','#','$','%','&','?','!','/','\','|','+','-','=','~','^','<','>','*','_','.',',',':',';','(',')','[',']','{','}',''','"','`','§','±'],
-  symbols:  ['∞','∆','◊','○','□','△','◇','●','■','▲','◆','★','✦','⊕','⊗','⊙'],
-  scissors: ['✁','✂','✃','✄'],
-  gradients:['░','▒','▓','█','▀','▄','▌','▐'],
-  squares:  ['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫'],
-  triangles:['△','▲'],
-  dots:     ['·','.',',',';',':','…','•','‧','⋅','∙'],
-  lines:    ['—','|','/','\\',' ̲','─','│','╱','╲','┼','╬','╋'],
-  custom:   ['J','O','N'],
+  chinese:   '食立感麻木的水火山人心月日風雨花道光龍和義愛永福電機學國慶體書美善力明天地男女高大小中'.split(''),
+  hiragana:  'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん'.split(''),
+  katakana:  'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンヴ'.split(''),
+  kanji:     '木火土金水日月風雷氷空星海森花草石岩光闇'.split(''),
+  korean:    '가나다라마바사아자차카타파하한국어시간마음빛물불산꿈사람사랑하늘바다해달별꽃강잎흙길집'.split(''),
+  georgian:  'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ'.split(''),
+  cyrillic:  'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЄІЇ'.split(''),
+  sanskrit:  'अआइईउऊएओकखगघचछजझटठडढतथदधनपफबभमयरलवशषसहॐ।।'.split(''),
+  arcane:    'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎⸽⸾⁙⁜※'.split(''),
+  ascii:     "@#$%&?!/\\|+-=~^<>*_.,;:()[]{}'\"`§±".split(''),
+  symbols:   '∞∆◊○□△◇●■▲◆★✦⊕⊗⊙♯♪♫♦♣♠♥♂♀☻☺◙◌⸙⸎'.split(''),
+  shapes:    '∞∆◊○□△◇●■▲◆★✦⊕⊗⊙'.split(''),
+  scissors:  '✁✂✃✄'.split(''),
+  daggers:   '†‡⸶⸸⸷'.split(''),
+  gradients: '░▒▓█▀▄▌▐'.split(''),
+  squares:   '■□▢▣▤▥▦▧▨▩▪▫'.split(''),
+  circles:   '☻☺⊕⊗⊙○●◌˚øø¤°·֎֍'.split(''),
+  triangles: '△▲▽▼◁▷◃▹'.split(''),
+  dots:      '·.,;:…•‧⋅∙°˙⁘⁙⁚⁛'.split(''),
+  lines:     '—|/\\─│╱╲┼╬╋┤├┴┬┘└┐┌╔╗╚╝╠╣╦╩═║'.split(''),
+  custom:    ['J','O','N'],
 };
 
-// ── PALETTES ────────────────────────────────────────────────────
 const PALETTES = {
-  site:  ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
-  ember: ['#c8632a','#e08040','#f0a060','#a84820','#784030'],
-  frost: ['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],
-  jade:  ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],
-  dusk:  ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],
-  mono:  ['#808078','#a0a098','#606058','#c0c0b8','#404038'],
-  fire:  ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
-  white: ['#e8e0d4','#ffffff','#d0c8bc','#f8f4ee','#b8b0a4'],
+  site:       ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
+  ember:      ['#c8632a','#e08040','#f0a060','#a84820','#784030'],
+  frost:      ['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],
+  jade:       ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],
+  dusk:       ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],
+  mono:       ['#808078','#a0a098','#606058','#c0c0b8','#404038'],
+  fire:       ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
+  ghost:      ['#f8f9fa','#dee2e6','#adb5bd','#6c757d','#495057'],
+  abyss:      ['#000814','#001d3d','#003566','#ffc300','#ffd60a'],
+  sakura:     ['#ffb7c5','#ff99ac','#f1e4e8','#ceb1be','#b97375'],
+  moss:       ['#2d6a4f','#409167','#52b788','#74c69d','#95d5b2'],
+  neon:       ['#f72585','#7209b7','#3a0ca3','#4361ee','#4cc9f0'],
+  terracotta: ['#e27396','#ea9ab2','#efcfe3','#eaf2d7','#b3dee2'],
+  white:      ['#e8e0d4','#ffffff','#d0c8bc','#f8f4ee','#b8b0a4'],
+  matrix:     ['#003300','#006600','#00aa00','#00ff00','#88ff88'],
 };
 
-// ── STATE ───────────────────────────────────────────────────────
+const FONTS = {
+  courier:"'Courier New',monospace", vt323:"'VT323',monospace",
+  typewriter:"'Special Elite',cursive", georgia:'Georgia,serif',
+  times:"'Times New Roman',serif", arial:'Arial,sans-serif',
+  bebas:"'Bebas Neue',sans-serif", playfair:"'Playfair Display',serif",
+  impact:'Impact,sans-serif', mono:'monospace', serif:'serif', sansserif:'sans-serif',
+};
+
+const GLITCH_CHARS = ['█','_','░','▒','?','#','%','■','□','▪',' '];
+const COMP_COLS    = ['#e63946','#b8955a','#2a4a7a','#234b09','#5a2a6a','#8a4a1a','#1a3a5a','#6a1a1a'];
+
+// ── STATE ────────────────────────────────────────────────────────────────
 let S = {
-  mode:      'bloom',
-  chars:     CHARSETS.chinese,
-  palette:   PALETTES.site,
-  accent:    '#e63946',
-  accentAmt: 0.10,
-  bg:        '#0d0c0a',
-  speed:     0.004,
-  wave:      30,
-  turb:      0.005,
-  density:   0.40,
-  spacing:   12,
-  maxSize:   20,
-  noiseScale:0.01,
-  playing:   false,
-  fc:        0,
+  mode:'bloom', chars:CHARSETS.chinese, palette:PALETTES.site,
+  accent:'#e63946', accentAmt:.10, accent2:'none', accentAmt2:.10,
+  bg:'#0d0c0a', speed:.004, wave:30, turb:.005, density:.45,
+  spacing:12, maxSize:20, noiseScale:.01,
+  charRotation:0, flipH:1,
+  entropy:0, caseGlitch:0, flipChance:0, flipHMirror:false, flipVMirror:false,
+  font:"'Courier New',monospace",
+  compEnabled:false, compPreset:0,
+  imgStretch:false, imgInvert:false,
+  playing:false, fc:0,
 };
 
-// ── RAIN STATE ──────────────────────────────────────────────────
-let rainDrops = [];
-function initRain(W, H) {
-  rainDrops = [];
-  let cols = Math.floor(W / S.spacing);
-  for (let i = 0; i < cols; i++) {
-    rainDrops.push({ x: i * S.spacing + S.spacing/2, y: Math.random() * -H, speed: 1 + Math.random() * 3 });
+let imgPix=null, imgW=0, imgH=0;
+let rainDrops=[], tessGrid=[], matrixCols=[], shatterParts=[], compBlocks=[];
+
+// ── INIT HELPERS ─────────────────────────────────────────────────────────
+function initRain(W,H){
+  rainDrops=[];
+  let c=Math.floor(W/S.spacing);
+  for(let i=0;i<c;i++) rainDrops.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:1+Math.random()*3,tl:4+Math.floor(Math.random()*14)});
+}
+function initTess(W,H){
+  tessGrid=[];
+  let sp=S.spacing*2,c=Math.floor(W/sp),r=Math.floor(H/sp);
+  for(let i=0;i<r;i++) for(let j=0;j<c;j++) tessGrid.push({x:j*sp+sp/2,y:i*sp+sp/2,phase:Math.random()*Math.PI*2});
+}
+function initMatrix(W,H){
+  matrixCols=[];
+  let c=Math.floor(W/S.spacing);
+  for(let i=0;i<c;i++) matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:5+Math.floor(Math.random()*16),glitch:Math.random()<.2});
+}
+function initShatter(W,H){
+  shatterParts=[];
+  let sp=S.spacing,cx=W/2,cy=H/2;
+  for(let x=sp;x<W-sp;x+=sp) for(let y=sp;y<H-sp;y+=sp){
+    let dx=x-cx,dy=y-cy;
+    shatterParts.push({ox:x,oy:y,dist:Math.sqrt(dx*dx+dy*dy),angle:Math.atan2(dy,dx)});
+  }
+}
+function buildComp(preset,W,H){
+  W=W||800;H=H||600;
+  if(preset==='rand') preset=Math.floor(Math.random()*5);
+  preset=+preset;
+  let p=COMP_COLS;
+  if(preset===0)      compBlocks=[{x:0,y:0,w:W,h:H*.42,col:p[0],op:.7},{x:0,y:H*.42,w:W,h:H*.58,col:p[2],op:.7}];
+  else if(preset===1) compBlocks=[{x:0,y:0,w:W*.55,h:H,col:p[1],op:.65},{x:W*.45,y:0,w:W*.55,h:H,col:p[3],op:.65}];
+  else if(preset===2) compBlocks=[{x:0,y:0,w:W/2,h:H/2,col:p[0],op:.7},{x:W/2,y:0,w:W/2,h:H/2,col:p[4],op:.7},{x:0,y:H/2,w:W/2,h:H/2,col:p[2],op:.7},{x:W/2,y:H/2,w:W/2,h:H/2,col:p[1],op:.7}];
+  else if(preset===3) compBlocks=[{x:W*.12,y:H*.12,w:W*.76,h:H*.76,col:p[0],op:.75},{x:W*.28,y:H*.28,w:W*.44,h:H*.44,col:p[2],op:.6}];
+  else{
+    compBlocks=[];
+    for(let i=0;i<3+Math.floor(Math.random()*4);i++)
+      compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});
   }
 }
 
-// ── TESSELLATION STATE ──────────────────────────────────────────
-let tessGrid = [];
-function initTess(W, H) {
-  tessGrid = [];
-  let cols = Math.floor(W / (S.spacing * 2));
-  let rows = Math.floor(H / (S.spacing * 2));
-  for (let r = 0; r < rows; r++)
-    for (let c = 0; c < cols; c++)
-      tessGrid.push({ x: c * S.spacing * 2 + S.spacing, y: r * S.spacing * 2 + S.spacing, phase: Math.random() * Math.PI * 2 });
+// ── CHARACTER / COLOR PICKERS ─────────────────────────────────────────────
+function pickChar(p,x,y,t){
+  let i=Math.floor(p.noise(x*.1,y*.1,t*.2)*S.chars.length);
+  let ch=S.chars[i%S.chars.length];
+  // Case glitch
+  if(S.caseGlitch>0&&p.random()<S.caseGlitch){
+    let u=ch.toUpperCase(),l=ch.toLowerCase();
+    ch=(ch===u)?l:u;
+  }
+  // Entropy degradation
+  if(S.entropy>0&&p.random()<S.entropy){
+    let r=p.random();
+    if(r<.28)ch='█';
+    else if(r<.46)ch='_';
+    else if(r<.58)ch=' ';
+    else if(r<.72)ch=GLITCH_CHARS[Math.floor(p.random(GLITCH_CHARS.length))];
+    else ch=String.fromCharCode(33+Math.floor(p.random(93)));
+  }
+  return ch;
 }
 
-// ── p5 SKETCH ───────────────────────────────────────────────────
-let sk = function(p) {
+function pickColor(p,x,y,t){
+  // Composition block override
+  if(S.compEnabled){
+    for(let i=compBlocks.length-1;i>=0;i--){
+      let b=compBlocks[i];
+      if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h&&p.random()<(b.op||.7)) return b.col;
+    }
+  }
+  // Accent 2
+  if(S.accent2!=='none'&&S.accentAmt2>0){
+    let n2=p.noise(x*.022,y*.022,t*.6+199);
+    if(n2>(1-S.accentAmt2)) return S.accent2;
+  }
+  // Accent 1
+  if(S.accent!=='none'&&S.accentAmt>0){
+    let n1=p.noise(x*.02,y*.02,t+50);
+    if(n1>(1-S.accentAmt)) return S.accent;
+  }
+  // Palette
+  let cVal=p.noise(x*.01,y*.01,t);
+  let ci=Math.floor(cVal*S.palette.length);
+  return S.palette[ci%S.palette.length];
+}
 
-  p.setup = function() {
-    let wrap = document.getElementById('canvas-wrap');
-    p.createCanvas(wrap.offsetWidth, wrap.offsetHeight).parent('canvas-wrap');
-    p.textAlign(p.CENTER, p.CENTER);
+// ── DRAW HELPER — places one character with all transforms ────────────────
+function dc(p,x,y,sz,rot,col,cx,cy){
+  let ch=pickChar(p,x,y,S.fc*S.speed);
+  if(!ch||(!ch.trim()&&S.entropy<.1)) return;
+  p.push();
+  p.translate(x,y);
+  if(rot) p.rotate(rot);
+  p.rotate(p.radians(S.charRotation));
+  p.scale(S.flipH,1);
+  // Random mirror (Mark Webster style)
+  if(S.flipChance>0){
+    let fx=(S.flipHMirror&&p.random()<S.flipChance*.6)?-1:1;
+    let fy=(S.flipVMirror&&p.random()<S.flipChance*.35)?-1:1;
+    if(fx!==1||fy!==1) p.scale(fx,fy);
+  }
+  p.fill(col);
+  p.textSize(sz);
+  p.text(ch,0,0);
+  p.pop();
+}
+
+// ── ANIMATION MODES ───────────────────────────────────────────────────────
+function drawBloom(p,t){
+  let sp=S.spacing;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let angle=p.noise(x*S.noiseScale*.5,y*S.noiseScale*.5,t*.5)*p.TWO_PI*4;
+    dc(p,x,y,p.map(n,S.density,1,2,S.maxSize),angle,pickColor(p,x,y,t));
+  }
+}
+
+function drawWave(p,t){
+  let sp=S.spacing;
+  for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let wx=Math.sin(y*S.turb*10+t*2)*S.wave;
+    let wy=Math.cos(x*S.turb*10+t*1.5)*S.wave*.6;
+    dc(p,x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,pickColor(p,x,y,t));
+  }
+}
+
+function drawRain1(p,t){
+  if(S.playing) rainDrops.forEach(function(d){
+    d.y+=d.speed*(S.speed*250+1);
+    if(d.y>p.height+S.spacing*2){d.y=-S.spacing*(2+Math.random()*8);d.speed=1+Math.random()*3;}
+  });
+  rainDrops.forEach(function(d,i){
+    let tl=Math.floor(3+(S.wave/20));
+    for(let j=0;j<tl;j++){
+      let ty=d.y-j*S.spacing;
+      if(ty<0||ty>p.height) continue;
+      let alpha=p.map(j,0,tl,255,30);
+      let rawCol=j===0?pickColor(p,d.x,ty,t):S.palette[i%S.palette.length];
+      let c=p.color(rawCol);
+      p.fill(p.red(c),p.green(c),p.blue(c),alpha);
+      p.textSize(j===0?S.maxSize*.8:S.maxSize*.5);
+      p.text(pickChar(p,i,j,t),d.x,ty);
+    }
+  });
+}
+
+function drawRain2(p,t){
+  if(S.playing) rainDrops.forEach(function(d){
+    d.y+=d.speed*(S.speed*500+2);
+    if(d.y>p.height+50) d.y=-20;
+  });
+  rainDrops.forEach(function(d,i){
+    p.fill(pickColor(p,d.x,d.y,t));
+    p.textSize(S.maxSize);
+    p.text(pickChar(p,i,d.y,t),d.x,d.y);
+  });
+}
+
+function drawVortex(p,t){
+  let cx=p.width/2,cy=p.height/2,maxR=Math.max(p.width,p.height)*.6;
+  for(let r=S.spacing;r<maxR;r+=S.spacing){
+    let count=Math.floor(p.TWO_PI*r/S.spacing);
+    for(let i=0;i<count;i++){
+      let angle=(i/count)*p.TWO_PI+(t*(maxR/r)*.5);
+      let x=cx+Math.cos(angle)*r, y=cy+Math.sin(angle)*r;
+      let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+      if(n<S.density) continue;
+      dc(p,x,y,p.map(n,S.density,1,4,S.maxSize),angle,pickColor(p,x,y,t));
+    }
+  }
+}
+
+function drawRipple(p,t){
+  let cx=p.width/2,cy=p.height/2;
+  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
+    let d=p.dist(x,y,cx,cy);
+    let ripple=Math.sin(d*S.turb*10-t*5)*S.wave;
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    dc(p,x,y+ripple,S.maxSize,0,pickColor(p,x,y,t));
+  }
+}
+
+function drawDrift(p,t){
+  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let offX=p.noise(x*.005,t)*S.wave*2;
+    let offY=p.noise(y*.005,t)*S.wave*2;
+    dc(p,x+offX,y+offY,S.maxSize,0,pickColor(p,x,y,t));
+  }
+}
+
+function drawTess(p,t){
+  tessGrid.forEach(function(cell,i){
+    let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);
+    if(n<S.density) return;
+    let pulse=Math.sin(t*2+cell.phase)*.5+.5;
+    dc(p,cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,pickColor(p,cell.x,cell.y,t));
+  });
+}
+
+function drawWarp(p,t){
+  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let warp=p.noise(x*.002,y*.002,t)*S.wave*4;
+    dc(p,x+warp,y+warp,S.maxSize,0,pickColor(p,x,y,t));
+  }
+}
+
+function drawGlitch(p,t){
+  let sp=S.spacing, nS=Math.floor(p.height/(sp*1.4));
+  for(let si=0;si<nS;si++){
+    let sy=si*sp*1.4, sh=sp*1.4;
+    let disp=Math.sin(si*.4+t*4)*S.wave*.6;
+    if(p.random()<S.entropy*.3) disp+=(p.random()-.5)*p.width*.35;
+    let rD=disp+Math.sin(t*6)*4, bD=disp-Math.sin(t*6)*4;
+    for(let x=sp;x<p.width-sp;x+=sp) for(let y=sy;y<sy+sh;y+=sp){
+      if(y>=p.height) continue;
+      let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+      if(n<S.density) continue;
+      let ch=pickChar(p,x,y,t), sz=p.random(5,S.maxSize*.65);
+      p.fill(255,50,80,85); p.textSize(sz); p.text(ch,x+rD,y);
+      p.fill(50,120,255,85); p.text(ch,x+bD,y);
+      p.fill(pickColor(p,x,y,t)); p.text(ch,x+disp,y);
+    }
+  }
+}
+
+function drawWebster(p,t){
+  let sp=S.spacing;
+  for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
+    if(p.random()>(1-S.density*.1)) continue;
+    dc(p,x+Math.sin(y*.008+t)*S.wave*.12,y+Math.cos(x*.008+t*.7)*S.wave*.08,p.random(S.maxSize*.25,S.maxSize*.6),0,pickColor(p,x,y,t));
+  }
+  compBlocks.forEach(function(b){
+    let wob=Math.sin(t+b.x*.01)*S.wave*.08;
+    for(let x=b.x;x<b.x+b.w;x+=sp*.7) for(let y=b.y;y<b.y+b.h;y+=sp*.55){
+      if(p.random()>b.op) continue;
+      p.push(); p.translate(x+wob,y);
+      if(S.flipChance>0&&p.random()<S.flipChance*.4) p.scale(-1,1);
+      p.fill(b.col); p.textSize(p.random(S.maxSize*.3,S.maxSize));
+      p.text(pickChar(p,x,y,t),0,0); p.pop();
+    }
+  });
+}
+
+function drawMatrix(p,t){
+  if(S.playing) matrixCols.forEach(function(c){
+    c.y+=c.speed*(S.speed*280+1);
+    if(c.y>p.height+S.spacing*c.tl){c.y=-S.spacing*(1+Math.random()*5);c.speed=.5+Math.random()*2.5;c.glitch=Math.random()<.2;}
+  });
+  matrixCols.forEach(function(c,ci){
+    for(let j=0;j<c.tl;j++){
+      let ty=c.y-j*S.spacing;
+      if(ty<0||ty>p.height) continue;
+      let a=p.map(j,0,c.tl,255,10);
+      let ch=(c.glitch&&S.entropy>0&&p.random()<S.entropy*.6)?GLITCH_CHARS[Math.floor(p.random(GLITCH_CHARS.length))]:pickChar(p,ci*S.spacing,ty,t);
+      let col=j===0?(S.accent!=='none'?S.accent:S.palette[0]):S.palette[1%S.palette.length];
+      let cv=p.color(col);
+      p.fill(p.red(cv),p.green(cv),p.blue(cv),a);
+      p.textSize(j===0?S.maxSize*.85:S.maxSize*.5);
+      p.text(ch,c.x,ty);
+    }
+  });
+}
+
+function drawOrbit(p,t){
+  let nC=2+Math.floor(S.density*0.6), maxR=Math.max(p.width,p.height)*.58, sp=S.spacing;
+  let centers=[];
+  for(let i=0;i<nC;i++){let a=(i/nC)*p.TWO_PI;centers.push({x:p.width/2+Math.cos(a+t*.3)*p.width*.28,y:p.height/2+Math.sin(a+t*.3)*p.height*.22});}
+  centers.forEach(function(c,ci){
+    for(let r=sp;r<maxR;r+=sp){
+      let cnt=Math.floor(p.TWO_PI*r/sp);
+      for(let i=0;i<cnt;i++){
+        if(p.random()>(0.2+S.density*.08)) continue;
+        let ang=(i/cnt)*p.TWO_PI+t*(0.5+ci*.3), x=c.x+Math.cos(ang)*r, y=c.y+Math.sin(ang)*r;
+        if(x<0||x>p.width||y<0||y>p.height) continue;
+        dc(p,x,y,p.map(r,0,maxR,S.maxSize*.8,2),ang+p.HALF_PI,pickColor(p,x,y,t));
+      }
+    }
+  });
+}
+
+function drawSpiral(p,t){
+  let cx=p.width/2, cy=p.height/2, maxR=Math.min(p.width,p.height)*.52, a=S.spacing/p.TWO_PI;
+  for(let th=0;th<p.TWO_PI*22;th+=.27){
+    let r=a*th; if(r>maxR) break;
+    let wb=Math.sin(th*3+t*2)*S.wave*.13;
+    let x=cx+Math.cos(th+t*.2)*(r+wb), y=cy+Math.sin(th+t*.2)*(r+wb);
+    if(x<0||x>p.width||y<0||y>p.height) continue;
+    dc(p,x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,pickColor(p,x,y,t));
+  }
+}
+
+function drawScan(p,t){
+  let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1, sw=70+S.wave*.8, sp=S.spacing;
+  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
+    let d=Math.abs(y-sc), ins=d<sw;
+    if(!ins&&p.random()>(1-S.density*.05)) continue;
+    if(ins&&p.random()>.72) continue;
+    let br=ins?p.map(d,0,sw,1,0):.28, disp=ins?Math.sin(x*.05+t*5)*S.wave*.3:0;
+    dc(p,x+disp,y,p.map(br,0,1,2,S.maxSize),0,pickColor(p,x,y,t));
+  }
+}
+
+function drawHalftone(p,t){
+  let sp=S.spacing;
+  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
+    let b=p.constrain((Math.sin(x*.03)*Math.cos(y*.03)+1)/2*.7+Math.sin(x*.015+t)*.12+Math.cos(y*.015+t*.8)*.1+.08,0,1);
+    if(b<.06) continue;
+    dc(p,x,y,p.map(b,0,1,.5,S.maxSize),0,pickColor(p,x,y,t));
+  }
+}
+
+function drawShatter(p,t){
+  if(!shatterParts.length) initShatter(p.width,p.height);
+  let prog=(Math.sin(t*.6)+1)/2, ex=prog*S.wave*2.5;
+  shatterParts.forEach(function(pt){
+    if(p.random()>(1-S.density*.04)) return;
+    let x=pt.ox+Math.cos(pt.angle)*ex*(pt.dist/280), y=pt.oy+Math.sin(pt.angle)*ex*(pt.dist/280);
+    if(x<0||x>p.width||y<0||y>p.height) return;
+    dc(p,x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,pickColor(p,pt.ox,pt.oy,t));
+  });
+}
+
+function drawWeave(p,t){
+  let sp=S.spacing;
+  for(let y=sp;y<p.height;y+=sp*2){let rt=t+y*.002;for(let x=sp;x<p.width;x+=sp){if(p.random()>(1-S.density*.1))continue;dc(p,x,y+Math.sin(x*S.turb*2+rt*2)*S.wave*.38,p.random(3,S.maxSize*.6),0,pickColor(p,x,y,t));}}
+  for(let x=sp*1.5;x<p.width;x+=sp*2){let ct=t+x*.002;for(let y=sp;y<p.height;y+=sp){if(p.random()>(1-S.density*.1))continue;dc(p,x+Math.cos(y*S.turb*2+ct*1.7)*S.wave*.38,y,p.random(3,S.maxSize*.6),0,pickColor(p,x,y,t));}}
+}
+
+function drawImgText(p,t){
+  if(!imgPix){
+    p.fill(S.palette[0]); p.textSize(13);
+    p.textAlign(p.CENTER,p.CENTER);
+    p.text('Upload an image in the Image→Text panel →',p.width/2,p.height/2);
+    p.textAlign(p.LEFT,p.TOP); return;
+  }
+  let sp=S.spacing, sx, sy, ox=0, oy=0;
+  if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}
+  else{let sc=Math.min(p.width/imgW,p.height/imgH);sx=sy=1/sc;ox=(p.width-imgW*sc)/2;oy=(p.height-imgH*sc)/2;}
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let ix=Math.floor((x-ox)*sx), iy=Math.floor((y-oy)*sy);
+    if(ix<0||ix>=imgW||iy<0||iy>=imgH) continue;
+    let idx=(iy*imgW+ix)*4, r=imgPix.data[idx], g=imgPix.data[idx+1], b=imgPix.data[idx+2];
+    let bri=(r*.299+g*.587+b*.114)/255;
+    if(S.imgInvert) bri=1-bri;
+    let d=1-bri; if(d<.1) continue;
+    dc(p,x+Math.sin(y*.01+t)*S.wave*.07,y+Math.cos(x*.01+t*.7)*S.wave*.05,p.map(d,.1,1,1.5,S.maxSize),0,pickColor(p,x,y,t));
+  }
+}
+
+// ── p5 SKETCH ────────────────────────────────────────────────────────────
+// NOTE: sk is defined as a function then passed to new p5() BELOW — outside the function.
+let sk = function(p){
+  p.setup = function(){
+    let wrap=document.getElementById('canvas-wrap');
+    p.createCanvas(wrap.offsetWidth,wrap.offsetHeight).parent('canvas-wrap');
+    p.textAlign(p.LEFT,p.TOP);
+    p.textFont(S.font);
     p.noStroke();
-    initRain(p.width, p.height);
-    initTess(p.width, p.height);
+    initRain(p.width,p.height);
+    initTess(p.width,p.height);
+    initMatrix(p.width,p.height);
+    buildComp(0,p.width,p.height);
     p.noLoop();
     p.redraw();
   };
 
-  p.windowResized = function() {
-    let wrap = document.getElementById('canvas-wrap');
-    p.resizeCanvas(wrap.offsetWidth, wrap.offsetHeight);
-    initRain(p.width, p.height);
-    initTess(p.width, p.height);
-    if (!S.playing) p.redraw();
+  p.windowResized = function(){
+    let wrap=document.getElementById('canvas-wrap');
+    p.resizeCanvas(wrap.offsetWidth,wrap.offsetHeight);
+    initRain(p.width,p.height);
+    initTess(p.width,p.height);
+    initMatrix(p.width,p.height);
+    buildComp(S.compPreset,p.width,p.height);
+    if(!S.playing) p.redraw();
   };
 
-  p.draw = function() {
-    if (S.playing) S.fc++;
-    let t = S.fc * S.speed;
-
+  p.draw = function(){
+    if(S.playing) S.fc++;
+    let t=S.fc*S.speed;
     p.background(S.bg);
+    p.textFont(S.font);
+    p.noStroke();
+    p.textAlign(p.LEFT,p.TOP);
 
-    switch(S.mode) {
-      case 'bloom':   drawBloom(p, t);   break;
-      case 'wave':    drawWave(p, t);    break;
-      case 'rain':    drawRain(p, t);    break;
-      case 'vortex':  drawVortex(p, t);  break;
-      case 'ripple':  drawRipple(p, t);  break;
-      case 'drift':   drawDrift(p, t);   break;
-      case 'tess':    drawTess(p, t);    break;
-      case 'warp':    drawWarp(p, t);    break;
+    switch(S.mode){
+      case'bloom':    drawBloom(p,t);    break;
+      case'wave':     drawWave(p,t);     break;
+      case'rain1':    drawRain1(p,t);    break;
+      case'rain2':    drawRain2(p,t);    break;
+      case'vortex':   drawVortex(p,t);   break;
+      case'ripple':   drawRipple(p,t);   break;
+      case'drift':    drawDrift(p,t);    break;
+      case'tess':     drawTess(p,t);     break;
+      case'warp':     drawWarp(p,t);     break;
+      case'glitch':   drawGlitch(p,t);   break;
+      case'webster':  drawWebster(p,t);  break;
+      case'matrix':   drawMatrix(p,t);   break;
+      case'orbit':    drawOrbit(p,t);    break;
+      case'spiral':   drawSpiral(p,t);   break;
+      case'scan':     drawScan(p,t);     break;
+      case'halftone': drawHalftone(p,t); break;
+      case'shatter':  drawShatter(p,t);  break;
+      case'weave':    drawWeave(p,t);    break;
+      case'imgtext':  drawImgText(p,t);  break;
     }
   };
 
-  // ── BLOOM ────────────────────────────────────────────────────
-  function drawBloom(p, t) {
-    let m = 20, sp = S.spacing;
-    for (let x = m; x < p.width - m; x += sp) {
-      for (let y = m; y < p.height - m; y += sp) {
-        let density = p.noise(x*S.noiseScale, y*S.noiseScale, t);
-        if (density <= S.density) continue;
-        let angle = p.noise(x*S.noiseScale*0.5, y*S.noiseScale*0.5, t*0.5) * p.TWO_PI * 4;
-        let ch = pickChar(p, x, y);
-        p.push();
-        p.translate(x, y);
-        p.rotate(angle);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(p.map(density, S.density, 1, 2, S.maxSize));
-        p.text(ch, 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── WAVE FIELD ───────────────────────────────────────────────
-  function drawWave(p, t) {
-    let sp = S.spacing;
-    for (let x = sp; x < p.width - sp; x += sp) {
-      for (let y = sp; y < p.height - sp; y += sp) {
-        if (p.random() > (1 - S.density * 0.1)) continue;
-        let wx = Math.sin(y * S.turb + t * 2) * S.wave + Math.cos(y * S.turb * 0.5 + t) * S.wave * 0.4;
-        let wy = Math.cos(x * S.turb + t * 1.5) * S.wave * 0.6;
-        let rot = Math.sin(x * 0.015 + t) * 0.8;
-        p.push();
-        p.translate(x + wx, y + wy);
-        p.rotate(rot);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(p.random(6, S.maxSize * 0.7));
-        p.text(pickChar(p, x, y), 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── RAIN ─────────────────────────────────────────────────────
-  function drawRain(p, t) {
-    if (S.playing) {
-      rainDrops.forEach(function(d) {
-        d.y += d.speed * (S.speed * 250 + 1);
-        if (d.y > p.height + S.spacing * 2) {
-          d.y = -S.spacing * (2 + Math.random() * 8);
-          d.speed = 1 + Math.random() * 3;
-        }
-      });
-    }
-    rainDrops.forEach(function(d, i) {
-      let trailLen = Math.floor(3 + (S.wave / 20));
-      for (let j = 0; j < trailLen; j++) {
-        let ty = d.y - j * S.spacing;
-        if (ty < 0 || ty > p.height) continue;
-        let alpha = p.map(j, 0, trailLen, 255, 30);
-        let col = j === 0 ? accentOrPal(p, i, t) : palColor(p, i);
-        p.fill(p.red(p.color(col)), p.green(p.color(col)), p.blue(p.color(col)), alpha);
-        p.textSize(j === 0 ? S.maxSize * 0.8 : S.maxSize * 0.5);
-        p.text(pickChar(p, i, j), d.x, ty);
-      }
-    });
-  }
-
-  // ── VORTEX ───────────────────────────────────────────────────
-  function drawVortex(p, t) {
-    let cx = p.width / 2, cy = p.height / 2;
-    let maxR = Math.max(p.width, p.height) * 0.6;
-    let sp = S.spacing;
-    for (let r = sp; r < maxR; r += sp) {
-      let circumference = p.TWO_PI * r;
-      let count = Math.floor(circumference / sp);
-      for (let i = 0; i < count; i++) {
-        if (p.random() > (0.3 + S.density * 0.07)) continue;
-        let baseAngle = (i / count) * p.TWO_PI;
-        let spiral = t + r * S.turb * 0.5;
-        let angle = baseAngle + spiral;
-        let wobble = Math.sin(r * 0.03 + t * 2) * S.wave * 0.01;
-        let rx = cx + Math.cos(angle + wobble) * r;
-        let ry = cy + Math.sin(angle + wobble) * r;
-        if (rx < 0 || rx > p.width || ry < 0 || ry > p.height) continue;
-        let rot = angle + p.HALF_PI + Math.sin(t + r * 0.02) * 0.5;
-        p.push();
-        p.translate(rx, ry);
-        p.rotate(rot);
-        p.fill(pickColor(p, rx, ry, t));
-        p.textSize(p.map(r, 0, maxR, S.maxSize, 4));
-        p.text(pickChar(p, i, r), 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── RIPPLE ───────────────────────────────────────────────────
-  function drawRipple(p, t) {
-    let cx = p.width / 2, cy = p.height / 2;
-    let sp = S.spacing;
-    for (let x = sp; x < p.width - sp; x += sp) {
-      for (let y = sp; y < p.height - sp; y += sp) {
-        let dist = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy));
-        let ripple = Math.sin(dist * S.turb * 2 - t * 4) * S.wave;
-        let angle = Math.atan2(y - cy, x - cx);
-        let rx = x + Math.cos(angle) * ripple * 0.5;
-        let ry = y + Math.sin(angle) * ripple * 0.5;
-        if (rx < 0 || rx > p.width || ry < 0 || ry > p.height) continue;
-        let n = p.noise(x*S.noiseScale, y*S.noiseScale, t*0.3);
-        if (n < S.density * 0.6) continue;
-        let sz = p.map(Math.abs(Math.sin(dist * 0.02 - t * 2)), 0, 1, 3, S.maxSize);
-        p.push();
-        p.translate(rx, ry);
-        p.rotate(angle + Math.sin(t + dist*0.01) * 0.5);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(sz);
-        p.text(pickChar(p, x, y), 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── DRIFT ────────────────────────────────────────────────────
-  function drawDrift(p, t) {
-    let sp = S.spacing;
-    for (let x = sp; x < p.width - sp; x += sp) {
-      for (let y = sp; y < p.height - sp; y += sp) {
-        let n = p.noise(x*S.noiseScale, y*S.noiseScale, t*0.2);
-        if (n < S.density * 0.5) continue;
-        let dx = Math.sin(p.noise(x*S.turb, y*S.turb, t)*p.TWO_PI) * S.wave * 0.8;
-        let dy = Math.cos(p.noise(x*S.turb+100, y*S.turb+100, t)*p.TWO_PI) * S.wave * 0.5;
-        let rot = p.noise(x*0.005, y*0.005, t*0.5) * p.TWO_PI;
-        p.push();
-        p.translate(x+dx, y+dy);
-        p.rotate(rot);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(p.map(n, S.density*0.5, 1, 4, S.maxSize));
-        p.text(pickChar(p, x, y), 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── TESSELLATION ─────────────────────────────────────────────
-  function drawTess(p, t) {
-    tessGrid.forEach(function(cell, i) {
-      let pulse = Math.sin(t * 2 + cell.phase) * 0.5 + 0.5;
-      let wobX = Math.sin(t * 1.5 + cell.phase) * S.wave * 0.3;
-      let wobY = Math.cos(t * 1.8 + cell.phase * 0.7) * S.wave * 0.3;
-      let rot = t * 0.5 + cell.phase;
-      let sz = p.map(pulse, 0, 1, S.maxSize * 0.2, S.maxSize);
-      p.push();
-      p.translate(cell.x + wobX, cell.y + wobY);
-      p.rotate(rot);
-      p.fill(pickColor(p, cell.x, cell.y, t));
-      p.textSize(sz);
-      p.text(pickChar(p, cell.x, i), 0, 0);
-      p.pop();
-    });
-  }
-
-  // ── WARP ─────────────────────────────────────────────────────
-  function drawWarp(p, t) {
-    let sp = S.spacing;
-    for (let x = sp; x < p.width - sp; x += sp) {
-      for (let y = sp; y < p.height - sp; y += sp) {
-        let n1 = p.noise(x*S.noiseScale, y*S.noiseScale, t);
-        let n2 = p.noise(x*S.noiseScale*2+50, y*S.noiseScale*2+50, t*0.8);
-        if (n1 < S.density * 0.5) continue;
-        let ang1 = n1 * p.TWO_PI * 4 + t * 2;
-        let ang2 = n2 * p.TWO_PI * 3 + t * 1.5;
-        let ox = Math.sin(ang1) * S.wave + Math.cos(ang2) * S.wave * 0.5;
-        let oy = Math.cos(ang1) * S.wave * 0.7 + Math.sin(ang2) * S.wave * 0.4;
-        let rot = Math.sin(x*0.015+t)*0.7 + Math.cos(y*0.015+t*0.8)*0.4;
-        let px = x+ox, py = y+oy;
-        if (px<0||px>p.width||py<0||py>p.height) continue;
-        p.push();
-        p.translate(px, py);
-        p.rotate(rot);
-        p.fill(pickColor(p, x, y, t));
-        p.textSize(p.map(n1, S.density*0.5, 1, 2, S.maxSize));
-        p.text(pickChar(p, x, y), 0, 0);
-        p.pop();
-      }
-    }
-  }
-
-  // ── HELPERS ──────────────────────────────────────────────────
-  function pickChar(p, x, y) {
-    let i = Math.floor(p.noise(x*0.1, y*0.1) * S.chars.length);
-    return S.chars[Math.min(i, S.chars.length - 1)];
-  }
-
-  function palColor(p, seed) {
-    return S.palette[Math.floor(p.noise(seed * 0.3) * S.palette.length) % S.palette.length];
-  }
-
-  function accentOrPal(p, seed, t) {
-    return S.accent !== 'none' ? S.accent : palColor(p, seed);
-  }
-
-  function pickColor(p, x, y, t) {
-    if (S.accent !== 'none') {
-      let pn = p.noise(x*0.018, y*0.018, t*0.7 + 99);
-      if (pn > (1 - S.accentAmt)) return S.accent;
-    }
-    let cVal = p.noise(x*0.02, y*0.02, t);
-    let ci = cVal > 0.65 ? 1 : cVal > 0.45 ? 2 : cVal > 0.28 ? 0 : S.palette.length - 1;
-    return S.palette[ci % S.palette.length];
-  }
-
-  // expose
-  window._studio = {
-    regen: function() { S.fc = 0; p.redraw(); },
-    save:  function() { p.saveCanvas('studio_' + S.mode, 'png'); },
-    play:  function() { S.playing = !S.playing; if (S.playing) p.loop(); else p.noLoop(); return S.playing; },
-    redraw: function() { if (!S.playing) p.redraw(); },
-    reinitRain: function() { initRain(p.width, p.height); },
-    reinitTess: function() { initTess(p.width, p.height); },
+  // Expose controls to outer scope
+  window._st = {
+    regen: function(){S.fc=Math.floor(Math.random()*10000);shatterParts=[];if(!S.playing)p.redraw();},
+    save:  function(){p.saveCanvas('studio-export','png');},
+    play:  function(){S.playing=!S.playing;if(S.playing)p.loop();else p.noLoop();return S.playing;},
+    rd:    function(){if(!S.playing)p.redraw();},
+    rsz:   function(w,h){p.resizeCanvas(w,h);initRain(w,h);initTess(w,h);initMatrix(w,h);buildComp(S.compPreset,w,h);if(!S.playing)p.redraw();},
+    ri:    function(){initRain(p.width,p.height);initTess(p.width,p.height);initMatrix(p.width,p.height);initShatter(p.width,p.height);},
+    rc:    function(pr){S.compPreset=pr;buildComp(pr,p.width,p.height);if(!S.playing)p.redraw();},
   };
 };
 
+// ── INSTANTIATE p5 (MUST be outside the sk function) ─────────────────────
 new p5(sk);
 
-// ── UI WIRING ────────────────────────────────────────────────────
-
-// Mode buttons
-document.getElementById('modeGrid').addEventListener('click', function(e) {
-  let btn = e.target.closest('.mode-btn');
-  if (!btn) return;
-  document.querySelectorAll('.mode-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  S.mode = btn.dataset.mode;
-  document.getElementById('modeLabel').textContent = btn.textContent;
-  if (S.mode === 'rain') window._studio.reinitRain();
-  if (S.mode === 'tess') window._studio.reinitTess();
-  window._studio.redraw();
-});
-
-// Charset buttons
-document.getElementById('charsetGrid').addEventListener('click', function(e) {
-  let btn = e.target.closest('.cs-btn');
-  if (!btn) return;
-  document.querySelectorAll('.cs-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  let cs = btn.dataset.cs;
-  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
-  if (cs !== 'custom') { S.chars = CHARSETS[cs]; window._studio.redraw(); }
-});
-
-document.getElementById('customApply').addEventListener('click', function() {
-  let val = document.getElementById('customInput').value.trim();
-  if (!val) return;
-  S.chars = val.split('').filter(function(c){return c.trim() !== '';});
-  if (S.chars.length === 0) S.chars = ['?'];
-  window._studio.redraw();
-});
-
-document.getElementById('customInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') document.getElementById('customApply').click();
-});
-
-// Sliders
-function wireSlider(id, valId, transform, key, extraFn) {
-  let slider = document.getElementById(id);
-  let label  = document.getElementById(valId);
-  slider.addEventListener('input', function() {
-    let v = +this.value;
-    label.textContent = v;
-    S[key] = transform(v);
-    if (extraFn) extraFn();
-    window._studio.redraw();
+// ── UI WIRING ─────────────────────────────────────────────────────────────
+function wireSlider(id, valId, stateKey, mapFn){
+  mapFn = mapFn || function(v){return v;};
+  let sl=document.getElementById(id), vl=document.getElementById(valId);
+  if(!sl||!vl) return;
+  sl.addEventListener('input',function(){
+    vl.textContent=this.value;
+    S[stateKey]=mapFn(parseFloat(this.value));
+    window._st.rd();
   });
 }
-wireSlider('sSpeed',   'vSpeed',   function(v){return v*0.001;},       'speed');
-wireSlider('sWave',    'vWave',    function(v){return v;},              'wave');
-wireSlider('sTurb',    'vTurb',    function(v){return v*0.001;},        'turb');
-wireSlider('sDens',    'vDens',    function(v){return p5.prototype.map ? 0.4 : (1-(v/10)*0.5+0.1);}, 'density');
-wireSlider('sSpacing', 'vSpacing', function(v){return v;},              'spacing', function(){window._studio.reinitRain();window._studio.reinitTess();});
-wireSlider('sMaxSize', 'vMaxSize', function(v){return v;},              'maxSize');
-wireSlider('sNoise',   'vNoise',   function(v){return v*0.002;},        'noiseScale');
-wireSlider('sAccent',  'vAccent',  function(v){return v/100;},          'accentAmt');
 
-// Fix density slider (can't use p5 map outside sketch)
-document.getElementById('sDens').addEventListener('input', function() {
-  let v = +this.value;
-  document.getElementById('vDens').textContent = v;
-  S.density = 0.58 - (v / 10) * 0.35;
-  window._studio.redraw();
-});
+wireSlider('sSpeed',   'vSpeed',   'speed',      function(v){return v*.001;});
+wireSlider('sWave',    'vWave',    'wave');
+wireSlider('sTurb',    'vTurb',    'turb',       function(v){return v*.001;});
+wireSlider('sDens',    'vDens',    'density',    function(v){return 1-(v*.1);});
+wireSlider('sSpacing', 'vSpacing', 'spacing',    function(v){window._st.ri();return v;});
+wireSlider('sMaxSize', 'vMaxSize', 'maxSize');
+wireSlider('sNoise',   'vNoise',   'noiseScale', function(v){return v*.002;});
+wireSlider('sRot',     'vRot',     'charRotation');
+wireSlider('sFlip',    'vFlip',    'flipH');
+wireSlider('sEntropy', 'vEntropy', 'entropy',    function(v){return v/100;});
+wireSlider('sCase',    'vCase',    'caseGlitch', function(v){return v/100;});
+wireSlider('sFlipChance','vFlipChance','flipChance',function(v){return v/100;});
+wireSlider('sAccent1', 'vAccent1', 'accentAmt',  function(v){return v/100;});
+wireSlider('sAccent2', 'vAccent2', 'accentAmt2', function(v){return v/100;});
 
-// Palette swatches
-document.getElementById('palGrid').addEventListener('click', function(e) {
-  let btn = e.target.closest('.pal-btn');
-  if (!btn) return;
-  document.querySelectorAll('.pal-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  S.palette = PALETTES[btn.dataset.pal];
-  window._studio.redraw();
-});
-
-// Accent swatches
-document.getElementById('accentRow').addEventListener('click', function(e) {
-  let sw = e.target.closest('.accent-swatch');
-  if (!sw) return;
-  document.querySelectorAll('.accent-swatch').forEach(function(b){b.classList.remove('active');});
-  sw.classList.add('active');
-  S.accent = sw.dataset.accent;
-  window._studio.redraw();
+// Mode
+document.getElementById('modeGrid').addEventListener('click',function(e){
+  let b=e.target.closest('.mode-btn');if(!b)return;
+  document.querySelectorAll('.mode-btn').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');
+  S.mode=b.dataset.mode;
+  document.getElementById('modeLabel').textContent=b.textContent;
+  window._st.ri();
+  window._st.rd();
 });
 
-// Background swatches
-document.getElementById('bgRow').addEventListener('click', function(e) {
-  let sw = e.target.closest('.accent-swatch[data-bg]');
-  if (!sw) return;
-  document.querySelectorAll('[data-bg]').forEach(function(b){b.classList.remove('active');});
-  sw.classList.add('active');
-  S.bg = sw.dataset.bg;
-  window._studio.redraw();
+// Charset
+document.getElementById('charsetGrid').addEventListener('click',function(e){
+  let b=e.target.closest('.cs-btn');if(!b||!b.dataset.cs)return;
+  document.querySelectorAll('#charsetGrid .cs-btn').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');
+  let cs=b.dataset.cs;
+  document.getElementById('customRow').style.display=cs==='custom'?'flex':'none';
+  if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
+});
+document.getElementById('customApply').addEventListener('click',function(){
+  let v=document.getElementById('customInput').value.trim();if(!v)return;
+  let parts=v.split(/[\s,]+/).filter(function(x){return x.length>0;});
+  S.chars=parts.length>1?parts:v.split('').filter(function(c){return c.trim()!=='';});
+  if(!S.chars.length)S.chars=['?'];
+  window._st.rd();
+});
+document.getElementById('customInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('customApply').click();});
+
+// Font
+document.getElementById('fontSelect').addEventListener('change',function(){
+  S.font=FONTS[this.value]||"'Courier New',monospace";window._st.rd();
 });
 
-// Action buttons
-document.getElementById('btnPlay').addEventListener('click', function() {
-  let on = window._studio.play();
-  this.textContent = on ? '⏸ Pause' : '▶ Play';
+// Flip mirror toggles
+document.getElementById('btnFlipH').addEventListener('click',function(){
+  S.flipHMirror=!S.flipHMirror;this.textContent=S.flipHMirror?'On':'Off';this.classList.toggle('on',S.flipHMirror);window._st.rd();
 });
-document.getElementById('btnRegen').addEventListener('click', function() {
-  window._studio.regen();
+document.getElementById('btnFlipV').addEventListener('click',function(){
+  S.flipVMirror=!S.flipVMirror;this.textContent=S.flipVMirror?'On':'Off';this.classList.toggle('on',S.flipVMirror);window._st.rd();
 });
-document.getElementById('btnSave').addEventListener('click', function() {
-  window._studio.save();
+
+// Palette
+document.getElementById('palGrid').addEventListener('click',function(e){
+  let b=e.target.closest('.pal-btn');if(!b)return;
+  document.querySelectorAll('.pal-btn').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');
+  S.palette=PALETTES[b.dataset.pal];window._st.rd();
 });
+
+// Accent 1
+document.getElementById('accentRow1').addEventListener('click',function(e){
+  let s=e.target.closest('[data-accent]');if(!s)return;
+  document.querySelectorAll('#accentRow1 [data-accent]').forEach(function(x){x.classList.remove('active');});
+  s.classList.add('active');S.accent=s.dataset.accent;window._st.rd();
+});
+
+// Accent 2
+document.getElementById('accentRow2').addEventListener('click',function(e){
+  let s=e.target.closest('[data-a2]');if(!s)return;
+  document.querySelectorAll('#accentRow2 [data-a2]').forEach(function(x){x.classList.remove('active');});
+  s.classList.add('active');S.accent2=s.dataset.a2;window._st.rd();
+});
+
+// Background
+document.getElementById('bgRow').addEventListener('click',function(e){
+  let s=e.target.closest('[data-bg]');if(!s)return;
+  document.querySelectorAll('[data-bg]').forEach(function(x){x.classList.remove('active');});
+  s.classList.add('active');S.bg=s.dataset.bg;window._st.rd();
+});
+
+// Composition
+document.getElementById('btnComp').addEventListener('click',function(){
+  S.compEnabled=!S.compEnabled;this.textContent=S.compEnabled?'On':'Off';this.classList.toggle('on',S.compEnabled);window._st.rd();
+});
+document.getElementById('compRow').addEventListener('click',function(e){
+  let b=e.target.closest('[data-comp]');if(!b)return;
+  document.querySelectorAll('#compRow [data-comp]').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');window._st.rc(b.dataset.comp);
+});
+
+// Image upload
+document.getElementById('imgFile').addEventListener('change',function(e){
+  let file=e.target.files[0];if(!file)return;
+  let reader=new FileReader();
+  reader.onload=function(ev){
+    let img=new Image();
+    img.onload=function(){
+      let oc=document.createElement('canvas');oc.width=img.width;oc.height=img.height;
+      let ctx=oc.getContext('2d');ctx.drawImage(img,0,0);
+      imgPix=ctx.getImageData(0,0,img.width,img.height);imgW=img.width;imgH=img.height;
+      document.getElementById('imgStatus').textContent=img.width+'×'+img.height+' — ready';
+      S.mode='imgtext';
+      document.querySelectorAll('.mode-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('[data-mode="imgtext"]').forEach(function(b){b.classList.add('active');});
+      document.getElementById('modeLabel').textContent='Image→Text';
+      window._st.rd();
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('btnStretch').addEventListener('click',function(){
+  S.imgStretch=!S.imgStretch;this.textContent=S.imgStretch?'On':'Off';this.classList.toggle('on',S.imgStretch);window._st.rd();
+});
+document.getElementById('btnInvert').addEventListener('click',function(){
+  S.imgInvert=!S.imgInvert;this.textContent=S.imgInvert?'On':'Off';this.classList.toggle('on',S.imgInvert);window._st.rd();
+});
+
+// Canvas size
+document.getElementById('sizeGrid').addEventListener('click',function(e){
+  let b=e.target.closest('[data-size]');if(!b)return;
+  document.querySelectorAll('#sizeGrid [data-size]').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');
+  let sz=b.dataset.size;
+  document.getElementById('customSizeRow').style.display=sz==='custom'?'flex':'none';
+  if(sz!=='custom'){let pts=sz.split(',');window._st.rsz(+pts[0],+pts[1]);}
+});
+document.getElementById('applySizeBtn').addEventListener('click',function(){
+  let w=+document.getElementById('cwInput').value, h=+document.getElementById('chInput').value;
+  if(w>=200&&h>=200) window._st.rsz(w,h);
+});
+
+// Actions
+document.getElementById('btnPlay').addEventListener('click',function(){
+  let on=window._st.play();this.textContent=on?'⏸ Pause':'▶ Play';
+});
+document.getElementById('btnRegen').addEventListener('click',function(){window._st.regen();});
+document.getElementById('btnSave').addEventListener('click',function(){window._st.save();});
 </script>
 </body>
 </html>
