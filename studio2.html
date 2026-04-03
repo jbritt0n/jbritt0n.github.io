@@ -792,8 +792,11 @@ function pickColor(p, x, y, t) {
 }
 
 // ── UI WIRING ──────────────────────────────────────────────────
+
+// Initialize the p5 instance
 window._studio = new p5(sk);
 
+// Helper to wire up sliders
 function wireSlider(id, valId, stateKey, mapFn = v => v) {
   const s = document.getElementById(id);
   const v = document.getElementById(valId);
@@ -805,7 +808,7 @@ function wireSlider(id, valId, stateKey, mapFn = v => v) {
   });
 }
 
-// Motion & Field Sliders
+// Standard Sliders
 wireSlider('sSpeed',   'vSpeed',   'speed',      v => v * 0.001);
 wireSlider('sWave',    'vWave',    'wave');
 wireSlider('sTurb',    'vTurb',    'turb',       v => v * 0.001);
@@ -820,8 +823,8 @@ wireSlider('sFlip',    'vFlip',    'flipH');
 wireSlider('sAccent1', 'vAccent1', 'accentAmt',  v => v / 100);
 wireSlider('sAccent2', 'vAccent2', 'accentAmt2', v => v / 100);
 
-// Mode Grid
-document.getElementById('modeGrid').addEventListener('click', e => {
+// Mode Selection
+document.getElementById('modeGrid').addEventListener('click', function(e) {
   let btn = e.target.closest('.mode-btn');
   if (!btn) return;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -831,8 +834,8 @@ document.getElementById('modeGrid').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Charset Grid
-document.getElementById('charsetGrid').addEventListener('click', e => {
+// Charset Selection
+document.getElementById('charsetGrid').addEventListener('click', function(e) {
   let btn = e.target.closest('.cs-btn');
   if (!btn) return;
   document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
@@ -842,8 +845,8 @@ document.getElementById('charsetGrid').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Accent 1 Swatches
-document.getElementById('accentRow1').addEventListener('click', e => {
+// Accent 1 Selection
+document.getElementById('accentRow1').addEventListener('click', function(e) {
   let sw = e.target.closest('.accent-swatch');
   if (!sw) return;
   document.querySelectorAll('#accentRow1 .accent-swatch').forEach(b => b.classList.remove('active'));
@@ -852,8 +855,8 @@ document.getElementById('accentRow1').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Accent 2 Swatches
-document.getElementById('accentRow2').addEventListener('click', e => {
+// Accent 2 Selection
+document.getElementById('accentRow2').addEventListener('click', function(e) {
   let sw = e.target.closest('.accent-swatch');
   if (!sw) return;
   document.querySelectorAll('#accentRow2 .accent-swatch').forEach(b => b.classList.remove('active'));
@@ -862,8 +865,8 @@ document.getElementById('accentRow2').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Palette Grid
-document.getElementById('palGrid').addEventListener('click', e => {
+// Palette Selection
+document.getElementById('palGrid').addEventListener('click', function(e) {
   let btn = e.target.closest('.pal-btn');
   if (!btn) return;
   document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('active'));
@@ -872,8 +875,8 @@ document.getElementById('palGrid').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Background Swatches
-document.getElementById('bgRow').addEventListener('click', e => {
+// Background Selection
+document.getElementById('bgRow').addEventListener('click', function(e) {
   let sw = e.target.closest('.accent-swatch');
   if (!sw) return;
   document.querySelectorAll('#bgRow .accent-swatch').forEach(b => b.classList.remove('active'));
@@ -882,7 +885,7 @@ document.getElementById('bgRow').addEventListener('click', e => {
   window._studio.redraw();
 });
 
-// Play/Pause
+// Play/Pause Control
 document.getElementById('btnPlay').addEventListener('click', function() {
   S.playing = !S.playing;
   this.textContent = S.playing ? '⏸ Pause' : '▶ Play';
@@ -890,14 +893,14 @@ document.getElementById('btnPlay').addEventListener('click', function() {
   else window._studio.noLoop();
 });
 
-// Regen
-document.getElementById('btnRegen').addEventListener('click', () => {
+// Regen Button
+document.getElementById('btnRegen').addEventListener('click', function() {
   S.fc = Math.floor(Math.random() * 10000);
   window._studio.redraw();
 });
 
-// Save
-document.getElementById('btnSave').addEventListener('click', () => {
+// Save Button
+document.getElementById('btnSave').addEventListener('click', function() {
   window._studio.saveCanvas('studio-export', 'png');
 });
 
