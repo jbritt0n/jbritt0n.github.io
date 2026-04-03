@@ -14,7 +14,7 @@
 </style>
 </head>
 <body>
-
+<!--
 <header id="header">
   <a href="index.html" class="site-name">Jonathan Britton</a>
   <nav class="site-nav">
@@ -34,7 +34,7 @@
     <a href="contact.html">Contact</a>
   </nav>
 </header>
-
+-->
 <main class="index-body">
 
   <!-- GENERATIVE BACKGROUND -->
@@ -79,7 +79,7 @@ new p5(function(p) {
 
   p.draw = function() {
     fc++;
-    var t = fc * 0.004;
+    var t = fc * 0.044;
     p.background('#0d0c0a');
     var spacing = 12, margin = 20;
     for (var x = margin; x < p.width - margin; x += spacing) {
@@ -91,8 +91,8 @@ new p5(function(p) {
         p.push();
         p.translate(x, y);
         p.rotate(angle);
-        var pinkNoise = p.noise(x*0.018, y*0.018, t*0.7 + 99);
-        var cVal = p.noise(x*0.02, y*0.02, t);
+        var pinkNoise = p.noise(x*0.028, y*0.028, t*0.7 + 99);
+        var cVal = p.noise(x*0.12, y*0.12, t);
         var col;
         if (pinkNoise > 0.80) {
           col = '#e63946';
@@ -101,7 +101,7 @@ new p5(function(p) {
           col = siteCols[ci];
         }
         p.fill(col);
-        p.textSize(p.map(density, 0.4, 1, 2, 20));
+        p.textSize(p.map(density, 0.4, 1, 4, 18));
         p.text(ch, 0, 0);
         p.pop();
       }
