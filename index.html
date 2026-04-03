@@ -10,12 +10,11 @@
 <link rel="stylesheet" href="style.css">
 <style>
   body { overflow: hidden; }
-  /* On index, header uses a lighter mix */
   #header { mix-blend-mode: difference; }
 </style>
 </head>
 <body>
-<!--
+
 <header id="header">
   <a href="index.html" class="site-name">Jonathan Britton</a>
   <nav class="site-nav">
@@ -35,7 +34,33 @@
     <a href="contact.html">Contact</a>
   </nav>
 </header>
--->
+
+<main class="index-body">
+
+  <!-- GENERATIVE BACKGROUND -->
+  <div class="index-painting">
+    <canvas id="genCanvas" style="width:100%;height:100%;display:block;"></canvas>
+  </div>
+
+  <!-- SWITCH BACK TO IMAGE: comment the canvas div above and uncomment this:
+  <div class="index-painting">
+    <img src="images/donkey1.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+  </div>
+  -->
+
+  <div class="index-overlay"></div>
+
+  <div class="index-content">
+    <h1 class="index-name">Jonathan Britton</h1>
+    <p class="index-tagline">Paintings &amp; Works on Paper</p>
+    <nav class="index-nav">
+      <a href="works.html">Works</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </div>
+
+</main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
@@ -57,19 +82,15 @@ new p5(function(p) {
     var t = fc * 0.004;
     p.background('#0d0c0a');
     var spacing = 12, margin = 20;
-
     for (var x = margin; x < p.width - margin; x += spacing) {
       for (var y = margin; y < p.height - margin; y += spacing) {
         var density = p.noise(x*0.01, y*0.01, t);
         if (density <= 0.4) continue;
-
         var angle = p.noise(x*0.005, y*0.005, t*0.5) * p.TWO_PI * 4;
         var ch = chars[p.floor(p.noise(x*0.1, y*0.1) * chars.length)];
-
         p.push();
         p.translate(x, y);
         p.rotate(angle);
-
         var pinkNoise = p.noise(x*0.018, y*0.018, t*0.7 + 99);
         var cVal = p.noise(x*0.02, y*0.02, t);
         var col;
@@ -79,7 +100,6 @@ new p5(function(p) {
           var ci = cVal > 0.65 ? 1 : cVal > 0.45 ? 2 : cVal > 0.28 ? 0 : 4;
           col = siteCols[ci];
         }
-
         p.fill(col);
         p.textSize(p.map(density, 0.4, 1, 2, 20));
         p.text(ch, 0, 0);
@@ -89,27 +109,6 @@ new p5(function(p) {
   };
 });
 </script>
-
-<!-- BACKGROUND IMAGE HERE -->
-<!--  
-<main class="index-body">
-  <div class="index-painting">
-  <img src="images/donkey1.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center; background: rgba(13,12,10,0.75);">
-</div>
-
--->
-
-  
-  <div class="index-content">
-    <h1 class="index-name">Jonathan Britton</h1>
-    <p class="index-tagline">Paintings &amp; Works on Paper</p>
-    <nav class="index-nav">
-      <a href="works.html">Works</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-  </div>
-</main>
 
 <script src="nav.js"></script>
 </body>
