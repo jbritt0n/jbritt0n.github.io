@@ -2,228 +2,751 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Generative Studio Expanded</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
-body { margin:0; background:#0d0c0a; color:#eee; font-family:sans-serif; display:flex;}
-#controls { width:300px; padding:12px; background:#111; overflow:auto;}
-canvas { display:block;}
-input, select, button { width:100%; margin-bottom:6px;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:   #0d0c0a;
+  --dark:  #1a1917;
+  --stone: #2e2c28;
+  --dim:   #5c5550;
+  --mid:   #8a8078;
+  --pale:  #c4bcb0;
+  --cream: #ede9e2;
+  --gold:  #b8955a;
+  --red:   #e63946;
+}
+html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--pale); font-family: 'Jost', sans-serif; font-weight: 300; }
+
+/* ── LAYOUT ── */
+#app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
+#canvas-wrap { position: relative; overflow: hidden; background: var(--ink); }
+#canvas-wrap canvas { display: block; }
+#panel { background: var(--dark); border-left: 1px solid var(--stone); display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── PANEL HEADER ── */
+.panel-head {
+  padding: 1.4rem 1.4rem 1rem;
+  border-bottom: 1px solid var(--stone);
+  flex-shrink: 0;
+}
+.panel-title {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--cream);
+  margin-bottom: 0.2rem;
+}
+.panel-sub {
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ── SCROLLABLE CONTROLS ── */
+#controls { flex: 1; overflow-y: auto; padding: 0 0 2rem; }
+#controls::-webkit-scrollbar { width: 4px; }
+#controls::-webkit-scrollbar-track { background: transparent; }
+#controls::-webkit-scrollbar-thumb { background: var(--stone); }
+
+/* ── SECTION ── */
+.section { padding: 1rem 1.4rem 0.5rem; border-bottom: 1px solid var(--stone); }
+.section-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 0.9rem;
+}
+
+/* ── MODE BUTTONS ── */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 0.5rem; }
+.mode-btn {
+  background: none;
+  border: 1px solid var(--stone);
+  color: var(--dim);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.mode-btn:hover { border-color: var(--mid); color: var(--pale); }
+.mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(184,149,90,0.06); }
+
+/* ── CHARSET BUTTONS ── */
+.charset-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 0.5rem; }
+.cs-btn {
+  background: none;
+  border: 1px solid var(--stone);
+  color: var(--dim);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cs-btn:hover { border-color: var(--mid); color: var(--pale); }
+.cs-btn.active { border-color: var(--pale); color: var(--pale); }
+
+/* ── CUSTOM CHARS ── */
+.custom-row { display: flex; gap: 6px; margin-top: 0.6rem; }
+.custom-input {
+  flex: 1;
+  background: var(--ink);
+  border: 1px solid var(--stone);
+  color: var(--pale);
+  font-family: 'EB Garamond', serif;
+  font-size: 1rem;
+  padding: 0.4rem 0.6rem;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.2s;
+}
+.custom-input:focus { border-color: var(--pale); }
+.custom-input::placeholder { color: var(--stone); font-style: italic; }
+.custom-apply {
+  background: none;
+  border: 1px solid var(--stone);
+  color: var(--dim);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.custom-apply:hover { border-color: var(--pale); color: var(--pale); }
+
+/* ── SLIDERS ── */
+.ctrl-row { margin-bottom: 0.85rem; }
+.ctrl-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.3rem;
+}
+.ctrl-name {
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--mid);
+}
+.ctrl-val {
+  font-family: 'EB Garamond', serif;
+  font-size: 0.85rem;
+  color: var(--pale);
+  min-width: 36px;
+  text-align: right;
+}
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--stone);
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+/* ── COLOR PALETTE ── */
+.palette-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.pal-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.pal-btn:hover { transform: scale(1.2); }
+.pal-btn.active { border-color: var(--cream); }
+
+/* ── ACCENT COLOR ── */
+.accent-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.accent-swatch {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.accent-swatch:hover { transform: scale(1.2); }
+.accent-swatch.active { border-color: var(--cream); }
+
+/* ── ACTION BUTTONS ── */
+.action-row { display: flex; gap: 6px; padding: 1rem 1.4rem 0; }
+.action-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--stone);
+  color: var(--dim);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.65rem 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.action-btn:hover { border-color: var(--pale); color: var(--pale); }
+.action-btn.play { border-color: var(--gold); color: var(--gold); }
+.action-btn.play:hover { background: rgba(184,149,90,0.08); }
+
+/* ── CANVAS OVERLAY ── */
+.canvas-corner {
+  position: absolute;
+  bottom: 1.5rem; left: 1.8rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(90,85,80,0.6);
+  pointer-events: none;
+}
+
+/* ── MOBILE: stack vertically ── */
+@media (max-width: 700px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 55vw 1fr; }
+  #canvas-wrap { height: 55vw; }
+  #panel { border-left: none; border-top: 1px solid var(--stone); overflow-y: auto; }
+  html, body { overflow: auto; }
+}
 </style>
 </head>
 <body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="gc"></canvas>
+    <div class="canvas-corner" id="modeLabel">Bloom</div>
+  </div>
 
-<div id="controls">
+  <div id="panel">
+    <div class="panel-head">
+      <div class="panel-title">Generative Studio</div>
+      <div class="panel-sub">jonathanbrittonart.com / studio</div>
+    </div>
 
-<h3>Motion</h3>
-Speed <input type="range" id="speed" min="0" max="20" value="4">
-Entropy <input type="range" id="entropy" min="0" max="100" value="0">
-Case glitch <input type="range" id="case" min="0" max="100" value="0">
-Flip <input type="range" id="flip" min="0" max="100" value="0">
+    <div id="controls">
 
-<h3>Color</h3>
-Accent <input type="color" id="accent" value="#e63946">
-Accent 2 <input type="color" id="accent2" value="#80b8e8">
+      <!-- ANIMATION MODE -->
+      <div class="section">
+        <div class="section-label">Animation mode</div>
+        <div class="mode-grid" id="modeGrid">
+          <button class="mode-btn active" data-mode="bloom">Bloom</button>
+          <button class="mode-btn" data-mode="wave">Wave field</button>
+          <button class="mode-btn" data-mode="rain">Rain</button>
+          <button class="mode-btn" data-mode="vortex">Vortex</button>
+          <button class="mode-btn" data-mode="ripple">Ripple</button>
+          <button class="mode-btn" data-mode="drift">Drift</button>
+          <button class="mode-btn" data-mode="tess">Tessellation</button>
+          <button class="mode-btn" data-mode="warp">Warp</button>
+        </div>
+      </div>
 
-<h3>Font</h3>
-<select id="font">
-<option>monospace</option>
-<option>serif</option>
-<option>sans-serif</option>
-<option>Courier New</option>
-<option>Times New Roman</option>
-<option>Arial</option>
-</select>
+      <!-- CHARACTER SET -->
 
-<h3>Charset</h3>
-<select id="charset">
-<option value="ascii">ASCII</option>
-<option value="blocks">Blocks</option>
-<option value="cyrillic">Cyrillic</option>
-<option value="sanskrit">Sanskrit</option>
-<option value="georgian">Georgian</option>
-</select>
+      
+      <div class="section">
+        <div class="section-label">Characters</div>
+        <div class="charset-grid" id="charsetGrid">
+          <button class="cs-btn active" data-cs="chinese">Chinese</button>
+          <button class="cs-btn" data-cs="hiragana">Hiragana</button>
+          <button class="cs-btn" data-cs="katakana">Katakana</button>
+          <button class="cs-btn" data-cs="kanji">Kanji</button>
+          <button class="cs-btn" data-cs="korean">Korean</button>
+          <button class="cs-btn" data-cs="georgian">Georgian</button>
+          <button class="cs-btn" data-cs="cyrillic">Cyrillic</button>
+          <button class="cs-btn" data-cs="sanskrit">Sanskrit</button>
+          <button class="cs-btn" data-cs="ascii">ASCII</button>
+          <button class="cs-btn" data-cs="symbols">Symbols</button>
+          <button class="cs-btn" data-cs="gradients">Gradients</button>
+          <button class="cs-btn" data-cs="scissors">Scissors</button>
+          <button class="cs-btn" data-cs="squares">Squares</button>
+          <button class="cs-btn" data-cs="triangles">Triangles</button>
+          <button class="cs-btn" data-cs="dots">Dots</button>
+          <button class="cs-btn" data-cs="lines">Lines</button>
+          <button class="cs-btn" data-cs="custom">Custom</button>
+        </div>
+        <div class="custom-row" id="customRow" style="display:none">
+          <input class="custom-input" id="customInput" placeholder="type characters or words…" maxlength="60">
+          <button class="custom-apply" id="customApply">Set</button>
+        </div>
+      </div>
 
-<h3>Composition</h3>
-<select id="comp">
-<option value="none">None</option>
-<option value="bands">Bands</option>
-<option value="blocks">Blocks</option>
-</select>
+      <!-- MOTION -->
+      <div class="section">
+        <div class="section-label">Motion</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Speed</span><span class="ctrl-val" id="vSpeed">4</span></div>
+          <input type="range" id="sSpeed" min="0" max="20" value="4" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Wave amplitude</span><span class="ctrl-val" id="vWave">30</span></div>
+          <input type="range" id="sWave" min="0" max="100" value="30" step="2">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Turbulence</span><span class="ctrl-val" id="vTurb">5</span></div>
+          <input type="range" id="sTurb" min="1" max="20" value="5" step="1">
+        </div>
+      </div>
 
-<h3>Image → Text</h3>
-<input type="text" id="imgurl" placeholder="Image URL">
-<button onclick="loadImg()">Load Image</button>
+      <!-- DENSITY & SIZE -->
+      <div class="section">
+        <div class="section-label">Field</div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Density</span><span class="ctrl-val" id="vDens">5</span></div>
+          <input type="range" id="sDens" min="1" max="10" value="5" step="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Spacing</span><span class="ctrl-val" id="vSpacing">12</span></div>
+          <input type="range" id="sSpacing" min="6" max="40" value="12" step="2">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Max size</span><span class="ctrl-val" id="vMaxSize">20</span></div>
+          <input type="range" id="sMaxSize" min="6" max="60" value="20" step="2">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label-row"><span class="ctrl-name">Noise scale</span><span class="ctrl-val" id="vNoise">5</span></div>
+          <input type="range" id="sNoise" min="1" max="20" value="5" step="1">
+        </div>
+      </div>
 
-<h3>Canvas</h3>
-W <input type="number" id="cw" value="800">
-H <input type="number" id="ch" value="1000">
-<button onclick="resizeC()">Resize</button>
+      <!-- COLOUR -->
+      <div class="section">
+        <div class="section-label">Palette</div>
+        <div class="palette-grid" id="palGrid">
+          <div class="pal-btn active" data-pal="site" style="background:linear-gradient(135deg,#c4bcb0,#b8955a)" title="Site"></div>
+          <div class="pal-btn" data-pal="ember" style="background:linear-gradient(135deg,#c8632a,#e08040)" title="Ember"></div>
+          <div class="pal-btn" data-pal="frost" style="background:linear-gradient(135deg,#8aaccc,#c8d8ec)" title="Frost"></div>
+          <div class="pal-btn" data-pal="jade" style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)" title="Jade"></div>
+          <div class="pal-btn" data-pal="dusk" style="background:linear-gradient(135deg,#7a5a8a,#c890d8)" title="Dusk"></div>
+          <div class="pal-btn" data-pal="mono" style="background:linear-gradient(135deg,#505048,#a0a098)" title="Mono"></div>
+          <div class="pal-btn" data-pal="fire" style="background:linear-gradient(135deg,#e63946,#f4a261)" title="Fire"></div>
+          <div class="pal-btn" data-pal="white" style="background:linear-gradient(135deg,#e8e0d4,#fff)" title="White"></div>
+        </div>
 
-<button onclick="togglePlay()">Play / Pause</button>
+        <div class="section-label" style="margin-top:.8rem">Accent</div>
+        <div class="accent-row" id="accentRow">
+          <div class="accent-swatch active" data-accent="#e63946" style="background:#e63946" title="Red"></div>
+          <div class="accent-swatch" data-accent="#f4a261" style="background:#f4a261" title="Amber"></div>
+          <div class="accent-swatch" data-accent="#ede66c" style="background:#ede66c" title="Yellow"></div>
+          <div class="accent-swatch" data-accent="#90d4a0" style="background:#90d4a0" title="Green"></div>
+          <div class="accent-swatch" data-accent="#80b8e8" style="background:#80b8e8" title="Blue"></div>
+          <div class="accent-swatch" data-accent="#d890d8" style="background:#d890d8" title="Pink"></div>
+          <div class="accent-swatch" data-accent="none" style="background:var(--stone);border:1px dashed var(--dim)" title="None"></div>
+        </div>
 
-</div>
+        <div class="ctrl-row" style="margin-top:.9rem">
+          <div class="ctrl-label-row"><span class="ctrl-name">Accent amount</span><span class="ctrl-val" id="vAccent">10</span></div>
+          <input type="range" id="sAccent" min="0" max="50" value="10" step="2">
+        </div>
 
+        <div class="section-label" style="margin-top:.8rem">Background</div>
+        <div class="accent-row" id="bgRow">
+          <div class="accent-swatch active" data-bg="#0d0c0a" style="background:#0d0c0a;border:1px solid var(--stone)" title="Ink"></div>
+          <div class="accent-swatch" data-bg="#234b09" style="background:#234b09" title="Forest"></div>
+          <div class="accent-swatch" data-bg="#0a0c14" style="background:#0a0c14" title="Night"></div>
+          <div class="accent-swatch" data-bg="#1a1008" style="background:#1a1008" title="Umber"></div>
+          <div class="accent-swatch" data-bg="#f2ede6" style="background:#f2ede6" title="Paper"></div>
+          <div class="accent-swatch" data-bg="#14101e" style="background:#14101e" title="Void"></div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="action-row">
+        <button class="action-btn play" id="btnPlay">▶ Play</button>
+        <button class="action-btn" id="btnRegen">Regen</button>
+        <button class="action-btn" id="btnSave">Save PNG</button>
+      </div>
+
+    </div><!-- /controls -->
+  </div><!-- /panel -->
+</div><!-- /app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
-
-let S = {
-  speed:0.004,
-  entropy:0,
-  case:0,
-  flip:0,
-  accent:'#e63946',
-  accent2:'#80b8e8',
-  font:'monospace',
-  comp:'none',
-  chars:[],
-  playing:true,
-  t:0
-};
-
+// ── CHARACTER SETS ─────────────────────────────────────────────
 const CHARSETS = {
-  ascii:['@','#','$','%','&','?','!'],
-  blocks:['░','▒','▓','█'],
-  cyrillic:['Д','Ж','Л','Ф','Ц','Ч'],
-  sanskrit:['अ','आ','इ','उ','क','ग'],
-  georgian:['ა','ბ','გ','დ','ე']
+  chinese:  ['麻','木','的','水','火','山','人','心','月','日','風','雨','花','道','光','龍','和','龍','義','愛','永','福','和','電','機','學','國','慶','體','道','書','美','善','心','力','明','天','地','男','女','高','大','小','中','水','火','山'],
+  hiragana: ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','セ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ','を','ん'],
+  katakana: ['ア','イ','ウ','エ','オ','カ','キ','ク','ケ','コ','サ','シ','ス','セ','ソ','タ','チ','ツ','テ','ト','ナ','ニ','ヌ','ネ','ノ','ハ','ヒ','フ','ヘ','ホ','マ','ミ','ム','メ','モ','ヤ','ユ','ヨ','ラ','リ','ル','レ','ロ','ワ','ヲ','ン','ヴ','ヵ','ヶ'],
+  kanji:    ['木','火','土','金','水','日','月','風','雷','氷','空','星','海','森','花','草','石','岩','光','闇'],
+  korean:   ['가','나','다','라','마','바','사','아','자','차','카','타','파','하','한','국','어','시','간','마','음','빛','물','불','산','꿈','사람','사랑','하늘','바다','해','달','별','꽃','강','잎','흙','길','집'],
+  georgian: ['ა','ბ','გ','დ','ე','ვ','ზ','თ','ი','კ','ლ','მ','ნ','ო','პ','ჟ','რ','ს','ტ','უ','ფ','ქ','ღ','ყ','შ','ჩ','ც','ძ','წ','ჭ','ხ','ჯ','ჰ'],
+  cyrillic: ['А','Б','В','Г','Д','Е','Ё','Ж','З','И','Й','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю','Я','Ґ','Є','І','Ї','Ѳ','Ѵ'],
+  sanskrit: ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','क','ख','ग','घ','ङ','च','छ','ज','झ','ञ','ट','ठ','ड','ढ','ण','त','थ','द','ध','न','प','फ','ब','भ','म','य','र','ल','व','श','ष','स','ह','ॐ','।','॥'],
+  ascii:    ['@','#','$','%','&','?','!','/','\\','|','+','-','=','~','^','<','>','*','_','.',',',':',';','(',')','[',']','{','}','\'','"','`','§','±'],
+  symbols:  ['∞','∆','◊','○','□','△','◇','●','■','▲','◆','★','✦','⊕','⊗','⊙'],
+  scissors: ['✁','✂','✃','✄'],
+  gradients:['░','▒','▓','█','▀','▄','▌','▐'],
+  squares:  ['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫'],
+  triangles:['△','▲'],
+  dots:     ['·','.',',',';',':','…','•','‧','⋅','∙'],
+  lines:    ['—','|','/','\\',' ̲','─','│','╱','╲','┼','╬','╋'],
+  custom:   ['J','O','N'],
 };
 
-let img;
+const PALETTES = {
+  site:  ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
+  ember: ['#c8632a','#e08040','#f0a060','#a84820','#784030'],
+  frost: ['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],
+  jade:  ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],
+  dusk:  ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],
+  mono:  ['#808078','#a0a098','#606058','#c0c0b8','#404038'],
+  fire:  ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
+  white: ['#e8e0d4','#ffffff','#d0c8bc','#f8f4ee','#b8b0a4'],
+};
 
-function loadImg(){
-  let url = document.getElementById('imgurl').value;
-  img = loadImage(url);
-}
+// ── STATE ───────────────────────────────────────────────────────
+let S = {
+  mode:      'bloom',
+  chars:     CHARSETS.chinese,
+  palette:   PALETTES.site,
+  accent:    '#e63946',
+  accentAmt: 0.10,
+  bg:        '#0d0c0a',
+  speed:     0.004,
+  wave:      30,
+  turb:      0.005,
+  density:   0.45, // Lower = more dense in this logic
+  spacing:   12,
+  maxSize:   20,
+  noiseScale:0.01,
+  playing:   false,
+  fc:        0,
+};
 
-function resizeC(){
-  resizeCanvas(
-    +document.getElementById('cw').value,
-    +document.getElementById('ch').value
-  );
-}
-
-function togglePlay(){ S.playing=!S.playing; }
-
-function distort(ch){
-  if (random()<S.entropy/100){
-    let g=['_',' ','█','░'];
-    ch=g[floor(random(g.length))];
+let rainDrops = [];
+function initRain(W, H) {
+  rainDrops = [];
+  let cols = Math.floor(W / S.spacing);
+  for (let i = 0; i < cols; i++) {
+    rainDrops.push({ x: i * S.spacing + S.spacing/2, y: Math.random() * -H, speed: 1 + Math.random() * 3 });
   }
-  if (random()<S.case/100){
-    ch = ch===ch.toUpperCase()?ch.toLowerCase():ch.toUpperCase();
-  }
-  return ch;
 }
 
-function pickChar(){
-  let ch = random(S.chars);
-  return distort(ch);
+let tessGrid = [];
+function initTess(W, H) {
+  tessGrid = [];
+  let cols = Math.floor(W / (S.spacing * 2));
+  let rows = Math.floor(H / (S.spacing * 2));
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      tessGrid.push({ x: c * S.spacing * 2 + S.spacing, y: r * S.spacing * 2 + S.spacing, phase: Math.random() * Math.PI * 2 });
 }
 
-function pickColor(x,y){
-  let r = random();
-  if (r<0.1) return S.accent;
-  if (r<0.2) return S.accent2;
-  return color(200);
-}
+// ── p5 SKETCH ───────────────────────────────────────────────────
+let sk = function(p) {
 
-function setup(){
-  createCanvas(800,1000);
-  textAlign(CENTER,CENTER);
-}
+  p.setup = function() {
+    let wrap = document.getElementById('canvas-wrap');
+    p.createCanvas(wrap.offsetWidth, wrap.offsetHeight).parent('canvas-wrap');
+    p.textAlign(p.CENTER, p.CENTER);
+    p.noStroke();
+    initRain(p.width, p.height);
+    initTess(p.width, p.height);
+    p.noLoop();
+    p.redraw();
+  };
 
-function draw(){
+  p.windowResized = function() {
+    let wrap = document.getElementById('canvas-wrap');
+    p.resizeCanvas(wrap.offsetWidth, wrap.offsetHeight);
+    initRain(p.width, p.height);
+    initTess(p.width, p.height);
+    if (!S.playing) p.redraw();
+  };
 
-  if(S.playing) S.t+=S.speed;
+  p.draw = function() {
+    if (S.playing) S.fc++;
+    let t = S.fc * S.speed;
+    p.background(S.bg);
 
-  background(10);
+    switch(S.mode) {
+      case 'bloom':   drawBloom(p, t);   break;
+      case 'wave':    drawWave(p, t);    break;
+      case 'rain':    drawRain(p, t);    break;
+      case 'vortex':  drawVortex(p, t);  break;
+      case 'ripple':  drawRipple(p, t);  break;
+      case 'drift':   drawDrift(p, t);   break;
+      case 'tess':    drawTess(p, t);    break;
+      case 'warp':    drawWarp(p, t);    break;
+    }
+  };
 
-  S.speed = document.getElementById('speed').value * 0.001;
-  S.entropy = document.getElementById('entropy').value;
-  S.case = document.getElementById('case').value;
-  S.flip = document.getElementById('flip').value;
-  S.accent = document.getElementById('accent').value;
-  S.accent2 = document.getElementById('accent2').value;
-  S.font = document.getElementById('font').value;
-  S.comp = document.getElementById('comp').value;
-
-  S.chars = CHARSETS[document.getElementById('charset').value];
-
-  textFont(S.font);
-
-  if(img){
-    drawImageText();
-    return;
-  }
-
-  let sp=14;
-
-  for(let x=0;x<width;x+=sp){
-    for(let y=0;y<height;y+=sp){
-
-      if(random()>0.5) continue;
-
-      push();
-
-      translate(x,y);
-
-      if(random()<S.flip/100){
-        scale(random()<0.5?-1:1,1);
+  function drawBloom(p, t) {
+    let sp = S.spacing;
+    for (let x = 0; x < p.width; x += sp) {
+      for (let y = 0; y < p.height; y += sp) {
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+        
+        let angle = p.noise(x*S.noiseScale*0.5, y*S.noiseScale*0.5, t*0.5) * p.TWO_PI * 4;
+        p.push();
+        p.translate(x, y);
+        p.rotate(angle);
+        p.fill(pickColor(p, x, y, t));
+        p.textSize(p.map(n, S.density, 1, 2, S.maxSize));
+        p.text(pickChar(p, x, y, t), 0, 0);
+        p.pop();
       }
-
-      fill(pickColor(x,y));
-
-      if(S.comp==='bands'){
-        if(y<height*0.3) fill(S.accent);
-        else if(y<height*0.6) fill(S.accent2);
-      }
-
-      if(S.comp==='blocks'){
-        if((floor(x/80)+floor(y/80))%2==0){
-          fill(S.accent);
-        }
-      }
-
-      textSize(random(6,20));
-      text(pickChar(),0,0);
-
-      pop();
     }
   }
 
-  glitchField();
-}
+  function drawWave(p, t) {
+    let sp = S.spacing;
+    for (let x = sp; x < p.width; x += sp) {
+      for (let y = sp; y < p.height; y += sp) {
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
 
-function glitchField(){
-  if(random()<0.2){
-    stroke(255,0,0,80);
-    let y=random(height);
-    line(0,y,width,y);
-  }
-}
-
-function drawImageText(){
-
-  img.loadPixels();
-
-  let sp=10;
-
-  for(let x=0;x<img.width;x+=sp){
-    for(let y=0;y<img.height;y+=sp){
-
-      let i=(x+y*img.width)*4;
-      let bright=img.pixels[i];
-
-      let idx = floor(map(bright,0,255,0,S.chars.length));
-      let ch=S.chars[idx];
-
-      fill(bright);
-      textSize(10);
-      text(ch,x,y);
+        let wx = Math.sin(y * S.turb * 10 + t * 2) * S.wave;
+        let wy = Math.cos(x * S.turb * 10 + t * 1.5) * S.wave * 0.6;
+        p.push();
+        p.translate(x + wx, y + wy);
+        p.fill(pickColor(p, x, y, t));
+        p.textSize(p.map(n, S.density, 1, 6, S.maxSize));
+        p.text(pickChar(p, x, y, t), 0, 0);
+        p.pop();
+      }
     }
   }
+
+  function drawRain(p, t) {
+    if (S.playing) {
+      rainDrops.forEach(d => {
+        d.y += d.speed * (S.speed * 500 + 2);
+        if (d.y > p.height + 50) d.y = -20;
+      });
+    }
+    rainDrops.forEach((d, i) => {
+      p.fill(pickColor(p, d.x, d.y, t));
+      p.textSize(S.maxSize);
+      p.text(pickChar(p, i, d.y, t), d.x, d.y);
+    });
+  }
+
+  function drawVortex(p, t) {
+    let cx = p.width / 2, cy = p.height / 2;
+    let maxR = Math.max(p.width, p.height) * 0.6;
+    for (let r = S.spacing; r < maxR; r += S.spacing) {
+      let count = Math.floor((p.TWO_PI * r) / S.spacing);
+      for (let i = 0; i < count; i++) {
+        let angle = (i / count) * p.TWO_PI + (t * (maxR / r) * 0.5);
+        let x = cx + Math.cos(angle) * r;
+        let y = cy + Math.sin(angle) * r;
+        
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+
+        p.push();
+        p.translate(x, y);
+        p.rotate(angle + p.HALF_PI);
+        p.fill(pickColor(p, x, y, t));
+        p.textSize(p.map(n, S.density, 1, 4, S.maxSize));
+        p.text(pickChar(p, i, r, t), 0, 0);
+        p.pop();
+      }
+    }
+  }
+
+  function drawRipple(p, t) {
+    let cx = p.width / 2, cy = p.height / 2;
+    for (let x = 0; x < p.width; x += S.spacing) {
+      for (let y = 0; y < p.height; y += S.spacing) {
+        let d = p.dist(x, y, cx, cy);
+        let ripple = Math.sin(d * S.turb * 10 - t * 5) * S.wave;
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+
+        p.push();
+        p.translate(x, y + ripple);
+        p.fill(pickColor(p, x, y, t));
+        p.textSize(S.maxSize);
+        p.text(pickChar(p, x, y, t), 0, 0);
+        p.pop();
+      }
+    }
+  }
+
+  function drawDrift(p, t) {
+    for (let x = 0; x < p.width; x += S.spacing) {
+      for (let y = 0; y < p.height; y += S.spacing) {
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+
+        let offX = p.noise(x * 0.005, t) * S.wave * 2;
+        let offY = p.noise(y * 0.005, t) * S.wave * 2;
+        p.push();
+        p.translate(x + offX, y + offY);
+        p.fill(pickColor(p, x, y, t));
+        p.text(pickChar(p, x, y, t), 0, 0);
+        p.pop();
+      }
+    }
+  }
+
+  function drawTess(p, t) {
+    tessGrid.forEach((cell, i) => {
+      let n = p.noise(cell.x * S.noiseScale, cell.y * S.noiseScale, t);
+      if (n < S.density) return;
+      p.push();
+      p.translate(cell.x, cell.y);
+      p.rotate(t + cell.phase);
+      p.fill(pickColor(p, cell.x, cell.y, t));
+      p.textSize(S.maxSize);
+      p.text(pickChar(p, i, t, t), 0, 0);
+      p.pop();
+    });
+  }
+
+  function drawWarp(p, t) {
+    for (let x = 0; x < p.width; x += S.spacing) {
+      for (let y = 0; y < p.height; y += S.spacing) {
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+        let warp = p.noise(x * 0.002, y * 0.002, t) * S.wave * 4;
+        p.push();
+        p.translate(x + warp, y + warp);
+        p.fill(pickColor(p, x, y, t));
+        p.text(pickChar(p, x, y, t), 0, 0);
+        p.pop();
+      }
+    }
+  }
+
+  function pickChar(p, x, y, t) {
+    let i = Math.floor(p.noise(x * 0.1, y * 0.1, t * 0.2) * S.chars.length);
+    return S.chars[i % S.chars.length];
+  }
+
+  function pickColor(p, x, y, t) {
+    if (S.accent !== 'none') {
+      let pn = p.noise(x * 0.02, y * 0.02, t + 50);
+      if (pn > (1 - S.accentAmt)) return S.accent;
+    }
+    let cVal = p.noise(x * 0.01, y * 0.01, t);
+    let ci = Math.floor(cVal * S.palette.length);
+    return S.palette[ci % S.palette.length];
+  }
+
+  window._studio = {
+    regen: () => { S.fc = 0; p.redraw(); },
+    save:  () => p.saveCanvas('studio_' + S.mode, 'png'),
+    play:  () => { S.playing = !S.playing; S.playing ? p.loop() : p.noLoop(); return S.playing; },
+    redraw: () => { if (!S.playing) p.redraw(); },
+    reinitRain: () => initRain(p.width, p.height),
+    reinitTess: () => initTess(p.width, p.height)
+  };
+};
+
+new p5(sk);
+
+// ── UI WIRING ────────────────────────────────────────────────────
+document.getElementById('modeGrid').addEventListener('click', e => {
+  let btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  S.mode = btn.dataset.mode;
+  document.getElementById('modeLabel').textContent = btn.textContent;
+  if (S.mode === 'rain') window._studio.reinitRain();
+  if (S.mode === 'tess') window._studio.reinitTess();
+  window._studio.redraw();
+});
+
+document.getElementById('charsetGrid').addEventListener('click', e => {
+  let btn = e.target.closest('.cs-btn');
+  if (!btn) return;
+  document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  let cs = btn.dataset.cs;
+  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
+  if (cs !== 'custom') { S.chars = CHARSETS[cs]; window._studio.redraw(); }
+});
+
+document.getElementById('customApply').addEventListener('click', () => {
+  let val = document.getElementById('customInput').value.trim();
+  if (!val) return;
+  S.chars = val.split('').filter(c => c.trim() !== '');
+  window._studio.redraw();
+});
+
+function wireSlider(id, valId, key, transform) {
+  let slider = document.getElementById(id);
+  let label  = document.getElementById(valId);
+  slider.addEventListener('input', function() {
+    let v = +this.value;
+    label.textContent = v;
+    S[key] = transform(v);
+    if (key === 'spacing') { window._studio.reinitRain(); window._studio.reinitTess(); }
+    window._studio.redraw();
+  });
 }
 
+wireSlider('sSpeed',   'vSpeed',   'speed',      v => v * 0.001);
+wireSlider('sWave',    'vWave',    'wave',       v => v);
+wireSlider('sTurb',    'vTurb',    'turb',       v => v * 0.001);
+wireSlider('sDens',    'vDens',    'density',    v => 0.8 - (v * 0.07));
+wireSlider('sSpacing', 'vSpacing', 'spacing',    v => v);
+wireSlider('sMaxSize', 'vMaxSize', 'maxSize',    v => v);
+wireSlider('sNoise',   'vNoise',   'noiseScale', v => v * 0.002);
+wireSlider('sAccent',  'vAccent',  'accentAmt',  v => v / 100);
+
+document.getElementById('palGrid').addEventListener('click', e => {
+  let btn = e.target.closest('.pal-btn');
+  if (!btn) return;
+  document.querySelectorAll('.pal-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  S.palette = PALETTES[btn.dataset.pal];
+  window._studio.redraw();
+});
+
+document.getElementById('accentRow').addEventListener('click', e => {
+  let sw = e.target.closest('.accent-swatch');
+  if (!sw) return;
+  document.querySelectorAll('#accentRow .accent-swatch').forEach(b => b.classList.remove('active'));
+  sw.classList.add('active');
+  S.accent = sw.dataset.accent;
+  window._studio.redraw();
+});
+
+document.getElementById('bgRow').addEventListener('click', e => {
+  let sw = e.target.closest('.accent-swatch');
+  if (!sw) return;
+  document.querySelectorAll('#bgRow .accent-swatch').forEach(b => b.classList.remove('active'));
+  sw.classList.add('active');
+  S.bg = sw.dataset.bg;
+  window._studio.redraw();
+});
+
+document.getElementById('btnPlay').addEventListener('click', function() {
+  this.textContent = window._studio.play() ? '⏸ Pause' : '▶ Play';
+});
+document.getElementById('btnRegen').addEventListener('click', () => window._studio.regen());
+document.getElementById('btnSave').addEventListener('click', () => window._studio.save());
 </script>
 </body>
 </html>
