@@ -10,7 +10,9 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--red:#e63946}
-html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',"Microsoft YaHei","SimSun","Malgun Gothic","Noto Sans",sans-serif;font-weight:300}
+
+html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',"Microsoft YaHei","SimSun","Malgun Gothic","Noto Sans",sans-serif;font-weight:300}
+body{display:flex;justify-content:center;align-items: center;background: #0d0c0a;
 #app{display:grid;grid-template-columns:1fr 300px;height:100vh}
 #canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
 #canvas-wrap canvas{display:block}
@@ -145,6 +147,11 @@ select option{background:var(--ink)}
         <div class="custom-row" id="customRow" style="display:none">
           <input class="custom-input" id="customInput" placeholder="chars or words, space-separated…" maxlength="120">
           <button class="custom-apply" id="customApply">Set</button>
+          <input type="text" id="textInput" placeholder="Enter full text">
+<select id="textMode">
+  <option value="chars">Characters</option>
+  <option value="string">Full String</option>
+</select>
         </div>
       </div>
 
@@ -353,6 +360,7 @@ select option{background:var(--ink)}
       <div class="section">
         <div class="section-label">Canvas size</div>
         <div class="charset-grid" id="sizeGrid">
+
           <button class="cs-btn active" data-size="800,600">800×600</button>
           <button class="cs-btn" data-size="800,800">Square</button>
           <button class="cs-btn" data-size="1200,800">1200×800</button>
@@ -365,6 +373,7 @@ select option{background:var(--ink)}
           <span class="num-x">×</span>
           <input type="number" class="num-input" id="chInput" value="600" min="200" max="3000">
           <button class="custom-apply" id="applySizeBtn">Set</button>
+          <button onclick="fullscreenCanvas()">Fullscreen</button>
         </div>
       </div>
 
@@ -437,7 +446,7 @@ const COMP_COLS    = ['#e63946','#b8955a','#2a4a7a','#234b09','#5a2a6a','#8a4a1a
 
 // ── STATE ────────────────────────────────────────────────────────────────
 let S = {
-  mode:'bloom', chars:CHARSETS.chinese, palette:PALETTES.site,
+  mode:'bloom', chars:CHARSETS.chinese, palette:PALETTES.site, textMode: "chars", textString: "INFINITE CONTENT",
   accent:'#e63946', accentAmt:.10, accent2:'none', accentAmt2:.10,
   bg:'#0d0c0a', speed:.004, wave:30, turb:.005, density:.45,
   spacing:12, maxSize:20, noiseScale:.01,
@@ -452,6 +461,8 @@ let S = {
 let imgPix=null, imgW=0, imgH=0;
 let rainDrops=[], tessGrid=[], matrixCols=[], shatterParts=[], compBlocks=[];
 
+
+  
 // ── INIT HELPERS ─────────────────────────────────────────────────────────
 function initRain(W,H){
   rainDrops=[];
@@ -493,13 +504,25 @@ function buildComp(preset,W,H){
 }
 
 // ── CHARACTER / COLOR PICKERS ─────────────────────────────────────────────
-function pickChar(p,x,y,t){
+let textIndex = 0;
+  //
+  function pickChar(p,x,y,t){
   let i=Math.floor(p.noise(x*.1,y*.1,t*.2)*S.chars.length);
   let ch=S.chars[i%S.chars.length];
   // Case glitch
   if(S.caseGlitch>0&&p.random()<S.caseGlitch){
     let u=ch.toUpperCase(),l=ch.toLowerCase();
     ch=(ch===u)?l:u;
+    // ADDED 
+    if (S.textMode === "string"){
+    let ch = S.textString[textIndex % S.textString.length];
+    textIndex++;
+    return distort(ch);
+  }
+//
+  let ch = random(S.chars);
+  return distort(ch);
+}
   }
   // Entropy degradation
   if(S.entropy>0&&p.random()<S.entropy){
@@ -808,6 +831,15 @@ function drawImgText(p,t){
   }
 }
 
+function fullscreenCanvas(){
+  const c = document.querySelector("canvas");
+  if (!document.fullscreenElement){
+    c.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+  
 // ── p5 SKETCH ────────────────────────────────────────────────────────────
 // NOTE: sk is defined as a function then passed to new p5() BELOW — outside the function.
 let sk = function(p){
