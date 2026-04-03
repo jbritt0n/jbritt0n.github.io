@@ -837,6 +837,26 @@ document.getElementById('customApply').addEventListener('click', () => {
   window._studio.redraw();
 });
 
+// Accent 1 Swatches
+document.getElementById('accentRow1').addEventListener('click', e => {
+  let sw = e.target.closest('.accent-swatch');
+  if (!sw) return;
+  document.querySelectorAll('#accentRow1 .accent-swatch').forEach(b => b.classList.remove('active'));
+  sw.classList.add('active');
+  S.accent = sw.dataset.accent;
+  window._studio.redraw();
+});
+
+// Accent 2 Swatches
+document.getElementById('accentRow2').addEventListener('click', e => {
+  let sw = e.target.closest('.accent-swatch');
+  if (!sw) return;
+  document.querySelectorAll('#accentRow2 .accent-swatch').forEach(b => b.classList.remove('active'));
+  sw.classList.add('active');
+  S.accent2 = sw.dataset.accent;
+  window._studio.redraw();
+});
+  
 function wireSlider(id, valId, key, transform) {
   let slider = document.getElementById(id);
   let label  = document.getElementById(valId);
@@ -858,7 +878,8 @@ wireSlider('sMaxSize', 'vMaxSize', 'maxSize',    v => v);
 wireSlider('sRot',  'vRot',  'charRotation', v => v);
 wireSlider('sFlip', 'vFlip', 'flipH',        v => v);
 wireSlider('sNoise',   'vNoise',   'noiseScale', v => v * 0.002);
-wireSlider('sAccent',  'vAccent',  'accentAmt',  v => v / 100);
+wireSlider('sAccent1', 'vAccent1', 'accentAmt',  v => v / 100);
+wireSlider('sAccent2', 'vAccent2', 'accentAmt2', v => v / 100);
 
 document.getElementById('palGrid').addEventListener('click', e => {
   let btn = e.target.closest('.pal-btn');
