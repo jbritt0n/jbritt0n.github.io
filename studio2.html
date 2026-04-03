@@ -20,7 +20,14 @@
   --gold:  #b8955a;
   --red:   #e63946;
 }
-html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--pale); font-family: 'Jost', sans-serif; font-weight: 300; }
+html, body { 
+  height: 100%; 
+  overflow: hidden; 
+  background: var(--ink); 
+  color: var(--pale); 
+  font-family: 'Jost', "Microsoft YaHei", "SimSun", "Malgun Gothic", "Noto Sans", sans-serif; 
+  font-weight: 300; 
+}
 
 /* ── LAYOUT ── */
 #app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
@@ -256,8 +263,8 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
         <div class="mode-grid" id="modeGrid">
           <button class="mode-btn active" data-mode="bloom">Bloom</button>
           <button class="mode-btn" data-mode="wave">Wave field</button>
-          <button class="mode-btn" data-mode="rain">Rain 1</button>
-          <button class="mode-btn" data-mode="rain">Rain 2</button>
+          <button class="mode-btn" data-mode="rain 1">Rain 1</button>
+          <button class="mode-btn" data-mode="rain 2">Rain 2</button>
           <button class="mode-btn" data-mode="vortex">Vortex</button>
           <button class="mode-btn" data-mode="ripple">Ripple</button>
           <button class="mode-btn" data-mode="drift">Drift</button>
@@ -560,13 +567,18 @@ let sk = function(p) {
         let ty = d.y - j * S.spacing;
         if (ty < 0 || ty > p.height) continue;
         let alpha = p.map(j, 0, trailLen, 255, 30);
-        let col = j === 0 ? accentOrPal(p, i, t) : palColor(p, i);
+        //
+        let col = j === 0 ? pickColor(p, d.x, ty, t) : S.palette[i % S.palette.length];
+        //
         p.fill(p.red(p.color(col)), p.green(p.color(col)), p.blue(p.color(col)), alpha);
         p.textSize(j === 0 ? S.maxSize * 0.8 : S.maxSize * 0.5);
         p.text(pickChar(p, i, j), d.x, ty);
       }
     });
   }
+
+  // Replace the color lines in drawRain1 with this:
+
   // ── RAIN 2 ───────────────────────────────────────────────────── 
   function drawRain2(p, t) {
     if (S.playing) {
