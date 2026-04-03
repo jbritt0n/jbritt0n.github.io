@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&family=VT323&family=Special+Elite&family=Bebas+Neue&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<style>
+  /* --- LAYOUT & THEME --- */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--red:#e63946}
+  html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',sans-serif;font-weight:300}
+  
+  #app{display:grid;grid-template-columns:1fr 300px;height:100vh}
+  
+  /* Canvas Centering Logic from Studio 3 */
+  #canvas-wrap {
+    position: relative;
+    overflow: hidden;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  canvas {
+    display: block;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* SIDE PANEL */
+  #panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+  .panel-head{padding:1.4rem 1.4rem 1rem;border-bottom:1px solid var(--stone);flex-shrink:0}
+  .panel-title{font-family:'EB Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--cream);margin-bottom:.2rem}
+  .panel-sub{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+  
+  #controls{flex:1;overflow-y:auto;padding:0 0 2rem}
+  .section{padding:1rem 1.4rem .5rem;border-bottom:1px solid var(--stone)}
+  .section-label{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:.9rem}
+
+  /* GRID COMPONENTS */
+  .mode-grid, .palette-grid, .size-grid {display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .mode-btn, .pal-btn, .size-btn {
+    background:none; border:1px solid var(--stone); color:var(--dim);
+    font-size:.58rem; letter-spacing:.12em; text-transform:uppercase;
+    padding:.5rem .4rem; cursor:pointer; transition:all .2s; text-align:center;
+  }
+  .active {border-color:var(--gold); color:var(--gold); background:rgba(184,149,90,.06)}
+  
+  .pal-btn {height:24px; display:flex; padding:0; overflow:hidden; border-radius:2px}
+  .pal-c {flex:1; height:100%}
+
+  /* FOOTER ACTIONS */
+  .actions{padding:1.2rem; background:var(--dark); border-top:1px solid var(--stone); display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .btn-main{background:var(--gold); color:var(--ink); border:none; padding:.7rem; font-size:.65rem; font-weight:500; text-transform:uppercase; letter-spacing:.15em; cursor:pointer}
+  .btn-sub{background:none; border:1px solid var(--stone); color:var(--pale); padding:.7rem; font-size:.65rem; text-transform:uppercase; letter-spacing:.15em; cursor:pointer}
+
+  #modeLabel {position:absolute; bottom:30px; right:30px; font-size:10px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.2)}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="canvas-wrap">
+    <div id="modeLabel">Bloom</div>
+  </div>
+
+  <div id="panel">
+    <div class="panel-head">
+      <div class="panel-title">Generative Studio</div>
+      <div class="panel-sub">v3.0 / optimized</div>
+    </div>
+
+    <div id="controls">
+      <div class="section">
+        <div class="section-label">Animation Mode</div>
+        <div class="mode-grid" id="modeGrid">
+          <button class="mode-btn active" data-mode="bloom">Bloom</button>
+          <button class="mode-btn" data-mode="matrix">Matrix</button>
+          <button class="mode-btn" data-mode="webster">Webster</button>
+          <button class="mode-btn" data-mode="tess">Tessellate</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Canvas Size</div>
+        <div class="size-grid" id="sizeGrid">
+          <button class="size-btn" data-size="800,800">1:1 Square</button>
+          <button class="size-btn active" data-size="full">Window Full</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Color Palette</div>
+        <div class="palette-grid" id="palGrid">
+          </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-main" id="btnPlay">║ Pause</button>
+      <button class="btn-sub" id="btnRegen">Regen</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+// --- CONSTANTS ---
+const CHARSETS = {
+  chinese: '食立感麻木的水火山人心月日風雨花道光龍和義愛永福'.split(''),
+  arcane: 'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎'.split(''),
+  mono: ['J','O','N']
+};
+
+const PALETTES = {
+  site: ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
+  matrix: ['#003300','#006600','#00aa00','#00ff00','#88ff88'],
+  fire: ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
+  ghost: ['#f8f9fa','#dee2e6','#adb5bd','#6c757d','#495057']
+};
+
+// --- STATE ---
+let S = {
+  playing: true,
+  mode: 'bloom',
+  chars: CHARSETS.chinese,
+  palette: PALETTES.site,
+  bg: '#0d0c0a',
+  spacing: 20,
+  fc: 0,
+  scrollers: [
+    { text: "INFINITE", y: 0.3, speed: 2, amp: 15, freq: 0.05, size: 50, col: '#fff' },
+    { text: "VOID", y: 0.7, speed: -1.5, amp: 25, freq: 0.02, size: 80, col: '#b8955a' }
+  ]
+};
+
+let matrixDrops = [];
+
+// --- p5.js CORE ---
+function setup() {
+  let container = document.getElementById('canvas-wrap');
+  let canvas = createCanvas(container.offsetWidth - 40, container.offsetHeight - 40);
+  canvas.parent('canvas-wrap');
+  textAlign(CENTER, CENTER);
+  window._st.rd();
+}
+
+function draw() {
+  if (!S.playing) return;
+  background(S.bg);
+
+  if (S.mode === 'bloom') renderBloom();
+  else if (S.mode === 'matrix') renderMatrix();
+  else if (S.mode === 'webster') drawScrollers();
+  else if (S.mode === 'tess') renderTess();
+
+  S.fc++;
+}
+
+// --- RENDER MODES ---
+function renderBloom() {
+  translate(width/2, height/2);
+  for(let i=0; i<100; i++) {
+    let ang = i * 0.2 + (S.fc * 0.01);
+    let rad = i * 4;
+    let x = cos(ang) * rad;
+    let y = sin(ang) * rad;
+    fill(S.palette[i % S.palette.length]);
+    noStroke();
+    textSize(10 + i/5);
+    text(S.chars[i % S.chars.length], x, y);
+  }
+}
+
+function renderMatrix() {
+  textSize(S.spacing);
+  matrixDrops.forEach(d => {
+    fill(S.palette[0]);
+    text(S.chars[floor(random(S.chars.length))], d.x, d.y);
+    d.y += d.speed;
+    if (d.y > height) d.y = -20;
+  });
+}
+
+function drawScrollers() {
+  for (let s of S.scrollers) {
+    let yBase = height * s.y;
+    let xOffset = (S.fc * s.speed) % (width + 500);
+    fill(s.col);
+    textSize(s.size);
+    let xPos = width - xOffset;
+    for (let i = 0; i < s.text.length; i++) {
+      let charX = xPos + (i * s.size * 0.7);
+      let charY = yBase + sin(charX * s.freq + S.fc * 0.1) * s.amp;
+      text(s.text[i], charX, charY);
+    }
+  }
+}
+
+function renderTess() {
+  let step = 40;
+  for(let x=0; x<width; x+=step) {
+    for(let y=0; y<height; y+=step) {
+      let rot = noise(x*0.01, y*0.01, S.fc*0.01) * TWO_PI;
+      push();
+      translate(x + step/2, y + step/2);
+      rotate(rot);
+      fill(S.palette[floor(random(S.palette.length))]);
+      text(S.chars[0], 0, 0);
+      pop();
+    }
+  }
+}
+
+// --- ENGINE BRIDGE ---
+window._st = {
+  play: function() { S.playing = !S.playing; return S.playing; },
+  rd: function() {
+    matrixDrops = [];
+    for(let i=0; i<width/S.spacing; i++) {
+      matrixDrops.push({x: i*S.spacing, y: random(height), speed: random(2, 5)});
+    }
+  },
+  rsz: function(w, h) {
+    let container = document.getElementById('canvas-wrap');
+    if (w === 'full') resizeCanvas(container.offsetWidth - 40, container.offsetHeight - 40);
+    else resizeCanvas(w, h);
+    this.rd();
+  }
+};
+
+// --- UI LISTENERS ---
+document.getElementById('btnPlay').addEventListener('click', function() {
+  let isPlaying = window._st.play();
+  this.textContent = isPlaying ? '║ Pause' : '▶ Play';
+});
+
+document.getElementById('btnRegen').addEventListener('click', () => window._st.rd());
+
+document.getElementById('modeGrid').addEventListener('click', (e) => {
+  let btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  S.mode = btn.dataset.mode;
+  document.getElementById('modeLabel').textContent = btn.textContent;
+  window._st.rd();
+});
+
+document.getElementById('sizeGrid').addEventListener('click', (e) => {
+  let btn = e.target.closest('.size-btn');
+  if (!btn) return;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  let sz = btn.dataset.size;
+  sz === 'full' ? window._st.rsz('full') : window._st.rsz(...sz.split(',').map(Number));
+});
+
+// Initialize Palettes
+const palGrid = document.getElementById('palGrid');
+Object.keys(PALETTES).forEach(key => {
+  let btn = document.createElement('button');
+  btn.className = 'pal-btn';
+  PALETTES[key].forEach(c => {
+    let div = document.createElement('div');
+    div.className = 'pal-c';
+    div.style.background = c;
+    btn.appendChild(div);
+  });
+  btn.onclick = () => { S.palette = PALETTES[key]; window._st.rd(); };
+  palGrid.appendChild(btn);
+});
+
+window.onresize = () => { if(document.querySelector('[data-size="full"]').classList.contains('active')) window._st.rsz('full'); };
+</script>
+</body>
+</html>
