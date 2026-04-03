@@ -716,13 +716,17 @@ document.getElementById('modeGrid').addEventListener('click', e => {
   if (!btn) return;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  
   S.mode = btn.dataset.mode;
   document.getElementById('modeLabel').textContent = btn.textContent;
-  if (S.mode === 'rain') window._studio.reinitRain();
+  
+  // FIX: Check if the mode contains 'rain' (matches "rain 1" and "rain 2")
+  if (S.mode.includes('rain')) window._studio.reinitRain();
+  
   if (S.mode === 'tess') window._studio.reinitTess();
   window._studio.redraw();
 });
-
+  
 document.getElementById('charsetGrid').addEventListener('click', e => {
   let btn = e.target.closest('.cs-btn');
   if (!btn) return;
