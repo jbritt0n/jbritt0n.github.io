@@ -236,9 +236,9 @@ select option{background:var(--ink)}
       <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
       <div class="sec-body" id="body-chars">
         <div class="cg" id="charsetGrid">
-          <button class="cb active" data-cs="hex">Hex</button>
-          <button class="cb active" data-cs="gothic">Gothic</button>
-          <button class="cb active" data-cs="cursive">Cursive</button>
+          <button class="cb" data-cs="hex">Hex</button>
+          <button class="cb" data-cs="gothic">Gothic</button>
+          <button class="cb" data-cs="cursive">Cursive</button>
           <button class="cb active" data-cs="chinese">Chinese</button>
           <button class="cb" data-cs="hiragana">Hiragana</button>
           <button class="cb" data-cs="katakana">Katakana</button>
@@ -262,6 +262,7 @@ select option{background:var(--ink)}
           <button class="cb" data-cs="barcode">Barcode</button>
           <button class="cb" data-cs="gradients">Blocks ░▓</button>
           <button class="cb" data-cs="squares">Squares</button>
+          <button class="cb" data-cs="crossstitch">Cross-stitch</button>
           <button class="cb" data-cs="circles">Circles</button>
           <button class="cb" data-cs="daggers">Daggers</button>
           <button class="cb" data-cs="lines">Lines</button>
@@ -746,6 +747,7 @@ const CHARSETS={
   barcode:  '▏▎▍▌▋▊▉█01'.split(''),
   gradients:'░▒▓█▀▄▌▐▖▗▘▙▚▛▜▝▞▟'.split(''),
   squares:  '■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯'.split(''),
+  crossstitch: '×•⨳╳✕'.split(''),
   circles:  '☻☺⊕⊗⊙○●◌˚¤°·֎֍◎◉◐◑◒◓'.split(''),
   music: ['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓'],
   daggers:  '†‡⸶⸸⸷✁✂✃✄'.split(''),
