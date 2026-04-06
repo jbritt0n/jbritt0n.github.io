@@ -100,6 +100,8 @@ select option{background:var(--ink)}
 .sh-item{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .sh-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mode-ctrl { display: none; }
+.mode-ctrl.active { display: block; }.
 #toast{position:absolute;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--dark);border:1px solid var(--gold);color:var(--cream);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1.1rem;z-index:50;transition:transform .3s ease;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
 #panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
@@ -244,6 +246,10 @@ select option{background:var(--ink)}
     <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
     <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
   </div>
+  <div class="tr">
+  <span class="tl">Oscillate</span>
+  <button class="tb" id="btnReactOscillate">Off</button>
+</div>
 </div>
       
       <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
@@ -889,6 +895,7 @@ let S={
   useParticleMode:false, 
   reactFeed: 0.035, //reaction
   reactKill: 0.065, //reaction
+  reactOscillate: false,
 };
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
@@ -2960,10 +2967,14 @@ document.getElementById('modeGrid').addEventListener('click',function(e){
   document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
   window._st.ri();window._st.rd();
 });
+// Hide all mode-specific control panels
+document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
+  ctrl.classList.remove('active');
+});
+// Show the panel for the current mode (if any)
+let activeCtrl = document.getElementById('ctrl-' + S.mode);
+if (activeCtrl) activeCtrl.classList.add('active');
 
-  document.querySelectorAll('.mode-ctrl').forEach(ctrl => ctrl.classList.remove('active'));
-let ctrl = document.getElementById('ctrl-' + S.mode);
-if (ctrl) ctrl.classList.add('active');
 
 // ── CHARSET ───────────────────────────────────────────────────────────────────
 document.getElementById('charsetGrid').addEventListener('click',function(e){
@@ -3011,7 +3022,12 @@ document.getElementById('btnFlipH').addEventListener('click',function(){
 document.getElementById('btnFlipV').addEventListener('click',function(){
   S.flipVMirror=!S.flipVMirror;this.textContent=S.flipVMirror?'On':'Off';this.classList.toggle('on',S.flipVMirror);window._st.rd();
 });
-
+document.getElementById('btnReactOscillate').addEventListener('click', function() {
+  S.reactOscillate = !S.reactOscillate;
+  this.textContent = S.reactOscillate ? 'On' : 'Off';
+  this.classList.toggle('on', S.reactOscillate);
+  window._st.rd();
+});
 // ── PALETTE ───────────────────────────────────────────────────────────────────
 document.getElementById('palGrid').addEventListener('click',function(e){
   let b=e.target.closest('.pb');if(!b) return;
