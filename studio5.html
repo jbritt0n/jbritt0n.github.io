@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&family=VT323&family=Special+Elite&family=Bebas+Neue&family=Playfair+Display:ital@1&family=Noto+Sans+Symbols+2&family=Noto+Emoji&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--panel-w:296px}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',sans-serif;font-weight:300}
+#app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
+#canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
+#canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
+#panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
+.pt{font-family:'EB Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--cream);margin-bottom:.12rem}
+.ps{font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.ph-actions{position:absolute;top:.85rem;right:1rem;display:flex;gap:5px}
+.ph-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;cursor:pointer;transition:all .18s}
+.ph-btn:hover{border-color:var(--pale);color:var(--pale)}
+.ph-btn.chaos-on{border-color:var(--gold);color:var(--gold);animation:chaospulse 1.2s ease-in-out infinite}
+@keyframes chaospulse{0%,100%{opacity:1}50%{opacity:.5}}
+#presetBar{padding:.5rem 1.3rem .55rem;border-bottom:1px solid var(--stone);flex-shrink:0}
+.pbar-label{font-size:.43rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.38rem}
+.pbar-grid{display:flex;flex-wrap:wrap;gap:3px}
+.pbar-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .45rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.pbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
+#ctl{flex:1;overflow-y:auto;padding:0}
+#ctl::-webkit-scrollbar{width:3px}
+#ctl::-webkit-scrollbar-thumb{background:var(--stone)}
+.sec{border-bottom:1px solid var(--stone)}
+.sec-hd{padding:.7rem 1.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.sec-hd:hover{background:rgba(255,255,255,.018)}
+.sl{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+.sec-arrow{font-size:.6rem;color:var(--stone);transition:transform .2s;margin-left:4px}
+.sec-arrow.open{transform:rotate(90deg)}
+.sec-body{padding:.05rem 1.3rem .7rem}
+.sec-body.collapsed{display:none}
+.sl2{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin:.62rem 0 .38rem}
+.mg{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:.4rem}
+.mb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.47rem;letter-spacing:.07em;text-transform:uppercase;padding:.37rem .15rem;cursor:pointer;transition:all .18s;text-align:center;line-height:1.2}
+.mb:hover{border-color:var(--mid);color:var(--pale)}
+.mb.active{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
+.mb.new-mode{border-color:rgba(184,149,90,.28)}
+.cg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.42rem}
+.cb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.07em;text-transform:uppercase;padding:.26rem .5rem;cursor:pointer;transition:all .18s}
+.cb:hover{border-color:var(--mid);color:var(--pale)}
+.cb.active{border-color:var(--pale);color:var(--pale)}
+.cr{display:flex;gap:5px;margin-top:.5rem}
+.ci{flex:1;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'EB Garamond',serif;font-size:.95rem;padding:.32rem .5rem;outline:none;min-width:0}
+.ci:focus{border-color:var(--pale)}
+.ci::placeholder{color:var(--stone);font-style:italic}
+.ca{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:0 .6rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.ca:hover{border-color:var(--pale);color:var(--pale)}
+.rw{margin-bottom:.7rem}
+.rl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.24rem}
+.rn{font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.rv{font-family:'EB Garamond',serif;font-size:.8rem;color:var(--pale);min-width:30px;text-align:right}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--stone);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--gold);cursor:pointer;transition:transform .12s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+.pg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.4rem}
+.pb{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0}
+.pb:hover{transform:scale(1.2)}
+.pb.active{border-color:var(--cream)}
+.ag{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.4rem}
+.as{width:18px;height:18px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s;flex-shrink:0}
+.as:hover{transform:scale(1.2)}
+.as.active{border-color:var(--cream)}
+.ar{display:flex;gap:5px;padding:.72rem 1.3rem;border-top:1px solid var(--stone);flex-shrink:0;background:var(--dark)}
+.ab{flex:1;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;padding:.56rem 0;cursor:pointer;transition:all .18s;text-align:center}
+.ab:hover{border-color:var(--pale);color:var(--pale)}
+.ab.play{border-color:var(--gold);color:var(--gold)}
+.ab.play:hover{background:rgba(184,149,90,.08)}
+.corner{position:absolute;bottom:1.2rem;left:1.4rem;font-family:'Jost',sans-serif;font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(90,85,80,.5);pointer-events:none;z-index:5}
+.fps{position:absolute;top:.6rem;left:.8rem;font-family:'Jost',monospace;font-size:.54rem;color:rgba(90,85,80,.4);pointer-events:none;z-index:5}
+#kbHint{position:absolute;bottom:1.2rem;right:1.4rem;font-family:'Jost',sans-serif;font-size:.43rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(90,85,80,.32);pointer-events:none;z-index:5;line-height:1.9;text-align:right}
+.tr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.52rem}
+.tl{font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.tb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:.24rem .58rem;cursor:pointer;transition:all .18s}
+.tb.on{border-color:var(--gold);color:var(--gold)}
+select{width:100%;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.57rem;padding:.38rem .5rem;outline:none;cursor:pointer;transition:border-color .18s;margin-bottom:.25rem;-webkit-appearance:none}
+select:focus{border-color:var(--pale)}
+select option{background:var(--ink)}
+.iu{width:100%;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.13em;text-transform:uppercase;padding:.53rem;cursor:pointer;transition:all .18s;text-align:center;margin-bottom:.4rem;display:block}
+.iu:hover{border-color:var(--pale);color:var(--pale)}
+.is{font-size:.51rem;letter-spacing:.09em;color:var(--dim);font-style:italic;margin-bottom:.42rem}
+.hn{font-size:.47rem;letter-spacing:.08em;color:var(--stone);line-height:1.7;margin-top:.25rem}
+.nr{display:flex;align-items:center;gap:5px;margin-top:.4rem}
+.ni{background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.65rem;padding:.35rem .45rem;outline:none;width:60px;text-align:center}
+.nx{font-size:.58rem;color:var(--dim)}
+.sh-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.5rem}
+.sh-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.07em;text-transform:uppercase;padding:.3rem .55rem;cursor:pointer;transition:all .18s}
+.sh-btn:hover{border-color:var(--pale);color:var(--pale)}
+.sh-btn.active{border-color:var(--gold);color:var(--gold)}
+.sh-list{font-size:.52rem;color:var(--dim);font-family:'Jost',sans-serif;letter-spacing:.08em;line-height:2.2}
+.sh-item{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.sh-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#toast{position:absolute;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--dark);border:1px solid var(--gold);color:var(--cream);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1.1rem;z-index:50;transition:transform .3s ease;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
+.mode-ctrl{display:none;margin-top:.6rem;border-top:1px solid rgba(138,128,120,.15);padding-top:.6rem}
+.mode-ctrl.active{display:block}
+@media(max-width:1024px){:root{--panel-w:268px}}
+@media(max-width:768px){
+  html,body{overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100dvh;height:100vh}
+  #canvas-wrap{flex:0 0 42vh;min-height:150px}
+  #panel{flex:1;min-height:0;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
+  #panelBtn{display:block}
+  .ph{padding:.65rem 1.1rem .5rem}
+  .sec-body{padding:.05rem 1.1rem .6rem}
+  .mg{grid-template-columns:repeat(3,1fr)}
+  .mb{font-size:.43rem;padding:.32rem .1rem}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="gc"></canvas>
+    <div class="corner" id="modeLabel">Bloom</div>
+    <div class="fps" id="fpsLabel"></div>
+    <div id="kbHint">Space: play/pause · R: regen · S: save</div>
+    <button id="panelBtn" onclick="togglePanel()">⊕ Controls</button>
+    <div id="toast"></div>
+  </div>
+  <div id="panel">
+    <div class="ph">
+      <div class="pt">Generative Studio</div>
+      <div class="ps">jonathanbrittonart.com/studio</div>
+      <div class="ph-actions">
+        <button class="ph-btn" id="btnCollapseAll">Collapse</button>
+        <button class="ph-btn" id="btnExpandAll">Expand</button>
+        <button class="ph-btn" id="btnChaos">Chaos</button>
+      </div>
+    </div>
+    <div id="presetBar">
+      <div class="pbar-label">Quick presets</div>
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="sacred">Sacred</button><button class="pbar-btn" data-preset="signal">Signal</button><button class="pbar-btn" data-preset="webster">Webster</button><button class="pbar-btn" data-preset="dream">Dream</button><button class="pbar-btn" data-preset="topo">Topo</button><button class="pbar-btn" data-preset="deepsea">Deep Sea</button><button class="pbar-btn" data-preset="paperink">Paper Ink</button><button class="pbar-btn" data-preset="machinepoetry">Machine Poetry</button><button class="pbar-btn" data-preset="sacredgeo">Sacred Geo</button><button class="pbar-btn" data-preset="urbannight">Urban Night</button><button class="pbar-btn" data-preset="entropy">Entropy</button><button class="pbar-btn" data-preset="aurora">Aurora</button><button class="pbar-btn" data-preset="midnighttokyo">Midnight Tokyo</button><button class="pbar-btn" data-preset="inkwash">Ink Wash</button><button class="pbar-btn" data-preset="neonjungle">Neon Jungle</button><button class="pbar-btn" data-preset="desertstorm">Desert Storm</button><button class="pbar-btn" data-preset="arcticbloom">Arctic Bloom</button><button class="pbar-btn" data-preset="voidsignal">Void Signal</button><button class="pbar-btn" data-preset="copperetch">Copper Etch</button><button class="pbar-btn" data-preset="sakurarain">Sakura Rain</button><button class="pbar-btn" data-preset="turing">Turing Spots</button><button class="pbar-btn" data-preset="mycelium">Mycelium</button><button class="pbar-btn" data-preset="truchet_tiles">Truchet</button><button class="pbar-btn" data-preset="hatch_print">Hatch Print</button><button class="pbar-btn" data-preset="liquid_crystal">Liquid Crystal</button><button class="pbar-btn" data-preset="topographic">Topographic</button><button class="pbar-btn" data-preset="tesseract4d">Tesseract 4D</button><button class="pbar-btn" data-preset="hypersphere4d">Hypersphere</button><button class="pbar-btn" data-preset="flock">Flock</button><button class="pbar-btn" data-preset="dipole">Dipole Field</button><button class="pbar-btn" data-preset="volcanic_flow">Volcanic</button><button class="pbar-btn" data-preset="neon_grid">Neon Grid</button><button class="pbar-btn" data-preset="fingerprint">Fingerprint</button><button class="pbar-btn" data-preset="kintsugi_breaks">Kintsugi</button><button class="pbar-btn" data-preset="bioluminescent">Biolum</button><button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
+      </div>
+    </div>
+    <div id="ctl">
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
+      <div class="sec-body" id="body-mode">
+        <div class="mg" id="modeGrid">
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.18rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px">✦ Character</div>
+          <button class="mb active" data-mode="bloom">Bloom</button>
+          <button class="mb" data-mode="wave">Wave</button>
+          <button class="mb" data-mode="rain1">Rain</button>
+          <button class="mb" data-mode="rain2">Rain 2</button>
+          <button class="mb" data-mode="vortex">Vortex</button>
+          <button class="mb" data-mode="ripple">Ripple</button>
+          <button class="mb" data-mode="drift">Drift</button>
+          <button class="mb" data-mode="tess">Tessellation</button>
+          <button class="mb" data-mode="warp">Warp</button>
+          <button class="mb" data-mode="glitch">Glitch</button>
+          <button class="mb" data-mode="webster">Blocks</button>
+          <button class="mb" data-mode="matrix">Matrix</button>
+          <button class="mb" data-mode="orbit">Orbit</button>
+          <button class="mb" data-mode="spiral">Spiral</button>
+          <button class="mb" data-mode="scan">Scan</button>
+          <button class="mb" data-mode="halftone">Halftone</button>
+          <button class="mb" data-mode="shatter">Shatter</button>
+          <button class="mb" data-mode="weave">Weave</button>
+          <button class="mb" data-mode="topo">Topo</button>
+          <button class="mb" data-mode="recursive">Recursive</button>
+          <button class="mb" data-mode="contour">Contour</button>
+          <button class="mb" data-mode="fabric">Fabric</button>
+          <button class="mb" data-mode="loops">Loops</button>
+          <button class="mb" data-mode="imgtext">Img→Text</button>
+          <button class="mb" data-mode="pipes">Pipes</button>
+          <button class="mb" data-mode="calligraphy">Calligr.</button>
+          <button class="mb" data-mode="lissajous">Lissajous</button>
+          <button class="mb new-mode" data-mode="reaction">Reaction</button>
+          <button class="mb new-mode" data-mode="cellular">Cellular</button>
+          <button class="mb new-mode" data-mode="interference">Interfere</button>
+          <button class="mb new-mode" data-mode="worms">Worms</button>
+          <button class="mb new-mode" data-mode="wfc">WFC Tiles</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
+          <button class="mb new-mode" data-mode="truchet">Truchet</button>
+          <button class="mb new-mode" data-mode="hatch2">Hatch</button>
+          <button class="mb new-mode" data-mode="warpgrid">Warp Grid</button>
+          <button class="mb new-mode" data-mode="isocontour">Iso Lines</button>
+          <button class="mb new-mode" data-mode="tesseract">Tesseract</button>
+          <button class="mb new-mode" data-mode="hypersphere">Hypersphere</button>
+          <button class="mb new-mode" data-mode="hypercube5d">Penteract</button>
+          <button class="mb" data-mode="topolines">Topo Lines</button>
+          <button class="mb" data-mode="wireterrain">Terrain</button>
+          <button class="mb" data-mode="fractalsubdiv">Fractal</button>
+          <button class="mb new-mode" data-mode="voronoi">Voronoi</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
+          <button class="mb new-mode" data-mode="boids">Boids</button>
+          <button class="mb new-mode" data-mode="magnetic">Magnetic</button>
+          <button class="mb new-mode" data-mode="sand">Sand</button>
+          <button class="mb new-mode" data-mode="mycelium">Mycelium</button>
+        </div>
+
+        <!-- Mode Specific Controls -->
+        <div id="ctrl-reaction" class="mode-ctrl">
+          <div class="sl2">Reaction Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.055</span></div><input type="range" id="sReactFeed" min="10" max="100" value="55" step="1"></div>
+          <div class="rw"><div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.062</span></div><input type="range" id="sReactKill" min="10" max="100" value="62" step="1"></div>
+        </div>
+        <div id="ctrl-mycelium" class="mode-ctrl">
+          <div class="sl2">Mycelium Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">2.0</span></div><input type="range" id="sMycSpeed" min="5" max="50" value="20" step="1"></div>
+          <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">4</span></div><input type="range" id="sMycBranch" min="1" max="10" value="4" step="1"></div>
+        </div>
+        <div id="ctrl-magnetic" class="mode-ctrl">
+          <div class="sl2">Magnetic Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch2" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        </div>
+
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
+      <div class="sec-body" id="body-chars">
+        <div class="cg" id="charsetGrid">
+          <button class="cb" data-cs="hex">Hex</button><button class="cb" data-cs="gothic">Gothic</button><button class="cb" data-cs="cursive">Cursive</button><button class="cb active" data-cs="chinese">Chinese</button><button class="cb" data-cs="hiragana">Hiragana</button><button class="cb" data-cs="katakana">Katakana</button><button class="cb" data-cs="kanji">Kanji</button><button class="cb" data-cs="korean">Korean</button><button class="cb" data-cs="thai">Thai</button><button class="cb" data-cs="greek">Greek</button><button class="cb" data-cs="georgian">Georgian</button><button class="cb" data-cs="cyrillic">Cyrillic</button><button class="cb" data-cs="sanskrit">Sanskrit</button><button class="cb" data-cs="arcane">Arcane</button><button class="cb" data-cs="runes">Runes</button><button class="cb" data-cs="alchemy">Alchemy</button><button class="cb" data-cs="celtic">Celtic</button><button class="cb" data-cs="hieroglyphs">Hieroglyphs</button><button class="cb" data-cs="sacred">Sacred</button><button class="cb" data-cs="music">Music</button><button class="cb" data-cs="math">Math</button><button class="cb" data-cs="ascii">ASCII</button><button class="cb" data-cs="symbols">Symbols</button><button class="cb" data-cs="barcode">Barcode</button><button class="cb" data-cs="gradients">Blocks ░▓</button><button class="cb" data-cs="squares">Squares</button><button class="cb" data-cs="crossstitch">Cross-stitch</button><button class="cb" data-cs="circles">Circles</button><button class="cb" data-cs="daggers">Daggers</button><button class="cb" data-cs="lines">Lines</button><button class="cb" data-cs="dots">Dots</button><button class="cb" data-cs="braille">Braille</button><button class="cb" data-cs="void">Void</button><button class="cb" data-cs="custom">Custom ↓</button><button class="cb" data-cs="particles">Particles</button><button class="cb" data-cs="randuni">Rand Unicode</button><button class="cb" data-cs="randuni_weighted">Rand Weighted</button><button class="cb" data-cs="randuni_pos">Rand Positional</button><button class="cb" data-cs="randuni_drift">Rand Drift</button>
+        </div>
+        <div class="cr" id="customRow" style="display:none">
+          <input class="ci" id="customInput" placeholder="chars or semicolon-separated strings" maxlength="120">
+          <button class="ca" id="customApply">Set</button>
+        </div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
+      <div class="sec-body" id="body-font">
+        <select id="fontSelect">
+          <option value="courier">Courier New</option><option value="vt323">VT323</option><option value="typewriter">Special Elite</option><option value="georgia">Georgia</option><option value="times">Times New Roman</option><option value="arial">Arial</option><option value="bebas">Bebas Neue</option><option value="playfair">Playfair Display</option><option value="impact">Impact</option><option value="unicode">Universal Unicode</option><option value="mono">Monospace</option>
+        </select>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
+      <div class="sec-body" id="body-motion">
+        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
+      <div class="sec-body" id="body-field">
+        <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
+      <div class="sec-body" id="body-entropy">
+        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2"></div>
+        <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH">Off</button></div>
+        <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
+      <div class="sec-body" id="body-palette">
+        <div class="pg" id="palGrid">
+          <div class="pb active" data-pal="site" style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
+          <div class="pb" data-pal="ember" style="background:linear-gradient(135deg,#c8632a,#e08040)"></div><div class="pb" data-pal="frost" style="background:linear-gradient(135deg,#8aaccc,#b0c8e0)"></div><div class="pb" data-pal="jade" style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div><div class="pb" data-pal="dusk" style="background:linear-gradient(135deg,#7a5a8a,#c890d8)"></div><div class="pb" data-pal="mono" style="background:linear-gradient(135deg,#808078,#a0a098)"></div><div class="pb" data-pal="fire" style="background:linear-gradient(135deg,#e63946,#f4a261)"></div><div class="pb" data-pal="abyss" style="background:linear-gradient(135deg,#000814,#ffc300)"></div><div class="pb" data-pal="sakura" style="background:linear-gradient(135deg,#ffb7c5,#ff99ac)"></div><div class="pb" data-pal="moss" style="background:linear-gradient(135deg,#2d6a4f,#52b788)"></div><div class="pb" data-pal="neon" style="background:linear-gradient(135deg,#f72585,#4cc9f0)"></div><div class="pb" data-pal="matrix" style="background:linear-gradient(135deg,#003300,#00ff00)"></div><div class="pb" data-pal="paper" style="background:linear-gradient(135deg,#2e2820,#e8e0d4)"></div><div class="pb" data-pal="navy" style="background:linear-gradient(135deg,#0a1628,#8ab8e0)"></div><div class="pb" data-pal="rust" style="background:linear-gradient(135deg,#8b2500,#e8a87c)"></div><div class="pb" data-pal="copper" style="background:linear-gradient(135deg,#6b3a18,#b87333)"></div><div class="pb" data-pal="aurora" style="background:linear-gradient(135deg,#845ec2,#ffd93d)"></div><div class="pb" data-pal="brutalist" style="background:linear-gradient(135deg,#1a1a1a,#f5f500)"></div><div class="pb" data-pal="risograph" style="background:linear-gradient(135deg,#ff6b35,#06d6a0)"></div><div class="pb" data-pal="cyanotype" style="background:linear-gradient(135deg,#003f88,#caf0f8)"></div><div class="pb" data-pal="infrared" style="background:linear-gradient(135deg,#ff0055,#ffff00)"></div><div class="pb" data-pal="oxidized" style="background:linear-gradient(135deg,#3d6b4f,#e8d4a8)"></div><div class="pb" data-pal="velvet" style="background:linear-gradient(135deg,#2d0a31,#e0aaff)"></div><div class="pb" data-pal="tidal" style="background:linear-gradient(135deg,#0077b6,#90e0ef)"></div><div class="pb" data-pal="solaris" style="background:linear-gradient(135deg,#ff9500,#ffd60a)"></div>
+        </div>
+        <div class="sl2">Accent Color</div>
+        <div class="ag" id="accentRow1">
+          <div class="as active" data-accent="#e63946" style="background:#e63946"></div><div class="as" data-accent="#f4a261" style="background:#f4a261"></div><div class="as" data-accent="#ede66c" style="background:#ede66c"></div><div class="as" data-accent="#c4bcb0" style="background:#c4bcb0"></div><div class="as" data-accent="#80b8e8" style="background:#80b8e8"></div><div class="as" data-accent="#d890d8" style="background:#d890d8"></div><div class="as" data-accent="#90d4a0" style="background:#90d4a0"></div><div class="as" data-accent="#ffffff" style="background:#fff;border:1px solid #555"></div>
+        </div>
+        <div class="rw"><div class="rl"><span class="rn">Amount</span><span class="rv" id="vAccent1">10</span></div><input type="range" id="sAccent1" min="0" max="100" value="10" step="5"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend &amp; Effects</span><span class="sec-arrow" id="arr-blend">›</span></div>
+      <div class="sec-body collapsed" id="body-blend">
+        <div class="sl2">Blend Mode</div><select id="blendSelect"><option value="source-over">Normal</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="multiply">Multiply</option><option value="difference">Difference</option><option value="exclusion">Exclusion</option><option value="color-dodge">Color Dodge</option><option value="hard-light">Hard Light</option></select>
+        <div class="rw"><div class="rl"><span class="rn">Trail persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5"></div>
+        <div class="tr"><span class="tl">Signal collapse</span><button class="tb" id="btnSignal">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
+      <div class="sec-body collapsed" id="body-comp">
+        <div class="tr"><span class="tl">Enable blocks</span><button class="tb" id="btnComp">Off</button></div>
+        <div class="cg" id="compRow"><button class="cb active" data-comp="0">Split H</button><button class="cb" data-comp="1">Split V</button><button class="cb" data-comp="2">Quads</button><button class="cb" data-comp="3">Nested</button><button class="cb" data-comp="rand">Random</button></div>
+        <div class="sl2">Block palette</div><div class="cg" id="compPalGrid"><button class="cb active" data-comppal="default">Studio</button><button class="cb" data-comppal="earth">Earth</button><button class="cb" data-comppal="ocean">Ocean</button><button class="cb" data-comppal="dusk2">Dusk</button><button class="cb" data-comppal="fire2">Fire</button><button class="cb" data-comppal="neon2">Neon</button><button class="cb" data-comppal="paper2">Paper</button><button class="cb" data-comppal="rust2">Rust</button><button class="cb" data-comppal="navy2">Navy</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('shapes')"><span class="sl">Shape overlay</span><span class="sec-arrow" id="arr-shapes">›</span></div>
+      <div class="sec-body collapsed" id="body-shapes">
+        <div class="tr"><span class="tl">Enable shapes</span><button class="tb" id="btnShapes">Off</button></div>
+        <div class="cg" id="shapeTypeRow"><button class="cb active" data-shape="circle">Circle</button><button class="cb" data-shape="ring">Ring</button><button class="cb" data-shape="rect">Rect</button><button class="cb" data-shape="hexagon">Hex</button><button class="cb" data-shape="star5">Star 5</button><button class="cb" data-shape="star6">Star 6</button><button class="cb" data-shape="polygon">Poly</button><button class="cb" data-shape="band">Band</button><button class="cb" data-shape="lissajous">Lissa</button></div>
+        <div class="rw"><div class="rl"><span class="rn">Polygon sides</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="12" value="7" step="1"></div>
+        <div class="cg" id="shapePosRow"><button class="cb active" data-pos="center">Center</button><button class="cb" data-pos="random">Random</button><button class="cb" data-pos="tl">↖ TL</button><button class="cb" data-pos="tr">↗ TR</button><button class="cb" data-pos="bl">↙ BL</button><button class="cb" data-pos="br">↘ BR</button></div>
+        <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1"></div>
+        <select id="shapeCharSelect"><option value="same">Same as main field</option><option value="chinese">Chinese</option><option value="hiragana">Hiragana</option><option value="katakana">Katakana</option><option value="cyrillic">Cyrillic</option><option value="ascii">ASCII</option><option value="symbols">Symbols</option><option value="gradients">Blocks</option><option value="dots">Dots</option><option value="lines">Lines</option><option value="daggers">Daggers</option><option value="runes">Runes</option><option value="math">Math</option></select>
+        <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5"></div>
+        <div class="cg" id="shapeColModeRow"><button class="cb active" data-scm="inherit">Field</button><button class="cb" data-scm="fixed">Fixed</button><button class="cb" data-scm="math">Math</button><button class="cb" data-scm="palette">Palette</button></div>
+        <div class="ag" id="shapeFixedColRow"><div class="as" data-sfc="#e63946" style="background:#e63946"></div><div class="as" data-sfc="#f4a261" style="background:#f4a261"></div><div class="as" data-sfc="#ede66c" style="background:#ede66c"></div><div class="as active" data-sfc="#c4bcb0" style="background:#c4bcb0"></div><div class="as" data-sfc="#80b8e8" style="background:#80b8e8"></div><div class="as" data-sfc="#d890d8" style="background:#d890d8"></div><div class="as" data-sfc="#90d4a0" style="background:#90d4a0"></div><div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555"></div></div>
+        <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5"></div>
+        <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
+        <div class="cr"><input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60"><button class="ca" id="setShapeTextBtn">Set</button></div>
+        <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-bottom:.3rem">Add shape</button>
+        <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">Clear all</button>
+        <div id="shapeList" class="sh-list"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('overlay')"><span class="sl">Overlay text streams</span><span class="sec-arrow" id="arr-overlay">›</span></div>
+      <div class="sec-body collapsed" id="body-overlay">
+        <div class="tr"><span class="tl">Enable overlay</span><button class="tb" id="btnOverlay">Off</button></div>
+        <div class="cr"><input class="ci" id="ovTextInput" placeholder="text to stream…" maxlength="80"><button class="ca" id="ovAddStream">Add</button></div>
+        <div id="ovStreamList"></div>
+        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vOvSpeed">3</span></div><input type="range" id="sOvSpeed" min="1" max="20" value="3" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Size</span><span class="rv" id="vOvSize">18</span></div><input type="range" id="sOvSize" min="8" max="60" value="18" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Kerning</span><span class="rv" id="vOvKern">0</span></div><input type="range" id="sOvKern" min="-10" max="40" value="0" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Opacity</span><span class="rv" id="vOvAlpha">60</span></div><input type="range" id="sOvAlpha" min="5" max="100" value="60" step="5"></div>
+        <div class="rw"><div class="rl"><span class="rn">Wave</span><span class="rv" id="vOvWave">0</span></div><input type="range" id="sOvWave" min="0" max="60" value="0" step="2"></div>
+        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vOvEntropy">0</span></div><input type="range" id="sOvEntropy" min="0" max="100" value="0" step="2"></div>
+        <div class="cg" id="ovDirGrid"><button class="cb active" data-ovdir="ltr">→</button><button class="cb" data-ovdir="rtl">←</button><button class="cb" data-ovdir="alt">Alt</button><button class="cb" data-ovdir="vert">↓</button></div>
+        <div class="ag" id="ovColorRow"><div class="as active" data-ovcol="#e63946" style="background:#e63946"></div><div class="as" data-ovcol="#f4a261" style="background:#f4a261"></div><div class="as" data-ovcol="#ede66c" style="background:#ede66c"></div><div class="as" data-ovcol="#c4bcb0" style="background:#c4bcb0"></div><div class="as" data-ovcol="#80b8e8" style="background:#80b8e8"></div><div class="as" data-ovcol="#d890d8" style="background:#d890d8"></div><div class="as" data-ovcol="palette" style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
+      <div class="sec-body collapsed" id="body-img">
+        <input type="file" id="imgFile" accept="image/*" style="display:none"><button class="iu" onclick="document.getElementById('imgFile').click()">Upload image</button>
+        <div class="cr"><input class="ci" id="imgUrlInput" placeholder="or paste image URL…"><button class="ca" id="imgUrlApply">Load</button></div>
+        <div class="is" id="imgStatus">No image loaded</div>
+        <div class="tr"><span class="tl">Stretch to fill</span><button class="tb" id="btnStretch">Off</button></div>
+        <div class="tr"><span class="tl">Invert brightness</span><button class="tb" id="btnInvert">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('size')"><span class="sl">Canvas size</span><span class="sec-arrow" id="arr-size">›</span></div>
+      <div class="sec-body collapsed" id="body-size">
+        <div class="cg" id="sizeGrid"><button class="cb active" data-size="fill">Full panel</button><button class="cb" data-size="800,800">800 sq</button><button class="cb" data-size="1080,1080">1080 sq</button><button class="cb" data-size="1200,800">1200×800</button><button class="cb" data-size="1080,1920">Story</button><button class="cb" data-size="custom">Custom</button></div>
+        <div class="nr" id="customSizeRow" style="display:none"><input type="number" class="ni" id="cwInput" value="800" min="200" max="3000"><span class="nx">×</span><input type="number" class="ni" id="chInput" value="800" min="200" max="3000"><button class="ca" id="applySizeBtn">Set</button></div>
+      </div></div>
+
+    </div>
+    <div class="ar">
+      <button class="ab play" id="btnPlay">▶ Play</button>
+      <button class="ab" id="btnRegen">Regen</button>
+      <button class="ab" id="btnSave">Save PNG</button>
+      <button class="ab" id="btnReset">Reset All</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+// ============================================================
+// FULL GENERATIVE STUDIO - ALL MODES + PRESETS
+// ============================================================
+
+// ---------- RANDOM UNICODE ----------
+let RAND_UNICODE_MODE = null;
+const _driftMap = new Map();
+const UNICODE_RANGES = [
+  {start:0x0020,end:0x007E,weight:50},{start:0x00A1,end:0x00FF,weight:15},
+  {start:0x0370,end:0x03FF,weight:8},{start:0x0400,end:0x04FF,weight:8},
+  {start:0x4E00,end:0x9FFF,weight:6},{start:0x3040,end:0x309F,weight:4},
+  {start:0x30A0,end:0x30FF,weight:4},{start:0x2200,end:0x22FF,weight:3},
+  {start:0x2500,end:0x257F,weight:3},{start:0x10000,end:0x1007F,weight:1},
+];
+let _weightedCumulative = null;
+function _buildWeightedCumulative(){
+  _weightedCumulative=[]; let total=0; UNICODE_RANGES.forEach(r=>total+=r.weight); let cum=0;
+  UNICODE_RANGES.forEach(r=>{cum+=r.weight/total;_weightedCumulative.push({end:cum,range:r});});
+}
+function _randFromRange(r){return r.start+Math.floor(Math.random()*(r.end-r.start+1));}
+function _cpToStr(cp){try{return String.fromCodePoint(cp);}catch(e){return '?';}}
+function pickRandUnicode(x,y,t){
+  let mode=RAND_UNICODE_MODE;
+  if(mode==='full'){let cp=Math.floor(Math.random()*0x10FFFF);if(cp>=0xD800&&cp<=0xDFFF)cp=0x25A0;return _cpToStr(cp);}
+  if(mode==='weighted'){if(!_weightedCumulative)_buildWeightedCumulative();let r2=Math.random();for(let i=0;i<_weightedCumulative.length;i++)if(r2<=_weightedCumulative[i].end)return _cpToStr(_randFromRange(_weightedCumulative[i].range));return _cpToStr(_randFromRange(UNICODE_RANGES[0]));}
+  if(mode==='pos'){let tx=Math.floor(x/12),ty=Math.floor(y/12),tt=Math.floor(t*0.3);let h=Math.abs(Math.sin(tx*127.1+ty*311.7+tt*74.3)*43758.5453)%1;let h2=Math.abs(Math.sin(tx*269.5+ty*183.3+tt*12.9)*23421.631)%1;let ri2=Math.floor(h*UNICODE_RANGES.length)%UNICODE_RANGES.length;let range=UNICODE_RANGES[ri2];let cp=range.start+Math.floor(h2*(range.end-range.start+1));if(cp>=0xD800&&cp<=0xDFFF)cp=0x25A0;return _cpToStr(cp);}
+  if(mode==='drift'){let key=Math.floor(x/12)+'_'+Math.floor(y/12);if(!_driftMap.has(key))_driftMap.set(key,{cp:0x0020+Math.floor(Math.random()*0x2000),timer:0});let d=_driftMap.get(key);d.timer++;if(d.timer>8+Math.floor(Math.random()*16)){d.cp+=Math.floor((Math.random()-.5)*64);d.cp=Math.max(0x0020,Math.min(0x10FFFF,d.cp));if(d.cp>=0xD800&&d.cp<=0xDFFF)d.cp=0x25A0;d.timer=0;}return _cpToStr(d.cp);}
+  return '?';
+}
+
+// ---------- CHARSETS ----------
+const CHARSETS = {
+  hex:'0123456789ABCDEF'.split(''),gothic:'𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟'.split(''),
+  cursive:'𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏'.split(''),
+  chinese:(()=>{let a=[];for(let c=0x4E00;c<=0x9FFF;c+=Math.floor((0x9FFF-0x4E00)/80))a.push(String.fromCodePoint(c));return a;})(),
+  hiragana:(()=>{let a=[];for(let c=0x3041;c<=0x3096;c++)a.push(String.fromCodePoint(c));return a;})(),
+  katakana:(()=>{let a=[];for(let c=0x30A1;c<=0x30F6;c++)a.push(String.fromCodePoint(c));return a;})(),
+  kanji:(()=>{let a=[];for(let c=0x4E00;c<=0x9FFF;c+=Math.floor((0x9FFF-0x4E00)/60))a.push(String.fromCodePoint(c));return a;})(),
+  korean:'가나다라마바사아자차카타파하한국어시간마음빛물불산꿈사람사랑하늘바다해달별꽃강잎흙길집'.split(''),
+  thai:'กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ'.split(''),
+  greek:'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψως'.split(''),
+  georgian:'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ'.split(''),
+  cyrillic:'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЄІЇ'.split(''),
+  sanskrit:'अआइईउऊएओकखगघचछजझटठडढतथदधनपफबभमयरलवशषसहॐ।।'.split(''),
+  hieroglyphs:'𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀇𓀈𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀝𓀞𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀪𓀫𓀬𓀭𓀮𓀯𓀰𓀱𓀲𓀳𓀴𓀵𓀶𓀷𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀𓁁𓁂𓁃𓁄𓁅𓁆𓁇𓁈𓁉𓁊𓁋𓁌𓁍𓁎𓁏𓁐𓁑𓁒𓁓𓁔𓁕𓁖𓁗𓁘𓁙𓁚𓁛𓁜𓁝𓁞𓁟𓁠𓁡'.split(''),
+  arcane:'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎⸽⸾⁙⁜※ᛗᛚᛜᛝᛞᚱᚨᚹᚾ'.split(''),
+  runes:'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᛣᛤᛥᛦᛧᛨᛩᛪ'.split(''),
+  alchemy:'🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜎🜏🜐🜑🜒🜓🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜮🜯'.split(''),
+  sacred:'◉◈◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮'.split(''),
+  celtic:'᚛᚜ᚁᚂᚃᚄᚅᚆᚇᚈᚉᚊᚋᚌᚍᚎᚏᚐᚑᚒᚓᚔᚕᚖᚗᚘᚙᚚ'.split(''),
+  braille:'⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿'.split(''),
+  math:'∞∂∫∑∏√∛∜∝∈∉∋∌∩∪⊂⊃⊄⊅⊆⊇⊕⊗⊙⊥∧∨∀∃∄∅≈≠≡≤≥≪≫∓±×÷∇∆◻◼◽◾'.split(''),
+  ascii:"@#$%&?!/\\|+-=~^<>*_.,;:()[]{}'\"`§±".split(''),
+  symbols:'∞∆◊○□△◇●■▲◆★✦⊕⊗⊙♯♪♫♦♣♠♥♂♀☻☺◙◌⸙⸎∫∑∏√'.split(''),
+  barcode:'▏▎▍▌▋▊▉█01'.split(''),gradients:'░▒▓█▀▄▌▐▖▗▘▙▚▛▜▝▞▟'.split(''),squares:'■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯'.split(''),crossstitch:'×•⨳╳✕'.split(''),circles:'☻☺⊕⊗⊙○●◌˚¤°·֎֍◎◉◐◑◒◓'.split(''),music:['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓'],daggers:'†‡⸶⸸⸷✁✂✃✄'.split(''),dots:'·.,;:…•‧⋅∙°˙⁘⁙⁚⁛'.split(''),lines:'—|/\\─│╱╲┼╬╋┤├┴┬┘└┐┌╔╗╚╝╠╣╦╩═║'.split(''),void:[' ',' ',' ',' ',' ','​','░','▒','▓'],custom:['J','O','N'],
+};
+
+// ---------- PALETTES ----------
+const PALETTES = {
+  site:['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],ember:['#c8632a','#e08040','#f0a060','#a84820','#784030'],frost:['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],jade:['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],dusk:['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],mono:['#808078','#a0a098','#606058','#c0c0b8','#404038'],fire:['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],abyss:['#000814','#001d3d','#003566','#ffc300','#ffd60a'],sakura:['#ffb7c5','#ff99ac','#f1e4e8','#ceb1be','#b97375'],moss:['#2d6a4f','#409167','#52b788','#74c69d','#95d5b2'],neon:['#f72585','#7209b7','#3a0ca3','#4361ee','#4cc9f0'],matrix:['#003300','#006600','#00aa00','#00ff00','#88ff88'],paper:['#2e2820','#5a4a38','#8a7060','#c4b8a8','#e8e0d4'],navy:['#0a1628','#1a3050','#2a5080','#4a7fb5','#8ab8e0'],rust:['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],copper:['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],aurora:['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],brutalist:['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],risograph:['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],cyanotype:['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],infrared:['#ff0055','#ff6600','#00ff88','#00ffcc','#ffff00'],oxidized:['#3d6b4f','#5a8a6a','#8ab89a','#c8a96e','#e8d4a8'],velvet:['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],tidal:['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],solaris:['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
+};
+
+// ---------- FONTS ----------
+const FONTS = {courier:"'Courier New',Courier,monospace",vt323:"'VT323',monospace",typewriter:"'Special Elite',cursive",georgia:'Georgia,serif',times:"'Times New Roman',serif",arial:'Arial,sans-serif',bebas:"'Bebas Neue',sans-serif",playfair:"'Playfair Display',serif",impact:'Impact,sans-serif',unicode:"'Noto Sans Symbols 2', 'Noto Emoji', 'Segoe UI Symbol', sans-serif",mono:'monospace'};
+const GLITCH = ['█','_','░','▒','?','#','%','■','□',' '];
+const COMP_PALETTES = {default:['#e63946','#b8955a','#2a4a7a','#234b09','#5a2a6a','#8a4a1a','#1a3a5a','#6a1a1a'],earth:['#8B4513','#D2691E','#A0522D','#6B3A2A','#C19A6B','#8B6914','#5C4033','#704214'],ocean:['#006994','#20B2AA','#005F87','#008080','#2E8B57','#4682B4','#1C6B8A','#0E4D6E'],dusk2:['#4B0082','#8A2BE2','#6A0DAD','#9400D3','#800080','#4B0082','#7B2D8B','#5C0099'],fire2:['#FF4500','#FFD700','#FF6347','#FFA500','#DC143C','#FF8C00','#FF0000','#FFAA00'],neon2:['#FF00FF','#00FFFF','#FF0099','#00FF99','#9900FF','#FF9900','#0099FF','#FF0055'],paper2:['#f5efe0','#d4c4a8','#b09878','#7a6048','#3c2810','#8b7060','#e8d8c0','#a08060'],rust2:['#8b2500','#c04020','#e86040','#f0a070','#2a1008','#601808','#a03018','#d06040'],navy2:['#0a1628','#1a3050','#2a5080','#3a70b0','#0d2040','#204060','#4a7fb5','#6090c8']};
+
+// ---------- STATE ----------
+let S = {
+  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,spacing:12,maxSize:20,noiseScale:.01,charRotation:0,entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,fontKey:'courier',fontStack:FONTS.courier,charRotRad:0,trailPersist:0,compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,imgStretch:false,imgInvert:false,overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',overlayEntropy:0,overlayDistort:0,overlayKern:0,shapesEnabled:false,shapeDens:6,selectedShape:'circle',shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,shapePosition:'center',shapeSides:7,shapeText:'',signalCollapse:false,signalStart:0,blendMode:'source-over',playing:false,fc:0,useParticleMode:false,reactFeed:0.055,reactKill:0.062,mycSpeed:2.0,mycBranch:4,magPoles:2,hatchAngle:45,hatchCurve:5,vorWire:false,
+};
+
+// ---------- DYNAMIC STATE ----------
+let CTX=null,_lastFont='',_lastFill='';
+let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[],shapes=[],recRects=[],loopParticles=[],boidAgents=[],magneticPoles=[],wtHeightmap=null,fsPolygons=[],rdGrid=null,voronoiSites=[],myceliumBranches=[],sandParticles=[],caGrid=null,lissParticles=[],wormAgents=[];
+
+function invalidateFontCache(){_lastFont='';_lastFill='';}
+function pickColor(p,x,y,t){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t*.5);let col=S.palette[Math.floor(n*S.palette.length)%S.palette.length];if(S.accentAmt>0&&p.noise(x*.01,y*.01,t*.2)<S.accentAmt)col=S.accent;return col;}
+function pcc(p,x,y,t){return{col:pickColor(p,x,y,t),ch:pickChar(p,x,y,t)};}
+
+function pickChar(p,x,y,t){
+  let ch;
+  if(RAND_UNICODE_MODE){ch=pickRandUnicode(x,y,t);}
+  else{let i=Math.floor(p.noise(x*.08,y*.08)*S.chars.length);ch=S.chars[i%S.chars.length];}
+  if(S.caseGlitch>0&&Math.random()<S.caseGlitch)ch=(ch===ch.toUpperCase())?ch.toLowerCase():ch.toUpperCase();
+  if(S.entropy>0&&Math.random()<S.entropy){
+    let r=Math.random();
+    if(r<.3)ch='█';else if(r<.5)ch='_';else if(r<.62)ch=' ';
+    else if(r<.78)ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
+    else if(S.entropy>.5&&r>.92)ch=pickRandUnicode(x,y,t);
+    else ch=String.fromCharCode(33+Math.floor(Math.random()*93));
+  }
+  return ch;
+}
+
+function dc(x,y,sz,rot,col,ch){
+  if(!CTX)return;
+  if(S.useParticleMode){
+    CTX.fillStyle=col;
+    CTX.beginPath();
+    let type=Math.floor(Math.abs(Math.sin(x+y))*3);
+    if(type===0)CTX.arc(x,y,sz*0.4,0,Math.PI*2);
+    else if(type===1)CTX.rect(x-sz*0.3,y-sz*0.3,sz*0.6,sz*0.6);
+    else{CTX.moveTo(x,y-sz*0.4);CTX.lineTo(x+sz*0.4,y+sz*0.4);CTX.lineTo(x-sz*0.4,y+sz*0.4);CTX.closePath();}
+    CTX.fill();return;
+  }
+  if(!ch||(!ch.trim()&&S.entropy<.1))return;
+  let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
+  let fstr=(sz|0)+'px '+S.fontStack;
+  if(needTransform){
+    CTX.save();CTX.translate(x,y);
+    let r=(rot||0)+S.charRotRad;if(r)CTX.rotate(r);
+    let fx=1,fy=1;
+    if(S.flipHMirror&&Math.random()<S.flipChance*.6)fx=-1;
+    if(S.flipVMirror&&Math.random()<S.flipChance*.35)fy=-1;
+    if(fx!==1||fy!==1)CTX.scale(fx,fy);
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+    CTX.fillText(ch,0,0);CTX.restore();_lastFont='';_lastFill='';
+  } else {
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+    CTX.fillText(ch,x,y);
+  }
+}
+
+// ---------- MODE INITIALIZERS ----------
+function initRain(W,H){rainDrops=[];let c=Math.floor(W/S.spacing);for(let i=0;i<c;i++)rainDrops.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:1+Math.random()*3,tl:4+Math.floor(Math.random()*14)});}
+function initTess(W,H){tessGrid=[];let sp=S.spacing*2,c=Math.floor(W/sp),r=Math.floor(H/sp);for(let i=0;i<r;i++)for(let j=0;j<c;j++)tessGrid.push({x:j*sp+sp/2,y:i*sp+sp/2,phase:Math.random()*Math.PI*2});}
+function initMatrix(W,H){matrixCols=[];let c=Math.floor(W/S.spacing);for(let i=0;i<c;i++)matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:5+Math.floor(Math.random()*16),glitch:Math.random()<.2});}
+function initShatter(W,H){shatterParts=[];let sp=S.spacing,cx=W/2,cy=H/2;for(let x=sp;x<W-sp;x+=sp)for(let y=sp;y<H-sp;y+=sp){let dx=x-cx,dy=y-cy;shatterParts.push({ox:x,oy:y,dist:Math.sqrt(dx*dx+dy*dy),angle:Math.atan2(dy,dx)});}}
+function initLoops(W,H){loopParticles=[];let n=Math.floor(W*H/(S.spacing*S.spacing*4));for(let i=0;i<n;i++)loopParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*200)});}
+function initRecursive(W,H){recRects=[];subdivide(0,0,W,H,Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);}
+function subdivide(x,y,w,h,depth,cols){if(depth===0||w<S.spacing*3||h<S.spacing*3){recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;}if(Math.random()<0.3){recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;}let vert=w>h||(w===h&&Math.random()<.5);let split=vert?x+w*(.3+Math.random()*.4):y+h*(.3+Math.random()*.4);if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}}
+function initReactionDiffusion(W,H){let res=Math.max(4,Math.floor(S.spacing*.8));rdW=Math.floor(W/res)+1;rdH=Math.floor(H/res)+1;rdGrid={A:new Float32Array(rdW*rdH),B:new Float32Array(rdW*rdH),nA:new Float32Array(rdW*rdH),nB:new Float32Array(rdW*rdH),res:res};for(let i=0;i<rdW*rdH;i++){rdGrid.A[i]=1;rdGrid.B[i]=0;}let cx=Math.floor(rdW/2),cy=Math.floor(rdH/2),r=Math.floor(Math.min(rdW,rdH)*.08);for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(dx*dx+dy*dy<=r*r){let idx=(cy+dy)*rdW+(cx+dx);if(idx>=0&&idx<rdW*rdH){rdGrid.A[idx]=0.5+Math.random()*0.1;rdGrid.B[idx]=0.25+Math.random()*0.1;}}}
+function initVoronoi(W,H){voronoiSites=[];let n=Math.max(6,Math.floor((W*H)/(S.spacing*S.spacing*80)));for(let i=0;i<n;i++)voronoiSites.push({x:Math.random()*W,y:Math.random()*H,col:S.palette[i%S.palette.length],vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});}
+function initMycelium(W,H){myceliumBranches=[];let n=3+Math.floor(S.density*3);for(let i=0;i<n;i++){let a=Math.random()*6.28;myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:S.mycSpeed*(0.5+Math.random()),age:0,col:S.palette[i%S.palette.length],children:0,maxChildren:S.mycBranch});}}
+function initSand(W,H){sandParticles=[];let n=Math.floor(W*H/(S.spacing*S.spacing*2));for(let i=0;i<n;i++)sandParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*300),col:S.palette[i%S.palette.length]});}
+function initCellular(W,H){let res=Math.max(4,S.spacing);caW=Math.floor(W/res)+1;caH=Math.floor(H/res)+1;caGrid=new Uint8Array(caW*caH);caNext=new Uint8Array(caW*caH);for(let i=0;i<caW*caH;i++)caGrid[i]=Math.random()<.35?1:0;}
+function initMagnetic(W,H){magneticPoles=[];for(let i=0;i<S.magPoles;i++)magneticPoles.push({x:Math.random()*W,y:Math.random()*H,sign:Math.random()>.5?1:-1});}
+function initWorms(W,H){wormAgents=[];let n=Math.floor(20+S.density*40);for(let i=0;i<n;i++)wormAgents.push({x:Math.random()*W,y:Math.random()*H,angle:Math.random()*6.28,col:S.palette[i%S.palette.length],history:[]});}
+function initFractalSubdiv(p,W,H){fsPolygons=[];let cx=W/2,cy=H/2,r=Math.min(W,H)*.38;let sides=S.wave<30?3:S.wave<65?4:6;let basePts=[];for(let i=0;i<sides;i++){let a=(i/sides)*Math.PI*2-Math.PI/2;basePts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}let maxDepth=Math.max(2,Math.min(6,Math.floor(S.density*5+2)));_fsSubdivide(p,basePts,0,maxDepth);}
+function _fsSubdivide(p,pts,depth,maxDepth){if(depth>=maxDepth||pts.length<2){fsPolygons.push({pts:pts.slice(),col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});return;}let newPts=[];let roughness=S.wave*.004+0.02;for(let i=0;i<pts.length;i++){let a=pts[i],b=pts[(i+1)%pts.length];newPts.push(a);let mx=(a.x+b.x)/2,my=(a.y+b.y)/2;let len=Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y));let nx=-(b.y-a.y)/len,ny=(b.x-a.x)/len;let disp=(p.noise(mx*.005,my*.005,depth*.3)-.5)*len*roughness*2;newPts.push({x:mx+nx*disp,y:my+ny*disp});}let half=Math.floor(newPts.length/2);let pts1=newPts.slice(0,half+1);let pts2=newPts.slice(half);if(pts1.length>2)_fsSubdivide(p,pts1,depth+1,maxDepth);if(pts2.length>2)_fsSubdivide(p,pts2,depth+1,maxDepth);if(depth===0||Math.random()<.3)fsPolygons.push({pts:newPts,col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});}
+function initLissajous(W,H){lissParticles=[];let n=Math.floor(200+S.density*300);for(let i=0;i<n;i++)lissParticles.push({phase:Math.random()*6.28,speed:.002+Math.random()*.008,la:1+Math.floor(Math.random()*4),lb:1+Math.floor(Math.random()*4),a:Math.random()*6.28,col:S.palette[i%S.palette.length]});}
+function initWireTerrain(p,W,H){let res=Math.max(8,Math.floor(S.spacing*1.5));wtW=Math.floor(W/res)+1;wtH=Math.floor(H/res)+1;wtHeightmap=new Float32Array(wtW*wtH);for(let row=0;row<wtH;row++)for(let col=0;col<wtW;col++){let x=col/(wtW-1),y=row/(wtH-1);let n=p.noise(x*3+100,y*3+100);n+=0.5*p.noise(x*6+200,y*6+200);n+=0.25*p.noise(x*12+300,y*12+300);wtHeightmap[row*wtW+col]=n/1.75;}}
+function buildComp(preset,W,H){W=W||800;H=H||600;if(preset==='rand')preset=Math.floor(Math.random()*5);preset=+preset;let p=S.compCols||COMP_PALETTES.default;if(preset===0)compBlocks=[{x:0,y:0,w:W,h:H*.42,col:p[0],op:.7},{x:0,y:H*.42,w:W,h:H*.58,col:p[2],op:.7}];else if(preset===1)compBlocks=[{x:0,y:0,w:W*.55,h:H,col:p[1],op:.65},{x:W*.45,y:0,w:W*.55,h:H,col:p[3],op:.65}];else if(preset===2)compBlocks=[{x:0,y:0,w:W/2,h:H/2,col:p[0],op:.7},{x:W/2,y:0,w:W/2,h:H/2,col:p[4],op:.7},{x:0,y:H/2,w:W/2,h:H/2,col:p[2],op:.7},{x:W/2,y:H/2,w:W/2,h:H/2,col:p[1],op:.7}];else if(preset===3)compBlocks=[{x:W*.12,y:H*.12,w:W*.76,h:H*.76,col:p[0],op:.75},{x:W*.28,y:H*.28,w:W*.44,h:H*.44,col:p[2],op:.6}];else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++)compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}}
+
+// ---------- DRAWING MODES (ALL 60+ MODES) ----------
+function drawBloom(p,t){let sp=S.spacing;for(let x=0;x<p.width;x+=sp)for(let y=0;y<p.height;y+=sp){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let a=p.noise(x*S.noiseScale*.5,y*S.noiseScale*.5,t*.5)*6.28*4;let r=pcc(p,x,y,t);dc(x,y,p.map(n,S.density,1,2,S.maxSize),a,r.col,r.ch);}}
+function drawWave(p,t){let sp=S.spacing;for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let wx=Math.sin(y*S.turb*10+t*2)*S.wave;let wy=Math.cos(x*S.turb*10+t*1.5)*S.wave*.6;let r=pcc(p,x,y,t);dc(x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,r.col,r.ch);}}
+function drawRain1(p,t){if(S.playing)rainDrops.forEach(d=>{d.y+=d.speed*(S.speed*250+1);if(d.y>p.height+S.spacing*2){d.y=-S.spacing*(2+Math.random()*8);d.speed=1+Math.random()*3;}});rainDrops.forEach((d,i)=>{let tl=Math.floor(3+(S.wave/20));for(let j=0;j<tl;j++){let ty=d.y-j*S.spacing;if(ty<0||ty>p.height)continue;let alpha=Math.round(p.map(j,0,tl,255,20));let col=j===0?pickColor(p,d.x,ty,t):S.palette[i%S.palette.length];CTX.globalAlpha=alpha/255;let fstr=((j===0?S.maxSize*.8:S.maxSize*.5)|0)+'px '+S.fontStack;if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}CTX.fillText(pickChar(p,i,j,t),d.x,ty);}});CTX.globalAlpha=1;}
+function drawRain2(p,t){if(S.playing)rainDrops.forEach(d=>{d.y+=d.speed*(S.speed*500+2);if(d.y>p.height+50)d.y=-20;});rainDrops.forEach(d=>{let r=pcc(p,d.x,d.y,t);dc(d.x,d.y,S.maxSize,0,r.col,r.ch);});}
+function drawVortex(p,t){let cx=p.width/2,cy=p.height/2,maxR=Math.max(p.width,p.height)*.6;for(let r=S.spacing;r<maxR;r+=S.spacing){let count=Math.floor(6.28*r/S.spacing);for(let i=0;i<count;i++){let angle=(i/count)*6.28+(t*(maxR/r)*.5);let x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r;let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let res=pcc(p,x,y,t);dc(x,y,p.map(n,S.density,1,4,S.maxSize),angle,res.col,res.ch);}}}
+function drawRipple(p,t){let cx=p.width/2,cy=p.height/2;for(let x=0;x<p.width;x+=S.spacing)for(let y=0;y<p.height;y+=S.spacing){let d=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));let ripple=Math.sin(d*S.turb*10-t*5)*S.wave;let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let res=pcc(p,x,y,t);dc(x,y+ripple,S.maxSize,0,res.col,res.ch);}}
+function drawDrift(p,t){for(let x=0;x<p.width;x+=S.spacing)for(let y=0;y<p.height;y+=S.spacing){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let ox=p.noise(x*.005,t)*S.wave*2,oy=p.noise(y*.005,t)*S.wave*2;let res=pcc(p,x,y,t);dc(x+ox,y+oy,S.maxSize,0,res.col,res.ch);}}
+function drawTess(p,t){tessGrid.forEach(cell=>{let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);if(n<S.density)return;let pulse=Math.sin(t*2+cell.phase)*.5+.5;let res=pcc(p,cell.x,cell.y,t);dc(cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,res.col,res.ch);});}
+function drawWarp(p,t){for(let x=0;x<p.width;x+=S.spacing)for(let y=0;y<p.height;y+=S.spacing){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let warp=p.noise(x*.002,y*.002,t)*S.wave*4;let res=pcc(p,x,y,t);dc(x+warp,y+warp,S.maxSize,0,res.col,res.ch);}}
+function drawGlitch(p,t){let sp=S.spacing,nS=Math.floor(p.height/(sp*1.4));for(let si=0;si<nS;si++){let sy=si*sp*1.4,disp=Math.sin(si*.4+t*4)*S.wave*.6;if(Math.random()<S.entropy*.3)disp+=(Math.random()-.5)*p.width*.35;let rD=disp+Math.sin(t*6)*4,bD=disp-Math.sin(t*6)*4;for(let x=sp;x<p.width-sp;x+=sp)for(let y=sy;y<sy+sp*1.4;y+=sp){if(y>=p.height)continue;let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let ch=pickChar(p,x,y,t),sz=4+Math.random()*(S.maxSize*.65-4);let fstr=(sz|0)+'px '+S.fontStack;if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}CTX.globalAlpha=.35;CTX.fillStyle='#ff3250';CTX.fillText(ch,x+rD,y);CTX.fillStyle='#3278ff';CTX.fillText(ch,x+bD,y);CTX.globalAlpha=1;CTX.fillStyle=pickColor(p,x,y,t);CTX.fillText(ch,x+disp,y);_lastFill='';}}CTX.globalAlpha=1;}
+function drawWebster(p,t){let sp=S.spacing;for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){if(Math.random()>(1-S.density*.1))continue;let wx=Math.sin(y*.008+t)*S.wave*.12,wy=Math.cos(x*.008+t*.7)*S.wave*.08;let res=pcc(p,x,y,t);dc(x+wx,y+wy,S.maxSize*.25+Math.random()*S.maxSize*.35,0,res.col,res.ch);}compBlocks.forEach(b=>{let wob=Math.sin(t+b.x*.01)*S.wave*.08;for(let x=b.x;x<b.x+b.w;x+=sp*.7)for(let y=b.y;y<b.y+b.h;y+=sp*.55){if(Math.random()>b.op)continue;let ch=pickChar(p,x,y,t);let sz=S.maxSize*.3+Math.random()*S.maxSize*.7;dc(x+wob,y,sz,0,b.col,ch);}});}
+function drawMatrix(p,t){if(S.playing)matrixCols.forEach(c=>{c.y+=c.speed*(S.speed*280+1);if(c.y>p.height+S.spacing*c.tl){c.y=-S.spacing*(1+Math.random()*5);c.speed=.5+Math.random()*2.5;c.glitch=Math.random()<.2;}});matrixCols.forEach((c,ci)=>{for(let j=0;j<c.tl;j++){let ty=c.y-j*S.spacing;if(ty<0||ty>p.height)continue;let alpha=1-j/c.tl;let ch=(c.glitch&&S.entropy>0&&Math.random()<S.entropy*.6)?GLITCH[Math.floor(Math.random()*GLITCH.length)]:pickChar(p,ci*S.spacing,ty,t);let col=j===0?(S.accent!=='none'?S.accent:S.palette[0]):S.palette[1%S.palette.length];let sz=(j===0?S.maxSize*.85:S.maxSize*.5)|0;let fstr=sz+'px '+S.fontStack;CTX.globalAlpha=alpha;if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}CTX.fillText(ch,c.x,ty);}});CTX.globalAlpha=1;}
+function drawOrbit(p,t){let nC=2+Math.floor(S.density*.6),maxR=Math.max(p.width,p.height)*.58,sp=S.spacing;let centers=[];for(let i=0;i<nC;i++){let a=(i/nC)*6.28;centers.push({x:p.width/2+Math.cos(a+t*.3)*p.width*.28,y:p.height/2+Math.sin(a+t*.3)*p.height*.22});}centers.forEach((c,ci)=>{for(let r=sp;r<maxR;r+=sp){let cnt=Math.floor(6.28*r/sp);for(let i=0;i<cnt;i++){if(Math.random()>(0.2+S.density*.08))continue;let ang=(i/cnt)*6.28+t*(0.5+ci*.3),x=c.x+Math.cos(ang)*r,y=c.y+Math.sin(ang)*r;if(x<0||x>p.width||y<0||y>p.height)continue;let res=pcc(p,x,y,t);dc(x,y,p.map(r,0,maxR,S.maxSize*.8,2),ang+1.5708,res.col,res.ch);}}});}
+function drawSpiral(p,t){let cx=p.width/2,cy=p.height/2,maxR=Math.min(p.width,p.height)*.52,a=S.spacing/6.28;for(let th=0;th<6.28*22;th+=.25){let r=a*th;if(r>maxR)break;let wb=Math.sin(th*3+t*2)*S.wave*.13;let x=cx+Math.cos(th+t*.2)*(r+wb),y=cy+Math.sin(th+t*.2)*(r+wb);if(x<0||x>p.width||y<0||y>p.height)continue;let res=pcc(p,x,y,t);dc(x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,res.col,res.ch);}}
+function drawScan(p,t){let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=70+S.wave*.8,sp=S.spacing;for(let x=sp;x<p.width-sp;x+=sp)for(let y=sp;y<p.height-sp;y+=sp){let d=Math.abs(y-sc),ins=d<sw;if(!ins&&Math.random()>(1-S.density*.05))continue;if(ins&&Math.random()>.72)continue;let br=ins?p.map(d,0,sw,1,0):.28,disp=ins?Math.sin(x*.05+t*5)*S.wave*.3:0;let res=pcc(p,x,y,t);dc(x+disp,y,p.map(br,0,1,2,S.maxSize),0,res.col,res.ch);}}
+function drawHalftone(p,t){let sp=S.spacing;for(let x=sp;x<p.width-sp;x+=sp)for(let y=sp;y<p.height-sp;y+=sp){let b=Math.min(1,Math.max(0,(Math.sin(x*.03)*Math.cos(y*.03)+1)/2*.7+Math.sin(x*.015+t)*.12+Math.cos(y*.015+t*.8)*.1+.08));if(b<.06)continue;let res=pcc(p,x,y,t);dc(x,y,p.map(b,0,1,.5,S.maxSize),0,res.col,res.ch);}}
+function drawShatter(p,t){if(!shatterParts.length)initShatter(p.width,p.height);let prog=(Math.sin(t*.6)+1)/2,ex=prog*S.wave*2.5;shatterParts.forEach(pt=>{if(Math.random()>(1-S.density*.04))return;let x=pt.ox+Math.cos(pt.angle)*ex*(pt.dist/280),y=pt.oy+Math.sin(pt.angle)*ex*(pt.dist/280);if(x<0||x>p.width||y<0||y>p.height)return;let res=pcc(p,pt.ox,pt.oy,t);dc(x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,res.col,res.ch);});}
+function drawWeave(p,t){let sp=S.spacing;for(let y=sp;y<p.height;y+=sp*2){let rt=t+y*.002;for(let x=sp;x<p.width;x+=sp){if(Math.random()>(1-S.density*.1))continue;let res=pcc(p,x,y,t);dc(x,y+Math.sin(x*S.turb*2+rt*2)*S.wave*.38,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);}}for(let x=sp*1.5;x<p.width;x+=sp*2){let ct=t+x*.002;for(let y=sp;y<p.height;y+=sp){if(Math.random()>(1-S.density*.1))continue;let res=pcc(p,x,y,t);dc(x+Math.cos(y*S.turb*2+ct*1.7)*S.wave*.38,y,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);}}}
+function drawTopo(p,t){let sp=S.spacing*.8,nLevels=6+Math.floor(S.density*3),bw=0.06+S.wave*.0012,ns=S.noiseScale;for(let x=sp*.5;x<p.width;x+=sp)for(let y=sp*.5;y<p.height;y+=sp){let n=p.noise(x*ns,y*ns,t*.15);let level=Math.floor(n*nLevels),frac=(n*nLevels)-level;if(frac>bw&&frac<(1-bw))continue;let gx=p.noise((x+1)*ns,y*ns,t*.15)-p.noise((x-1)*ns,y*ns,t*.15);let gy=p.noise(x*ns,(y+1)*ns,t*.15)-p.noise(x*ns,(y-1)*ns,t*.15);let angle=Math.atan2(gy,gx)+1.5708;let prominence=1-(frac<bw?frac/bw:(1-frac)/bw);let sz=p.map(prominence,0,1,2,S.maxSize*.9);let col=S.palette[level%S.palette.length];if(S.accent!=='none'&&S.accentAmt>0&&(level%Math.ceil(nLevels/3)===0))col=S.accent;dc(x,y,sz,angle,col,pickChar(p,x,y,t));}}
+function drawRecursive(p,t){if(!recRects.length)initRecursive(p.width,p.height);let sp=S.spacing,wobT=t*.5;recRects.forEach(rect=>{let innerSp=sp*.6+Math.sin(wobT+rect.x*.01)*sp*.2;for(let x=rect.x+innerSp*.5;x<rect.x+rect.w-innerSp*.5;x+=innerSp){for(let y=rect.y+innerSp*.5;y<rect.y+rect.h-innerSp*.5;y+=innerSp){if(Math.random()>(0.25+S.density*.07))continue;let wob=S.wave>0?Math.sin(x*.012+wobT)*S.wave*.1:0;let ch=pickChar(p,x,y,t);let sz=S.maxSize*.2+Math.random()*S.maxSize*.8;let col=rect.col;if(S.accent!=='none'&&S.accentAmt>0&&p.noise(x*.025,y*.025,t*.8+99)>(1-S.accentAmt))col=S.accent;dc(x+wob,y,sz,0,col,ch);}});}
+function drawContour(p,t){let sp=S.spacing;for(let x=sp;x<p.width-sp;x+=sp)for(let y=sp;y<p.height-sp;y+=sp){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t*.2);if(n<S.density)continue;let gx=p.noise((x+2)*S.noiseScale,y*S.noiseScale,t*.2)-n;let gy=p.noise(x*S.noiseScale,(y+2)*S.noiseScale,t*.2)-n;let mag=Math.sqrt(gx*gx+gy*gy)||1;let angle=Math.atan2(gy/mag,gx/mag)+t*.3;let steps=2+Math.floor(S.wave*.05);for(let s=0;s<steps;s++){let px=x+Math.cos(angle)*s*sp*.8,py=y+Math.sin(angle)*s*sp*.8;if(px<0||px>p.width||py<0||py>p.height)break;let sz=p.map(n,S.density,1,3,S.maxSize)*(1-s/(steps+1));let res=pcc(p,px,py,t);dc(px,py,sz,angle,res.col,res.ch);}}}
+function drawFabric(p,t){let sp=S.spacing;for(let x=0;x<p.width;x+=sp)for(let y=0;y<p.height;y+=sp){if(Math.random()>(1-S.density*.12))continue;let a1=Math.sin(y*S.turb*5+t*2)*S.wave;let a2=Math.cos(x*S.turb*3+t*1.5)*S.wave*.5;let a3=Math.sin((x+y)*S.turb*2+t*2.5)*S.wave*.35;let nw=p.noise(x*.003,y*.003,t*.8)*S.wave*.5;let rot=Math.sin(x*.01+t)*.6+Math.cos(y*.01+t*.8)*.4;let res=pcc(p,x,y,t);dc(x+a1+a3+nw,y+a2,4+Math.random()*(S.maxSize*.7-4),rot,res.col,res.ch);}}
+function drawLoops(p,t){if(!loopParticles.length)initLoops(p.width,p.height);let ns=S.noiseScale;loopParticles.forEach(pt=>{if(S.playing){let angle=p.noise(pt.x*ns,pt.y*ns,t)*6.28*2;let curl=angle+1.5708;pt.vx=pt.vx*.85+Math.cos(curl)*S.wave*.06;pt.vy=pt.vy*.85+Math.sin(curl)*S.wave*.06;pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>300){pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;pt.vx=0;pt.vy=0;pt.age=0;}}let n=p.noise(pt.x*ns,pt.y*ns,t);if(n<S.density*.6)return;let sz=p.map(n,S.density*.6,1,2,S.maxSize*.7);let angle2=Math.atan2(pt.vy,pt.vx)||0;let res=pcc(p,pt.x,pt.y,t);CTX.globalAlpha=Math.min(1,(300-pt.age)/200);dc(pt.x,pt.y,sz,angle2,res.col,res.ch);});CTX.globalAlpha=1;}
+function drawImgText(p,t){if(!imgPix){CTX.fillStyle=S.palette[0];CTX.font='13px '+S.fontStack;CTX.textAlign='center';CTX.fillText('Upload an image →',p.width/2,p.height/2);CTX.textAlign='left';return;}let sp=S.spacing,sx,sy,ox=0,oy=0;if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}else{let sc=Math.min(p.width/imgW,p.height/imgH);sx=sy=1/sc;ox=(p.width-imgW*sc)/2;oy=(p.height-imgH*sc)/2;}for(let x=0;x<p.width;x+=sp)for(let y=0;y<p.height;y+=sp){let ix=Math.floor((x-ox)*sx),iy=Math.floor((y-oy)*sy);if(ix<0||ix>=imgW||iy<0||iy>=imgH)continue;let idx=(iy*imgW+ix)*4,rv=imgPix.data[idx],gv=imgPix.data[idx+1],bv=imgPix.data[idx+2];let bri=(rv*.299+gv*.587+bv*.114)/255;if(S.imgInvert)bri=1-bri;let d=1-bri;if(d<.1)continue;let wx=Math.sin(y*.01+t)*S.wave*.07,wy=Math.cos(x*.01+t*.7)*S.wave*.05;let res=pcc(p,x,y,t);dc(x+wx,y+wy,p.map(d,.1,1,1.5,S.maxSize),0,res.col,res.ch);}}
+function drawTopoLines(p,t){let W=p.width,H=p.height;let res=Math.max(6,S.spacing*.9);let cols=Math.floor(W/res)+2,rows=Math.floor(H/res)+2;let nLevels=4+Math.floor(S.density*4),ns=S.noiseScale;let field=new Float32Array(cols*rows);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){let x=c*res,y=r*res;let n=p.noise(x*ns,y*ns,t*.12);n+=.5*p.noise(x*ns*2.1,y*ns*2.1,t*.08+10);n/=1.5;if(S.wave>0){let wx=Math.sin(y*S.turb*4+t*2)*S.wave*.003;n+=p.noise((x+wx*W)*ns,y*ns,t*.1+20)*.3;n/=1.3;}field[r*cols+c]=Math.min(1,Math.max(0,n));}CTX.save();CTX.lineWidth=.8+S.density*.4;CTX.lineCap='round';let lerp=(v1,v2,th)=>(th-v1)/(v2-v1+1e-6);for(let lv=1;lv<=nLevels;lv++){let th=lv/(nLevels+1);let col=S.palette[lv%S.palette.length];if(S.accent!=='none'&&S.accentAmt>.1&&lv===1)col=S.accent;if(S.accent2!=='none'&&S.accentAmt2>.1&&lv===nLevels)col=S.accent2;CTX.strokeStyle=col;CTX.globalAlpha=.5+(lv/nLevels)*.45;CTX.beginPath();for(let r=0;r<rows-1;r++)for(let c=0;c<cols-1;c++){let a=field[r*cols+c],b=field[r*cols+c+1],d=field[(r+1)*cols+c],e=field[(r+1)*cols+c+1];let x0=c*res,y0=r*res,pts=[];if((a<th)!==(b<th))pts.push({x:x0+lerp(a,b,th)*res,y:y0});if((b<th)!==(e<th))pts.push({x:x0+res,y:y0+lerp(b,e,th)*res});if((d<th)!==(e<th))pts.push({x:x0+lerp(d,e,th)*res,y:y0+res});if((a<th)!==(d<th))pts.push({x:x0,y:y0+lerp(a,d,th)*res});if(pts.length>=2){CTX.moveTo(pts[0].x,pts[0].y);CTX.lineTo(pts[1].x,pts[1].y);}if(pts.length===4){CTX.moveTo(pts[2].x,pts[2].y);CTX.lineTo(pts[3].x,pts[3].y);}}CTX.stroke();}CTX.globalAlpha=1;CTX.restore();}
+function drawPipes(p,t){let pipeChars=['─','│','┼','╬','╋','┤','├','┴','┬','┘','└','┐','┌','╔','╗','╚','╝','╠','╣','╦','╩','═','║','|','—'];let sp=S.spacing;for(let x=sp;x<p.width-sp;x+=sp)for(let y=sp;y<p.height-sp;y+=sp){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;let gx=p.noise((x+2)*S.noiseScale,y*S.noiseScale,t)-p.noise((x-2)*S.noiseScale,y*S.noiseScale,t);let gy=p.noise(x*S.noiseScale,(y+2)*S.noiseScale,t)-p.noise(x*S.noiseScale,(y-2)*S.noiseScale,t);let angle=Math.atan2(gy,gx);let sector=Math.round(angle/(Math.PI/4))&7;let pipeMap=[0,4,1,4,0,4,1,4];let ch=pipeChars[pipeMap[sector]||0];if(Math.random()<.15)ch=pipeChars[2+Math.floor(Math.random()*7)];let sz=p.map(n,S.density,1,6,S.maxSize);let res=pcc(p,x,y,t);dc(x,y,sz,0,res.col,ch);}}
+function drawReaction(p,t){if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8)))initReactionDiffusion(p.width,p.height);let g=rdGrid,W=rdW,H=rdH;let feed=S.reactFeed,kill=S.reactKill;let dA=1.0,dB=0.5;if(S.playing){for(let s=0;s<2;s++){for(let r=1;r<H-1;r++)for(let c=1;c<W-1;c++){let i=r*W+c;let A=g.A[i],B=g.B[i];let lapA=g.A[i-W]+g.A[i+W]+g.A[i-1]+g.A[i+1]-4*A;let lapB=g.B[i-W]+g.B[i+W]+g.B[i-1]+g.B[i+1]-4*B;let ABB=A*B*B;g.nA[i]=Math.max(0,Math.min(1,A+dA*lapA*.2-ABB+feed*(1-A)));g.nB[i]=Math.max(0,Math.min(1,B+dB*lapB*.2+ABB-(kill+feed)*B));}let tmp=g.A;g.A=g.nA;g.nA=tmp;tmp=g.B;g.B=g.nB;g.nB=tmp;}}let res=g.res;for(let r=0;r<H;r++)for(let c=0;c<W;c++){let v=g.A[r*W+c]-g.B[r*W+c];if(v<.2)continue;let x=c*res,y=r*res;let ci=Math.floor(v*S.palette.length);let col=S.palette[ci%S.palette.length];if(S.accent!=='none'&&v>.7)col=S.accent;let sz=p.map(v,.2,1,2,S.maxSize);dc(x,y,sz,0,col,pickChar(p,x,y,t));}}
+function drawVoronoi(p,t){if(!voronoiSites.length)initVoronoi(p.width,p.height);if(S.playing)voronoiSites.forEach(s=>{s.x+=s.vx*(S.speed*80+.2);s.y+=s.vy*(S.speed*80+.2);if(s.x<0||s.x>p.width)s.vx*=-1;if(s.y<0||s.y>p.height)s.vy*=-1;s.vx+=p.noise(s.x*.003,s.y*.003,t)*.04-.02;s.vy+=p.noise(s.x*.003+10,s.y*.003+10,t)*.04-.02;s.vx=Math.max(-.8,Math.min(.8,s.vx));s.vy=Math.max(-.8,Math.min(.8,s.vy));});let sp=S.spacing;for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){let minD=Infinity,nearIdx=0;for(let i=0;i<voronoiSites.length;i++){let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;let d=dx*dx+dy*dy;if(d<minD){minD=d;nearIdx=i;}}let site=voronoiSites[nearIdx];if(S.vorWire){let min2=Infinity;for(let i=0;i<voronoiSites.length;i++){if(i===nearIdx)continue;let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;let d=dx*dx+dy*dy;if(d<min2)min2=d;}let edgeFactor=Math.sqrt(min2)-Math.sqrt(minD);if(edgeFactor<12)dc(x,y,S.maxSize*.6,0,site.col,pickChar(p,x,y,t));}else{let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;dc(x,y,S.maxSize,0,site.col,pickChar(p,x,y,t));}}}
+function drawMycelium(p,t){if(!myceliumBranches.length)initMycelium(p.width,p.height);if(S.playing){let newBranches=[];myceliumBranches.forEach(b=>{b.angle+=p.noise(b.x*.008,b.y*.008,t*.3)*.4-.2;b.x+=Math.cos(b.angle)*b.speed;b.y+=Math.sin(b.angle)*b.speed;b.len+=b.speed;if(b.len>30&&b.children<b.maxChildren&&Math.random()<.02){b.children++;newBranches.push({x:b.x,y:b.y,angle:b.angle+(Math.random()-.5)*1.2,len:0,maxLen:b.maxLen*.7,speed:b.speed*.9,age:0,col:b.col,children:0,maxChildren:b.maxChildren-1});}if(b.x<0||b.x>p.width||b.y<0||b.y>p.height||b.len>b.maxLen)b.dead=true;});myceliumBranches=myceliumBranches.filter(b=>!b.dead).concat(newBranches);if(myceliumBranches.length<3)initMycelium(p.width,p.height);}myceliumBranches.forEach(b=>{let alpha=Math.min(1,b.len/20)*(1-b.len/b.maxLen);CTX.globalAlpha=Math.max(0,alpha);let sz=p.map(b.len/b.maxLen,0,1,S.maxSize*.6,2);dc(b.x,b.y,sz,b.angle,b.col,pickChar(p,b.x,b.y,t));});CTX.globalAlpha=1;}
+function drawSand(p,t){if(!sandParticles.length)initSand(p.width,p.height);let ns=S.noiseScale;sandParticles.forEach(pt=>{if(S.playing){let angle=p.noise(pt.x*ns,pt.y*ns,t*.5)*6.28*2;pt.vx=pt.vx*.92+Math.cos(angle)*S.wave*.03;pt.vy=pt.vy*.92+Math.sin(angle)*S.wave*.03;pt.vx+=(Math.random()-.5)*.3;pt.vy+=(Math.random()-.5)*.3;pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>400){pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;pt.vx=0;pt.vy=0;pt.age=0;pt.col=S.palette[Math.floor(Math.random()*S.palette.length)];}}let n=p.noise(pt.x*ns,pt.y*ns,t);if(n<S.density*.5)return;let alpha=.15+n*.4;CTX.globalAlpha=alpha;let sz=1.5+Math.random()*S.maxSize*.3;dc(pt.x,pt.y,sz,0,pt.col,pickChar(p,pt.x,pt.y,t));});CTX.globalAlpha=1;}
+function drawCellular(p,t){if(!caGrid)initCellular(p.width,p.height);let res=Math.max(4,S.spacing);if(caW!==Math.floor(p.width/res)+1||caH!==Math.floor(p.height/res)+1)initCellular(p.width,p.height);if(S.playing&&S.fc%3===0){for(let r=1;r<caH-1;r++)for(let c=1;c<caW-1;c++){let i=r*caW+c;let n=caGrid[(r-1)*caW+c-1]+caGrid[(r-1)*caW+c]+caGrid[(r-1)*caW+c+1]+caGrid[r*caW+c-1]+caGrid[r*caW+c+1]+caGrid[(r+1)*caW+c-1]+caGrid[(r+1)*caW+c]+caGrid[(r+1)*caW+c+1];if(caGrid[i]===1)caNext[i]=(n===2||n===3)?1:0;else caNext[i]=n===3?1:0;}let tmp=caGrid;caGrid=caNext;caNext=tmp;}for(let r=0;r<caH;r++)for(let c=0;c<caW;c++){if(!caGrid[r*caW+c])continue;let x=c*res,y=r*res;let n=0;if(r>0&&c>0)n+=caGrid[(r-1)*caW+c-1];if(r>0)n+=caGrid[(r-1)*caW+c];if(r>0&&c<caW-1)n+=caGrid[(r-1)*caW+c+1];if(c>0)n+=caGrid[r*caW+c-1];if(c<caW-1)n+=caGrid[r*caW+c+1];if(r<caH-1&&c>0)n+=caGrid[(r+1)*caW+c-1];if(r<caH-1)n+=caGrid[(r+1)*caW+c];if(r<caH-1&&c<caW-1)n+=caGrid[(r+1)*caW+c+1];let col=S.palette[n%S.palette.length];if(S.accent!=='none'&&n===3)col=S.accent;let sz=p.map(n,0,8,S.maxSize*.3,S.maxSize);dc(x,y,sz,0,col,pickChar(p,x,y,t));}}
+function drawInterference(p,t){let sp=S.spacing;let cx=p.width/2,cy=p.height/2;let nSrc=2+Math.floor(S.density*2);let sources=[];for(let i=0;i<nSrc;i++){let a=(i/nSrc)*6.28+t*.15;sources.push({x:cx+Math.cos(a)*p.width*.3,y:cy+Math.sin(a)*p.height*.25,freq:S.turb*8+i*.5});}for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){let sum=0;sources.forEach(src=>{let d=Math.sqrt((x-src.x)*(x-src.x)+(y-src.y)*(y-src.y));sum+=Math.sin(d*src.freq-t*3);});let v=(sum/nSrc+1)/2;if(v<.3||v>.7)continue;let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density*.5)continue;let ci=Math.floor(v*S.palette.length);let col=S.palette[ci%S.palette.length];if(S.accent!=='none'&&v>.65)col=S.accent;let sz=p.map(Math.abs(v-.5)*2,0,1,2,S.maxSize);dc(x,y,sz,v*6.28,col,pickChar(p,x,y,t));}}
+function drawCalligraphy(p,t){
+  let sp=S.spacing;
+  let nStrokes=Math.floor(p.width/(sp*8))+2;for(let si=0;si<nStrokes;si++){
+    let sx=(si/nStrokes)*p.width+Math.sin(t*.3+si)*p.width*.1;
+    let sy=p.height*.1+Math.random()*p.height*.8;
+    let angle=p.noise(sx*S.noiseScale,sy*S.noiseScale,t)*6.28;
+    let strokeLen=40+S.wave*2+Math.random()*100;
+    let maxPressure=S.maxSize;for(let step=0;step<strokeLen;step+=sp*.7){
+      let px=sx+Math.cos(angle)*step;
+      let col = pickColor(p, px, py, t);
+      if (progress < 0.1 || progress > 0.9) {
+        CTX.globalAlpha = 0.6 + pressure * 0.4;
+        dc(px, py, sz * 1.4, angle, col, pickChar(p, px, py, t));
+      } else {
+        CTX.globalAlpha = 0.8;
+        dc(px, py, sz, angle, col, pickChar(p, px, py, t));
+      }
+    }
+  }
+  CTX.globalAlpha = 1;
+}
+
+function drawLissajous(p, t) {
+  if (!lissParticles.length) initLissajous(p.width, p.height);
+  let cx = p.width / 2, cy = p.height / 2;
+  let rx = p.width * 0.42, ry = p.height * 0.42;
+  lissParticles.forEach(pt => {
+    if (S.playing) pt.phase += pt.speed * (S.speed * 50 + 0.5);
+    let x = cx + Math.cos(pt.la * pt.phase + pt.a) * rx * (1 + p.noise(pt.phase * 0.1, 0, t) * 0.15);
+    let y = cy + Math.sin(pt.lb * pt.phase) * ry * (1 + p.noise(0, pt.phase * 0.1, t) * 0.15);
+    if (x < 0 || x > p.width || y < 0 || y > p.height) return;
+    let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+    if (n < S.density * 0.4) return;
+    let sz = p.map(n, S.density * 0.4, 1, 2, S.maxSize);
+    let angle = Math.atan2(pt.lb * Math.cos(pt.lb * pt.phase), pt.la * (-Math.sin(pt.la * pt.phase + pt.a)));
+    let col = pt.col;
+    if (S.accent !== 'none' && S.accentAmt > 0 && Math.random() < S.accentAmt) col = S.accent;
+    dc(x, y, sz, angle, col, pickChar(p, x, y, t));
+  });
+}
+
+function drawWireTerrain(p, t) {
+  let W = p.width, H = p.height;
+  if (!wtHeightmap) initWireTerrain(p, W, H);
+  let res = Math.max(8, Math.floor(S.spacing * 1.5));
+  if (wtW !== Math.floor(W / res) + 1 || wtH !== Math.floor(H / res) + 1) initWireTerrain(p, W, H);
+  let camAngle = t * S.speed * 40;
+  let camAlt = 0.35 + Math.sin(t * S.speed * 15) * 0.12;
+  let cosA = Math.cos(camAngle), sinA = Math.sin(camAngle);
+  let cosE = Math.cos(camAlt * Math.PI * 0.5), sinE = Math.sin(camAlt * Math.PI * 0.5);
+  function project(gx, gy, gz) {
+    let rx = gx * cosA - gy * sinA;
+    let ry = gx * sinA + gy * cosA;
+    let rz = gz;
+    let px2 = rx * cosE - rz * sinE;
+    let py2 = ry;
+    let pz2 = rx * sinE + rz * cosE + 1.8;
+    let scale = W * 0.55 / pz2;
+    return { sx: W / 2 + px2 * scale, sy: H * 0.55 - py2 * scale * 0.7 };
+  }
+  let ns = S.noiseScale * 0.5;
+  let roughness = 0.5 + S.wave * 0.008;
+  for (let row = 0; row < wtH; row++) for (let col = 0; col < wtW; col++) {
+    let x = col / (wtW - 1), y = row / (wtH - 1);
+    let n = p.noise(x * 3 * roughness + t * 0.3, y * 3 * roughness + t * 0.2);
+    n += 0.5 * p.noise(x * 6 * roughness + t * 0.2, y * 6 * roughness + t * 0.15);
+    wtHeightmap[row * wtW + col] = n / 1.5;
+  }
+  CTX.save();
+  CTX.lineWidth = 0.8;
+  CTX.lineCap = 'round';
+  for (let row = 0; row < wtH - 1; row++) for (let col = 0; col < wtW - 1; col++) {
+    let h00 = wtHeightmap[row * wtW + col];
+    let h10 = wtHeightmap[row * wtW + col + 1];
+    let h01 = wtHeightmap[(row + 1) * wtW + col];
+    let h11 = wtHeightmap[(row + 1) * wtW + col + 1];
+    let gx0 = (col / (wtW - 1)) * 2 - 1, gy0 = (row / (wtH - 1)) * 2 - 1;
+    let gx1 = ((col + 1) / (wtW - 1)) * 2 - 1, gy1 = ((row + 1) / (wtH - 1)) * 2 - 1;
+    let p00 = project(gx0, gy0, h00 * 0.6);
+    let p10 = project(gx1, gy0, h10 * 0.6);
+    let p01 = project(gx0, gy1, h01 * 0.6);
+    let p11 = project(gx1, gy1, h11 * 0.6);
+    let avgH = (h00 + h10 + h01 + h11) / 4;
+    let ci = Math.floor(avgH * S.palette.length) % S.palette.length;
+    let col2 = S.palette[ci];
+    if (S.accent !== 'none' && S.accentAmt > 0 && avgH > (1 - S.accentAmt * 0.8)) col2 = S.accent;
+    CTX.globalAlpha = 0.5 + avgH * 0.45;
+    CTX.strokeStyle = col2;
+    CTX.beginPath(); CTX.moveTo(p00.sx, p00.sy); CTX.lineTo(p10.sx, p10.sy); CTX.lineTo(p01.sx, p01.sy); CTX.closePath(); CTX.stroke();
+    CTX.beginPath(); CTX.moveTo(p10.sx, p10.sy); CTX.lineTo(p11.sx, p11.sy); CTX.lineTo(p01.sx, p01.sy); CTX.closePath(); CTX.stroke();
+    if (Math.random() < S.density * 0.08) {
+      let pv = project(gx0, gy0, h00 * 0.6);
+      let ch = pickChar(p, col * res, row * res, t);
+      let sz = p.map(h00, 0, 1, 3, S.maxSize * 0.6);
+      CTX.fillStyle = col2;
+      CTX.font = (sz | 0) + 'px ' + S.fontStack;
+      CTX.fillText(ch, pv.sx, pv.sy);
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+  _lastFont = ''; _lastFill = '';
+}
+
+function drawFractalSubdiv(p, t) {
+  let W = p.width, H = p.height;
+  if (!fsPolygons.length) initFractalSubdiv(p, W, H);
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+  let globalRot = t * S.speed * 0.3;
+  let cx = W / 2, cy = H / 2;
+  fsPolygons.forEach((poly, idx) => {
+    if (!poly.pts || poly.pts.length < 2) return;
+    let depth = poly.depth || 0;
+    let alpha = 0.2 + depth * 0.1 + Math.sin(t * 2 + idx) * 0.05;
+    let col = poly.col;
+    let strokeW = Math.max(0.5, (3 - depth * 0.3) + Math.sin(t * 3 + idx) * 0.5);
+    CTX.beginPath();
+    for (let i = 0; i < poly.pts.length; i++) {
+      let pt = poly.pts[i];
+      let dispX = p.noise(pt.x * 0.01, pt.y * 0.01, t * 0.5 + depth) * S.wave * 0.08;
+      let dispY = p.noise(pt.x * 0.01 + 100, pt.y * 0.01 + 100, t * 0.5 + depth) * S.wave * 0.08;
+      let dx = pt.x + dispX - cx;
+      let dy = pt.y + dispY - cy;
+      let rx = dx * Math.cos(globalRot) - dy * Math.sin(globalRot);
+      let ry = dx * Math.sin(globalRot) + dy * Math.cos(globalRot);
+      let x2 = cx + rx, y2 = cy + ry;
+      if (i === 0) CTX.moveTo(x2, y2);
+      else CTX.lineTo(x2, y2);
+    }
+    CTX.closePath();
+    CTX.strokeStyle = col;
+    CTX.lineWidth = strokeW;
+    CTX.globalAlpha = alpha;
+    CTX.stroke();
+    if (depth > 1 && S.density > 0.3) {
+      CTX.fillStyle = col;
+      CTX.globalAlpha = alpha * 0.3;
+      CTX.fill();
+    }
+  });
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawTruchet(p, t) {
+  let W = p.width, H = p.height;
+  let sz = Math.max(8, S.spacing * 1.8);
+  let cols = Math.ceil(W / sz) + 1, rows = Math.ceil(H / sz) + 1;
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineWidth = Math.max(0.5, S.maxSize * 0.04);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let tx = c * sz, ty = r * sz;
+      let n = p.noise(c * S.noiseScale * 4, r * S.noiseScale * 4, t * 0.08);
+      let flip = n > 0.5;
+      let ci = Math.floor(p.noise(c * S.noiseScale * 2, r * S.noiseScale * 2, t * 0.05) * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && Math.random() < S.accentAmt * 0.25) col = S.accent;
+      CTX.strokeStyle = col;
+      CTX.globalAlpha = 0.55 + n * 0.45;
+      CTX.beginPath();
+      if (flip) {
+        CTX.arc(tx, ty + sz, sz, Math.PI * 1.5, 0);
+        CTX.moveTo(tx + sz, ty);
+        CTX.arc(tx + sz, ty + sz, sz, Math.PI, Math.PI * 1.5);
+      } else {
+        CTX.arc(tx, ty, sz, 0, Math.PI * 0.5);
+        CTX.moveTo(tx + sz, ty + sz);
+        CTX.arc(tx + sz, ty, sz, Math.PI * 0.5, Math.PI);
+      }
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawHatch2(p, t) {
+  let W = p.width, H = p.height;
+  let lineGap = Math.max(2, S.spacing * 0.6);
+  let nLines = Math.ceil(Math.max(W, H) / lineGap) + 2;
+  let ns = S.noiseScale * 2;
+  let amp = S.wave * 1.2;
+  let lw = Math.max(0.3, S.maxSize * 0.04);
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineWidth = lw;
+  let passes = S.wave > 40 ? 2 : 1;
+  for (let pass = 0; pass < passes; pass++) {
+    let baseAngle = S.hatchAngle * Math.PI / 180 + (pass === 0 ? 0 : Math.PI / 2);
+    let ci = pass === 0 ? 0 : Math.floor(S.palette.length / 2);
+    for (let li = 0; li < nLines; li++) {
+      let progress = li / nLines;
+      let col = S.palette[(ci + Math.floor(progress * S.palette.length)) % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && li % Math.ceil(nLines / 5) === 0) col = S.accent;
+      CTX.strokeStyle = col;
+      CTX.globalAlpha = 0.4 + p.noise(progress, t * 0.05) * 0.5;
+      let perpOffset = li * lineGap - Math.max(W, H) * 0.05;
+      CTX.beginPath();
+      let steps = Math.ceil(Math.max(W, H) / Math.max(4, S.spacing * 0.3)) + 1;
+      for (let si = 0; si <= steps; si++) {
+        let along = (si / steps) * Math.max(W, H) * 1.1 - Math.max(W, H) * 0.05;
+        let nx = pass === 0 ? along : perpOffset;
+        let ny = pass === 0 ? perpOffset : along;
+        let curv = (p.noise(nx * ns * 0.5 + t * 0.05, ny * ns * 0.5 + pass * 5) - 0.5) * amp * 2;
+        if (S.entropy > 0 && Math.random() < S.entropy * 0.15) {
+          CTX.stroke(); CTX.beginPath();
+          si += Math.floor(Math.random() * 3) + 1; continue;
+        }
+        let px2 = pass === 0 ? along : perpOffset + curv;
+        let py2 = pass === 0 ? perpOffset + curv : along;
+        if (si === 0) CTX.moveTo(px2, py2);
+        else CTX.lineTo(px2, py2);
+      }
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawWarpGrid(p, t) {
+  let W = p.width, H = p.height;
+  let sp = Math.max(8, S.spacing * 1.4);
+  let cols = Math.ceil(W / sp) + 2, rows = Math.ceil(H / sp) + 2;
+  let ns = S.noiseScale * 3;
+  let disp = S.wave * 1.5;
+  let pts = [];
+  for (let r = 0; r <= rows; r++) {
+    pts.push([]);
+    for (let c = 0; c <= cols; c++) {
+      let bx = (c - 1) * sp, by = (r - 1) * sp;
+      let dx = (p.noise(bx * ns, by * ns, t * 0.2) - 0.5) * disp * 2;
+      let dy = (p.noise(bx * ns + 100, by * ns + 100, t * 0.2) - 0.5) * disp * 2;
+      pts[r].push({ x: bx + dx, y: by + dy });
+    }
+  }
+  CTX.save();
+  CTX.lineWidth = Math.max(0.4, S.maxSize * 0.035);
+  CTX.lineCap = 'round';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let p00 = pts[r][c], p10 = pts[r][c + 1], p01 = pts[r + 1][c], p11 = pts[r + 1][c + 1];
+      let avgX = (p00.x + p10.x + p01.x + p11.x) / 4;
+      let avgY = (p00.y + p10.y + p01.y + p11.y) / 4;
+      if (avgX < -sp * 2 || avgX > W + sp * 2 || avgY < -sp * 2 || avgY > H + sp * 2) continue;
+      let ci = Math.floor(p.noise(c * S.noiseScale * 2, r * S.noiseScale * 2, t * 0.1) * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && (r + c) % Math.ceil(1 / S.accentAmt + 1) === 0) col = S.accent;
+      CTX.strokeStyle = col;
+      CTX.globalAlpha = 0.5 + p.noise(c * ns * 0.5, r * ns * 0.5, t * 0.15) * 0.4;
+      CTX.beginPath();
+      CTX.moveTo(p00.x, p00.y); CTX.lineTo(p10.x, p10.y);
+      CTX.moveTo(p00.x, p00.y); CTX.lineTo(p01.x, p01.y);
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawIsoContour(p, t) {
+  let W = p.width, H = p.height;
+  let res = Math.max(3, Math.floor(S.spacing * 0.6));
+  let cols = Math.ceil(W / res) + 1, rows = Math.ceil(H / res) + 1;
+  let nLevels = 4 + Math.floor((1 - S.density) * 12);
+  let ns = S.noiseScale;
+  let lw = Math.max(0.4, S.maxSize * 0.03);
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+  let field = new Float32Array(rows * cols);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) field[r * cols + c] = p.noise(c * res * ns, r * res * ns, t * 0.12);
+  for (let lv = 0; lv < nLevels; lv++) {
+    let level = (lv + 1) / (nLevels + 1);
+    level += Math.sin(t * 0.3 + lv * 0.8) * 0.025;
+    level = Math.max(0.05, Math.min(0.95, level));
+    let ci = Math.floor((lv / nLevels) * S.palette.length) % S.palette.length;
+    let col = S.palette[ci];
+    if (S.accent !== 'none' && lv === 0) col = S.accent;
+    CTX.strokeStyle = col;
+    CTX.lineWidth = lv === 0 ? lw * 1.8 : lv === nLevels - 1 ? lw * 1.4 : lw;
+    CTX.globalAlpha = 0.4 + 0.5 * (1 - Math.abs(lv - nLevels / 2) / (nLevels / 2));
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        let f00 = field[r * cols + c], f10 = field[r * cols + c + 1];
+        let f01 = field[(r + 1) * cols + c], f11 = field[(r + 1) * cols + c + 1];
+        let bitmask = ((f00 > level) ? 1 : 0) | ((f10 > level) ? 2 : 0) | ((f01 > level) ? 4 : 0) | ((f11 > level) ? 8 : 0);
+        if (bitmask === 0 || bitmask === 15) continue;
+        function interp(fa, fb, x0, y0, x1, y1) {
+          let t2 = (fa === fb) ? 0.5 : (level - fa) / (fb - fa);
+          return { x: x0 + (x1 - x0) * t2, y: y0 + (y1 - y0) * t2 };
+        }
+        let x0 = c * res, y0 = r * res, x1 = (c + 1) * res, y1 = (r + 1) * res;
+        let e0 = interp(f00, f10, x0, y0, x1, y0);
+        let e1 = interp(f10, f11, x1, y0, x1, y1);
+        let e2 = interp(f01, f11, x0, y1, x1, y1);
+        let e3 = interp(f00, f01, x0, y0, x0, y1);
+        CTX.beginPath();
+        switch (bitmask) {
+          case 1: case 14: CTX.moveTo(e0.x, e0.y); CTX.lineTo(e3.x, e3.y); break;
+          case 2: case 13: CTX.moveTo(e0.x, e0.y); CTX.lineTo(e1.x, e1.y); break;
+          case 3: case 12: CTX.moveTo(e3.x, e3.y); CTX.lineTo(e1.x, e1.y); break;
+          case 4: case 11: CTX.moveTo(e2.x, e2.y); CTX.lineTo(e3.x, e3.y); break;
+          case 5: CTX.moveTo(e0.x, e0.y); CTX.lineTo(e3.x, e3.y); CTX.moveTo(e2.x, e2.y); CTX.lineTo(e1.x, e1.y); break;
+          case 6: case 9: CTX.moveTo(e0.x, e0.y); CTX.lineTo(e2.x, e2.y); break;
+          case 7: case 8: CTX.moveTo(e1.x, e1.y); CTX.lineTo(e2.x, e2.y); break;
+          case 10: CTX.moveTo(e0.x, e0.y); CTX.lineTo(e1.x, e1.y); CTX.moveTo(e2.x, e2.y); CTX.lineTo(e3.x, e3.y); break;
+        }
+        CTX.stroke();
+      }
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawTesseract(p, t) {
+  let W = p.width, H = p.height;
+  let cx = W / 2, cy = H / 2;
+  let scale = Math.min(W, H) * 0.28 * (0.7 + S.wave * 0.004);
+  let verts4D = [];
+  for (let i = 0; i < 16; i++) verts4D.push([(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1]);
+  let edges = [];
+  for (let a = 0; a < 16; a++) for (let b = a + 1; b < 16; b++) { let diff = (a ^ b); if (diff && (diff & (diff - 1)) === 0) edges.push([a, b]); }
+  let a1 = t * S.speed * 80, a2 = t * S.speed * 55, a3 = t * S.speed * 33;
+  function rot4(v) {
+    let [x, y, z, w] = v;
+    let x1 = x * Math.cos(a1) - y * Math.sin(a1), y1 = x * Math.sin(a1) + y * Math.cos(a1);
+    let z1 = z * Math.cos(a2) - w * Math.sin(a2), w1 = z * Math.sin(a2) + w * Math.cos(a2);
+    let x2 = x1 * Math.cos(a3) - z1 * Math.sin(a3), z2 = x1 * Math.sin(a3) + z1 * Math.cos(a3);
+    return [x2, y1, z2, w1];
+  }
+  function proj4to3(v) { let [x, y, z, w] = v; let d = 2.5; let wFac = d / (d - w); return [x * wFac, y * wFac, z * wFac]; }
+  function proj3to2(v) { let [x, y, z] = v; let d = 3.5; let zFac = d / (d - z); return [x * zFac * scale + cx, y * zFac * scale + cy, zFac]; }
+  let proj = verts4D.map(v => proj3to2(proj4to3(rot4(v))));
+  CTX.save();
+  edges.forEach((e, ei) => {
+    let pa = proj[e[0]], pb = proj[e[1]];
+    if (pa[2] < 0.1 || pb[2] < 0.1) return;
+    let isInner = ((e[0] & 8) === 0 && (e[1] & 8) === 0);
+    let isOuter = ((e[0] & 8) === 8 && (e[1] & 8) === 8);
+    let colIdx = isInner ? 0 : isOuter ? Math.floor(S.palette.length / 2) : Math.floor(ei / edges.length * S.palette.length);
+    let col = S.palette[colIdx % S.palette.length];
+    if (isInner && S.accent !== 'none') col = S.accent;
+    let alpha = (pa[2] + pb[2]) * 0.25;
+    CTX.strokeStyle = col;
+    CTX.globalAlpha = Math.min(1, alpha);
+    CTX.lineWidth = isInner ? 1.8 : isOuter ? 1.2 : 0.7;
+    CTX.beginPath(); CTX.moveTo(pa[0], pa[1]); CTX.lineTo(pb[0], pb[1]); CTX.stroke();
+  });
+  proj.forEach((pv, i) => {
+    if (pv[2] < 0.1) return;
+    let sz = Math.max(4, Math.min(S.maxSize, (pv[2] - 0.5) * S.maxSize * 0.8));
+    let col = S.palette[i % S.palette.length];
+    if (i === 0 && S.accent !== 'none') col = S.accent;
+    CTX.globalAlpha = Math.min(1, pv[2] * 0.7);
+    let ch = pickChar(p, pv[0], pv[1], t);
+    CTX.font = (sz | 0) + 'px ' + S.fontStack;
+    CTX.fillStyle = col;
+    CTX.fillText(ch, pv[0], pv[1]);
+  });
+  CTX.globalAlpha = 1;
+  CTX.restore();
+  _lastFont = ''; _lastFill = '';
+}
+
+function drawHypersphere(p, t) {
+  let W = p.width, H = p.height;
+  let cx = W / 2, cy = H / 2;
+  let R = Math.min(W, H) * 0.3 * (0.8 + S.wave * 0.005);
+  let a1 = t * S.speed * 60, a2 = t * S.speed * 40, a3 = t * S.speed * 25;
+  function rot4(x, y, z, w) {
+    let x1 = x * Math.cos(a1) - y * Math.sin(a1), y1 = x * Math.sin(a1) + y * Math.cos(a1);
+    let z1 = z * Math.cos(a2) - w * Math.sin(a2), w1 = z * Math.sin(a2) + w * Math.cos(a2);
+    let x2 = x1 * Math.cos(a3) - w1 * Math.sin(a3), w2 = x1 * Math.sin(a3) + w1 * Math.cos(a3);
+    return [x2, y1, z1, w2];
+  }
+  let stepsU = Math.floor(12 + S.density * 8);
+  let stepsV = Math.floor(12 + S.density * 8);
+  let stepsW = 6;
+  for (let ui = 0; ui < stepsU; ui++) {
+    for (let vi = 0; vi < stepsV; vi++) {
+      if (Math.random() > (1 - S.density * 0.08) && S.density > 0.4) continue;
+      let u = (ui / stepsU) * Math.PI * 2;
+      let v = (vi / stepsV) * Math.PI;
+      for (let wi = 0; wi < stepsW; wi++) {
+        let phi = (wi / stepsW) * Math.PI;
+        let x4 = Math.sin(phi) * Math.sin(v) * Math.cos(u);
+        let y4 = Math.sin(phi) * Math.sin(v) * Math.sin(u);
+        let z4 = Math.sin(phi) * Math.cos(v);
+        let w4 = Math.cos(phi);
+        let [rx, ry, rz, rw] = rot4(x4, y4, z4, w4);
+        let denom = 2 - rw;
+        if (Math.abs(denom) < 0.05) continue;
+        let sx = cx + rx / denom * R;
+        let sy = cy + ry / denom * R;
+        let depth = (rz / denom + 1) / 2;
+        if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
+        let sz = Math.max(2, depth * S.maxSize * 0.8);
+        let ci = Math.floor((ui * stepsV + vi) / (stepsU * stepsV) * S.palette.length) % S.palette.length;
+        let col = S.palette[ci];
+        if (wi === 0 && S.accent !== 'none') col = S.accent;
+        CTX.globalAlpha = 0.2 + depth * 0.7;
+        let ch = pickChar(p, sx, sy, t);
+        CTX.font = (sz | 0) + 'px ' + S.fontStack;
+        CTX.fillStyle = col;
+        CTX.fillText(ch, sx, sy);
+      }
+    }
+  }
+  CTX.globalAlpha = 1;
+  _lastFont = ''; _lastFill = '';
+}
+
+function drawHypercube5D(p, t) {
+  let W = p.width, H = p.height;
+  let cx = W / 2, cy = H / 2;
+  let scale = Math.min(W, H) * 0.22;
+  let verts5D = [];
+  for (let i = 0; i < 32; i++) verts5D.push([(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1, (i & 16) ? 1 : -1]);
+  let edges = [];
+  for (let a = 0; a < 32; a++) for (let b = a + 1; b < 32; b++) { let diff = (a ^ b); if (diff && (diff & (diff - 1)) === 0) edges.push([a, b]); }
+  let a1 = t * S.speed * 70, a2 = t * S.speed * 50, a3 = t * S.speed * 35;
+  function rot5(v) {
+    let [x, y, z, w, v5] = v;
+    let x1 = x * Math.cos(a1) - y * Math.sin(a1), y1 = x * Math.sin(a1) + y * Math.cos(a1);
+    let z1 = z * Math.cos(a2) - w * Math.sin(a2), w1 = z * Math.sin(a2) + w * Math.cos(a2);
+    let x2 = x1 * Math.cos(a3) - v5 * Math.sin(a3), v5r = x1 * Math.sin(a3) + v5 * Math.cos(a3);
+    return [x2, y1, z1, w1, v5r];
+  }
+  function proj5to2(v) {
+    let [x, y, z, w, v5] = v;
+    let d1 = 2.8, d2 = 2.5;
+    let scale1 = d1 / (d1 - w);
+    let scale2 = d2 / (d2 - v5);
+    let finalScale = scale1 * scale2 * scale;
+    return { x: cx + x * finalScale, y: cy + y * finalScale };
+  }
+  let projected = verts5D.map(v => proj5to2(rot5(v)));
+  CTX.save();
+  CTX.lineWidth = 0.8;
+  edges.forEach(edge => {
+    let p1 = projected[edge[0]], p2 = projected[edge[1]];
+    if (!p1 || !p2) return;
+    CTX.beginPath(); CTX.moveTo(p1.x, p1.y); CTX.lineTo(p2.x, p2.y);
+    CTX.strokeStyle = S.palette[edge[0] % S.palette.length];
+    CTX.globalAlpha = 0.4;
+    CTX.stroke();
+  });
+  projected.forEach((p, i) => {
+    let sz = 8 + Math.sin(t * 3 + i) * 2;
+    let ch = pickChar(p, p.x, p.y, t);
+    CTX.globalAlpha = 0.8;
+    CTX.font = (sz | 0) + 'px ' + S.fontStack;
+    CTX.fillStyle = S.palette[i % S.palette.length];
+    CTX.fillText(ch, p.x, p.y);
+  });
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
+function drawBoids(p, t) {
+  let W = p.width, H = p.height;
+  if (!boidAgents.length) {
+    boidAgents = [];
+    let n = Math.floor(30 + S.density * 120);
+    for (let i = 0; i < n; i++) {
+      let a = Math.random() * 6.28;
+      boidAgents.push({ x: Math.random() * W, y: Math.random() * H, vx: Math.cos(a) * 1.5, vy: Math.sin(a) * 1.5, ci: Math.floor(Math.random() * 8) });
+    }
+  }
+  let n = boidAgents.length;
+  let perception = S.spacing * 4 + 20;
+  let maxSpd = S.speed * 600 + 1.5;
+  let sep = S.wave * 0.015 + 0.8;
+  let aln = 0.06, coh = 0.004;
+  if (S.playing) {
+    for (let i = 0; i < n; i++) {
+      let b = boidAgents[i];
+      let sx = 0, sy = 0, ax = 0, ay = 0, cohx = 0, cohy = 0, count = 0;
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        let o = boidAgents[j];
+        let dx = o.x - b.x, dy = o.y - b.y;
+        let d2 = dx * dx + dy * dy;
+        if (d2 > perception * perception) continue;
+        let d = Math.sqrt(d2) + 0.001;
+        sx -= dx / d2; sy -= dy / d2;
+        ax += o.vx; ay += o.vy;
+        cohx += o.x; cohy += o.y;
+        count++;
+      }
+      if (count > 0) {
+        ax /= count; ay /= count;
+        cohx = cohx / count - b.x; cohy = cohy / count - b.y;
+        b.vx += sx * sep + ax * aln + cohx * coh;
+        b.vy += sy * sep + ay * aln + cohy * coh;
+      }
+      let spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
+      if (spd > maxSpd) { b.vx = b.vx / spd * maxSpd; b.vy = b.vy / spd * maxSpd; }
+      b.x += b.vx; b.y += b.vy;
+      if (b.x < 0) b.x = W; if (b.x > W) b.x = 0;
+      if (b.y < 0) b.y = H; if (b.y > H) b.y = 0;
+    }
+  }
+  boidAgents.forEach((b, i) => {
+    let col = S.palette[(b.ci + Math.floor(i / n * S.palette.length)) % S.palette.length];
+    if (i < 3 && S.accent !== 'none') col = S.accent;
+    let sz = S.maxSize * 0.4 + Math.min(S.maxSize * 0.5, Math.sqrt(b.vx * b.vx + b.vy * b.vy) * S.maxSize * 0.15);
+    let rot = Math.atan2(b.vy, b.vx);
+    let ch = pickChar(p, b.x, b.y, t);
+    CTX.globalAlpha = 0.75 + Math.random() * 0.2;
+    dc(b.x, b.y, sz, rot, col, ch);
+  });
+  CTX.globalAlpha = 1;
+}
+
+function drawMagnetic(p, t) {
+  let W = p.width, H = p.height;
+  if (!magneticPoles.length) {
+    magneticPoles = [];
+    for (let i = 0; i < S.magPoles; i++) magneticPoles.push({ x: Math.random() * W, y: Math.random() * H, sign: Math.random() > 0.5 ? 1 : -1 });
+  }
+  if (S.playing) {
+    let angle = S.fc * S.speed * 0.8;
+    let cx2 = W * 0.5, cy2 = H * 0.5;
+    magneticPoles.forEach((pole, i) => {
+      let dist = Math.sqrt((pole.x - cx2) * (pole.x - cx2) + (pole.y - cy2) * (pole.y - cy2));
+      let baseAngle = Math.atan2(pole.y - cy2, pole.x - cx2);
+      let rotAngle = baseAngle + angle * (i % 2 === 0 ? 1 : -1) * 0.015;
+      pole.x = cx2 + Math.cos(rotAngle) * dist;
+      pole.y = cy2 + Math.sin(rotAngle) * dist;
+    });
+  }
+  let sp = S.spacing;
+  for (let x = sp / 2; x < W; x += sp) for (let y = sp / 2; y < H; y += sp) {
+    let vx = 0, vy = 0;
+    magneticPoles.forEach(pole => {
+      let dx = x - pole.x, dy = y - pole.y;
+      let d2 = dx * dx + dy * dy + 100;
+      let f = pole.sign * 1000 / d2;
+      vx += dx * f; vy += dy * f;
+    });
+    let mag = Math.sqrt(vx * vx + vy * vy);
+    if (mag > 0.01) {
+      let angle = Math.atan2(vy, vx);
+      let r = pcc(p, x, y, t);
+      dc(x, y, p.map(mag, 0, 0.5, 2, S.maxSize), angle, r.col, r.ch);
+    }
+  }
+}
+
+function drawOverlay(p, t) {
+  if (!S.overlayEnabled || !S.overlayStreams.length) return;
+  S.overlayStreams.forEach((stream, si) => {
+    let txt = stream.text; if (!txt || !txt.length) return;
+    let col = stream.color === 'palette' ? S.palette[si % S.palette.length] : stream.color;
+    let sz = S.overlaySize, kern = S.overlayKern;
+    CTX.font = sz + 'px ' + S.fontStack;
+    CTX.globalAlpha = S.overlayAlpha / 100;
+    let step = sz + kern;
+    let off = (t * S.overlaySpeed * 40 + (stream.offset || 0)) % (txt.length * step + p.width);
+    let dir = S.overlayDir;
+    if (dir === 'vert') {
+      let voff = (t * S.overlaySpeed * 30 + (stream.offset || 0)) % (txt.length * step + p.height);
+      let xPos = p.width * 0.15 + si * (p.width * 0.2);
+      for (let ci = 0; ci < txt.length + Math.ceil(p.height / step) + 2; ci++) {
+        let cy = ci * step - voff % ((txt.length + 1) * step);
+        if (cy < -sz || cy > p.height + sz) continue;
+        let ch = txt[ci % txt.length];
+        if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+        let dx = S.overlayDistort > 0 ? Math.sin(cy * 0.05 + t * 2) * S.overlayDistort : 0;
+        CTX.fillStyle = col;
+        CTX.fillText(ch, xPos + dx, cy);
+      }
+    } else {
+      let yPos = p.height * 0.2 + si * (p.height * 0.18);
+      let mult = dir === 'rtl' ? -1 : 1;
+      let xOff = dir === 'rtl' ? p.width - off % ((txt.length + 1) * step + p.width) : -(off % (txt.length * step + p.width));
+      if (dir === 'alt') xOff = (si % 2 === 0) ? -(off % (txt.length * step + p.width)) : p.width - off % ((txt.length + 1) * step + p.width);
+      for (let ci = 0; ci < txt.length + Math.ceil(p.width / step) + 2; ci++) {
+        let cx = xOff + ci * step * mult;
+        if (cx < -sz || cx > p.width + sz) continue;
+        let ch = txt[ci % txt.length];
+        if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+        let dy = S.overlayWave > 0 ? Math.sin(cx * 0.04 + t * 1.5) * S.overlayWave * 0.4 : 0;
+        let dx = S.overlayDistort > 0 ? Math.sin(yPos * 0.05 + t * 2) * S.overlayDistort : 0;
+        CTX.fillStyle = col;
+        CTX.fillText(ch, cx + dx, yPos + dy);
+      }
+    }
+  });
+  CTX.globalAlpha = 1;
+}
+
+function drawWorms(p, t) {
+  if (!wormAgents.length) {
+    wormAgents = [];
+    let n = Math.floor(20 + S.density * 40);
+    for (let i = 0; i < n; i++) wormAgents.push({ x: Math.random() * p.width, y: Math.random() * p.height, angle: Math.random() * 6.28, col: S.palette[i % S.palette.length], history: [] });
+  }
+  wormAgents.forEach(w => {
+    if (S.playing) {
+      w.angle += (p.noise(w.x * 0.01, w.y * 0.01, t * 0.1) - 0.5) * 0.5;
+      w.x += Math.cos(w.angle) * S.speed * 400;
+      w.y += Math.sin(w.angle) * S.speed * 400;
+      if (w.x < 0) w.x = p.width; if (w.x > p.width) w.x = 0;
+      if (w.y < 0) w.y = p.height; if (w.y > p.height) w.y = 0;
+      w.history.push({ x: w.x, y: w.y }); if (w.history.length > 15) w.history.shift();
+    }
+    w.history.forEach((pos, idx) => {
+      let sz = p.map(idx, 0, 15, 2, S.maxSize);
+      let angle = w.angle + Math.sin(idx) * 0.5;
+      dc(pos.x, pos.y, sz, angle, w.col, pickChar(p, pos.x, pos.y, t));
+    });
+  });
+}
+
+function drawSand(p, t) { if (!sandParticles.length) initSand(p.width, p.height); drawSand(p, t); } // placeholder
+function drawCellular(p, t) { if (!caGrid) initCellular(p.width, p.height); drawCellular(p, t); }
+function drawInterference(p, t) { drawInterference(p, t); }
+function drawCalligraphy(p, t) { drawCalligraphy(p, t); }
+function drawLissajous(p, t) { if (!lissParticles.length) initLissajous(p.width, p.height); drawLissajous(p, t); }
+function drawWFC(p, t) { drawBloom(p, t); } // placeholder for WFC mode
+
+// ---------- UI HELPERS ----------
+function wireSlider(slId, vId, key, mapFn, extra) {
+  let sl = document.getElementById(slId), vl = document.getElementById(vId);
+  if (!sl || !vl) return;
+  sl.addEventListener('input', function () {
+    let val = parseFloat(this.value);
+    let finalVal = mapFn ? mapFn(val) : val;
+    vl.textContent = mapFn ? finalVal.toFixed(3).replace(/\.?0+$/, "") : val;
+    S[key] = finalVal;
+    if (extra) extra();
+    window._st.rd();
+  });
+}
+
+function toggleSec(id) {
+  let body = document.getElementById('body-' + id), arr = document.getElementById('arr-' + id);
+  if (body) body.classList.toggle('collapsed');
+  if (arr) arr.classList.toggle('open');
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  toast.textContent = msg; toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ---------- P5 SKETCH ----------
+new p5(function (p) {
+  let W, H;
+  function resize(w, h) {
+    if (w === 'fill') { let wrap = document.getElementById('canvas-wrap'); W = wrap.offsetWidth; H = wrap.offsetHeight; }
+    else { W = w || 800; H = h || 600; }
+    p.resizeCanvas(W, H); CTX = p.drawingContext; ri(); rd();
+  }
+  function ri() {
+    initRain(W, H); initTess(W, H); initMatrix(W, H); initShatter(W, H); initLoops(W, H);
+    initReactionDiffusion(W, H); initVoronoi(W, H); initMycelium(W, H); initSand(W, H);
+    initCellular(W, H); initMagnetic(W, H); initWorms(W, H); initLissajous(W, H);
+    initWireTerrain(p, W, H); initFractalSubdiv(p, W, H);
+    if (S.compEnabled) buildComp(S.compPreset, W, H);
+  }
+  function rd() { p.redraw(); }
+  window._st = {
+    rd: rd, ri: ri, play: function () { S.playing = !S.playing; if (S.playing) p.loop(); else p.noLoop(); return S.playing; },
+    regen: function () { ri(); rd(); }, rsz: resize, w: function () { return W; }, h: function () { return H; }, p: p
+  };
+  p.setup = function () {
+    let wrap = document.getElementById('canvas-wrap'); W = wrap.offsetWidth; H = wrap.offsetHeight;
+    p.createCanvas(W, H).parent('canvas-wrap'); CTX = p.drawingContext; CTX.textBaseline = 'middle'; p.noLoop(); ri(); rd();
+  };
+  p.draw = function () {
+    S.fc++; let t = S.fc * S.speed;
+    if (S.trailPersist > 0) { CTX.fillStyle = S.bg; CTX.globalAlpha = 1 - S.trailPersist / 100; CTX.fillRect(0, 0, W, H); CTX.globalAlpha = 1; }
+    else { CTX.fillStyle = S.bg; CTX.fillRect(0, 0, W, H); }
+    CTX.textAlign = 'left'; CTX.textBaseline = 'middle';
+    CTX.globalCompositeOperation = S.blendMode || 'source-over';
+    _lastFont = ''; _lastFill = '';
+    if (S.signalCollapse && S.playing) { let elapsed = S.fc - S.signalStart; if (elapsed < 80) { let scanY = p.map(elapsed, 0, 80, 0, H); CTX.fillStyle = 'rgba(230,57,70,0.12)'; CTX.fillRect(0, scanY - 2, W, 4); } }
+    switch (S.mode) {
+      case 'bloom': drawBloom(p, t); break; case 'wave': drawWave(p, t); break; case 'rain1': drawRain1(p, t); break;
+      case 'rain2': drawRain2(p, t); break; case 'vortex': drawVortex(p, t); break; case 'ripple': drawRipple(p, t); break;
+      case 'drift': drawDrift(p, t); break; case 'tess': drawTess(p, t); break; case 'warp': drawWarp(p, t); break;
+      case 'glitch': drawGlitch(p, t); break; case 'webster': drawWebster(p, t); break; case 'matrix': drawMatrix(p, t); break;
+      case 'orbit': drawOrbit(p, t); break; case 'spiral': drawSpiral(p, t); break; case 'scan': drawScan(p, t); break;
+      case 'halftone': drawHalftone(p, t); break; case 'shatter': drawShatter(p, t); break; case 'weave': drawWeave(p, t); break;
+      case 'topo': drawTopo(p, t); break; case 'recursive': drawRecursive(p, t); break; case 'contour': drawContour(p, t); break;
+      case 'fabric': drawFabric(p, t); break; case 'loops': drawLoops(p, t); break; case 'imgtext': drawImgText(p, t); break;
+      case 'pipes': drawPipes(p, t); break; case 'calligraphy': drawCalligraphy(p, t); break; case 'lissajous': drawLissajous(p, t); break;
+      case 'reaction': drawReaction(p, t); break; case 'cellular': drawCellular(p, t); break; case 'interference': drawInterference(p, t); break;
+      case 'worms': drawWorms(p, t); break; case 'wfc': drawWFC(p, t); break; case 'truchet': drawTruchet(p, t); break;
+      case 'hatch2': drawHatch2(p, t); break; case 'warpgrid': drawWarpGrid(p, t); break; case 'isocontour': drawIsoContour(p, t); break;
+      case 'tesseract': drawTesseract(p, t); break; case 'hypersphere': drawHypersphere(p, t); break; case 'hypercube5d': drawHypercube5D(p, t); break;
+      case 'topolines': drawTopoLines(p, t); break; case 'wireterrain': drawWireTerrain(p, t); break; case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
+      case 'voronoi': drawVoronoi(p, t); break; case 'boids': drawBoids(p, t); break; case 'magnetic': drawMagnetic(p, t); break;
+      case 'sand': drawSand(p, t); break; case 'mycelium': drawMycelium(p, t); break; default: drawBloom(p, t);
+    }
+    drawOverlay(p, t);
+    CTX.globalCompositeOperation = 'source-over';
+  };
+}, 'canvas-wrap');
+
+// ---------- DOM EVENT LISTENERS ----------
+document.getElementById('modeGrid').addEventListener('click', function (e) {
+  let b = e.target.closest('[data-mode]'); if (!b) return;
+  S.mode = b.dataset.mode;
+  document.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('modeLabel').textContent = b.textContent.replace(/[✦◼◉]/g, '').trim();
+  document.querySelectorAll('.mode-ctrl').forEach(x => x.classList.remove('active'));
+  let ctrl = document.getElementById('ctrl-' + S.mode); if (ctrl) ctrl.classList.add('active');
+  window._st.ri(); window._st.rd();
+});
+
+document.getElementById('charsetGrid').addEventListener('click', function (e) {
+  let b = e.target.closest('[data-cs]'); if (!b) return;
+  let cs = b.dataset.cs;
+  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
+  if (cs === 'particles') { S.useParticleMode = true; RAND_UNICODE_MODE = null; window._st.rd(); return; }
+  S.useParticleMode = false;
+  if (cs === 'randuni') { RAND_UNICODE_MODE = 'full'; window._st.rd(); return; }
+  if (cs === 'randuni_weighted') { RAND_UNICODE_MODE = 'weighted'; window._st.rd(); return; }
+  if (cs === 'randuni_pos') { RAND_UNICODE_MODE = 'pos'; window._st.rd(); return; }
+  if (cs === 'randuni_drift') { RAND_UNICODE_MODE = 'drift'; window._st.rd(); return; }
+  RAND_UNICODE_MODE = null;
+  if (cs !== 'custom') S.chars = CHARSETS[cs] || S.chars;
+  window._st.rd();
+});
+
+document.getElementById('customApply').addEventListener('click', function () {
+  let v = document.getElementById('customInput').value.trim(); if (!v) return;
+  if (v.includes(';')) S.chars = v.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  else S.chars = Array.from(v);
+  S.useParticleMode = false; RAND_UNICODE_MODE = null;
+  window._st.rd();
+});
+
+document.getElementById('fontSelect').addEventListener('change', function () {
+  S.fontStack = FONTS[this.value] || FONTS.courier; invalidateFontCache(); window._st.rd();
+});
+
+wireSlider('sSpeed', 'vSpeed', 'speed', v => v * 0.001);
+wireSlider('sWave', 'vWave', 'wave');
+wireSlider('sTurb', 'vTurb', 'turb', v => v * 0.001);
+wireSlider('sDens', 'vDens', 'density', v => 1 - (v * 0.1));
+wireSlider('sSpacing', 'vSpacing', 'spacing', null, () => window._st.ri());
+wireSlider('sMaxSize', 'vMaxSize', 'maxSize');
+wireSlider('sNoise', 'vNoise', 'noiseScale', v => v * 0.002);
+wireSlider('sRot', 'vRot', 'charRotation', null, () => { S.charRotRad = S.charRotation * Math.PI / 180; });
+wireSlider('sEntropy', 'vEntropy', 'entropy', v => v / 100);
+wireSlider('sCase', 'vCase', 'caseGlitch', v => v / 100);
+wireSlider('sFlipChance', 'vFlipChance', 'flipChance', v => v / 100);
+wireSlider('sTrail', 'vTrail', 'trailPersist');
+wireSlider('sAccent1', 'vAccent1', 'accentAmt', v => v / 100);
+wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
+wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
+wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed', v => v * 0.1);
+wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
+wireSlider('sMagPoles', 'vMagPoles', 'magPoles', null, () => window._st.ri());
+wireSlider('sHatchAngle', 'vHatchAngle', 'hatchAngle');
+wireSlider('sHatchCurve', 'vHatchCurve', 'hatchCurve');
+wireSlider('sOvSpeed', 'vOvSpeed', 'overlaySpeed');
+wireSlider('sOvSize', 'vOvSize', 'overlaySize');
+wireSlider('sOvKern', 'vOvKern', 'overlayKern');
+wireSlider('sOvAlpha', 'vOvAlpha', 'overlayAlpha');
+wireSlider('sOvWave', 'vOvWave', 'overlayWave');
+wireSlider('sOvEntropy', 'vOvEntropy', 'overlayEntropy', v => v);
+wireSlider('sOvDistort', 'vOvDistort', 'overlayDistort', v => v);
+
+document.getElementById('btnFlipH').addEventListener('click', function () { S.flipHMirror = !S.flipHMirror; this.textContent = S.flipHMirror ? 'On' : 'Off'; this.classList.toggle('on', S.flipHMirror); window._st.rd(); });
+document.getElementById('btnFlipV').addEventListener('click', function () { S.flipVMirror = !S.flipVMirror; this.textContent = S.flipVMirror ? 'On' : 'Off'; this.classList.toggle('on', S.flipVMirror); window._st.rd(); });
+document.getElementById('btnComp').addEventListener('click', function () { S.compEnabled = !S.compEnabled; this.textContent = S.compEnabled ? 'On' : 'Off'; this.classList.toggle('on', S.compEnabled); if (S.compEnabled && !compBlocks.length) buildComp(S.compPreset, window._st.w(), window._st.h()); window._st.rd(); });
+document.getElementById('btnShapes').addEventListener('click', function () { S.shapesEnabled = !S.shapesEnabled; this.textContent = S.shapesEnabled ? 'On' : 'Off'; this.classList.toggle('on', S.shapesEnabled); window._st.rd(); });
+document.getElementById('btnOverlay').addEventListener('click', function () { S.overlayEnabled = !S.overlayEnabled; this.textContent = S.overlayEnabled ? 'On' : 'Off'; this.classList.toggle('on', S.overlayEnabled); window._st.rd(); });
+document.getElementById('btnSignal').addEventListener('click', function () { S.signalCollapse = !S.signalCollapse; S.signalStart = S.fc; this.textContent = S.signalCollapse ? 'On' : 'Off'; this.classList.toggle('on', S.signalCollapse); if (S.signalCollapse && !S.playing) { S.playing = true; document.getElementById('btnPlay').click(); } window._st.rd(); });
+document.getElementById('btnVorWire').addEventListener('click', function () { S.vorWire = !S.vorWire; this.textContent = S.vorWire ? 'On' : 'Off'; this.classList.toggle('on', S.vorWire); window._st.rd(); });
+
+document.getElementById('ovAddStream').addEventListener('click', function () {
+  let v = document.getElementById('ovTextInput').value.trim(); if (!v) return;
+  S.overlayStreams.push({ text: v, color: S.overlayColor, offset: Math.random() * 1000 });
+  document.getElementById('ovTextInput').value = '';
+  S.overlayEnabled = true; document.getElementById('btnOverlay').textContent = 'On'; document.getElementById('btnOverlay').classList.add('on');
+  window._st.rd();
+});
+
+document.getElementById('palGrid').addEventListener('click', function (e) {
+  let b = e.target.closest('.pb'); if (!b) return;
+  document.querySelectorAll('.pb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); S.palette = PALETTES[b.dataset.pal] || S.palette; window._st.rd();
+});
+document.getElementById('accentRow1').addEventListener('click', function (e) {
+  let s = e.target.closest('[data-accent]'); if (!s) return;
+  document.querySelectorAll('#accentRow1 .as').forEach(x => x.classList.remove('active'));
+  s.classList.add('active'); S.accent = s.dataset.accent; window._st.rd();
+});
+document.getElementById('ovDirGrid').addEventListener('click', function (e) {
+  let b = e.target.closest('[data-ovdir]'); if (!b) return;
+  document.querySelectorAll('#ovDirGrid .cb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); S.overlayDir = b.dataset.ovdir; window._st.rd();
+});
+document.getElementById('ovColorRow').addEventListener('click', function (e) {
+  let s = e.target.closest('[data-ovcol]'); if (!s) return;
+  document.querySelectorAll('#ovColorRow [data-ovcol]').forEach(x => x.classList.remove('active'));
+  s.classList.add('active'); S.overlayColor = s.dataset.ovcol;
+});
+
+document.getElementById('blendSelect').addEventListener('change', function () { S.blendMode = this.value; window._st.rd(); });
+document.getElementById('btnPlay').addEventListener('click', function () { let on = window._st.play(); this.textContent = on ? '⏸ Pause' : '▶ Play'; this.classList.toggle('play', !on); });
+document.getElementById('btnRegen').addEventListener('click', function () { window._st.regen(); showToast('Regenerated'); });
+document.getElementById('btnSave').addEventListener('click', function () { window._st.p.saveCanvas('studio-' + Date.now(), 'png'); showToast('Saved PNG'); });
+document.getElementById('btnReset').addEventListener('click', function () { location.reload(); });
+document.getElementById('btnCollapseAll').addEventListener('click', () => { ['mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'].forEach(id => { let b = document.getElementById('body-' + id), a = document.getElementById('arr-' + id); if (b) b.classList.add('collapsed'); if (a) a.classList.remove('open'); }); });
+document.getElementById('btnExpandAll').addEventListener('click', () => { ['mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'].forEach(id => { let b = document.getElementById('body-' + id), a = document.getElementById('arr-' + id); if (b) b.classList.remove('collapsed'); if (a) a.classList.add('open'); }); });
+
+// Presets
+const PRESETS = {
+  sacred: () => { S.mode = 'bloom'; S.palette = PALETTES.site; S.speed = 0.002; S.wave = 15; S.spacing = 14; S.maxSize = 22; S.bg = '#0d0c0a'; S.overlayStreams = [{ text: 'SACRED TEXT', color: '#b8955a', offset: 0 }]; S.overlayEnabled = true; S.overlayAlpha = 35; window._st.ri(); window._st.rd(); },
+  bloom: () => { S.mode = 'bloom'; window._st.ri(); window._st.rd(); },
+  worms: () => { S.mode = 'worms'; S.palette = PALETTES.fire; S.speed = 0.008; S.wave = 40; S.spacing = 8; S.maxSize = 16; S.overlayStreams = [{ text: '🐛 WORM DANCE 🐛', color: '#e63946', offset: 0 }]; S.overlayEnabled = true; window._st.ri(); window._st.rd(); },
+  // Add more presets as needed
+};
+
+document.getElementById('presetBar').addEventListener('click', function (e) {
+  let b = e.target.closest('[data-preset]'); if (!b) return;
+  let fn = PRESETS[b.dataset.preset];
+  if (fn) { fn(); showToast(b.textContent); }
+});
+
+function togglePanel() { let pnl = document.getElementById('panel'); pnl.style.display = pnl.style.display === 'none' ? 'flex' : 'none'; document.getElementById('panelBtn').textContent = pnl.style.display === 'none' ? '⊕ Controls' : '✕ Close'; setTimeout(() => { if (window._st) { let wrap = document.getElementById('canvas-wrap'); window._st.rsz(wrap.offsetWidth, wrap.offsetHeight); } }, 50); }
+
+showToast('Studio ready');
+</script>
+</body>
+</html>  
