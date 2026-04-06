@@ -346,6 +346,7 @@ select option{background:var(--ink)}
         <select id="fontSelect">
           <option value="courier">Courier New</option>
           <option value="vt323">VT323 — terminal</option>
+          <option value="unicode">Universal Unicode</option>
           <option value="typewriter">Special Elite — typewriter</option>
           <option value="georgia">Georgia</option>
           <option value="times">Times New Roman</option>
@@ -813,6 +814,8 @@ const CHARSETS={
   custom:   ['J','O','N'],
 };
 
+const RARE_CHARSETS = ['hieroglyphs', 'alchemy', 'gothic', 'runes', 'celtic', 'arcane', 'braille', 'music', 'math', 'sacred'];
+  
 // ── PALETTES ─────────────────────────────────────────────────────────────────
 const PALETTES={
   site:      ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
@@ -890,6 +893,7 @@ const FONTS={
   playfair:"'Playfair Display',serif",
   impact:'Impact,sans-serif',
   mono:'monospace',
+  unicode: "'Noto Sans Symbols 2', 'Noto Emoji', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans', sans-serif",
 };
 
 const GLITCH=['█','_','░','▒','?','#','%','■','□',' '];
@@ -910,6 +914,7 @@ const COMP_PALETTES={
 let S={
   mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
   accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
+  previousFont: 'courier',   // default
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
@@ -3225,10 +3230,35 @@ document.getElementById('charsetGrid').addEventListener('click',function(e){
   return;
 }
 S.useParticleMode = false;
+// --- NEW: Rare charset font fallback ---
+if (RARE_CHARSETS.includes(cs)) {
+  // Remember current font if not already a rare fallback
+  if (S.fontKey !== 'unicode') {
+    S.previousFont = S.fontKey;
+  }
+  // Switch to Unicode font
+  S.fontKey = 'unicode';
+  S.fontStack = FONTS.unicode;
+  document.getElementById('fontSelect').value = 'unicode';
+  invalidateFontCache();
+  showToast(`Switched to Universal Unicode font for ${cs}`);
+} else if (cs !== 'custom' && cs !== 'particles' && !cs.startsWith('randuni')) {
+  // Normal charset: restore previous font if it was changed by rare fallback
+  if (S.fontKey === 'unicode' && S.previousFont && S.previousFont !== 'unicode') {
+    S.fontKey = S.previousFont;
+    S.fontStack = FONTS[S.previousFont];
+    document.getElementById('fontSelect').value = S.previousFont;
+    invalidateFontCache();
+    showToast(`Restored font: ${S.previousFont}`);
+  }
+}
+  
   // Normal charset
   RAND_UNICODE_MODE=null;
   if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
 });
+
+
   
 //custom text in semicolon separated strings
 document.getElementById('customApply').addEventListener('click', function() {
