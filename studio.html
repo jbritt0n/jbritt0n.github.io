@@ -3187,15 +3187,34 @@ S.useParticleMode = false;
   RAND_UNICODE_MODE=null;
   if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
 });
-document.getElementById('customApply').addEventListener('click',function(){
-  let v=document.getElementById('customInput').value.trim();if(!v) return;
-  let parts=v.split(/[\s,]+/).filter(function(x){return x.length>0;});
-  S.chars=parts.length>1?parts:v.split('').filter(function(c){return c.trim()!=='';});
-  if(!S.chars.length) S.chars=['?'];
-  RAND_UNICODE_MODE=null; // custom input overrides random unicode mode
-  window._st.rd();
-});
-document.getElementById('customInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('customApply').click();});
+//custom text in semicolon separated strings
+document.getElementById('customApply').addEventListener('click', function() {
+  let v = document.getElementById('customInput').value.trim();
+  if (!v) return;
+  // First split by semicolon to get separate strings/phrases
+  let strings = v.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  let allChars = [];
+  for (let str of strings) {
+    // If the string contains commas or spaces, split further into individual characters
+    if (str.includes(',') || str.includes(' ')) {
+      let parts = str.split(/[ ,]+/);
+      for (let part of parts) {
+        if (part.length === 1) allChars.push(part);
+        else allChars.push(...part.split(''));
+      }
+    } else {
+      // Treat the whole string as a sequence of characters
+      allChars.push(...str.split(''));
+    }
+  }
+
+  if (allChars.length) {
+    S.chars = allChars;
+    RAND_UNICODE_MODE = null;   // custom overrides random Unicode
+    showToast(`Custom charset: ${S.chars.length} characters`);
+    window._st.rd();
+  }
+});  
 
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change',function(){
