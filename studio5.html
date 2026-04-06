@@ -537,18 +537,169 @@ function drawPipes(p,t){let pipeChars=['─','│','┼','╬','╋','┤','├'
 function drawReaction(p,t){if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8)))initReactionDiffusion(p.width,p.height);let g=rdGrid,W=rdW,H=rdH;let feed=S.reactFeed,kill=S.reactKill;let dA=1.0,dB=0.5;if(S.playing){for(let s=0;s<2;s++){for(let r=1;r<H-1;r++)for(let c=1;c<W-1;c++){let i=r*W+c;let A=g.A[i],B=g.B[i];let lapA=g.A[i-W]+g.A[i+W]+g.A[i-1]+g.A[i+1]-4*A;let lapB=g.B[i-W]+g.B[i+W]+g.B[i-1]+g.B[i+1]-4*B;let ABB=A*B*B;g.nA[i]=Math.max(0,Math.min(1,A+dA*lapA*.2-ABB+feed*(1-A)));g.nB[i]=Math.max(0,Math.min(1,B+dB*lapB*.2+ABB-(kill+feed)*B));}let tmp=g.A;g.A=g.nA;g.nA=tmp;tmp=g.B;g.B=g.nB;g.nB=tmp;}}let res=g.res;for(let r=0;r<H;r++)for(let c=0;c<W;c++){let v=g.A[r*W+c]-g.B[r*W+c];if(v<.2)continue;let x=c*res,y=r*res;let ci=Math.floor(v*S.palette.length);let col=S.palette[ci%S.palette.length];if(S.accent!=='none'&&v>.7)col=S.accent;let sz=p.map(v,.2,1,2,S.maxSize);dc(x,y,sz,0,col,pickChar(p,x,y,t));}}
 function drawVoronoi(p,t){if(!voronoiSites.length)initVoronoi(p.width,p.height);if(S.playing)voronoiSites.forEach(s=>{s.x+=s.vx*(S.speed*80+.2);s.y+=s.vy*(S.speed*80+.2);if(s.x<0||s.x>p.width)s.vx*=-1;if(s.y<0||s.y>p.height)s.vy*=-1;s.vx+=p.noise(s.x*.003,s.y*.003,t)*.04-.02;s.vy+=p.noise(s.x*.003+10,s.y*.003+10,t)*.04-.02;s.vx=Math.max(-.8,Math.min(.8,s.vx));s.vy=Math.max(-.8,Math.min(.8,s.vy));});let sp=S.spacing;for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){let minD=Infinity,nearIdx=0;for(let i=0;i<voronoiSites.length;i++){let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;let d=dx*dx+dy*dy;if(d<minD){minD=d;nearIdx=i;}}let site=voronoiSites[nearIdx];if(S.vorWire){let min2=Infinity;for(let i=0;i<voronoiSites.length;i++){if(i===nearIdx)continue;let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;let d=dx*dx+dy*dy;if(d<min2)min2=d;}let edgeFactor=Math.sqrt(min2)-Math.sqrt(minD);if(edgeFactor<12)dc(x,y,S.maxSize*.6,0,site.col,pickChar(p,x,y,t));}else{let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density)continue;dc(x,y,S.maxSize,0,site.col,pickChar(p,x,y,t));}}}
 function drawMycelium(p,t){if(!myceliumBranches.length)initMycelium(p.width,p.height);if(S.playing){let newBranches=[];myceliumBranches.forEach(b=>{b.angle+=p.noise(b.x*.008,b.y*.008,t*.3)*.4-.2;b.x+=Math.cos(b.angle)*b.speed;b.y+=Math.sin(b.angle)*b.speed;b.len+=b.speed;if(b.len>30&&b.children<b.maxChildren&&Math.random()<.02){b.children++;newBranches.push({x:b.x,y:b.y,angle:b.angle+(Math.random()-.5)*1.2,len:0,maxLen:b.maxLen*.7,speed:b.speed*.9,age:0,col:b.col,children:0,maxChildren:b.maxChildren-1});}if(b.x<0||b.x>p.width||b.y<0||b.y>p.height||b.len>b.maxLen)b.dead=true;});myceliumBranches=myceliumBranches.filter(b=>!b.dead).concat(newBranches);if(myceliumBranches.length<3)initMycelium(p.width,p.height);}myceliumBranches.forEach(b=>{let alpha=Math.min(1,b.len/20)*(1-b.len/b.maxLen);CTX.globalAlpha=Math.max(0,alpha);let sz=p.map(b.len/b.maxLen,0,1,S.maxSize*.6,2);dc(b.x,b.y,sz,b.angle,b.col,pickChar(p,b.x,b.y,t));});CTX.globalAlpha=1;}
-function drawSand(p,t){if(!sandParticles.length)initSand(p.width,p.height);let ns=S.noiseScale;sandParticles.forEach(pt=>{if(S.playing){let angle=p.noise(pt.x*ns,pt.y*ns,t*.5)*6.28*2;pt.vx=pt.vx*.92+Math.cos(angle)*S.wave*.03;pt.vy=pt.vy*.92+Math.sin(angle)*S.wave*.03;pt.vx+=(Math.random()-.5)*.3;pt.vy+=(Math.random()-.5)*.3;pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>400){pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;pt.vx=0;pt.vy=0;pt.age=0;pt.col=S.palette[Math.floor(Math.random()*S.palette.length)];}}let n=p.noise(pt.x*ns,pt.y*ns,t);if(n<S.density*.5)return;let alpha=.15+n*.4;CTX.globalAlpha=alpha;let sz=1.5+Math.random()*S.maxSize*.3;dc(pt.x,pt.y,sz,0,pt.col,pickChar(p,pt.x,pt.y,t));});CTX.globalAlpha=1;}
-function drawCellular(p,t){if(!caGrid)initCellular(p.width,p.height);let res=Math.max(4,S.spacing);if(caW!==Math.floor(p.width/res)+1||caH!==Math.floor(p.height/res)+1)initCellular(p.width,p.height);if(S.playing&&S.fc%3===0){for(let r=1;r<caH-1;r++)for(let c=1;c<caW-1;c++){let i=r*caW+c;let n=caGrid[(r-1)*caW+c-1]+caGrid[(r-1)*caW+c]+caGrid[(r-1)*caW+c+1]+caGrid[r*caW+c-1]+caGrid[r*caW+c+1]+caGrid[(r+1)*caW+c-1]+caGrid[(r+1)*caW+c]+caGrid[(r+1)*caW+c+1];if(caGrid[i]===1)caNext[i]=(n===2||n===3)?1:0;else caNext[i]=n===3?1:0;}let tmp=caGrid;caGrid=caNext;caNext=tmp;}for(let r=0;r<caH;r++)for(let c=0;c<caW;c++){if(!caGrid[r*caW+c])continue;let x=c*res,y=r*res;let n=0;if(r>0&&c>0)n+=caGrid[(r-1)*caW+c-1];if(r>0)n+=caGrid[(r-1)*caW+c];if(r>0&&c<caW-1)n+=caGrid[(r-1)*caW+c+1];if(c>0)n+=caGrid[r*caW+c-1];if(c<caW-1)n+=caGrid[r*caW+c+1];if(r<caH-1&&c>0)n+=caGrid[(r+1)*caW+c-1];if(r<caH-1)n+=caGrid[(r+1)*caW+c];if(r<caH-1&&c<caW-1)n+=caGrid[(r+1)*caW+c+1];let col=S.palette[n%S.palette.length];if(S.accent!=='none'&&n===3)col=S.accent;let sz=p.map(n,0,8,S.maxSize*.3,S.maxSize);dc(x,y,sz,0,col,pickChar(p,x,y,t));}}
-function drawInterference(p,t){let sp=S.spacing;let cx=p.width/2,cy=p.height/2;let nSrc=2+Math.floor(S.density*2);let sources=[];for(let i=0;i<nSrc;i++){let a=(i/nSrc)*6.28+t*.15;sources.push({x:cx+Math.cos(a)*p.width*.3,y:cy+Math.sin(a)*p.height*.25,freq:S.turb*8+i*.5});}for(let x=sp;x<p.width;x+=sp)for(let y=sp;y<p.height;y+=sp){let sum=0;sources.forEach(src=>{let d=Math.sqrt((x-src.x)*(x-src.x)+(y-src.y)*(y-src.y));sum+=Math.sin(d*src.freq-t*3);});let v=(sum/nSrc+1)/2;if(v<.3||v>.7)continue;let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);if(n<S.density*.5)continue;let ci=Math.floor(v*S.palette.length);let col=S.palette[ci%S.palette.length];if(S.accent!=='none'&&v>.65)col=S.accent;let sz=p.map(Math.abs(v-.5)*2,0,1,2,S.maxSize);dc(x,y,sz,v*6.28,col,pickChar(p,x,y,t));}}
-function drawCalligraphy(p,t){
-  let sp=S.spacing;
-  let nStrokes=Math.floor(p.width/(sp*8))+2;for(let si=0;si<nStrokes;si++){
-    let sx=(si/nStrokes)*p.width+Math.sin(t*.3+si)*p.width*.1;
-    let sy=p.height*.1+Math.random()*p.height*.8;
-    let angle=p.noise(sx*S.noiseScale,sy*S.noiseScale,t)*6.28;
-    let strokeLen=40+S.wave*2+Math.random()*100;
-    let maxPressure=S.maxSize;for(let step=0;step<strokeLen;step+=sp*.7){
-      let px=sx+Math.cos(angle)*step;
+function drawSand(p, t) {
+  // Initialize particles if needed
+  if (!sandParticles.length) initSand(p.width, p.height);
+
+  let ns = S.noiseScale * 1.5;
+  let flowStrength = S.wave * 0.05 + 0.2;
+
+  // Update particle positions (only when playing)
+  if (S.playing) {
+    for (let i = 0; i < sandParticles.length; i++) {
+      let pt = sandParticles[i];
+      // Flow field angle from Perlin noise
+      let angle = p.noise(pt.x * ns, pt.y * ns, t * 0.3) * Math.PI * 4;
+      pt.vx = pt.vx * 0.92 + Math.cos(angle) * flowStrength;
+      pt.vy = pt.vy * 0.92 + Math.sin(angle) * flowStrength;
+      // Add small random jitter
+      pt.vx += (Math.random() - 0.5) * 0.2;
+      pt.vy += (Math.random() - 0.5) * 0.2;
+      pt.x += pt.vx;
+      pt.y += pt.vy;
+      pt.age++;
+
+      // Reset if out of bounds or too old
+      if (pt.x < 0 || pt.x > p.width || pt.y < 0 || pt.y > p.height || pt.age > 400) {
+        pt.x = Math.random() * p.width;
+        pt.y = Math.random() * p.height;
+        pt.vx = 0;
+        pt.vy = 0;
+        pt.age = 0;
+        pt.col = S.palette[Math.floor(Math.random() * S.palette.length)];
+      }
+    }
+  }
+
+  // Draw particles as tiny characters with low opacity (sand grain effect)
+  for (let pt of sandParticles) {
+    let n = p.noise(pt.x * ns, pt.y * ns, t);
+    if (n < S.density * 0.4) continue;
+    let alpha = 0.15 + n * 0.4;
+    CTX.globalAlpha = alpha;
+    let sz = 2 + Math.random() * (S.maxSize * 0.3);
+    let ch = pickChar(p, pt.x, pt.y, t);
+    dc(pt.x, pt.y, sz, 0, pt.col, ch);
+  }
+  CTX.globalAlpha = 1;
+}
+function drawCellular(p, t) {
+  // Initialize grid if needed
+  if (!caGrid) initCellular(p.width, p.height);
+
+  let res = Math.max(4, S.spacing);
+  let cols = Math.floor(p.width / res) + 1;
+  let rows = Math.floor(p.height / res) + 1;
+
+  // Re‑initialize if canvas size changed
+  if (caW !== cols || caH !== rows) initCellular(p.width, p.height);
+
+  // Update the automaton every 3 frames (only when playing)
+  if (S.playing && S.fc % 3 === 0) {
+    for (let r = 1; r < rows - 1; r++) {
+      for (let c = 1; c < cols - 1; c++) {
+        let i = r * cols + c;
+        let neighbors =
+          caGrid[(r - 1) * cols + c - 1] + caGrid[(r - 1) * cols + c] + caGrid[(r - 1) * cols + c + 1] +
+          caGrid[r * cols + c - 1] + caGrid[r * cols + c + 1] +
+          caGrid[(r + 1) * cols + c - 1] + caGrid[(r + 1) * cols + c] + caGrid[(r + 1) * cols + c + 1];
+
+        if (caGrid[i] === 1) {
+          // Cell is alive: survives with 2 or 3 neighbours
+          caNext[i] = (neighbors === 2 || neighbors === 3) ? 1 : 0;
+        } else {
+          // Cell is dead: becomes alive with exactly 3 neighbours
+          caNext[i] = (neighbors === 3) ? 1 : 0;
+        }
+      }
+    }
+    // Swap buffers
+    let tmp = caGrid;
+    caGrid = caNext;
+    caNext = tmp;
+  }
+
+  // Draw each living cell as a character
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!caGrid[r * cols + c]) continue;
+      let x = c * res;
+      let y = r * res;
+
+      // Count neighbours for colour variation
+      let n = 0;
+      if (r > 0 && c > 0) n += caGrid[(r - 1) * cols + c - 1];
+      if (r > 0) n += caGrid[(r - 1) * cols + c];
+      if (r > 0 && c < cols - 1) n += caGrid[(r - 1) * cols + c + 1];
+      if (c > 0) n += caGrid[r * cols + c - 1];
+      if (c < cols - 1) n += caGrid[r * cols + c + 1];
+      if (r < rows - 1 && c > 0) n += caGrid[(r + 1) * cols + c - 1];
+      if (r < rows - 1) n += caGrid[(r + 1) * cols + c];
+      if (r < rows - 1 && c < cols - 1) n += caGrid[(r + 1) * cols + c + 1];
+
+      let col = S.palette[n % S.palette.length];
+      if (S.accent !== 'none' && n === 3) col = S.accent;
+      let sz = p.map(n, 0, 8, S.maxSize * 0.4, S.maxSize);
+      let ch = pickChar(p, x, y, t);
+      dc(x, y, sz, 0, col, ch);
+    }
+  }
+}
+function drawInterference(p, t) {
+  let sp = S.spacing;
+  let cx = p.width / 2, cy = p.height / 2;
+  let nSrc = 2 + Math.floor(S.density * 2);
+  let sources = [];
+
+  // Create moving wave sources
+  for (let i = 0; i < nSrc; i++) {
+    let a = (i / nSrc) * Math.PI * 2 + t * 0.15;
+    sources.push({
+      x: cx + Math.cos(a) * p.width * 0.3,
+      y: cy + Math.sin(a) * p.height * 0.25,
+      freq: S.turb * 8 + i * 0.5
+    });
+  }
+
+  // For each cell, sum contributions from all sources
+  for (let x = sp; x < p.width; x += sp) {
+    for (let y = sp; y < p.height; y += sp) {
+      let sum = 0;
+      for (let src of sources) {
+        let d = Math.hypot(x - src.x, y - src.y);
+        sum += Math.sin(d * src.freq - t * 3);
+      }
+      let v = (sum / nSrc + 1) / 2;  // normalize to 0..1
+      if (v < 0.3 || v > 0.7) continue;  // only draw high‑contrast regions
+
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density * 0.5) continue;
+
+      let ci = Math.floor(v * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && v > 0.65) col = S.accent;
+
+      let sz = p.map(Math.abs(v - 0.5) * 2, 0, 1, 2, S.maxSize);
+      let ch = pickChar(p, x, y, t);
+      dc(x, y, sz, v * Math.PI * 2, col, ch);
+    }
+  }
+}
+function drawCalligraphy(p, t) {
+  let sp = S.spacing;
+  let nStrokes = Math.floor(p.width / (sp * 8)) + 2;
+  for (let si = 0; si < nStrokes; si++) {
+    let sx = (si / nStrokes) * p.width + Math.sin(t * 0.3 + si) * p.width * 0.1;
+    let sy = p.height * 0.1 + Math.random() * p.height * 0.8;
+    let angle = p.noise(sx * S.noiseScale, sy * S.noiseScale, t) * 6.28;
+    let strokeLen = 40 + S.wave * 2 + Math.random() * 100;
+    for (let step = 0; step < strokeLen; step += sp * 0.7) {
+      let px = sx + Math.cos(angle) * step;
+      let py = sy + Math.sin(angle) * step;
+      if (px < 0 || px > p.width || py < 0 || py > p.height) break;
+      let progress = step / strokeLen;
+      let pressure = Math.sin(progress * Math.PI);
+      let sz = Math.max(1, pressure * S.maxSize);
       let col = pickColor(p, px, py, t);
       if (progress < 0.1 || progress > 0.9) {
         CTX.globalAlpha = 0.6 + pressure * 0.4;
@@ -1216,6 +1367,7 @@ new p5(function (p) {
     regen: function () { ri(); rd(); }, rsz: resize, w: function () { return W; }, h: function () { return H; }, p: p
   };
   p.setup = function () {
+    console.log("p5 setup started");
     let wrap = document.getElementById('canvas-wrap'); W = wrap.offsetWidth; H = wrap.offsetHeight;
     p.createCanvas(W, H).parent('canvas-wrap'); CTX = p.drawingContext; CTX.textBaseline = 'middle'; p.noLoop(); ri(); rd();
   };
