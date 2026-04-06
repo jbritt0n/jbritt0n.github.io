@@ -907,6 +907,8 @@ let S={
   reactFeed: 0.035, //reaction
   reactKill: 0.065, //reaction
   reactOscillate: false,
+  mycSpeed: 1.0, //mycelium
+  mycBranch: 3,  //mycelium
 };
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
@@ -1096,7 +1098,7 @@ function initMycelium(W,H){
   let n=3+Math.floor(S.density*3);
   for(let i=0;i<n;i++){
     let a=Math.random()*6.28;
-    myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:1+Math.random()*2,age:0,col:S.palette[i%S.palette.length],children:0,maxChildren:3+Math.floor(Math.random()*4)});
+    myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:S.mycSpeed*(0.5 + Math.random()),age:0,col:S.palette[i%S.palette.length],children:0,maxChildren: S.mycBranch});
   }
 }
 
@@ -1717,7 +1719,11 @@ function drawMycelium(p,t){
   }
   myceliumBranches.forEach(function(b){
     let alpha=Math.min(1,b.len/20)*(1-b.len/b.maxLen);
-    CTX.globalAlpha=Math.max(0,alpha);
+    CTX.globalAlpha = 0.7;
+    CTX.fillStyle = b.col;
+    CTX.beginPath();
+    CTX.arc(b.x, b.y, sz * 0.3, 0, Math.PI * 2);
+    CTX.fill();
     let sz=p.map(b.len/b.maxLen,0,1,S.maxSize*.6,2);
     dc(b.x,b.y,sz,b.angle,b.col,pickChar(p,b.x,b.y,t));
   });
@@ -2969,6 +2975,8 @@ wireSlider('sOvEntropy','vOvEntropy','overlayEntropy',function(v){return v;});
 wireSlider('sOvDistort','vOvDistort','overlayDistort',function(v){return v;});
 wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
 wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
+wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
+wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
 document.getElementById('modeGrid').addEventListener('click',function(e){
