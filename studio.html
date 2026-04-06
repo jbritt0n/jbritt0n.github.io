@@ -1154,11 +1154,11 @@ function initWorms(W, H) {
   }
 }  
 
-function initflowerspin(W, H) {
+function initFlowerspin(W, H) {
   flowerspin = [];
   let count = Math.max(7, Math.floor(S.density * 23)); // 1 to 5 creatures
   for (let i = 0; i < count; i++) {
-    flowerspins.push({
+    flowerspin.push({
       x: Math.random() * W,
       y: Math.random() * H,
       angle: Math.random() * Math.PI * 2,
@@ -2327,10 +2327,10 @@ function drawIsoContour(p,t){
   CTX.restore();
 }
 // ── flower spin ─────────────────────────────────────────────────────────
-function drawflowerspin(p, t) {
+function drawFlowerspin(p, t) {
   if (!flowerspin.length) initflowerspin(p.width, p.height);
 
-  let wiggleAmp = S.wave * 0.15;        // how much they squirm
+  let wiggleAmp = S.wave * 0.15;        // how much they wiggle
   let pulseAmp = S.turb * 0.02;         // how much they pulse
   let speed = S.speed * 100;
 
@@ -3070,7 +3070,7 @@ new p5(function(p){
       case'boids':      drawBoids(p,t);break;
       case'magnetic':   drawMagnetic(p,t);break;
       case'worms':      drawWorms(p,t); break;
-      case 'flowerspin': drawflowerspin(p,t); break;  
+      case 'flowerspin': drawFlowerspin(p,t); break;  
     }
     CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
     drawShapes(p,t);
