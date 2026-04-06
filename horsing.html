@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Integrated Generative Studio</title>
+    <!-- CSS and Font imports based on source requirements [7-9] -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=EB+Garamond&family=Jost:wght@400;700&family=Playfair+Display&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Unified UI style with section collapse logic [10-12] */
+        :root { --bg: #0d0c0a; --panel: #1a1917; --gold: #b8955a; --pale: #c4bcb0; }
+        body { margin: 0; background: var(--bg); color: var(--pale); font-family: 'Jost', sans-serif; overflow: hidden; display: flex; height: 100vh; }
+        #panel { width: 320px; background: var(--panel); display: flex; flex-direction: column; border-right: 1px solid #333; overflow-y: auto; padding: 1rem; }
+        #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+        .sec-head { cursor: pointer; padding: 0.5rem; background: #222; margin-top: 0.5rem; display: flex; justify-content: space-between; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
+        .sec-body.collapsed { display: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; padding: 0.5rem 0; }
+        .mb, .cb, .pb { cursor: pointer; padding: 4px; background: #2a2927; border-radius: 3px; font-size: 0.65rem; text-align: center; border: 1px solid transparent; transition: 0.2s; }
+        .active { border-color: var(--gold); background: #3a3936; color: white; }
+        .slider-row { margin-bottom: 8px; font-size: 0.7rem; }
+        .slider-row input { width: 100%; cursor: pointer; margin-top: 4px; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: black; padding: 8px 16px; border-radius: 4px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 1000; }
+        #toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="panel">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-weight: bold; color: var(--gold); letter-spacing: 1px;">STUDIO v2026</div>
+            <div id="fpsLabel" style="font-size: 10px; opacity: 0.6;">0 fps</div>
+        </div>
+
+        <div id="presetBar" class="grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="pb" data-preset="sacred">Sacred</div>
+            <div class="pb" data-preset="signal">Signal</div>
+            <div class="pb" data-preset="dream">Dream</div>
+            <div class="pb" data-preset="turing">Turing</div>
+            <div class="pb" data-preset="alchemist">Alchemist</div>
+            <div class="pb" data-preset="fossil">Fossil</div>
+        </div>
+
+        <!-- Section Collapse UI logic [10, 11] -->
+        <div class="sec-head" onclick="toggleSec('mode')">Mode <span id="modeLabel">Bloom</span> <span id="arr-mode">▾</span></div>
+        <div id="body-mode" class="sec-body">
+            <div id="modeGrid" class="grid">
+                <div class="mb active" data-mode="bloom">Bloom</div>
+                <div class="mb" data-mode="wave">Wave</div>
+                <div class="mb" data-mode="reaction">Reaction</div>
+                <div class="mb" data-mode="tesseract">Tesseract</div>
+                <div class="mb" data-mode="hypersphere">Hypersphere</div>
+                <div class="mb" data-mode="boids">Flock</div>
+                <div class="mb" data-mode="magnetic">Magnetic</div>
+                <div class="mb" data-mode="mycelium">Growth</div>
+                <div class="mb" data-mode="worms">Worms</div>
+                <div class="mb" data-mode="glitch">Glitch</div>
+            </div>
+        </div>
+
+        <div class="sec-head" onclick="toggleSec('motion')">Motion & Spacing <span id="arr-motion">▾</span></div>
+        <div id="body-motion" class="sec-body">
+            <div class="slider-row">Speed: <span id="vSpeed">4</span> <input type="range" id="sSpeed" min="0" max="20" value="4"></div>
+            <div class="slider-row">Wave: <span id="vWave">30</span> <input type="range" id="sWave" min="0" max="100" value="30"></div>
+            <div class="slider-row">Density: <span id="vDens">5</span> <input type="range" id="sDens" min="1" max="10" value="5"></div>
+            <div class="slider-row">Spacing: <span id="vSpacing">12</span> <input type="range" id="sSpacing" min="4" max="40" value="12"></div>
+        </div>
+
+        <div class="sec-head" onclick="toggleSec('chars')">Charsets <span id="arr-chars">▾</span></div>
+        <div id="body-chars" class="sec-body">
+            <div id="charsetGrid" class="grid">
+                <div class="cb" data-cs="chinese">CJK</div>
+                <div class="cb" data-cs="hieroglyphs">Egypt</div>
+                <div class="cb" data-cs="alchemy">Alch</div>
+                <div class="cb" data-cs="runes">Runes</div>
+                <div class="cb" data-cs="particles">Shape</div>
+                <div class="cb" data-cs="randuni">Random</div>
+            </div>
+            <div class="slider-row">Entropy: <span id="vEntropy">0</span>% <input type="range" id="sEntropy" min="0" max="100" value="0"></div>
+        </div>
+
+        <div style="margin-top: auto; padding-top: 1rem; display: flex; gap: 5px;">
+            <button id="btnPlay" style="flex:1; padding: 10px;">▶ Play</button>
+            <button id="btnSave" style="flex:1; padding: 10px;">Save</button>
+        </div>
+    </div>
+
+    <div id="canvas-wrap"></div>
+    <div id="toast">Message</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.min.js"></script>
+    <script>
+        // INTEGRATED STATE SYNTHESIS [3, 5, 13]
+        const CHARSETS = {
+            chinese: (function(){let a=[];for(let c=0x4E00;c<=0x4E50;c++)a.push(String.fromCodePoint(c));return a;})(),
+            hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀇𓀈𓀉𓀊'.split(''),
+            alchemy: '🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊'.split(''),
+            runes: 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃ'.split(''),
+            horsing: ['HORSING AROUND', 'HoRsInG', 'H-O-R-S-I-N-G'], // [14]
+            void: [' ', '░', '▒', '▓']
+        };
+
+        const PALETTES = {
+            site: ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
+            neon: ['#f72585','#7209b7','#3a0ca3','#4361ee','#4cc9f0'],
+            oxidized: ['#3d6b4f','#5a8a6a','#8ab89a','#c8a96e','#e8d4a8'],
+            incense: ['#D4A373','#B5835A','#8A5A44','#CC8B65','#E6C7A0'],
+            deepnebula: ['#0b0b2a','#1a1a4a','#3a2a6a','#7a4a8a','#c86aaa']
+        };
+
+        let S = {
+            mode: 'bloom', chars: CHARSETS.chinese, palette: PALETTES.site,
+            speed: 0.004, wave: 30, turb: 0.005, density: 0.45, spacing: 12, maxSize: 20,
+            entropy: 0, fontStack: "'Courier New', monospace", useParticleMode: false,
+            reactFeed: 0.055, reactKill: 0.062, playing: false, fc: 0, trailPersist: 0
+        };
+
+        let CTX, rdGrid, voronoiSites = [], myceliumBranches = [], boidAgents = [], magneticPoles = [];
+
+        // ADVANCED DC FUNCTION with Particle Mode [6, 15]
+        function dc(x, y, sz, rot, col, ch) {
+            if (!CTX) return;
+            if (S.useParticleMode) {
+                CTX.fillStyle = col; CTX.beginPath();
+                let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
+                if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
+                else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+                else { CTX.moveTo(x, y - sz * 0.4); CTX.lineTo(x + sz * 0.4, y + sz * 0.4); CTX.lineTo(x - sz * 0.4, y + sz * 0.4); CTX.closePath(); }
+                CTX.fill(); return;
+            }
+            if (!ch || (!ch.trim() && S.entropy < 0.1)) return;
+            CTX.save(); CTX.translate(x, y);
+            if (rot) CTX.rotate(rot);
+            CTX.font = (sz | 0) + 'px ' + S.fontStack;
+            CTX.fillStyle = col; CTX.fillText(ch, 0, 0);
+            CTX.restore();
+        }
+
+        function pcc(p, x, y, t) {
+            let n = p.noise(x * 0.01, y * 0.01, t);
+            let col = S.palette[Math.floor(n * S.palette.length) % S.palette.length];
+            let i = Math.floor(p.noise(x * 0.08, y * 0.08) * S.chars.length);
+            let ch = S.chars[i % S.chars.length];
+            if (S.entropy > 0 && Math.random() < S.entropy) ch = '█'; // Glitch simplification [16]
+            return { col, ch };
+        }
+
+        // MODE INITIALIZERS [17-20]
+        function initReaction(W, H) {
+            let res = Math.max(4, Math.floor(S.spacing * 0.8));
+            let rw = Math.floor(W / res) + 1, rh = Math.floor(H / res) + 1;
+            rdGrid = { A: new Float32Array(rw * rh).fill(1), B: new Float32Array(rw * rh).fill(0), res, rw, rh };
+            rdGrid.B[Math.floor(rw * rh / 2)] = 1; 
+        }
+
+        // P5 SKETCH CORE [8, 21, 22]
+        new p5(p => {
+            let W, H;
+            p.setup = () => {
+                let wrap = document.getElementById('canvas-wrap');
+                W = wrap.offsetWidth; H = wrap.offsetHeight;
+                p.createCanvas(W, H).parent('canvas-wrap');
+                CTX = p.drawingContext; CTX.textBaseline = 'middle';
+                p.noLoop(); initReaction(W, H);
+            };
+
+            p.draw = () => {
+                S.fc++; let t = S.fc * S.speed;
+                CTX.fillStyle = S.bg || '#0d0c0a';
+                CTX.fillRect(0, 0, W, H);
+
+                switch (S.mode) {
+                    case 'bloom': 
+                        for (let x = 0; x < W; x += S.spacing) {
+                            for (let y = 0; y < H; y += S.spacing) {
+                                let n = p.noise(x * 0.01, y * 0.01, t);
+                                if (n < S.density) continue;
+                                let r = pcc(p, x, y, t);
+                                dc(x, y, p.map(n, S.density, 1, 2, S.maxSize), n * 6.28, r.col, r.ch);
+                            }
+                        }
+                        break;
+                    case 'tesseract': drawTesseract(p, t, W, H); break; // Logic from [4, 23]
+                    case 'reaction': drawReaction(p, t); break; // Logic from [24-26]
+                }
+            };
+
+            // Simplified 4D Hypercube logic [27, 28]
+            function drawTesseract(p, t, W, H) {
+                let cx = W / 2, cy = H / 2, sz = Math.min(W, H) * 0.2;
+                for (let i = 0; i < 16; i++) {
+                    let x = (i & 1 ? 1 : -1) * sz + cx + Math.sin(t + i) * 50;
+                    let y = (i & 2 ? 1 : -1) * sz + cy + Math.cos(t + i) * 50;
+                    let r = pcc(p, x, y, t);
+                    dc(x, y, S.maxSize, 0, r.col, r.ch);
+                }
+            }
+
+            // Reaction Diffusion (Gray-Scott) [24-26]
+            function drawReaction(p, t) {
+                if (!rdGrid) return;
+                // Simplified visualization loop
+                for (let i = 0; i < rdGrid.rw * rdGrid.rh; i += 4) {
+                    let x = (i % rdGrid.rw) * rdGrid.res, y = Math.floor(i / rdGrid.rw) * rdGrid.res;
+                    let r = pcc(p, x, y, t);
+                    dc(x, y, S.maxSize * 0.5, 0, r.col, r.ch);
+                }
+            }
+
+        }, 'canvas-wrap');
+
+        // UI WIRING AND UTILITIES [12, 29]
+        function toggleSec(id) {
+            document.getElementById('body-' + id).classList.toggle('collapsed');
+        }
+
+        document.getElementById('btnPlay').onclick = function() {
+            S.playing = !S.playing;
+            this.textContent = S.playing ? '⏸ Pause' : '▶ Play';
+            if (S.playing) window._st?.p.loop(); else window._st?.p.noLoop();
+        };
+
+        // PRESET ENGINE [30-32]
+        const PRESETS = {
+            alchemist: { mode: 'bloom', chars: CHARSETS.alchemy, palette: PALETTES.incense, speed: 0.002, density: 0.3 },
+            fossil: { mode: 'bloom', chars: CHARSETS.runes, palette: PALETTES.oxidized, density: 0.6 },
+            nebula: { mode: 'tesseract', chars: CHARSETS.void, palette: PALETTES.deepnebula, speed: 0.008 }
+        };
+
+        document.getElementById('presetBar').onclick = e => {
+            let b = e.target.closest('[data-preset]');
+            if (b && PRESETS[b.dataset.preset]) {
+                Object.assign(S, PRESETS[b.dataset.preset]);
+                showToast("Applied: " + b.dataset.preset);
+            }
+        };
+
+        function showToast(m) {
+            let t = document.getElementById('toast');
+            t.textContent = m; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
