@@ -1691,46 +1691,56 @@ function drawVoronoi(p,t){
 
 // ── NEW MODE: MYCELIUM ────────────────────────────────────────────────────────
 // Branching organic network — like fungal growth or neural dendrites
-function drawMycelium(p,t){
-  if(!myceliumBranches.length) initMycelium(p.width,p.height);
-  if(S.playing){
-    let newBranches=[];
-    myceliumBranches.forEach(function(b){
+function drawMycelium(p, t) {
+  if (!myceliumBranches.length) initMycelium(p.width, p.height);
+  if (S.playing) {
+    let newBranches = [];
+    myceliumBranches.forEach(function(b) {
       // Grow
-      b.angle+=p.noise(b.x*.008,b.y*.008,t*.3)*.4-.2+S.wave*.003;
-      b.x+=Math.cos(b.angle)*b.speed;
-      b.y+=Math.sin(b.angle)*b.speed;
-      b.len+=b.speed;b.age++;
+      b.angle += p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) * 0.4 - 0.2 + S.wave * 0.003;
+      b.x += Math.cos(b.angle) * b.speed;
+      b.y += Math.sin(b.angle) * b.speed;
+      b.len += b.speed;
+      b.age++;
       // Branch
-      if(b.len>30+Math.random()*60&&b.children<b.maxChildren&&Math.random()<.02){
+      if (b.len > 30 + Math.random() * 60 && b.children < b.maxChildren && Math.random() < 0.02) {
         b.children++;
-        newBranches.push({x:b.x,y:b.y,angle:b.angle+(Math.random()-.5)*1.2,
-          len:0,maxLen:b.maxLen*.7,speed:b.speed*.9,age:0,
-          col:S.palette[Math.floor(Math.random()*S.palette.length)],
-          children:0,maxChildren:2});
+        newBranches.push({
+          x: b.x, y: b.y,
+          angle: b.angle + (Math.random() - 0.5) * 1.2,
+          len: 0,
+          maxLen: b.maxLen * 0.7,
+          speed: b.speed * 0.9,
+          age: 0,
+          col: S.palette[Math.floor(Math.random() * S.palette.length)],
+          children: 0,
+          maxChildren: 2
+        });
       }
       // Die at edges or max length
-      if(b.x<0||b.x>p.width||b.y<0||b.y>p.height||b.len>b.maxLen) b.dead=true;
+      if (b.x < 0 || b.x > p.width || b.y < 0 || b.y > p.height || b.len > b.maxLen) b.dead = true;
     });
-    myceliumBranches=myceliumBranches.filter(function(b){return !b.dead;});
-    myceliumBranches=myceliumBranches.concat(newBranches);
-    // Respawn
-    if(myceliumBranches.length<5){
-      initMycelium(p.width,p.height);
-    }
-    if(myceliumBranches.length>400) myceliumBranches.splice(0,50);
+    myceliumBranches = myceliumBranches.filter(function(b) { return !b.dead; });
+    myceliumBranches = myceliumBranches.concat(newBranches);
+    // Respawn if too few branches
+    if (myceliumBranches.length < 5) initMycelium(p.width, p.height);
+    if (myceliumBranches.length > 400) myceliumBranches.splice(0, 50);
   }
-  myceliumBranches.forEach(function(b){
-    let alpha=Math.min(1,b.len/20)*(1-b.len/b.maxLen);
-    CTX.globalAlpha = 0.7;
+  // Draw each branch point
+  myceliumBranches.forEach(function(b) {
+    let alpha = Math.min(1, b.len / 20) * (1 - b.len / b.maxLen);
+    CTX.globalAlpha = alpha;
+    // Character size based on growth progress
+    let sz = p.map(b.len / b.maxLen, 0, 1, S.maxSize * 0.6, 2);
+    // Draw a small circle at the branch point for better visibility
     CTX.fillStyle = b.col;
     CTX.beginPath();
     CTX.arc(b.x, b.y, sz * 0.3, 0, Math.PI * 2);
     CTX.fill();
-    let sz=p.map(b.len/b.maxLen,0,1,S.maxSize*.6,2);
-    dc(b.x,b.y,sz,b.angle,b.col,pickChar(p,b.x,b.y,t));
+    // Draw the character
+    dc(b.x, b.y, sz, b.angle, b.col, pickChar(p, b.x, b.y, t));
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
 
 // ── NEW MODE: SAND DRIFT ──────────────────────────────────────────────────────
