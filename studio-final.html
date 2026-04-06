@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio — Jonathan Britton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&family=VT323&family=Special+Elite&family=Bebas+Neue&family=Playfair+Display:ital@1&family=Noto+Sans+Symbols+2&family=Noto+Emoji&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--panel-w:296px}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',sans-serif;font-weight:300}
+#app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
+#canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
+#canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
+#panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
+.pt{font-family:'EB Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--cream);margin-bottom:.12rem}
+.ps{font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.ph-actions{position:absolute;top:.85rem;right:1rem;display:flex;gap:5px}
+.ph-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;cursor:pointer;transition:all .18s}
+.ph-btn:hover{border-color:var(--pale);color:var(--pale)}
+.ph-btn.chaos-on{border-color:var(--gold);color:var(--gold);animation:chaospulse 1.2s ease-in-out infinite}
+@keyframes chaospulse{0%,100%{opacity:1}50%{opacity:.5}}
+#presetBar{padding:.5rem 1.3rem .55rem;border-bottom:1px solid var(--stone);flex-shrink:0}
+.pbar-label{font-size:.43rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.38rem}
+.pbar-grid{display:flex;flex-wrap:wrap;gap:3px}
+.pbar-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .45rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.pbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
+#ctl{flex:1;overflow-y:auto;padding:0}
+#ctl::-webkit-scrollbar{width:3px}
+#ctl::-webkit-scrollbar-thumb{background:var(--stone)}
+.sec{border-bottom:1px solid var(--stone)}
+.sec-hd{padding:.7rem 1.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.sec-hd:hover{background:rgba(255,255,255,.018)}
+.sl{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+.sec-arrow{font-size:.6rem;color:var(--stone);transition:transform .2s;margin-left:4px}
+.sec-arrow.open{transform:rotate(90deg)}
+.sec-body{padding:.05rem 1.3rem .7rem}
+.sec-body.collapsed{display:none}
+.sl2{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin:.62rem 0 .38rem}
+.mg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:.4rem}
+.mb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.47rem;letter-spacing:.07em;text-transform:uppercase;padding:.37rem .15rem;cursor:pointer;transition:all .18s;text-align:center;line-height:1.2}
+.mb:hover{border-color:var(--mid);color:var(--pale)}
+.mb.active{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
+.mb.new-mode{border-color:rgba(184,149,90,.28)}
+.cg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.42rem}
+.cb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.07em;text-transform:uppercase;padding:.26rem .5rem;cursor:pointer;transition:all .18s}
+.cb:hover{border-color:var(--mid);color:var(--pale)}
+.cb.active{border-color:var(--pale);color:var(--pale)}
+.cr{display:flex;gap:5px;margin-top:.5rem}
+.ci{flex:1;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'EB Garamond',serif;font-size:.95rem;padding:.32rem .5rem;outline:none;min-width:0}
+.ci:focus{border-color:var(--pale)}
+.ci::placeholder{color:var(--stone);font-style:italic}
+.ca{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:0 .6rem;cursor:pointer;transition:all .18s;white-space:nowrap}
+.ca:hover{border-color:var(--pale);color:var(--pale)}
+.rw{margin-bottom:.7rem}
+.rl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.24rem}
+.rn{font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.rv{font-family:'EB Garamond',serif;font-size:.8rem;color:var(--pale);min-width:30px;text-align:right}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:var(--stone);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--gold);cursor:pointer;transition:transform .12s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
+.pg{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.4rem}
+.pb{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0}
+.pb:hover{transform:scale(1.2)}
+.pb.active{border-color:var(--cream)}
+.ag{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.4rem}
+.as{width:18px;height:18px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s;flex-shrink:0}
+.as:hover{transform:scale(1.2)}
+.as.active{border-color:var(--cream)}
+.ar{display:flex;gap:5px;padding:.72rem 1.3rem;border-top:1px solid var(--stone);flex-shrink:0;background:var(--dark)}
+.ab{flex:1;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;padding:.56rem 0;cursor:pointer;transition:all .18s;text-align:center}
+.ab:hover{border-color:var(--pale);color:var(--pale)}
+.ab.play{border-color:var(--gold);color:var(--gold)}
+.ab.play:hover{background:rgba(184,149,90,.08)}
+.corner{position:absolute;bottom:1.2rem;left:1.4rem;font-family:'Jost',sans-serif;font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(90,85,80,.5);pointer-events:none;z-index:5}
+.fps{position:absolute;top:.6rem;left:.8rem;font-family:'Jost',monospace;font-size:.54rem;color:rgba(90,85,80,.4);pointer-events:none;z-index:5}
+#kbHint{position:absolute;bottom:1.2rem;right:1.4rem;font-family:'Jost',sans-serif;font-size:.43rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(90,85,80,.32);pointer-events:none;z-index:5;line-height:1.9;text-align:right}
+.tr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.52rem}
+.tl{font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mid)}
+.tb{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:.24rem .58rem;cursor:pointer;transition:all .18s}
+.tb.on{border-color:var(--gold);color:var(--gold)}
+select{width:100%;background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.57rem;padding:.38rem .5rem;outline:none;cursor:pointer;transition:border-color .18s;margin-bottom:.25rem;-webkit-appearance:none}
+select:focus{border-color:var(--pale)}
+select option{background:var(--ink)}
+.iu{width:100%;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.13em;text-transform:uppercase;padding:.53rem;cursor:pointer;transition:all .18s;text-align:center;margin-bottom:.4rem;display:block}
+.iu:hover{border-color:var(--pale);color:var(--pale)}
+.is{font-size:.51rem;letter-spacing:.09em;color:var(--dim);font-style:italic;margin-bottom:.42rem}
+.hn{font-size:.47rem;letter-spacing:.08em;color:var(--stone);line-height:1.7;margin-top:.25rem}
+.nr{display:flex;align-items:center;gap:5px;margin-top:.4rem}
+.ni{background:var(--ink);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.65rem;padding:.35rem .45rem;outline:none;width:60px;text-align:center}
+.nx{font-size:.58rem;color:var(--dim)}
+.sh-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.5rem}
+.sh-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.48rem;letter-spacing:.07em;text-transform:uppercase;padding:.3rem .55rem;cursor:pointer;transition:all .18s}
+.sh-btn:hover{border-color:var(--pale);color:var(--pale)}
+.sh-btn.active{border-color:var(--gold);color:var(--gold)}
+.sh-list{font-size:.52rem;color:var(--dim);font-family:'Jost',sans-serif;letter-spacing:.08em;line-height:2.2}
+.sh-item{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.sh-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#toast{position:absolute;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--dark);border:1px solid var(--gold);color:var(--cream);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1.1rem;z-index:50;transition:transform .3s ease;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
+.mode-ctrl{display:none;margin-top:.6rem;border-top:1px solid rgba(138,128,120,.15);padding-top:.6rem}
+.mode-ctrl.active{display:block}
+@media(max-width:1024px){:root{--panel-w:268px}}
+@media(max-width:768px){
+  html,body{overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100dvh;height:100vh}
+  #canvas-wrap{flex:0 0 42vh;min-height:150px}
+  #panel{flex:1;min-height:0;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
+  #panelBtn{display:block}
+  .ph{padding:.65rem 1.1rem .5rem}
+  .sec-body{padding:.05rem 1.1rem .6rem}
+  .mg{grid-template-columns:1fr 1fr 1fr 1fr}
+  .mb{font-size:.43rem;padding:.32rem .1rem}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="gc"></canvas>
+    <div class="corner" id="modeLabel">Bloom</div>
+    <div class="fps" id="fpsLabel"></div>
+    <div id="kbHint">Space: play/pause · R: regen · S: save</div>
+    <button id="panelBtn" onclick="togglePanel()">⊕ Controls</button>
+    <div id="toast"></div>
+  </div>
+  <div id="panel">
+    <div class="ph">
+      <div class="pt">Generative Studio</div>
+      <div class="ps">jonathanbrittonart.com/studio</div>
+      <div class="ph-actions">
+        <button class="ph-btn" id="btnCollapseAll" title="Collapse all sections">Collapse</button>
+        <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
+        <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
+      </div>
+    </div>
+    <div id="presetBar">
+      <div class="pbar-label">Quick presets</div>
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="sacred">Sacred</button>
+        <button class="pbar-btn" data-preset="signal">Signal</button>
+        <button class="pbar-btn" data-preset="webster">Webster</button>
+        <button class="pbar-btn" data-preset="dream">Dream</button>
+        <button class="pbar-btn" data-preset="topo">Topo</button>
+        <button class="pbar-btn" data-preset="deepsea">Deep Sea</button>
+        <button class="pbar-btn" data-preset="paperink">Paper Ink</button>
+        <button class="pbar-btn" data-preset="machinepoetry">Machine Poetry</button>
+        <button class="pbar-btn" data-preset="sacredgeo">Sacred Geo</button>
+        <button class="pbar-btn" data-preset="urbannight">Urban Night</button>
+        <button class="pbar-btn" data-preset="entropy">Entropy</button>
+        <button class="pbar-btn" data-preset="aurora">Aurora</button>
+        <button class="pbar-btn" data-preset="midnighttokyo">Midnight Tokyo</button>
+        <button class="pbar-btn" data-preset="inkwash">Ink Wash</button>
+        <button class="pbar-btn" data-preset="neonjungle">Neon Jungle</button>
+        <button class="pbar-btn" data-preset="desertstorm">Desert Storm</button>
+        <button class="pbar-btn" data-preset="arcticbloom">Arctic Bloom</button>
+        <button class="pbar-btn" data-preset="voidsignal">Void Signal</button>
+        <button class="pbar-btn" data-preset="copperetch">Copper Etch</button>
+        <button class="pbar-btn" data-preset="sakurarain">Sakura Rain</button>
+        <button class="pbar-btn" data-preset="turing">Turing Spots</button>
+        <button class="pbar-btn" data-preset="mycelium">Mycelium</button>
+        <button class="pbar-btn" data-preset="truchet_tiles">Truchet</button>
+        <button class="pbar-btn" data-preset="hatch_print">Hatch Print</button>
+        <button class="pbar-btn" data-preset="liquid_crystal">Liquid Crystal</button>
+        <button class="pbar-btn" data-preset="topographic">Topographic</button>
+        <button class="pbar-btn" data-preset="tesseract4d">Tesseract 4D</button>
+        <button class="pbar-btn" data-preset="hypersphere4d">Hypersphere</button>
+        <button class="pbar-btn" data-preset="flock">Flock</button>
+        <button class="pbar-btn" data-preset="dipole">Dipole Field</button>
+        <button class="pbar-btn" data-preset="volcanic_flow">Volcanic</button>
+        <button class="pbar-btn" data-preset="neon_grid">Neon Grid</button>
+        <button class="pbar-btn" data-preset="fingerprint">Fingerprint</button>
+        <button class="pbar-btn" data-preset="kintsugi_breaks">Kintsugi</button>
+        <button class="pbar-btn" data-preset="bioluminescent">Biolum</button>
+        <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
+      </div>
+    </div>
+    <div id="ctl">
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
+      <div class="sec-body" id="body-mode">
+        <div class="mg" id="modeGrid">
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.18rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px">✦ Character</div>
+          <button class="mb active" data-mode="bloom">Bloom</button>
+          <button class="mb" data-mode="wave">Wave</button>
+          <button class="mb" data-mode="rain1">Rain</button>
+          <button class="mb" data-mode="rain2">Rain 2</button>
+          <button class="mb" data-mode="vortex">Vortex</button>
+          <button class="mb" data-mode="ripple">Ripple</button>
+          <button class="mb" data-mode="drift">Drift</button>
+          <button class="mb" data-mode="tess">Tessellation</button>
+          <button class="mb" data-mode="warp">Warp</button>
+          <button class="mb" data-mode="glitch">Glitch</button>
+          <button class="mb" data-mode="webster">Blocks</button>
+          <button class="mb" data-mode="matrix">Matrix</button>
+          <button class="mb" data-mode="orbit">Orbit</button>
+          <button class="mb" data-mode="spiral">Spiral</button>
+          <button class="mb" data-mode="scan">Scan</button>
+          <button class="mb" data-mode="halftone">Halftone</button>
+          <button class="mb" data-mode="shatter">Shatter</button>
+          <button class="mb" data-mode="weave">Weave</button>
+          <button class="mb" data-mode="topo">Topo</button>
+          <button class="mb" data-mode="recursive">Recursive</button>
+          <button class="mb" data-mode="contour">Contour</button>
+          <button class="mb" data-mode="fabric">Fabric</button>
+          <button class="mb" data-mode="loops">Loops</button>
+          <button class="mb" data-mode="imgtext">Img→Text</button>
+          <button class="mb" data-mode="pipes">Pipes</button>
+          <button class="mb" data-mode="calligraphy">Calligr.</button>
+          <button class="mb" data-mode="lissajous">Lissajous</button>
+          <button class="mb new-mode" data-mode="reaction">Reaction</button>
+          <button class="mb new-mode" data-mode="cellular">Cellular</button>
+          <button class="mb new-mode" data-mode="interference">Interfere</button>
+          <button class="mb new-mode" data-mode="worms">Worms</button>
+          <button class="mb new-mode" data-mode="wfc">WFC Tiles</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
+          <button class="mb new-mode" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
+          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
+          <button class="mb new-mode" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
+          <button class="mb new-mode" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
+          <button class="mb new-mode" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
+          <button class="mb new-mode" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
+          <button class="mb new-mode" data-mode="hypercube5d" title="5D hypercube (Penteract) projected into 2D — 32 vertices, 80 edges">Penteract</button>
+          <button class="mb" data-mode="topolines">Topo Lines</button>
+          <button class="mb" data-mode="wireterrain">Terrain</button>
+          <button class="mb" data-mode="fractalsubdiv">Fractal</button>
+          <button class="mb new-mode" data-mode="voronoi">Voronoi</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
+          <button class="mb new-mode" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
+          <button class="mb new-mode" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
+          <button class="mb new-mode" data-mode="sand">Sand</button>
+          <button class="mb new-mode" data-mode="mycelium">Mycelium</button>
+        </div>
+
+        <!-- Mode Specific Controls -->
+        <div id="ctrl-reaction" class="mode-ctrl">
+          <div class="sl2">Reaction Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.055</span></div><input type="range" id="sReactFeed" min="10" max="100" value="55" step="1"></div>
+          <div class="rw"><div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.062</span></div><input type="range" id="sReactKill" min="10" max="100" value="62" step="1"></div>
+        </div>
+        <div id="ctrl-mycelium" class="mode-ctrl">
+          <div class="sl2">Mycelium Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">2.0</span></div><input type="range" id="sMycSpeed" min="5" max="50" value="20" step="1"></div>
+          <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">4</span></div><input type="range" id="sMycBranch" min="1" max="10" value="4" step="1"></div>
+        </div>
+        <div id="ctrl-magnetic" class="mode-ctrl">
+          <div class="sl2">Magnetic Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        </div>
+
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
+      <div class="sec-body" id="body-chars">
+        <div class="cg" id="charsetGrid">
+          <button class="cb" data-cs="hex">Hex</button>
+          <button class="cb" data-cs="gothic">Gothic</button>
+          <button class="cb" data-cs="cursive">Cursive</button>
+          <button class="cb active" data-cs="chinese">Chinese</button>
+          <button class="cb" data-cs="hiragana">Hiragana</button>
+          <button class="cb" data-cs="katakana">Katakana</button>
+          <button class="cb" data-cs="kanji">Kanji</button>
+          <button class="cb" data-cs="korean">Korean</button>
+          <button class="cb" data-cs="thai">Thai</button>
+          <button class="cb" data-cs="greek">Greek</button>
+          <button class="cb" data-cs="georgian">Georgian</button>
+          <button class="cb" data-cs="cyrillic">Cyrillic</button>
+          <button class="cb" data-cs="sanskrit">Sanskrit</button>
+          <button class="cb" data-cs="arcane">Arcane</button>
+          <button class="cb" data-cs="runes">Runes</button>
+          <button class="cb" data-cs="alchemy">Alchemy</button>
+          <button class="cb" data-cs="celtic">Celtic</button>
+          <button class="cb" data-cs="hieroglyphs">Hieroglyphs</button>
+          <button class="cb" data-cs="sacred">Sacred</button>
+          <button class="cb" data-cs="music">Music</button>
+          <button class="cb" data-cs="math">Math</button>
+          <button class="cb" data-cs="ascii">ASCII</button>
+          <button class="cb" data-cs="symbols">Symbols</button>
+          <button class="cb" data-cs="barcode">Barcode</button>
+          <button class="cb" data-cs="gradients">Blocks ░▓</button>
+          <button class="cb" data-cs="squares">Squares</button>
+          <button class="cb" data-cs="crossstitch">Cross-stitch</button>
+          <button class="cb" data-cs="circles">Circles</button>
+          <button class="cb" data-cs="daggers">Daggers</button>
+          <button class="cb" data-cs="lines">Lines</button>
+          <button class="cb" data-cs="dots">Dots</button>
+          <button class="cb" data-cs="braille">Braille</button>
+          <button class="cb" data-cs="void">Void</button>
+          <button class="cb" data-cs="custom">Custom ↓</button>
+          <button class="cb" data-cs="particles" title="Drawn particle shapes instead of characters">Particles</button>
+          <button class="cb" data-cs="randuni" title="Randomly chosen Unicode character each frame — full spectrum">Rand Unicode</button>
+          <button class="cb" data-cs="randuni_weighted" title="Random Unicode with weighted ranges: more Latin, fewer rare scripts">Rand Weighted</button>
+          <button class="cb" data-cs="randuni_pos" title="Position-based deterministic Unicode — stable textures that evolve slowly">Rand Positional</button>
+          <button class="cb" data-cs="randuni_drift" title="Unicode Drift — characters slowly morph by shifting code points">Rand Drift</button>
+        </div>
+        <div class="cr" id="customRow" style="display:none">
+          <input class="ci" id="customInput" placeholder="chars or words semicolon-separated…" maxlength="120">
+          <button class="ca" id="customApply">Set</button>
+        </div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
+      <div class="sec-body" id="body-font">
+        <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal</option>
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="unicode">Universal Unicode</option>
+          <option value="mono">Monospace</option>
+        </select>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
+      <div class="sec-body" id="body-motion">
+        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
+        <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
+        <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
+      <div class="sec-body" id="body-field">
+        <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1" title="Character density — threshold for placing characters (higher = fewer chars)"></div>
+        <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
+        <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
+        <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
+        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
+      <div class="sec-body" id="body-entropy">
+        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Entropy: replaces characters with random glitch symbols at this probability"></div>
+        <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Case glitch: randomly flips character case (uppercase ↔ lowercase)"></div>
+        <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
+        <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
+        <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
+      <div class="sec-body" id="body-palette">
+        <div class="pg" id="palGrid">
+          <div class="pb active" data-pal="site" style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
+          <div class="pb" data-pal="ember" style="background:linear-gradient(135deg,#c8632a,#e08040)"></div>
+          <div class="pb" data-pal="frost" style="background:linear-gradient(135deg,#8aaccc,#b0c8e0)"></div>
+          <div class="pb" data-pal="jade" style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
+          <div class="pb" data-pal="dusk" style="background:linear-gradient(135deg,#7a5a8a,#c890d8)"></div>
+          <div class="pb" data-pal="mono" style="background:linear-gradient(135deg,#808078,#a0a098)"></div>
+          <div class="pb" data-pal="fire" style="background:linear-gradient(135deg,#e63946,#f4a261)"></div>
+          <div class="pb" data-pal="abyss" style="background:linear-gradient(135deg,#000814,#ffc300)"></div>
+          <div class="pb" data-pal="sakura" style="background:linear-gradient(135deg,#ffb7c5,#ff99ac)"></div>
+          <div class="pb" data-pal="moss" style="background:linear-gradient(135deg,#2d6a4f,#52b788)"></div>
+          <div class="pb" data-pal="neon" style="background:linear-gradient(135deg,#f72585,#4cc9f0)"></div>
+          <div class="pb" data-pal="matrix" style="background:linear-gradient(135deg,#003300,#00ff00)"></div>
+          <div class="pb" data-pal="paper" style="background:linear-gradient(135deg,#2e2820,#e8e0d4)"></div>
+          <div class="pb" data-pal="navy" style="background:linear-gradient(135deg,#0a1628,#8ab8e0)"></div>
+          <div class="pb" data-pal="rust" style="background:linear-gradient(135deg,#8b2500,#e8a87c)"></div>
+          <div class="pb" data-pal="copper" style="background:linear-gradient(135deg,#6b3a18,#b87333)"></div>
+          <div class="pb" data-pal="aurora" style="background:linear-gradient(135deg,#845ec2,#ffd93d)"></div>
+          <div class="pb" data-pal="brutalist" style="background:linear-gradient(135deg,#1a1a1a,#f5f500)"></div>
+          <div class="pb" data-pal="risograph" style="background:linear-gradient(135deg,#ff6b35,#06d6a0)"></div>
+          <div class="pb" data-pal="cyanotype" style="background:linear-gradient(135deg,#003f88,#caf0f8)"></div>
+          <div class="pb" data-pal="infrared" style="background:linear-gradient(135deg,#ff0055,#ffff00)"></div>
+          <div class="pb" data-pal="oxidized" style="background:linear-gradient(135deg,#3d6b4f,#e8d4a8)"></div>
+          <div class="pb" data-pal="velvet" style="background:linear-gradient(135deg,#2d0a31,#e0aaff)"></div>
+          <div class="pb" data-pal="tidal" style="background:linear-gradient(135deg,#0077b6,#90e0ef)"></div>
+          <div class="pb" data-pal="solaris" style="background:linear-gradient(135deg,#ff9500,#ffd60a)"></div>
+        </div>
+        <div class="sl2">Accent Color</div>
+        <div class="rw"><div class="rl"><span class="rn">Amount</span><span class="rv" id="vAccent1">10</span></div><input type="range" id="sAccent1" min="0" max="100" value="10" step="5"></div>
+        <div class="ag" id="accentRow1">
+          <div class="as active" data-accent="#e63946" style="background:#e63946"></div>
+          <div class="as" data-accent="#f4a261" style="background:#f4a261"></div>
+          <div class="as" data-accent="#ede66c" style="background:#ede66c"></div>
+          <div class="as" data-accent="#c4bcb0" style="background:#c4bcb0"></div>
+          <div class="as" data-accent="#80b8e8" style="background:#80b8e8"></div>
+          <div class="as" data-accent="#d890d8" style="background:#d890d8"></div>
+          <div class="as" data-accent="#90d4a0" style="background:#90d4a0"></div>
+          <div class="as" data-accent="#ffffff" style="background:#fff;border:1px solid #555"></div>
+        </div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend &amp; Effects</span><span class="sec-arrow" id="arr-blend">›</span></div>
+      <div class="sec-body collapsed" id="body-blend">
+        <div class="sl2">Blend Mode</div>
+        <select id="blendSelect">
+          <option value="source-over">Normal</option>
+          <option value="screen">Screen</option>
+          <option value="overlay">Overlay</option>
+          <option value="multiply">Multiply</option>
+          <option value="difference">Difference</option>
+          <option value="exclusion">Exclusion</option>
+          <option value="color-dodge">Color Dodge</option>
+          <option value="hard-light">Hard Light</option>
+        </select>
+        <div class="rw" style="margin-top:.8rem"><div class="rl"><span class="rn">Trail persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — leaves ghostly traces of previous frames (0=none)"></div>
+        <div class="tr"><span class="tl">Signal collapse</span><button class="tb" id="btnSignal">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
+      <div class="sec-body collapsed" id="body-comp">
+        <div class="tr"><span class="tl">Enable blocks</span><button class="tb" id="btnComp">Off</button></div>
+        <div class="cg" id="compRow">
+          <button class="cb active" data-comp="0">Split H</button>
+          <button class="cb" data-comp="1">Split V</button>
+          <button class="cb" data-comp="2">Quads</button>
+          <button class="cb" data-comp="3">Nested</button>
+          <button class="cb" data-comp="rand">Random</button>
+        </div>
+        <div class="sl2">Block palette</div>
+        <div class="cg" id="compPalGrid">
+          <button class="cb active" data-comppal="default">Studio</button>
+          <button class="cb" data-comppal="earth">Earth</button>
+          <button class="cb" data-comppal="ocean">Ocean</button>
+          <button class="cb" data-comppal="dusk2">Dusk</button>
+          <button class="cb" data-comppal="fire2">Fire</button>
+          <button class="cb" data-comppal="neon2">Neon</button>
+          <button class="cb" data-comppal="paper2">Paper</button>
+          <button class="cb" data-comppal="rust2">Rust</button>
+          <button class="cb" data-comppal="navy2">Navy</button>
+        </div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('shapes')"><span class="sl">Shape overlay</span><span class="sec-arrow" id="arr-shapes">›</span></div>
+      <div class="sec-body collapsed" id="body-shapes">
+        <div class="tr"><span class="tl">Enable shapes</span><button class="tb" id="btnShapes">Off</button></div>
+        <div class="cg" id="shapeTypeRow">
+          <button class="cb active" data-shape="circle">Circle</button>
+          <button class="cb" data-shape="ring">Ring</button>
+          <button class="cb" data-shape="rect">Rect</button>
+          <button class="cb" data-shape="hexagon">Hex</button>
+          <button class="cb" data-shape="star5">Star 5</button>
+          <button class="cb" data-shape="star6">Star 6</button>
+          <button class="cb" data-shape="polygon">Poly</button>
+          <button class="cb" data-shape="band">Band</button>
+          <button class="cb" data-shape="lissajous">Lissa</button>
+        </div>
+        <div class="rw" id="polySidesRow" style="margin-top:.4rem"><div class="rl"><span class="rn">Polygon sides</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="12" value="7" step="1"></div>
+        <div class="sl2">Position</div>
+        <div class="cg" id="shapePosRow">
+          <button class="cb active" data-pos="center">Center</button>
+          <button class="cb" data-pos="random">Random</button>
+          <button class="cb" data-pos="tl">↖ TL</button>
+          <button class="cb" data-pos="tr">↗ TR</button>
+          <button class="cb" data-pos="bl">↙ BL</button>
+          <button class="cb" data-pos="br">↘ BR</button>
+        </div>
+        <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1" title="Character density inside the shape"></div>
+        <div class="sl2">Shape characters</div>
+        <select id="shapeCharSelect">
+          <option value="same">Same as main field</option>
+          <option value="chinese">Chinese</option>
+          <option value="hiragana">Hiragana</option>
+          <option value="katakana">Katakana</option>
+          <option value="cyrillic">Cyrillic</option>
+          <option value="ascii">ASCII</option>
+          <option value="symbols">Symbols</option>
+          <option value="gradients">Blocks ░▓</option>
+          <option value="dots">Dots</option>
+          <option value="lines">Lines</option>
+          <option value="daggers">Daggers</option>
+          <option value="runes">Runes</option>
+          <option value="math">Math</option>
+        </select>
+        <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5" title="How quickly characters inside the shape cycle"></div>
+        <div class="sl2">Char color mode</div>
+        <div class="cg" id="shapeColModeRow">
+          <button class="cb active" data-scm="inherit">Field</button>
+          <button class="cb" data-scm="fixed">Fixed</button>
+          <button class="cb" data-scm="math">Math</button>
+          <button class="cb" data-scm="palette">Palette</button>
+        </div>
+        <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
+          <div class="as" data-sfc="#e63946" style="background:#e63946"></div>
+          <div class="as" data-sfc="#f4a261" style="background:#f4a261"></div>
+          <div class="as" data-sfc="#ede66c" style="background:#ede66c"></div>
+          <div class="as active" data-sfc="#c4bcb0" style="background:#c4bcb0"></div>
+          <div class="as" data-sfc="#80b8e8" style="background:#80b8e8"></div>
+          <div class="as" data-sfc="#d890d8" style="background:#d890d8"></div>
+          <div class="as" data-sfc="#90d4a0" style="background:#90d4a0"></div>
+          <div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555"></div>
+        </div>
+        <div class="sl2">Shape behavior</div>
+        <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2" title="Shape pulse — radius oscillates in and out"></div>
+        <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5" title="Shape spin speed — rotates the shape and its fill"></div>
+        <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
+        <div class="sl2">Scrolling text in shape</div>
+        <div class="cr" style="margin-bottom:.4rem">
+          <input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60">
+          <button class="ca" id="setShapeTextBtn">Set</button>
+        </div>
+        <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-bottom:.3rem">Add shape</button>
+        <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">Clear all</button>
+        <div id="shapeList" class="sh-list"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('overlay')"><span class="sl">Overlay text streams</span><span class="sec-arrow" id="arr-overlay">›</span></div>
+      <div class="sec-body collapsed" id="body-overlay">
+        <div class="tr"><span class="tl">Enable overlay</span><button class="tb" id="btnOverlay">Off</button></div>
+        <div class="cr" style="margin-bottom:.5rem">
+          <input class="ci" id="ovTextInput" placeholder="text to stream…" maxlength="80">
+          <button class="ca" id="ovAddStream">Add</button>
+        </div>
+        <div id="ovStreamList"></div>
+        <div class="rw" style="margin-top:.5rem"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vOvSpeed">3</span></div><input type="range" id="sOvSpeed" min="1" max="20" value="3" step="1" title="Overlay scroll speed"></div>
+        <div class="rw"><div class="rl"><span class="rn">Size</span><span class="rv" id="vOvSize">18</span></div><input type="range" id="sOvSize" min="8" max="60" value="18" step="2" title="Overlay character font size"></div>
+        <div class="rw"><div class="rl"><span class="rn">Kerning</span><span class="rv" id="vOvKern">0</span></div><input type="range" id="sOvKern" min="-10" max="40" value="0" step="1" title="Overlay character spacing offset"></div>
+        <div class="rw"><div class="rl"><span class="rn">Opacity</span><span class="rv" id="vOvAlpha">60</span></div><input type="range" id="sOvAlpha" min="5" max="100" value="60" step="5" title="Overlay text opacity (0–100)"></div>
+        <div class="rw"><div class="rl"><span class="rn">Wave</span><span class="rv" id="vOvWave">0</span></div><input type="range" id="sOvWave" min="0" max="60" value="0" step="2" title="Overlay wave — vertical undulation of the text stream"></div>
+        <div class="rw"><div class="rl"><span class="rn">Entropy (char glitch)</span><span class="rv" id="vOvEntropy">0</span></div><input type="range" id="sOvEntropy" min="0" max="100" value="0" step="2" title="Overlay entropy — probability of replacing a character with a glitch symbol"></div>
+        <div class="rw"><div class="rl"><span class="rn">Distortion (positional)</span><span class="rv" id="vOvDistort">0</span></div><input type="range" id="sOvDistort" min="0" max="60" value="0" step="2" title="Overlay distortion — horizontal jitter applied to each character position"></div>
+        <div class="cg" id="ovDirGrid">
+          <button class="cb active" data-ovdir="ltr">→</button>
+          <button class="cb" data-ovdir="rtl">←</button>
+          <button class="cb" data-ovdir="alt">Alt</button>
+          <button class="cb" data-ovdir="vert">↓</button>
+        </div>
+        <div class="ag" id="ovColorRow">
+          <div class="as active" data-ovcol="#e63946" style="background:#e63946"></div>
+          <div class="as" data-ovcol="#f4a261"  style="background:#f4a261"></div>
+          <div class="as" data-ovcol="#ede66c"  style="background:#ede66c"></div>
+          <div class="as" data-ovcol="#c4bcb0"  style="background:#c4bcb0"></div>
+          <div class="as" data-ovcol="#80b8e8"  style="background:#80b8e8"></div>
+          <div class="as" data-ovcol="#d890d8"  style="background:#d890d8"></div>
+          <div class="as" data-ovcol="palette"  style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
+        </div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
+      <div class="sec-body collapsed" id="body-img">
+        <input type="file" id="imgFile" accept="image/*" style="display:none">
+        <button class="iu" onclick="document.getElementById('imgFile').click()">Upload image</button>
+        <div class="cr" style="margin-bottom:.4rem">
+          <input class="ci" id="imgUrlInput" placeholder="or paste image URL…">
+          <button class="ca" id="imgUrlApply">Load</button>
+        </div>
+        <div class="is" id="imgStatus">No image loaded</div>
+        <div class="tr"><span class="tl">Stretch to fill</span><button class="tb" id="btnStretch">Off</button></div>
+        <div class="tr"><span class="tl">Invert brightness</span><button class="tb" id="btnInvert">Off</button></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('size')"><span class="sl">Canvas size</span><span class="sec-arrow" id="arr-size">›</span></div>
+      <div class="sec-body collapsed" id="body-size">
+        <div class="cg" id="sizeGrid">
+          <button class="cb active" data-size="fill">Full panel</button>
+          <button class="cb" data-size="800,800">800 sq</button>
+          <button class="cb" data-size="1080,1080">1080 sq</button>
+          <button class="cb" data-size="1200,800">1200×800</button>
+          <button class="cb" data-size="1080,1920">Story</button>
+          <button class="cb" data-size="custom">Custom</button>
+        </div>
+        <div class="nr" id="customSizeRow" style="display:none">
+          <input type="number" class="ni" id="cwInput" value="800" min="200" max="3000">
+          <span class="nx">×</span>
+          <input type="number" class="ni" id="chInput" value="800" min="200" max="3000">
+          <button class="ca" id="applySizeBtn">Set</button>
+        </div>
+      </div></div>
+
+    </div><!-- /ctl -->
+    <div class="ar">
+      <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
+      <button class="ab" id="btnRegen" title="Regenerate with new random seed (R)">Regen</button>
+      <button class="ab" id="btnSave" title="Save canvas as PNG (S)">Save PNG</button>
+      <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
+    </div>
+  </div><!-- /panel -->
+</div><!-- /app -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+// ── CHARSETS ─────────────────────────────────────────────────────────────────
+let RAND_UNICODE_MODE=null; 
+const _driftMap=new Map();
+
+const UNICODE_RANGES=[
+  {start:0x0020,end:0x007E,weight:50},  
+  {start:0x00A1,end:0x00FF,weight:15},  
+  {start:0x0370,end:0x03FF,weight:8},   
+  {start:0x0400,end:0x04FF,weight:8},   
+  {start:0x4E00,end:0x9FFF,weight:6},   
+  {start:0x3040,end:0x309F,weight:4},   
+  {start:0x30A0,end:0x30FF,weight:4},   
+  {start:0x2200,end:0x22FF,weight:3},   
+  {start:0x2500,end:0x257F,weight:3},   
+  {start:0x1F300,end:0x1F9FF,weight:0}, // REMOVED EMOJI WEIGHT
+  {start:0x10000,end:0x1007F,weight:1}, 
+  {start:0x13000,end:0x1342F,weight:1}, 
+];
+let _weightedCumulative=null;
+function _buildWeightedCumulative(){
+  _weightedCumulative=[];
+  let total=0;
+  UNICODE_RANGES.forEach(function(r){total+=r.weight;});
+  let cum=0;
+  UNICODE_RANGES.forEach(function(r){
+    cum+=r.weight/total;
+    _weightedCumulative.push({end:cum,range:r});
+  });
+}
+function _randFromRange(r){return r.start+Math.floor(Math.random()*(r.end-r.start+1));}
+function _cpToStr(cp){
+  try{return String.fromCodePoint(cp);}catch(e){return '?';}
+}
+function pickRandUnicode(x,y,t){
+  let mode=RAND_UNICODE_MODE;
+  if(mode==='full'){
+    let cp=Math.floor(Math.random()*0x10FFFF);
+    if(cp>=0xD800&&cp<=0xDFFF) cp=0x25A0; 
+    return _cpToStr(cp);
+  }
+  if(mode==='weighted'){
+    if(!_weightedCumulative) _buildWeightedCumulative();
+    let r2=Math.random();
+    for(let i=0;i<_weightedCumulative.length;i++){
+      if(r2<=_weightedCumulative[i].end) return _cpToStr(_randFromRange(_weightedCumulative[i].range));
+    }
+    return _cpToStr(_randFromRange(UNICODE_RANGES[0]));
+  }
+  if(mode==='pos'){
+    let tx=Math.floor(x/12),ty=Math.floor(y/12),tt=Math.floor(t*0.3);
+    let h=Math.abs(Math.sin(tx*127.1+ty*311.7+tt*74.3)*43758.5453)%1;
+    let h2=Math.abs(Math.sin(tx*269.5+ty*183.3+tt*12.9)*23421.631)%1;
+    let ri2=Math.floor(h*UNICODE_RANGES.length)%UNICODE_RANGES.length;
+    let range=UNICODE_RANGES[ri2];
+    let cp=range.start+Math.floor(h2*(range.end-range.start+1));
+    if(cp>=0xD800&&cp<=0xDFFF) cp=0x25A0;
+    return _cpToStr(cp);
+  }
+  if(mode==='drift'){
+    let key=Math.floor(x/12)+'_'+Math.floor(y/12);
+    if(!_driftMap.has(key)){
+      let cp=0x0020+Math.floor(Math.random()*0x2000);
+      _driftMap.set(key,{cp:cp,timer:0});
+    }
+    let d=_driftMap.get(key);
+    d.timer++;
+    if(d.timer>8+Math.floor(Math.random()*16)){
+      d.cp+=Math.floor((Math.random()-.5)*64);
+      d.cp=Math.max(0x0020,Math.min(0x10FFFF,d.cp));
+      if(d.cp>=0xD800&&d.cp<=0xDFFF) d.cp=0x25A0;
+      d.timer=0;
+    }
+    return _cpToStr(d.cp);
+  }
+  return '?';
+}
+
+const CHARSETS={
+  hex: '0123456789ABCDEF'.split(''),
+  gothic: '𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟'.split(''),
+  cursive: '𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏'.split(''),
+  chinese:  (function(){let a=[];for(let c=0x4E00;c<=0x9FFF;c+=Math.floor((0x9FFF-0x4E00)/80)) a.push(String.fromCodePoint(c));return a;})(),
+  hiragana: (function(){let a=[];for(let c=0x3041;c<=0x3096;c++) a.push(String.fromCodePoint(c));return a;})(),
+  katakana: (function(){let a=[];for(let c=0x30A1;c<=0x30F6;c++) a.push(String.fromCodePoint(c));return a;})(),
+  kanji:    (function(){let a=[];for(let c=0x4E00;c<=0x9FFF;c+=Math.floor((0x9FFF-0x4E00)/60)) a.push(String.fromCodePoint(c));return a;})(),
+  korean:   '가나다라마바사아자차카타파하한국어시간마음빛물불산꿈사람사랑하늘바다해달별꽃강잎흙길집'.split(''),
+  thai:     'กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ'.split(''),
+  greek: 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψως'.split(''),
+  georgian: 'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ'.split(''),
+  cyrillic: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЄІЇ'.split(''),
+  sanskrit: 'अआइईउऊएओकखगघचछजझटठडढतथदधनपफबभमयरलवशषसहॐ।।'.split(''),
+  hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀇𓀈𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀝𓀞𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀪𓀪𓀫𓀬𓀭𓀮𓀯𓀰𓀱𓀲𓀳𓀴𓀵𓀶𓀷𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀𓁁𓁂𓁃𓁄𓁅𓁆𓁇𓁈𓁉𓁊𓁋𓁌𓁍𓁎𓁏𓁐𓁑𓁒𓁓𓁔𓁕𓁖𓁗𓁘𓁙𓁚𓁛𓁜𓁝𓁞𓁟𓁠𓁡'.split(''),
+  arcane:   'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎⸽⸾⁙⁜※ᛗᛚᛜᛝᛞᚱᚨᚹᚾ'.split(''),
+  runes:    'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᛣᛤᛥᛦᛧᛨᛩᛪ'.split(''),
+  alchemy: '🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜎🜏🜐🜑🜒🜓🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜮🜯'.split(''),
+  sacred: '◉◈◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮'.split(''),
+  celtic: '᚛᚜ᚁᚂᚃᚄᚅᚆᚇᚈᚉᚊᚋᚌᚍᚎᚏᚐᚑᚒᚓᚔᚕᚖᚗᚘᚙᚚ'.split(''),
+  braille:  '⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿'.split(''),
+  math:     '∞∂∫∑∏√∛∜∝∈∉∋∌∩∪⊂⊃⊄⊅⊆⊇⊕⊗⊙⊥∧∨∀∃∄∅≈≠≡≤≥≪≫∓±×÷∇∆◻◼◽◾'.split(''),
+  ascii:    "@#$%&?!/\\|+-=~^<>*_.,;:()[]{}'\"`§±".split(''),
+  symbols:  '∞∆◊○□△◇●■▲◆★✦⊕⊗⊙♯♪♫♦♣♠♥♂♀☻☺◙◌⸙⸎∫∑∏√'.split(''),
+  barcode:  '▏▎▍▌▋▊▉█01'.split(''),
+  gradients:'░▒▓█▀▄▌▐▖▗▘▙▚▛▜▝▞▟'.split(''),
+  squares:  '■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯'.split(''),
+  crossstitch: '×•⨳╳✕'.split(''),
+  circles:  '☻☺⊕⊗⊙○●◌˚¤°·֎֍◎◉◐◑◒◓'.split(''),
+  music: ['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓'],
+  daggers:  '†‡⸶⸸⸷✁✂✃✄'.split(''),
+  dots:     '·.,;:…•‧⋅∙°˙⁘⁙⁚⁛'.split(''),
+  lines:    '—|/\\─│╱╲┼╬╋┤├┴┬┘└┐┌╔╗╚╝╠╣╦╩═║'.split(''),
+  void:     [' ', ' ', ' ', ' ', ' ', '​', '░', '▒', '▓'],
+  custom:   ['J','O','N'],
+};
+
+const PALETTES={
+  site:      ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
+  ember:     ['#c8632a','#e08040','#f0a060','#a84820','#784030'],
+  frost:     ['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],
+  jade:      ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],
+  dusk:      ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],
+  mono:      ['#808078','#a0a098','#606058','#c0c0b8','#404038'],
+  fire:      ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
+  abyss:     ['#000814','#001d3d','#003566','#ffc300','#ffd60a'],
+  sakura:    ['#ffb7c5','#ff99ac','#f1e4e8','#ceb1be','#b97375'],
+  moss:      ['#2d6a4f','#409167','#52b788','#74c69d','#95d5b2'],
+  neon:      ['#f72585','#7209b7','#3a0ca3','#4361ee','#4cc9f0'],
+  matrix:    ['#003300','#006600','#00aa00','#00ff00','#88ff88'],
+  paper:     ['#2e2820','#5a4a38','#8a7060','#c4b8a8','#e8e0d4'],
+  navy:      ['#0a1628','#1a3050','#2a5080','#4a7fb5','#8ab8e0'],
+  rust:      ['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],
+  copper:    ['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],
+  aurora:    ['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],
+  brutalist: ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],
+  risograph: ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],
+  cyanotype: ['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],
+  infrared:  ['#ff0055','#ff6600','#00ff88','#00ffcc','#ffff00'],
+  oxidized:  ['#3d6b4f','#5a8a6a','#8ab89a','#c8a96e','#e8d4a8'],
+  velvet:    ['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],
+  tidal:     ['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],
+  solaris:   ['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
+};
+
+const FONTS={
+  courier:"'Courier New',Courier,monospace",
+  vt323:"'VT323',monospace",
+  typewriter:"'Special Elite',cursive",
+  georgia:'Georgia,serif',
+  times:"'Times New Roman',serif",
+  arial:'Arial,sans-serif',
+  bebas:"'Bebas Neue',sans-serif",
+  playfair:"'Playfair Display',serif",
+  impact:'Impact,sans-serif',
+  unicode:"'Noto Sans Symbols 2', 'Noto Emoji', 'Segoe UI Symbol', sans-serif",
+  mono:'monospace',
+};
+
+const GLITCH=['█','_','░','▒','?','#','%','■','□',' '];
+
+const COMP_PALETTES={
+  default:['#e63946','#b8955a','#2a4a7a','#234b09','#5a2a6a','#8a4a1a','#1a3a5a','#6a1a1a'],
+  earth:  ['#8B4513','#D2691E','#A0522D','#6B3A2A','#C19A6B','#8B6914','#5C4033','#704214'],
+  ocean:  ['#006994','#20B2AA','#005F87','#008080','#2E8B57','#4682B4','#1C6B8A','#0E4D6E'],
+  dusk2:  ['#4B0082','#8A2BE2','#6A0DAD','#9400D3','#800080','#4B0082','#7B2D8B','#5C0099'],
+  fire2:  ['#FF4500','#FFD700','#FF6347','#FFA500','#DC143C','#FF8C00','#FF0000','#FFAA00'],
+  neon2:  ['#FF00FF','#00FFFF','#FF0099','#00FF99','#9900FF','#FF9900','#0099FF','#FF0055'],
+  paper2: ['#f5efe0','#d4c4a8','#b09878','#7a6048','#3c2810','#8b7060','#e8d8c0','#a08060'],
+  rust2:  ['#8b2500','#c04020','#e86040','#f0a070','#2a1008','#601808','#a03018','#d06040'],
+  navy2:  ['#0a1628','#1a3050','#2a5080','#3a70b0','#0d2040','#204060','#4a7fb5','#6090c8'],
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let S={
+  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
+  accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
+  bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
+  spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
+  entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
+  fontKey:'courier',fontStack:FONTS.courier,charRotRad:0,
+  trailPersist:0,
+  compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
+  imgStretch:false,imgInvert:false,
+  overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
+  overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
+  overlayEntropy:0,overlayDistort:0,overlayKern:0,
+  shapesEnabled:false,shapeDens:6,selectedShape:'circle',
+  shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
+  shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
+  shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
+  shapePosition:'center',shapeSides:7,shapeText:'',
+  signalCollapse:false,signalStart:0,
+  blendMode:'source-over',
+  playing:false,fc:0,
+  // Per-mode params
+  useParticleMode:false,
+  reactFeed:0.055,reactKill:0.062,
+  mycSpeed:2.0,mycBranch:4,
+  magPoles:2,
+  hatchAngle:45,hatchCurve:5,
+  vorWire:false,
+};
+
+// ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
+let imgPix=null,imgW=0,imgH=0;
+let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[];
+let shapes=[];
+let recRects=[];
+let loopParticles=[];
+let topoSegs=[];
+let boidAgents=[];
+let magneticPoles=[];
+let wtHeightmap=null,wtW=0,wtH=0;
+let fsPolygons=[];
+let rdGrid=null,rdW=0,rdH=0; 
+let voronoiSites=[];
+let myceliumBranches=[];
+let sandParticles=[];
+let caGrid=null,caW=0,caH=0,caNext=null;
+let lissParticles=[];
+let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
+let CTX=null;
+let _lastFont='',_lastSize=-1,_lastFill='';
+
+function invalidateFontCache(){_lastFont='';_lastSize=-1;}
+
+function dc(x,y,sz,rot,col,ch){
+  if(!CTX) return;
+  if(S.useParticleMode){
+    CTX.fillStyle=col;
+    CTX.beginPath();
+    let type=Math.floor(Math.abs(Math.sin(x+y))*3);
+    if(type===0) CTX.arc(x,y,sz*0.4,0,Math.PI*2);
+    else if(type===1) CTX.rect(x-sz*0.3,y-sz*0.3,sz*0.6,sz*0.6);
+    else {
+      CTX.moveTo(x,y-sz*0.4);
+      CTX.lineTo(x+sz*0.4,y+sz*0.4);
+      CTX.lineTo(x-sz*0.4,y+sz*0.4);
+      CTX.closePath();
+    }
+    CTX.fill();
+    return;
+  }
+  if(!ch||(!ch.trim()&&S.entropy<.1)) return;
+  let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
+  let fstr=(sz|0)+'px '+S.fontStack;
+  if(needTransform){
+    CTX.save();CTX.translate(x,y);
+    let r=(rot||0)+S.charRotRad;
+    if(r) CTX.rotate(r);
+    let fx=1,fy=1;
+    if(S.flipHMirror&&Math.random()<S.flipChance*.6) fx=-1;
+    if(S.flipVMirror&&Math.random()<S.flipChance*.35) fy=-1;
+    if(fx!==1||fy!==1) CTX.scale(fx,fy);
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+    CTX.fillText(ch,0,0);CTX.restore();
+    _lastFont='';_lastFill='';
+  } else {
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+    CTX.fillText(ch,x,y);
+  }
+}
+
+function pickChar(p,x,y,t){
+  let ch;
+  if(RAND_UNICODE_MODE){
+    ch=pickRandUnicode(x,y,t);
+  } else {
+    let i=Math.floor(p.noise(x*.08,y*.08)*S.chars.length);
+    ch=S.chars[i%S.chars.length];
+  }
+  if(S.caseGlitch>0&&Math.random()<S.caseGlitch){
+    ch=(ch===ch.toUpperCase())?ch.toLowerCase():ch.toUpperCase();
+  }
+  if(S.entropy>0&&Math.random()<S.entropy){
+    let r=Math.random();
+    if(r<.3)ch='█';else if(r<.5)ch='_';else if(r<.62)ch=' ';
+    else if(r<.78)ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
+    else if(S.entropy>.5&&r>.92){
+      ch=pickRandUnicode(x,y,t);
+    }
+  }
+  return ch;
+}
+
+function pcc(p,x,y,t){
+  let col=pickColor(p,x,y,t);
+  let ch=pickChar(p,x,y,t);
+  return {col,ch};
+}
+
+function pickColor(p,x,y,t){
+  let n=p.noise(x*S.noiseScale,y*S.noiseScale,t*.5);
+  let col=S.palette[Math.floor(n*S.palette.length)%S.palette.length];
+  if(S.accentAmt>0&&p.noise(x*.01,y*.01,t*.2)<S.accentAmt) col=S.accent;
+  return col;
+}
+
+// ── MODE INITIALIZERS ─────────────────────────────────────────────────────────
+function initRain(W,H){
+  rainDrops=[];
+  let n=Math.floor(W/S.spacing);
+  for(let i=0;i<n;i++) rainDrops.push({x:i*S.spacing,y:Math.random()*H,speed:1+Math.random()*3});
+}
+function initTess(W,H){
+  tessGrid=[];
+  let sp=S.spacing*2;
+  for(let x=sp;x<W;x+=sp) for(let y=sp;y<H;y+=sp) tessGrid.push({x,y,phase:Math.random()*6.28});
+}
+function initMatrix(W,H){
+  matrixCols=[];
+  let n=Math.floor(W/S.spacing);
+  for(let i=0;i<n;i++) matrixCols.push({x:i*S.spacing,y:Math.random()*H,speed:2+Math.random()*5,chars:[]});
+}
+function initShatter(W,H){
+  shatterParts=[];
+  let n=Math.floor(30+S.density*50);
+  for(let i=0;i<n;i++) shatterParts.push({x:W/2,y:H/2,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,sz:S.maxSize*(.5+Math.random())});
+}
+function initLoops(W,H){
+  loopParticles=[];
+  let n=Math.floor(W*H/(S.spacing*S.spacing*4));
+  for(let i=0;i<n;i++) loopParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*200)});
+}
+function initRecursive(W,H){
+  recRects=[];
+  subdivide(0,0,W,H,Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
+}
+function subdivide(x,y,w,h,depth,cols){
+  if(depth===0||w<S.spacing*3||h<S.spacing*3){
+    recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;
+  }
+  if(Math.random()<0.3){recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;}
+  let vert=w>h||(w===h&&Math.random()<.5);
+  let split=vert?x+w*(.3+Math.random()*.4):y+h*(.3+Math.random()*.4);
+  if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}
+  else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}
+}
+
+function initReactionDiffusion(W,H){
+  let res=Math.max(4,Math.floor(S.spacing*.8));
+  rdW=Math.floor(W/res)+1; rdH=Math.floor(H/res)+1;
+  rdGrid={A:new Float32Array(rdW*rdH),B:new Float32Array(rdW*rdH),
+          nA:new Float32Array(rdW*rdH),nB:new Float32Array(rdW*rdH),res:res};
+  for(let i=0;i<rdW*rdH;i++){rdGrid.A[i]=1;rdGrid.B[i]=0;}
+  let cx=Math.floor(rdW/2),cy=Math.floor(rdH/2),r=Math.floor(Math.min(rdW,rdH)*.08);
+  for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
+    if(dx*dx+dy*dy<=r*r){
+      let idx=(cy+dy)*rdW+(cx+dx);
+      if(idx>=0&&idx<rdW*rdH){rdGrid.A[idx]=0.5+Math.random()*0.1;rdGrid.B[idx]=0.25+Math.random()*0.1;}
+    }
+  }
+}
+
+function initVoronoi(W,H){
+  voronoiSites=[];
+  let n=Math.max(6,Math.floor((W*H)/(S.spacing*S.spacing*80)));
+  for(let i=0;i<n;i++) voronoiSites.push({x:Math.random()*W,y:Math.random()*H,col:S.palette[i%S.palette.length],vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
+}
+
+function initMycelium(W,H){
+  myceliumBranches=[];
+  let n=3+Math.floor(S.density*3);
+  for(let i=0;i<n;i++){
+    let a=Math.random()*6.28;
+    myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:S.mycSpeed*(0.5+Math.random()),age:0,col:S.palette[i%S.palette.length],children:0,maxChildren:S.mycBranch});
+  }
+}
+
+function initSand(W,H){
+  sandParticles=[];
+  let n=Math.floor(W*H/(S.spacing*S.spacing*2));
+  for(let i=0;i<n;i++) sandParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*300),col:S.palette[i%S.palette.length]});
+}
+
+function initCellular(W,H){
+  let res=Math.max(4,S.spacing);
+  caW=Math.floor(W/res)+1; caH=Math.floor(H/res)+1;
+  caGrid=new Uint8Array(caW*caH);
+  caNext=new Uint8Array(caW*caH);
+  for(let i=0;i<caW*caH;i++) caGrid[i]=Math.random()<.35?1:0;
+}
+
+function initMagnetic(W,H){
+  magneticPoles=[];
+  for(let i=0;i<S.magPoles;i++){
+    magneticPoles.push({x:Math.random()*W,y:Math.random()*H,sign:Math.random()>.5?1:-1});
+  }
+}
+
+let wormAgents=[];
+function initWorms(W,H){
+  wormAgents=[];
+  let n=Math.floor(20+S.density*40);
+  for(let i=0;i<n;i++) wormAgents.push({x:Math.random()*W,y:Math.random()*H,angle:Math.random()*6.28,col:S.palette[i%S.palette.length],history:[]});
+}
+
+function initFractalSubdiv(p,W,H){
+  fsPolygons=[];
+  let cx=W/2,cy=H/2,r=Math.min(W,H)*.3;
+  let pts=polyPts(cx,cy,r,3,0);
+  _fsSubdivide(p,pts,0,5);
+}
+function _fsSubdivide(p,pts,depth,maxDepth){
+  if(depth>=maxDepth){
+    fsPolygons.push({pts:pts.slice(),col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});
+    return;
+  }
+  let newPts=[];
+  let roughness=S.wave*.004+0.02;
+  for(let i=0;i<pts.length;i++){
+    let a=pts[i],b=pts[(i+1)%pts.length];
+    newPts.push(a);
+    let mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    let len=Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y));
+    let nx=-(b.y-a.y)/len,ny=(b.x-a.x)/len;
+    let disp=(p.noise(mx*.005,my*.005,depth*.3)-.5)*len*roughness*2;
+    newPts.push({x:mx+nx*disp,y:my+ny*disp});
+  }
+  let half=Math.floor(newPts.length/2);
+  _fsSubdivide(p,newPts.slice(0,half+1),depth+1,maxDepth);
+  _fsSubdivide(p,newPts.slice(half),depth+1,maxDepth);
+  if(depth===0||Math.random()<.3) fsPolygons.push({pts:newPts,col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});
+}
+
+function initLissajous(W,H){
+  lissParticles=[];
+  let n=Math.floor(200+S.density*300);
+  for(let i=0;i<n;i++) lissParticles.push({phase:Math.random()*6.28,speed:.002+Math.random()*.008,la:1+Math.floor(Math.random()*4),lb:1+Math.floor(Math.random()*4),a:Math.random()*6.28,col:S.palette[i%S.palette.length]});
+}
+
+function initWireTerrain(p,W,H){
+  let res=Math.max(8,Math.floor(S.spacing*1.5));
+  wtW=Math.floor(W/res)+1; wtH=Math.floor(H/res)+1;
+  wtHeightmap=new Float32Array(wtW*wtH);
+}
+
+// ── DRAWING MODES ─────────────────────────────────────────────────────────────
+function drawBloom(p,t){
+  let sp=S.spacing;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let a=p.noise(x*S.noiseScale*.5,y*S.noiseScale*.5,t*.5)*6.28*4;
+    let r=pcc(p,x,y,t);
+    dc(x,y,p.map(n,S.density,1,2,S.maxSize),a,r.col,r.ch);
+  }
+}
+
+function drawReaction(p,t){
+  if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
+  let g=rdGrid,W=rdW,H=rdH;
+  let feed=S.reactFeed*0.001,kill=S.reactKill*0.001;
+  let dA=1.0,dB=0.5;
+  if(S.playing){
+    for(let s=0;s<2;s++){
+      for(let r=1;r<H-1;r++) for(let c=1;c<W-1;c++){
+        let i=r*W+c;
+        let A=g.A[i],B=g.B[i];
+        let lapA=g.A[i-W]+g.A[i+W]+g.A[i-1]+g.A[i+1]-4*A;
+        let lapB=g.B[i-W]+g.B[i+W]+g.B[i-1]+g.B[i+1]-4*B;
+        let ABB=A*B*B;
+        g.nA[i]=Math.max(0,Math.min(1,A+dA*lapA*.2-ABB+feed*(1-A)));
+        g.nB[i]=Math.max(0,Math.min(1,B+dB*lapB*.2+ABB-(kill+feed)*B));
+      }
+      let tmp=g.A;g.A=g.nA;g.nA=tmp;
+      tmp=g.B;g.B=g.nB;g.nB=tmp;
+    }
+  }
+  let res=g.res;
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++){
+    let v=g.B[r*W+c];
+    if(v<0.1) continue;
+    let x=c*res,y=r*res;
+    let r2=pcc(p,x,y,t);
+    dc(x,y,p.map(v,0.1,0.5,2,S.maxSize),0,r2.col,r2.ch);
+  }
+}
+
+function drawVoronoi(p,t){
+  if(!voronoiSites.length) initVoronoi(p.width,p.height);
+  if(S.playing) voronoiSites.forEach(s=>{
+    s.x+=s.vx*S.speed*100; s.y+=s.vy*S.speed*100;
+    if(s.x<0||s.x>p.width) s.vx*=-1; if(s.y<0||s.y>p.height) s.vy*=-1;
+  });
+  let sp=S.vorWire?S.spacing*2:S.spacing;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let minD=Infinity,nearIdx=0;
+    for(let i=0;i<voronoiSites.length;i++){
+      let d=(x-voronoiSites[i].x)**2+(y-voronoiSites[i].y)**2;
+      if(d<minD){minD=d;nearIdx=i;}
+    }
+    let site=voronoiSites[nearIdx];
+    if(S.vorWire){
+      let min2=Infinity;
+      for(let i=0;i<voronoiSites.length;i++){
+        if(i===nearIdx) continue;
+        let d=(x-voronoiSites[i].x)**2+(y-voronoiSites[i].y)**2;
+        if(d<min2) min2=d;
+      }
+      let edge=Math.sqrt(min2)-Math.sqrt(minD);
+      if(edge<S.spacing*.8) dc(x,y,S.maxSize*.6,0,site.col,pickChar(p,x,y,t));
+    } else dc(x,y,S.maxSize,0,site.col,pickChar(p,x,y,t));
+  }
+}
+
+function drawMycelium(p,t){
+  if(!myceliumBranches.length) initMycelium(p.width,p.height);
+  if(S.playing){
+    let newBranches=[];
+    myceliumBranches.forEach(b=>{
+      b.angle+=p.noise(b.x*.008,b.y*.008,t*.3)*.4-.2;
+      b.x+=Math.cos(b.angle)*b.speed;
+      b.y+=Math.sin(b.angle)*b.speed;
+      b.len+=b.speed;
+      if(b.len>30&&b.children<b.maxChildren&&Math.random()<.02){
+        b.children++;
+        newBranches.push({x:b.x,y:b.y,angle:b.angle+(Math.random()-.5)*1,len:0,maxLen:b.maxLen*.8,speed:b.speed,age:0,col:b.col,children:0,maxChildren:b.maxChildren-1});
+      }
+      if(b.x<0||b.x>p.width||b.y<0||b.y>p.height||b.len>b.maxLen) b.dead=true;
+    });
+    myceliumBranches=myceliumBranches.filter(b=>!b.dead).concat(newBranches);
+    if(myceliumBranches.length<3) initMycelium(p.width,p.height);
+  }
+  myceliumBranches.forEach(b=>{
+    dc(b.x,b.y,p.map(b.len,0,b.maxLen,S.maxSize,2),b.angle,b.col,pickChar(p,b.x,b.y,t));
+  });
+}
+
+function drawMagnetic(p,t){
+  if(!magneticPoles.length) initMagnetic(p.width,p.height);
+  let sp=S.spacing*1.5;
+  for(let x=sp/2;x<p.width;x+=sp) for(let y=sp/2;y<p.height;y+=sp){
+    let vx=0,vy=0;
+    magneticPoles.forEach(pole=>{
+      let dx=x-pole.x,dy=y-pole.y,d2=dx*dx+dy*dy+100;
+      let f=pole.sign*1000/d2; vx+=dx*f;vy+=dy*f;
+    });
+    let angle=Math.atan2(vy,vx),mag=Math.sqrt(vx*vx+vy*vy);
+    if(mag>0.01){
+      let r=pcc(p,x,y,t);
+      dc(x,y,p.map(mag,0,0.5,2,S.maxSize),angle,r.col,r.ch);
+    }
+  }
+}
+
+function drawHatch(p,t){
+  let sp=S.spacing,ang=S.hatchAngle*Math.PI/180;
+  CTX.lineWidth=1;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let localAng=ang+(n-.5)*S.hatchCurve*0.2;
+    let x2=x+Math.cos(localAng)*sp*2,y2=y+Math.sin(localAng)*sp*2;
+    CTX.strokeStyle=pickColor(p,x,y,t);
+    CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x2,y2);CTX.stroke();
+    if(n>S.density+0.2){
+      let x3=x+Math.cos(localAng+Math.PI/2)*sp*2,y3=y+Math.sin(localAng+Math.PI/2)*sp*2;
+      CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x3,y3);CTX.stroke();
+    }
+  }
+}
+
+function drawWorms(p,t){
+  if(!wormAgents.length) initWorms(p.width,p.height);
+  wormAgents.forEach(w=>{
+    if(S.playing){
+      w.angle+=(p.noise(w.x*.01,w.y*.01,t*.1)-.5)*0.5;
+      w.x+=Math.cos(w.angle)*S.speed*400; w.y+=Math.sin(w.angle)*S.speed*400;
+      if(w.x<0)w.x=p.width; if(w.x>p.width)w.x=0;
+      if(w.y<0)w.y=p.height; if(w.y>p.height)w.y=0;
+      w.history.push({x:w.x,y:w.y}); if(w.history.length>20) w.history.shift();
+    }
+    w.history.forEach((pos,idx)=>{
+      dc(pos.x,pos.y,p.map(idx,0,20,2,S.maxSize),w.angle,w.col,pickChar(p,pos.x,pos.y,t));
+    });
+  });
+}
+
+function drawHypercube5D(p,t){
+  let cx=p.width/2,cy=p.height/2,sz=Math.min(p.width,p.height)*.25;
+  let nodes=[];
+  for(let i=0;i<32;i++){
+    let x5=(i&1)?1:-1,y5=(i&2)?1:-1,z5=(i&4)?1:-1,w5=(i&8)?1:-1,v5=(i&16)?1:-1;
+    let s=Math.sin(t),c=Math.cos(t);
+    let x=x5*c-y5*s,y=x5*s+y5*c,z=z5*c-w5*s,w=z5*s+w5*c,v=v5;
+    let factor=2/(3-v);
+    nodes.push({x:cx+x*sz*factor,y:cy+y*sz*factor});
+  }
+  nodes.forEach((n,i)=>{
+    dc(n.x,n.y,S.maxSize*.6,0,S.palette[i%S.palette.length],pickChar(p,n.x,n.y,t));
+    for(let j=i+1;j<32;j++) if((i^j)&&!((i^j)&((i^j)-1))){
+      CTX.strokeStyle=S.palette[i%S.palette.length]; CTX.globalAlpha=0.2;
+      CTX.beginPath();CTX.moveTo(n.x,n.y);CTX.lineTo(nodes[j].x,nodes[j].y);CTX.stroke();
+    }
+  });
+  CTX.globalAlpha=1;
+}
+
+function drawOverlay(p,t){
+  if(!S.overlayEnabled||!S.overlayStreams.length) return;
+  S.overlayStreams.forEach(function(stream,si){
+    let txt=stream.text;if(!txt||!txt.length) return;
+    let col=stream.color==='palette'?S.palette[si%S.palette.length]:stream.color;
+    let sz=S.overlaySize,kern=S.overlayKern;
+    let fstr=sz+'px '+S.fontStack;
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    CTX.globalAlpha=S.overlayAlpha/100;
+    let step=sz+kern;
+    let off=(t*S.overlaySpeed*40+(stream.offset||0))%(txt.length*step+p.width);
+    let dir=S.overlayDir;
+    if(dir==='vert'){
+      let voff=(t*S.overlaySpeed*30+(stream.offset||0))%(txt.length*step+p.height);
+      let xPos=p.width*.15+si*(p.width*.2);
+      for(let ci=0;ci<txt.length+Math.ceil(p.height/step)+2;ci++){
+        let cy=ci*step-voff%((txt.length+1)*step);
+        if(cy<-sz||cy>p.height+sz) continue;
+        let ch=txt[ci%txt.length];
+        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
+        let dx=S.overlayDistort>0?Math.sin(cy*.05+t*2)*S.overlayDistort:0;
+        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+        CTX.fillText(ch,xPos+dx,cy);
+      }
+    } else {
+      let yPos=p.height*.2+si*(p.height*.18);
+      let mult=dir==='rtl'?-1:1;
+      let xOff=dir==='rtl'?p.width-off%((txt.length+1)*step+p.width):-(off%(txt.length*step+p.width));
+      if(dir==='alt') xOff=(si%2===0)?-(off%(txt.length*step+p.width)):p.width-off%((txt.length+1)*step+p.width);
+      for(let ci=0;ci<txt.length+Math.ceil(p.width/step)+2;ci++){
+        let cx=xOff+ci*step*mult;
+        if(cx<-sz||cx>p.width+sz) continue;
+        let ch=txt[ci%txt.length];
+        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
+        let dy=S.overlayWave>0?Math.sin(cx*.04+t*1.5)*S.overlayWave*.4:0;
+        let dx=S.overlayDistort>0?Math.sin(yPos*.05+t*2)*S.overlayDistort:0;
+        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+        CTX.fillText(ch,cx+dx,yPos+dy);
+      }
+    }
+  });
+  CTX.globalAlpha=1;
+}
+
+// ── UI WIRING & HELPERS ──────────────────────────────────────────────────────
+function wireSlider(slId,vId,key,mapFn,extra){
+  let sl=document.getElementById(slId),vl=document.getElementById(vId);
+  if(!sl||!vl) return;
+  sl.addEventListener('input',function(){
+    let val=parseFloat(this.value);
+    let finalVal=mapFn?mapFn(val):val;
+    vl.textContent=mapFn?finalVal.toFixed(3).replace(/\.?0+$/,""):val;
+    S[key]=finalVal;
+    if(extra) extra();
+    window._st.rd();
+  });
+}
+
+function toggleSec(id){
+  let body=document.getElementById('body-'+id),arr=document.getElementById('arr-'+id);
+  body.classList.toggle('collapsed');arr.classList.toggle('open');
+}
+
+new p5(function(p){
+  let W,H;
+  function resize(w,h){
+    if(w==='fill'){let wrap=document.getElementById('canvas-wrap');W=wrap.offsetWidth;H=wrap.offsetHeight;}
+    else{W=w||800;H=h||600;}
+    p.resizeCanvas(W,H);CTX=p.drawingContext;ri();rd();
+  }
+  function ri(){
+    initRain(W,H);initTess(W,H);initMatrix(W,H);initReactionDiffusion(W,H);initVoronoi(W,H);initMycelium(W,H);initSand(W,H);initCellular(W,H);initMagnetic(W,H);initWorms(W,H);
+  }
+  function rd(){p.redraw();}
+  window._st={rd:rd,ri:ri,play:function(){S.playing=!S.playing;if(S.playing)p.loop();else p.noLoop();return S.playing;},regen:function(){ri();rd();},rsz:resize,w:function(){return W;},h:function(){return H;},p:p};
+  p.setup=function(){
+    let wrap=document.getElementById('canvas-wrap');W=wrap.offsetWidth;H=wrap.offsetHeight;
+    p.createCanvas(W,H).parent('canvas-wrap');CTX=p.drawingContext;CTX.textBaseline='middle';p.noLoop();ri();rd();
+  };
+  p.draw=function(){
+    S.fc++; let t=S.fc*S.speed;
+    if(S.trailPersist>0){CTX.fillStyle=S.bg;CTX.globalAlpha=1-S.trailPersist/100;CTX.fillRect(0,0,W,H);CTX.globalAlpha=1;}
+    else {CTX.fillStyle=S.bg;CTX.fillRect(0,0,W,H);}
+    switch(S.mode){
+      case'bloom': drawBloom(p,t);break;
+      case'reaction': drawReaction(p,t);break;
+      case'mycelium': drawMycelium(p,t);break;
+      case'magnetic': drawMagnetic(p,t);break;
+      case'hatch': drawHatch(p,t);break;
+      case'voronoi': drawVoronoi(p,t);break;
+      case'worms': drawWorms(p,t);break;
+      case'hypercube5d': drawHypercube5D(p,t);break;
+      default: drawBloom(p,t);
+    }
+    drawOverlay(p,t);
+  };
+},'canvas-wrap');
+
+document.getElementById('modeGrid').addEventListener('click',function(e){
+  let b=e.target.closest('[data-mode]');if(!b) return;
+  S.mode=b.dataset.mode;
+  document.querySelectorAll('.mb').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.mode-ctrl').forEach(x=>x.classList.remove('active'));
+  let ctrl=document.getElementById('ctrl-'+S.mode);if(ctrl)ctrl.classList.add('active');
+  window._st.ri();window._st.rd();
+});
+document.getElementById('customApply').addEventListener('click',function(){
+  let v=document.getElementById('customInput').value.trim();if(!v) return;
+  if(v.includes(';')) S.chars=v.split(';').map(s=>s.trim()).filter(s=>s.length>0);
+  else S.chars=Array.from(v);
+  RAND_UNICODE_MODE=null;window._st.rd();
+});
+document.getElementById('charsetGrid').addEventListener('click',function(e){
+  let b=e.target.closest('[data-cs]');if(!b) return;
+  S.useParticleMode=(b.dataset.cs==='particles');
+  if(!S.useParticleMode) S.chars=CHARSETS[b.dataset.cs]||S.chars;
+  window._st.rd();
+});
+document.getElementById('fontSelect').addEventListener('change',function(){
+  S.fontStack=FONTS[this.value];invalidateFontCache();window._st.rd();
+});
+wireSlider('sReactFeed','vReactFeed','reactFeed',v=>v*0.001);
+wireSlider('sReactKill','vReactKill','reactKill',v=>v*0.001);
+wireSlider('sMycSpeed','vMycSpeed','mycSpeed',v=>v*0.1);
+wireSlider('sMycBranch','vMycBranch','mycBranch');
+wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
+wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
+wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
+document.getElementById('btnVorWire').addEventListener('click',function(){
+  S.vorWire=!S.vorWire;this.textContent=S.vorWire?'On':'Off';this.classList.toggle('on',S.vorWire);window._st.rd();
+});
+wireSlider('sOvKern','vOvKern','overlayKern');
+document.getElementById('btnPlay').addEventListener('click',function(){
+  let p=window._st.play();this.textContent=p?'⏸ Pause':'▶ Play';this.classList.toggle('play',!p);
+});
+document.getElementById('btnRegen').addEventListener('click',()=>window._st.regen());
+document.getElementById('btnSave').addEventListener('click',()=>window._st.p.saveCanvas('studio','png'));
+document.getElementById('btnReset').addEventListener('click',()=>location.reload());
+
+</script>
+</body>
+</html>
