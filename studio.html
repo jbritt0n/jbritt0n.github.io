@@ -34,6 +34,8 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .sec{border-bottom:1px solid var(--stone)}
 .sec-hd{padding:.7rem 1.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .sec-hd:hover{background:rgba(255,255,255,.018)}
+.mode-ctrl {display:none;}
+.mode-ctrl.active {padding:.7rem 1.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;hover{background:rgba(255,255,255,.018)}.  
 .sl{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
 .sec-arrow{font-size:.6rem;color:var(--stone);transition:transform .2s;margin-left:4px}
 .sec-arrow.open{transform:rotate(90deg)}
@@ -100,8 +102,6 @@ select option{background:var(--ink)}
 .sh-item{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .sh-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mode-ctrl { display: none; }
-.mode-ctrl.active { display: block; }.
 #toast{position:absolute;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--dark);border:1px solid var(--gold);color:var(--cream);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1.1rem;z-index:50;transition:transform .3s ease;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
 #panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
@@ -253,6 +253,9 @@ select option{background:var(--ink)}
   <button class="tb" id="btnReactOscillate">Off</button>
 </div>
 </div>
+
+
+      
       <!-- Mycelium Controls -->
 <div id="ctrl-mycelium" class="mode-ctrl">
   <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
