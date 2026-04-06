@@ -269,6 +269,7 @@ select option{background:var(--ink)}
           <button class="cb" data-cs="dots">Dots</button>
           <button class="cb" data-cs="braille">Braille</button>
           <button class="cb" data-cs="void">Void</button>
+          <button class="cb" data-cs="particles">Particles</button>
           <button class="cb" data-cs="custom">Custom ↓</button>
           <button class="cb" data-cs="randuni" title="Randomly chosen Unicode character each frame — full spectrum">Rand Unicode</button>
           <button class="cb" data-cs="randuni_weighted" title="Random Unicode with weighted ranges: more Latin, fewer rare scripts">Rand Weighted</button>
@@ -872,6 +873,7 @@ let S={
   signalCollapse:false,signalStart:0,
   blendMode:'source-over',
   playing:false,fc:0,
+  useParticleMode:false,  
 };
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
@@ -904,7 +906,23 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 
-function dc(x,y,sz,rot,col,ch){
+function dc(x, y, sz, rot, col, ch) {
+  if (!CTX) return;
+  if (S.useParticleMode) {
+    CTX.fillStyle = col;
+    CTX.beginPath();
+    let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
+    if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
+    else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+    else {
+      CTX.moveTo(x, y - sz * 0.4);
+      CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
+      CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
+      CTX.closePath();
+    }
+    CTX.fill();
+    return;
+  }
   if(!CTX||!ch) return;
   if(!ch.trim()&&S.entropy<.1) return;
   let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
@@ -2938,6 +2956,13 @@ document.getElementById('charsetGrid').addEventListener('click',function(e){
   if(cs==='randuni_weighted'){RAND_UNICODE_MODE='weighted';_driftMap.clear();window._st.rd();return;}
   if(cs==='randuni_pos'){RAND_UNICODE_MODE='pos';_driftMap.clear();window._st.rd();return;}
   if(cs==='randuni_drift'){RAND_UNICODE_MODE='drift';_driftMap.clear();window._st.rd();return;}
+  if (cs === 'particles') {
+  S.useParticleMode = true;
+  RAND_UNICODE_MODE = null;
+  window._st.rd();
+  return;
+}
+S.useParticleMode = false;
   // Normal charset
   RAND_UNICODE_MODE=null;
   if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
