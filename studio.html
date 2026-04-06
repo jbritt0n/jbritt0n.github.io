@@ -234,7 +234,7 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
           <button class="mb" data-mode="sand">Sand</button>
           <button class="mb" data-mode="mycelium">Mycelium</button>
-          <button class="mb new-mode" data-mode="tardigrade">Tardigrade</button>
+          <button class="mb new-mode" data-mode="flowerspin">Flower Spin</button>
         </div>
       </div></div>
 
@@ -938,7 +938,7 @@ let rdGrid=null,rdW=0,rdH=0; // reaction-diffusion
 let voronoiSites=[];
 let myceliumBranches=[];
 let wormAgents = [];
-let tardigrades = [];   
+let flowerspin = [];   
 let sandParticles=[];
 let caGrid=null,caW=0,caH=0,caNext=null;
 let lissParticles=[];
@@ -1154,11 +1154,11 @@ function initWorms(W, H) {
   }
 }  
 
-function initTardigrades(W, H) {
-  tardigrades = [];
+function initflowerspin(W, H) {
+  flowerspin = [];
   let count = Math.max(7, Math.floor(S.density * 23)); // 1 to 5 creatures
   for (let i = 0; i < count; i++) {
-    tardigrades.push({
+    flowerspins.push({
       x: Math.random() * W,
       y: Math.random() * H,
       angle: Math.random() * Math.PI * 2,
@@ -2326,16 +2326,16 @@ function drawIsoContour(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
-// ── Tardigrade ─────────────────────────────────────────────────────────
-function drawTardigrade(p, t) {
-  if (!tardigrades.length) initTardigrades(p.width, p.height);
+// ── flower spin ─────────────────────────────────────────────────────────
+function drawflowerspin(p, t) {
+  if (!flowerspin.length) initflowerspin(p.width, p.height);
 
   let wiggleAmp = S.wave * 0.15;        // how much they squirm
   let pulseAmp = S.turb * 0.02;         // how much they pulse
   let speed = S.speed * 100;
 
-  for (let i = 0; i < tardigrades.length; i++) {
-    let td = tardigrades[i];
+  for (let i = 0; i < flowerspin.length; i++) {
+    let td = flowerspin[i];
 
     // Update position with Perlin noise (smooth wandering)
     if (S.playing) {
@@ -3070,7 +3070,7 @@ new p5(function(p){
       case'boids':      drawBoids(p,t);break;
       case'magnetic':   drawMagnetic(p,t);break;
       case'worms':      drawWorms(p,t); break;
-      case 'tardigrade': drawTardigrade(p,t); break;  
+      case 'flowerspin': drawflowerspin(p,t); break;  
     }
     CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
     drawShapes(p,t);
