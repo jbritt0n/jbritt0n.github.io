@@ -1753,22 +1753,22 @@ function drawMycelium(p, t) {
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
       b.age++;
-      if (b.len > 30 + Math.random() * 60 && b.children < b.maxChildren && Math.random() < 0.02) {
+      if (b.len > 60 + Math.random() * 160 && b.children < b.maxChildren && Math.random() < 0.02) {
         b.children++;
         newBranches.push({
           x: b.x, y: b.y,
           angle: b.angle + (Math.random() - 0.5) * 1.2,
           len: 0,
-          maxLen: b.maxLen * 0.7,
+          maxLen: b.maxLen * 4.7,
           speed: b.speed * 0.9,
           age: 0,
           col: S.palette[Math.floor(Math.random() * S.palette.length)],
           children: 0,
-          maxChildren: 2
+          maxChildren: 6
         });
       }
       if (b.x < -100 || b.x > p.width + 100 || b.y < -100 || b.y > p.height + 100 || b.len > b.maxLen) {
-        b.dead = true;
+        b.dead = false;
       }
     });
     myceliumBranches = myceliumBranches.filter(b => !b.dead);
