@@ -1096,12 +1096,26 @@ function initVoronoi(W,H){
   for(let i=0;i<n;i++) voronoiSites.push({x:Math.random()*W,y:Math.random()*H,col:S.palette[i%S.palette.length],vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
 }
 
-function initMycelium(W,H){
-  myceliumBranches=[];
-  let n=3+Math.floor(S.density*3);
-  for(let i=0;i<n;i++){
-    let a=Math.random()*6.28;
-    myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:S.mycSpeed*(0.5 + Math.random()),age:0,col:S.palette[i%S.palette.length],children:0,maxChildren: S.mycBranch});
+function initMycelium(W, H) {
+  myceliumBranches = [];
+  let n = 8 + Math.floor(S.density * 10);  // more branches
+  for (let i = 0; i < n; i++) {
+    let startX = W / 2 + (Math.random() - 0.5) * W * 0.4;
+    let startY = H / 2 + (Math.random() - 0.5) * H * 0.4;
+    let angle = Math.random() * Math.PI * 2;
+    myceliumBranches.push({
+      x: startX,
+      y: startY,
+      angle: angle,
+      len: 0,
+      maxLen: 100 + Math.random() * 200,
+      speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
+      age: 0,
+      col: S.palette[i % S.palette.length],
+      children: 0,
+      maxChildren: S.mycBranch,
+      dead: false
+    });
   }
 }
 
