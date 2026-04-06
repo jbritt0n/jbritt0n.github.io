@@ -173,7 +173,8 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="turing">Turing Spots</button>
         <button class="pbar-btn" data-preset="mycelium">Mycelium</button>
         <button class="pbar-btn" data-preset="truchet_tiles">Truchet</button>
-        <button class="pbar-btn" data-preset="hatch_print">Hatch Print</button>
+        <button class="pbar-btn" data-preset="seisma_print">Seisma Print</button>
+        <button class="pbar-btn" data-preset="hatch">Hatches</button>
         <button class="pbar-btn" data-preset="liquid_crystal">Liquid Crystal</button>
         <button class="pbar-btn" data-preset="topographic">Topographic</button>
         <button class="pbar-btn" data-preset="tesseract4d">Tesseract 4D</button>
@@ -228,13 +229,14 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="interference">Interfere</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
           <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
-          <button class="mb" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
+          <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
           <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
           <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
           <button class="mb" data-mode="topolines">Topo Lines</button>
           <button class="mb" data-mode="wireterrain">Terrain</button>
+          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
           <button class="mb" data-mode="fractalsubdiv">Fractal</button>
           <button class="mb" data-mode="voronoi">Voronoi</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
@@ -262,7 +264,20 @@ select option{background:var(--ink)}
   <div class="tr">
   <span class="tl">Oscillate</span>
   <button class="tb" id="btnReactOscillate">Off</button>
-</div>
+  </div>
+  <div id="ctrl-magnetic" class="mode-ctrl">
+  <div class="sl2">Magnetic Parameters</div>
+    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        </div>
 </div>
 
 
@@ -670,6 +685,7 @@ select option{background:var(--ink)}
 </div><!-- /app -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
+  
 // ── CHARSETS ─────────────────────────────────────────────────────────────────
 // NOTE: Do NOT remove or modify CHARSETS — it is used by presets, shape overlay,
 // and custom charset logic throughout the code.
@@ -918,6 +934,8 @@ let S={
   reactOscillate: false,
   mycSpeed: 1.0, //mycelium
   mycBranch: 3,  //mycelium
+  hatchAngle:45,hatchCurve:5,
+  vorWire:false,
   
 };
 
@@ -2159,10 +2177,10 @@ function drawTruchet(p,t){
   CTX.restore();
 }
 
-// ── PLOTTER HATCH ─────────────────────────────────────────────────────────────
+// ── SEISMA (PLOTTER HATCH) ─────────────────────────────────────────────────────────────
 // Parallel lines across the canvas; spacing, curvature, and direction driven
 // by Perlin noise. Cross-hatching when wave is high.
-function drawHatch(p,t){
+function drawSeisma(p,t){
   let W=p.width,H=p.height;
   let lineGap=Math.max(2,S.spacing*.6);
   let nLines=Math.ceil(Math.max(W,H)/lineGap)+2;
@@ -2212,7 +2230,24 @@ function drawHatch(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
-
+// ── HATCH LINES ───────────────────────────────────────────────────────────────
+function drawHatch(p,t){
+  let sp=S.spacing,ang=S.hatchAngle*Math.PI/180;
+  CTX.lineWidth=1;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let localAng=ang+(n-.5)*S.hatchCurve*0.2;
+    let x2=x+Math.cos(localAng)*sp*2,y2=y+Math.sin(localAng)*sp*2;
+    CTX.strokeStyle=pickColor(p,x,y,t);
+    CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x2,y2);CTX.stroke();
+    if(n>S.density+0.2){
+      let x3=x+Math.cos(localAng+Math.PI/2)*sp*2,y3=y+Math.sin(localAng+Math.PI/2)*sp*2;
+      CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x3,y3);CTX.stroke();
+    }
+  }
+}
+  
 // ── WARPED GRID ───────────────────────────────────────────────────────────────
 // Regular grid displaced by a noise vector field. Draw grid lines as quads.
 // Liquid crystals, waving fabric, twisting tunnels.
@@ -3065,7 +3100,8 @@ new p5(function(p){
       case'wireterrain': drawWireTerrain(p,t);break;
       case'fractalsubdiv':drawFractalSubdiv(p,t);break;
       case'truchet':    drawTruchet(p,t);break;
-      case'hatch':      drawHatch(p,t);break;
+      case'seisma':     drawSeisma(p,t);break;
+      case'hatch':      drawHatch(p,t);break;  
       case'warpgrid':   drawWarpGrid(p,t);break;
       case'isocontour': drawIsoContour(p,t);break;
       case'tesseract':  drawTesseract(p,t);break;
@@ -3073,7 +3109,7 @@ new p5(function(p){
       case'boids':      drawBoids(p,t);break;
       case'magnetic':   drawMagnetic(p,t);break;
       case'worms':      drawWorms(p,t); break;
-      case 'flowerspin': drawFlowerspin(p,t); break;  
+      case'flowerspin': drawFlowerspin(p,t); break;  
     }
     CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
     drawShapes(p,t);
@@ -3147,6 +3183,9 @@ wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
 wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
 wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
 wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
+wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
+wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
+wireSlider('sHatchCurve','vHatchCurve','hatchCurve');  
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
 document.getElementById('modeGrid').addEventListener('click',function(e){
@@ -3755,7 +3794,7 @@ const PRESETS={
   turing:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.004,wave:10,bg:'#0d0c0a',spacing:6,maxSize:14,noiseScale:.006,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'TURING MORPHOGENESIS',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   mycelium:function(){ap({mode:'mycelium',font:'courier',entropy:.03,speed:.004,wave:20,bg:'#0a0a08',spacing:10,maxSize:18,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:80,overlayStreams:[{text:'mycelium network',color:'#52b788',offset:0}],overlayWave:8,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   truchet_tiles:function(){ap({mode:'truchet',font:'courier',entropy:0,speed:.002,wave:30,bg:'#0d0c0a',spacing:18,maxSize:14,noiseScale:.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'PATTERN',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:22});},
-  hatch_print:function(){ap({mode:'hatch',font:'courier',entropy:.03,speed:.001,wave:22,bg:'#f5efe0',spacing:8,maxSize:12,noiseScale:.01,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
+  seisma_print:function(){ap({mode:'seisma',font:'courier',entropy:.03,speed:.001,wave:22,bg:'#f5efe0',spacing:8,maxSize:12,noiseScale:.01,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
   liquid_crystal:function(){ap({mode:'warpgrid',font:'courier',entropy:0,speed:.004,wave:55,bg:'#0a0c14',spacing:14,maxSize:12,noiseScale:.006,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'LATTICE',color:'#8aaccc',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:28});},
   topographic:function(){ap({mode:'isocontour',font:'courier',entropy:0,speed:.002,wave:40,bg:'#0a1628',spacing:6,maxSize:10,noiseScale:.007,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'elevation · depth · form',color:'#4db6ac',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:11,overlayAlpha:25});},
   tesseract4d:function(){ap({mode:'tesseract',font:'courier',entropy:.04,speed:.005,wave:20,bg:'#060410',spacing:12,maxSize:18,noiseScale:.01,palette:'velvet',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'4D ROTATION',color:'#c77dff',offset:0},{text:'w → z → y → x',color:'#7a5a8a',offset:300}],overlayWave:0,overlaySpeed:2,overlaySize:13,overlayAlpha:35});},
