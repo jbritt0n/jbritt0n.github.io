@@ -73,6 +73,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
 .as:hover{transform:scale(1.2)}
 .as.active{border-color:var(--cream)}
 .ar{display:flex;gap:5px;padding:.72rem 1.3rem;border-top:1px solid var(--stone);flex-shrink:0;background:var(--dark)}
+.top-actions {margin: 0.5rem 1.3rem 0.5rem;padding: 0;border-top: none;background: transparent;}  
 .ab{flex:1;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;padding:.56rem 0;cursor:pointer;transition:all .18s;text-align:center}
 .ab:hover{border-color:var(--pale);color:var(--pale)}
 .ab.play{border-color:var(--gold);color:var(--gold)}
@@ -138,6 +139,13 @@ select option{background:var(--ink)}
         <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
         <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
       </div>
+    </div>
+        <div class="ar top-actions">
+      <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
+      <button class="ab" id="btnRegen" title="Regenerate with new random seed (R)">Regen</button>
+      <button class="ab" id="btnSave" title="Save canvas as PNG (S)">Save PNG</button>
+      <button class="ab" id="btnRecordGif" title="Record a 5 second gif">Record GIF</button>    
+      <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
     </div>
     <div id="presetBar">
       <div class="pbar-label">Quick presets</div>
@@ -657,12 +665,7 @@ select option{background:var(--ink)}
       </div></div>
 
     </div><!-- /ctl -->
-    <div class="ar">
-      <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
-      <button class="ab" id="btnRegen" title="Regenerate with new random seed (R)">Regen</button>
-      <button class="ab" id="btnSave" title="Save canvas as PNG (S)">Save PNG</button>
-      <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
-    </div>
+    
   </div><!-- /panel -->
 </div><!-- /app -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -3606,6 +3609,48 @@ document.getElementById('btnRegen').addEventListener('click',function(){window._
 document.getElementById('btnSave').addEventListener('click',function(){window._st.save();});
 document.getElementById('btnReset').addEventListener('click',function(){resetAllToDefaults();});
 
+let mediaRecorder;
+let recordedChunks = [];
+let recordingTimeout;
+  
+// ── RECORDER ─────────────────────────────────────────────────────────────────
+document.getElementById('btnRecordGif').addEventListener('click', function() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    // Stop recording
+    mediaRecorder.stop();
+    this.textContent = '📹 Record GIF';
+    clearTimeout(recordingTimeout);
+    return;
+  }
+  // Start recording the canvas stream
+  let canvas = document.getElementById('gc');
+  let stream = canvas.captureStream(30); // 30 fps
+  mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+  recordedChunks = [];
+  mediaRecorder.ondataavailable = function(e) {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+  mediaRecorder.onstop = function() {
+    let blob = new Blob(recordedChunks, { type: 'video/webm' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'studio-recording-' + Date.now() + '.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Recording saved as WebM');
+  };
+  mediaRecorder.start();
+  this.textContent = '⏹ Stop Recording';
+  // Auto-stop after 5 seconds
+  recordingTimeout = setTimeout(() => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      document.getElementById('btnRecordGif').textContent = '📹 Record GIF';
+      showToast('5 seconds recorded');
+    }
+  }, 5000);
+});  
 // ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────────
 document.addEventListener('keydown',function(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
@@ -3709,8 +3754,6 @@ const PRESETS={
   sakurarain:function(){ap({mode:'rain1',font:'playfair',entropy:.02,speed:.005,wave:20,bg:'#2d1b2d',spacing:12,maxSize:22,noiseScale:.01,palette:'sakura',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'桜 sakura',color:'#ffb7c5',offset:0},{text:'花びら',color:'#ceb1be',offset:400}],overlayWave:15,overlaySpeed:3,overlaySize:18,overlayAlpha:40,chars:CHARSETS.kanji});},
   turing:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.004,wave:10,bg:'#0d0c0a',spacing:6,maxSize:14,noiseScale:.006,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'TURING MORPHOGENESIS',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   mycelium:function(){ap({mode:'mycelium',font:'courier',entropy:.03,speed:.004,wave:20,bg:'#0a0a08',spacing:10,maxSize:18,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:80,overlayStreams:[{text:'mycelium network',color:'#52b788',offset:0}],overlayWave:8,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
-
-  // ── NEW PRESETS 2025 ─────────────────────────────────────────────────────────
   truchet_tiles:function(){ap({mode:'truchet',font:'courier',entropy:0,speed:.002,wave:30,bg:'#0d0c0a',spacing:18,maxSize:14,noiseScale:.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'PATTERN',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:22});},
   hatch_print:function(){ap({mode:'hatch',font:'courier',entropy:.03,speed:.001,wave:22,bg:'#f5efe0',spacing:8,maxSize:12,noiseScale:.01,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
   liquid_crystal:function(){ap({mode:'warpgrid',font:'courier',entropy:0,speed:.004,wave:55,bg:'#0a0c14',spacing:14,maxSize:12,noiseScale:.006,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'LATTICE',color:'#8aaccc',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:28});},
@@ -3725,8 +3768,7 @@ const PRESETS={
   kintsugi_breaks:function(){ap({mode:'shatter',font:'playfair',entropy:0,speed:.002,wave:40,bg:'#1a0a05',spacing:12,maxSize:22,noiseScale:.009,palette:'kintsugi',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'金継ぎ KINTSUGI',color:'#e8b87a',offset:0}],overlayWave:3,overlaySpeed:1,overlaySize:14,overlayAlpha:35,chars:CHARSETS.kanji});},
   bioluminescent:function(){ap({mode:'mycelium',font:'courier',entropy:.01,speed:.003,wave:15,bg:'#001a0a',spacing:8,maxSize:18,noiseScale:.008,palette:'biolum',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'bioluminescence',color:'#00FFAA',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
-  worms: function() {ap({mode: 'worms',palette: 'fire',speed: 0.008,wave: 40,spacing: 8,maxSize: 16,bg: '#1a0a00',overlayStreams: [{ text: '🐛 WORM DANCE 🐛', color: '#e63946', offset: 0 }],overlayEnabled: true
-  });
+  worms: function() {ap({mode: 'worms',palette: 'fire',speed: 0.008,wave: 40,spacing: 8,maxSize: 16,bg: '#1a0a00',overlayStreams: [{ text: '🐛 WORM DANCE 🐛', color: '#e63946', offset: 0 }],overlayEnabled: true});
 }
 };
 
