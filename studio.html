@@ -215,25 +215,26 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="calligraphy">Calligr.</button>
           <button class="mb" data-mode="lissajous">Lissajous</button>
           <button class="mb new-mode" data-mode="reaction">Reaction</button>
-          <button class="mb new-mode" data-mode="cellular">Cellular</button>
-          <button class="mb new-mode" data-mode="interference">Interfere</button>
+          <button class="mb" data-mode="cellular">Cellular</button>
+          <button class="mb" data-mode="worms">Worms</button>
+          <button class="mb" data-mode="interference">Interfere</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
-          <button class="mb new-mode" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
-          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
-          <button class="mb new-mode" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
-          <button class="mb new-mode" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
-          <button class="mb new-mode" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
-          <button class="mb new-mode" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
+          <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
+          <button class="mb" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
+          <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
+          <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
+          <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
+          <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
           <button class="mb" data-mode="topolines">Topo Lines</button>
           <button class="mb" data-mode="wireterrain">Terrain</button>
           <button class="mb" data-mode="fractalsubdiv">Fractal</button>
-          <button class="mb new-mode" data-mode="voronoi">Voronoi</button>
+          <button class="mb" data-mode="voronoi">Voronoi</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
-          <button class="mb new-mode" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
-          <button class="mb new-mode" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
-          <button class="mb new-mode" data-mode="sand">Sand</button>
-          <button class="mb new-mode" data-mode="mycelium">Mycelium</button>
-          <button class="mb new-mode" data-mode="worms">Worms</button>
+          <button class="mb" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
+          <button class="mb" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
+          <button class="mb" data-mode="sand">Sand</button>
+          <button class="mb" data-mode="mycelium">Mycelium</button>
+          <button class="mb new-mode" data-mode="tardigrade">Tardigrade</button>
         </div>
       </div></div>
 
@@ -936,6 +937,8 @@ let fsPolygons=[];
 let rdGrid=null,rdW=0,rdH=0; // reaction-diffusion
 let voronoiSites=[];
 let myceliumBranches=[];
+let wormAgents = [];
+let tardigrades = [];   
 let sandParticles=[];
 let caGrid=null,caW=0,caH=0,caNext=null;
 let lissParticles=[];
@@ -944,7 +947,7 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 // Native ctx
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
-let wormAgents = [];  
+ 
 
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 
@@ -1150,6 +1153,25 @@ function initWorms(W, H) {
     });
   }
 }  
+
+function initTardigrades(W, H) {
+  tardigrades = [];
+  let count = Math.max(7, Math.floor(S.density * 23)); // 1 to 5 creatures
+  for (let i = 0; i < count; i++) {
+    tardigrades.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      angle: Math.random() * Math.PI * 2,
+      phase: Math.random() * Math.PI * 2,
+      bodyLength: 40 + Math.random() * 60,   // pixels
+      bodyWidth: 20 + Math.random() * 30,
+      wiggle: 0.5 + Math.random() * 1.5,
+      col: S.palette[i % S.palette.length],
+      borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
+      pulse: 0
+    });
+  }
+}
   
 // ── WIREFRAME TERRAIN INIT ─────────────────────────────────────────────────────────────────
 function initWireTerrain(p,W,H){
@@ -2249,38 +2271,32 @@ function drawIsoContour(p,t){
   let nLevels=4+Math.floor((1-S.density)*12);
   let ns=S.noiseScale;
   let lw=Math.max(0.4,S.maxSize*.03);
-
   CTX.save();
   CTX.lineCap='round';
   CTX.lineJoin='round';
-
   // Sample noise field
   let field=new Float32Array(rows*cols);
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     field[r*cols+c]=p.noise(c*res*ns,r*res*ns,t*.12);
   }
-
   // For each iso level, trace lines using marching squares
   for(let lv=0;lv<nLevels;lv++){
     let level=(lv+1)/(nLevels+1);
     // Animate level breathing
     level+=Math.sin(t*.3+lv*0.8)*0.025;
     level=Math.max(0.05,Math.min(0.95,level));
-
     let ci=Math.floor((lv/nLevels)*S.palette.length)%S.palette.length;
     let col=S.palette[ci];
     if(S.accent!=='none'&&lv===0) col=S.accent;
     CTX.strokeStyle=col;
     CTX.lineWidth=lv===0?lw*1.8:lv===nLevels-1?lw*1.4:lw;
     CTX.globalAlpha=0.4+0.5*(1-Math.abs(lv-nLevels/2)/(nLevels/2));
-
     for(let r=0;r<rows-1;r++){
       for(let c=0;c<cols-1;c++){
         let f00=field[r*cols+c],     f10=field[r*cols+c+1];
         let f01=field[(r+1)*cols+c], f11=field[(r+1)*cols+c+1];
         let bitmask=((f00>level)?1:0)|((f10>level)?2:0)|((f01>level)?4:0)|((f11>level)?8:0);
         if(bitmask===0||bitmask===15) continue;
-
         // Interpolate crossing points on each edge
         function interp(fa,fb,x0,y0,x1,y1){
           let t2=(fa===fb)?0.5:(level-fa)/(fb-fa);
@@ -2291,7 +2307,6 @@ function drawIsoContour(p,t){
         let e1=interp(f10,f11,x1,y0,x1,y1); // right
         let e2=interp(f01,f11,x0,y1,x1,y1); // bottom
         let e3=interp(f00,f01,x0,y0,x0,y1); // left
-
         CTX.beginPath();
         // Standard marching squares line segments
         switch(bitmask){
@@ -2311,7 +2326,89 @@ function drawIsoContour(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
+// ── Tardigrade ─────────────────────────────────────────────────────────
+function drawTardigrade(p, t) {
+  if (!tardigrades.length) initTardigrades(p.width, p.height);
 
+  let wiggleAmp = S.wave * 0.15;        // how much they squirm
+  let pulseAmp = S.turb * 0.02;         // how much they pulse
+  let speed = S.speed * 100;
+
+  for (let i = 0; i < tardigrades.length; i++) {
+    let td = tardigrades[i];
+
+    // Update position with Perlin noise (smooth wandering)
+    if (S.playing) {
+      let angleNoise = p.noise(td.x * 0.01, td.y * 0.01, t * 0.2) * Math.PI * 2;
+      td.angle = td.angle * 0.95 + angleNoise * 0.05;
+      td.x += Math.cos(td.angle) * speed * 0.5;
+      td.y += Math.sin(td.angle) * speed * 0.5;
+      // Wrap around edges
+      if (td.x < -50) td.x = p.width + 50;
+      if (td.x > p.width + 50) td.x = -50;
+      if (td.y < -50) td.y = p.height + 50;
+      if (td.y > p.height + 50) td.y = -50;
+      td.phase += 0.02 * S.speed * 20;
+    }
+    // Body dimensions with pulse
+    let pulse = 1 + Math.sin(t * pulseAmp + td.phase) * 0.05;
+    let w = td.bodyWidth * pulse;
+    let h = td.bodyLength * pulse;
+    // Build a rounded polygon (an elongated ellipse with wiggly edges)
+    let segments = 24;
+    let points = [];
+    for (let s = 0; s < segments; s++) {
+      let angle = (s / segments) * Math.PI * 2;
+      // Wiggle: displace radius based on sine of angle and noise
+      let wiggle = Math.sin(angle * 3 + t * wiggleAmp) * wiggleAmp * 8;
+      let rx = (w / 2 + wiggle) * Math.cos(angle);
+      let ry = (h / 2 + wiggle) * Math.sin(angle);
+      // Rotate the whole creature by its movement angle
+      let cosA = Math.cos(td.angle);
+      let sinA = Math.sin(td.angle);
+      let x = td.x + rx * cosA - ry * sinA;
+      let y = td.y + rx * sinA + ry * cosA;
+      points.push({x, y});
+    }
+    // Draw the blob body with a border
+    CTX.save();
+    CTX.beginPath();
+    CTX.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      CTX.lineTo(points[i].x, points[i].y);
+    }
+    CTX.closePath();
+    // Fill with semi‑transparent colour
+    CTX.fillStyle = td.col;
+    CTX.fill();
+    // Stroke the border
+    CTX.strokeStyle = td.borderCol;
+    CTX.lineWidth = Math.max(2, S.maxSize * 0.1);
+    CTX.stroke();
+    // (Optional) draw characters inside the blob
+    // Sample points inside the bounding box
+    let bbox = {
+      minX: Math.min(...points.map(p => p.x)),
+      maxX: Math.max(...points.map(p => p.x)),
+      minY: Math.min(...points.map(p => p.y)),
+      maxY: Math.max(...points.map(p => p.y))
+    };
+    let step = Math.max(8, S.spacing);
+    for (let x = bbox.minX; x <= bbox.maxX; x += step) {
+      for (let y = bbox.minY; y <= bbox.maxY; y += step) {
+        // Check if point is inside the blob (simple polygon test)
+        if (pointInPoly(x, y, points)) {
+          let ch = pickChar(p, x, y, t);
+          let sz = S.maxSize * 0.6;
+          let col = S.palette[Math.floor(Math.abs(Math.sin(x * y)) * S.palette.length) % S.palette.length];
+          dc(x, y, sz, 0, col, ch);
+        }
+      }
+    }
+    CTX.restore();
+  }
+}
+  
 // ── TESSERACT (4D HYPERCUBE) ──────────────────────────────────────────────────
 // 4D hypercube vertices projected through 4D→3D→2D.
 // Two independent 4D rotations animate; characters sit on vertices, edges glow.
@@ -2972,7 +3069,8 @@ new p5(function(p){
       case'hypersphere':drawHypersphere(p,t);break;
       case'boids':      drawBoids(p,t);break;
       case'magnetic':   drawMagnetic(p,t);break;
-      case'worms':      drawWorms(p,t); break;  
+      case'worms':      drawWorms(p,t); break;
+      case 'tardigrade': drawTardigrade(p,t); break;  
     }
     CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
     drawShapes(p,t);
