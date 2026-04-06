@@ -434,8 +434,27 @@ let S = {
 
 // ---------- DYNAMIC STATE ----------
 let CTX=null,_lastFont='',_lastFill='';
-let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[],shapes=[],recRects=[],loopParticles=[],boidAgents=[],magneticPoles=[],wtHeightmap=null,fsPolygons=[],rdGrid=null,voronoiSites=[],myceliumBranches=[],sandParticles=[],caGrid=null,lissParticles=[],wormAgents=[];
-
+let imgPix = null, imgW = 0, imgH = 0;
+let rdW, rdH;  // for reaction‑diffusion grid dimensions
+let rainDrops=[],
+  tessGrid=[],
+  matrixCols=[],
+  shatterParts=[],
+  compBlocks=[],
+  shapes=[],
+  recRects=[],
+  loopParticles=[],
+  boidAgents=[],
+  magneticPoles=[],
+  wtHeightmap=null,
+  fsPolygons=[],
+  rdGrid=null,
+  voronoiSites=[],
+  myceliumBranches=[],
+  sandParticles=[],
+  caGrid=null,
+  lissParticles=[],
+  wormAgents=[];
 function invalidateFontCache(){_lastFont='';_lastFill='';}
 function pickColor(p,x,y,t){let n=p.noise(x*S.noiseScale,y*S.noiseScale,t*.5);let col=S.palette[Math.floor(n*S.palette.length)%S.palette.length];if(S.accentAmt>0&&p.noise(x*.01,y*.01,t*.2)<S.accentAmt)col=S.accent;return col;}
 function pcc(p,x,y,t){return{col:pickColor(p,x,y,t),ch:pickChar(p,x,y,t)};}
