@@ -1313,12 +1313,91 @@ function drawWorms(p, t) {
   });
 }
 
-function drawSand(p, t) { if (!sandParticles.length) initSand(p.width, p.height); drawSand(p, t); } // placeholder
-function drawCellular(p, t) { if (!caGrid) initCellular(p.width, p.height); drawCellular(p, t); }
-function drawInterference(p, t) { drawInterference(p, t); }
-function drawCalligraphy(p, t) { drawCalligraphy(p, t); }
-function drawLissajous(p, t) { if (!lissParticles.length) initLissajous(p.width, p.height); drawLissajous(p, t); }
-function drawWFC(p, t) { drawBloom(p, t); } // placeholder for WFC mode
+function drawLissajous(p, t) {
+  // Initialize particles if not already done
+  if (!lissParticles.length) initLissajous(p.width, p.height);
+
+  let cx = p.width / 2;
+  let cy = p.height / 2;
+  let rx = p.width * 0.42;
+  let ry = p.height * 0.42;
+
+  // Update and draw each particle
+  for (let i = 0; i < lissParticles.length; i++) {
+    let pt = lissParticles[i];
+
+    // Advance phase when playing
+    if (S.playing) {
+      pt.phase += pt.speed * (S.speed * 50 + 0.5);
+    }
+
+    // Compute Lissajous position
+    let x = cx + Math.cos(pt.la * pt.phase + pt.a) * rx * (1 + p.noise(pt.phase * 0.1, 0, t) * 0.15);
+    let y = cy + Math.sin(pt.lb * pt.phase) * ry * (1 + p.noise(0, pt.phase * 0.1, t) * 0.15);
+
+    // Skip if off canvas
+    if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+
+    // Density filter
+    let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+    if (n < S.density * 0.4) continue;
+
+    // Character size based on noise
+    let sz = p.map(n, S.density * 0.4, 1, 2, S.maxSize);
+    // Rotation angle from curve derivative
+    let angle = Math.atan2(
+      pt.lb * Math.cos(pt.lb * pt.phase),
+      -pt.la * Math.sin(pt.la * pt.phase + pt.a)
+    );
+    let col = pt.col;
+    if (S.accent !== 'none' && S.accentAmt > 0 && Math.random() < S.accentAmt) {
+      col = S.accent;
+    }
+    let ch = pickChar(p, x, y, t);
+    dc(x, y, sz, angle, col, ch);
+  }
+}
+function drawWFC(p, t) {
+  // Tile size – larger than normal spacing to show patterns
+  let tileSize = Math.max(16, S.spacing * 2);
+  let cols = Math.ceil(p.width / tileSize);
+  let rows = Math.ceil(p.height / tileSize);
+
+  // Define a small set of tile “glyphs” (Unicode box‑drawing characters)
+  const tileGlyphs = [
+    '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶'
+  ];
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let x = col * tileSize;
+      let y = row * tileSize;
+
+      // Use multi‑octave noise to select a tile in a way that creates larger structures
+      let n1 = p.noise(col * 0.15, row * 0.15, t * 0.1);
+      let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.07);
+      let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length);
+      idx = idx % tileGlyphs.length;
+
+      let ch = tileGlyphs[idx];
+      let colPal = S.palette[(col + row) % S.palette.length];
+      // Add accent occasionally
+      if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.2) < S.accentAmt) {
+        colPal = S.accent;
+      }
+
+      // Size the tile character to nearly fill the tile (with a small margin)
+      let sz = tileSize * 0.7;
+      // Center the character in the tile
+      let cx = x + tileSize / 2;
+      let cy = y + tileSize / 2;
+      // Small wave offset if wave amplitude is > 0
+      let wx = Math.sin(y * 0.02 + t * 2) * S.wave * 0.2;
+      let wy = Math.cos(x * 0.02 + t * 1.5) * S.wave * 0.2;
+      dc(cx + wx, cy + wy, sz, 0, colPal, ch);
+    }
+  }
+}
 
 // ---------- UI HELPERS ----------
 function wireSlider(slId, vId, key, mapFn, extra) {
