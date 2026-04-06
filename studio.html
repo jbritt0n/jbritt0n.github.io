@@ -233,6 +233,19 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
+      <!-- Mode Specific Controls -->
+<div id="ctrl-reaction" class="mode-ctrl">
+  <div class="sl2">Reaction Parameters</div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
+    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
+  </div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
+    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
+  </div>
+</div>
+      
       <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
       <div class="sec-body" id="body-chars">
         <div class="cg" id="charsetGrid">
@@ -873,7 +886,9 @@ let S={
   signalCollapse:false,signalStart:0,
   blendMode:'source-over',
   playing:false,fc:0,
-  useParticleMode:false,  
+  useParticleMode:false, 
+  reactFeed: 0.035, //reaction
+  reactKill: 0.065, //reaction
 };
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
@@ -1575,7 +1590,7 @@ function drawReaction(p,t){
   if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
   let g=rdGrid,W=rdW,H=rdH;
   // Gray-Scott parameters (feed/kill tuned for spots)
-  let feed=0.035+S.density*.008,kill=0.065+S.wave*.0002;
+  let feed = S.reactFeed, kill = S.reactKill;
   let dA=1.0,dB=0.5;
   // Simulate steps
   let steps=S.playing?2:0;
@@ -2934,6 +2949,8 @@ wireSlider('sOvAlpha','vOvAlpha','overlayAlpha');
 wireSlider('sOvWave','vOvWave','overlayWave');
 wireSlider('sOvEntropy','vOvEntropy','overlayEntropy',function(v){return v;});
 wireSlider('sOvDistort','vOvDistort','overlayDistort',function(v){return v;});
+wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
+wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
 document.getElementById('modeGrid').addEventListener('click',function(e){
@@ -2943,6 +2960,10 @@ document.getElementById('modeGrid').addEventListener('click',function(e){
   document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
   window._st.ri();window._st.rd();
 });
+
+  document.querySelectorAll('.mode-ctrl').forEach(ctrl => ctrl.classList.remove('active'));
+let ctrl = document.getElementById('ctrl-' + S.mode);
+if (ctrl) ctrl.classList.add('active');
 
 // ── CHARSET ───────────────────────────────────────────────────────────────────
 document.getElementById('charsetGrid').addEventListener('click',function(e){
