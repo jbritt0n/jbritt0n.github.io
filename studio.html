@@ -345,8 +345,7 @@ select option{background:var(--ink)}
       <div class="sec-body" id="body-font">
         <select id="fontSelect">
           <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>
-          <option value="unicode">Universal Unicode</option>
+          <option value="vt323">VT323 — terminal</option>       
           <option value="typewriter">Special Elite — typewriter</option>
           <option value="georgia">Georgia</option>
           <option value="times">Times New Roman</option>
@@ -355,6 +354,8 @@ select option{background:var(--ink)}
           <option value="playfair">Playfair Display</option>
           <option value="impact">Impact</option>
           <option value="mono">Monospace</option>
+          <option value="unicode_lite">Unicode Lite (faster)</option>
+          <option value="unicode">Universal Unicode</option>
         </select>
       </div></div>
 
@@ -791,7 +792,7 @@ const CHARSETS={
   georgian: 'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ'.split(''),
   cyrillic: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЄІЇ'.split(''),
   sanskrit: 'अआइईउऊएओकखगघचछजझटठडढतथदधनपफबभमयरलवशषसहॐ।।'.split(''),
-  hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀇𓀈𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀝𓀞𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀪𓀫𓀬𓀭𓀮𓀯𓀰𓀱𓀲𓀳𓀴𓀵𓀶𓀷𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀𓁁𓁂𓁃𓁄𓁅𓁆𓁇𓁈𓁉𓁊𓁋𓁌𓁍𓁎𓁏𓁐𓁑𓁒𓁓𓁔𓁕𓁖𓁗𓁘𓁙𓁚𓁛𓁜𓁝𓁞𓁟𓁠𓁡'.split(''),
+  hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀬𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀'.split(''),
   arcane:   'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎⸽⸾⁙⁜※ᛗᛚᛜᛝᛞᚱᚨᚹᚾ'.split(''),
   runes:    'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᛣᛤᛥᛦᛧᛨᛩᛪ'.split(''),
   alchemy: '🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜎🜏🜐🜑🜒🜓🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜮🜯'.split(''),
@@ -894,6 +895,7 @@ const FONTS={
   impact:'Impact,sans-serif',
   mono:'monospace',
   unicode: "'Noto Sans Symbols 2', 'Noto Emoji', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans', sans-serif",
+  unicode_lite: "'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans', sans-serif",
 };
 
 const GLITCH=['█','_','░','▒','?','#','%','■','□',' '];
@@ -3212,77 +3214,61 @@ document.getElementById('modeGrid').addEventListener('click',function(e){
 
 
 // ── CHARSET ───────────────────────────────────────────────────────────────────
-document.getElementById('charsetGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.cb');if(!b||!b.dataset.cs) return;
-  document.querySelectorAll('#charsetGrid .cb').forEach(function(x){x.classList.remove('active');});
+document.getElementById('charsetGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b || !b.dataset.cs) return;
+  document.querySelectorAll('#charsetGrid .cb').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  let cs=b.dataset.cs;
-  document.getElementById('customRow').style.display=cs==='custom'?'flex':'none';
+  let cs = b.dataset.cs;
+  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
+
   // Handle Random Unicode modes
-  if(cs==='randuni'){RAND_UNICODE_MODE='full';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_weighted'){RAND_UNICODE_MODE='weighted';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_pos'){RAND_UNICODE_MODE='pos';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_drift'){RAND_UNICODE_MODE='drift';_driftMap.clear();window._st.rd();return;}
+  if (cs === 'randuni') { RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_weighted') { RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_pos') { RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_drift') { RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; }
+
+  // Handle Particles mode
   if (cs === 'particles') {
-  S.useParticleMode = true;
+    S.useParticleMode = true;
+    RAND_UNICODE_MODE = null;
+    window._st.rd();
+    return;
+  }
+  S.useParticleMode = false;
+
+  // Normal charset (non‑custom)
   RAND_UNICODE_MODE = null;
-  window._st.rd();
-  return;
-}
-S.useParticleMode = false;
-// --- NEW: Rare charset font fallback ---
-if (RARE_CHARSETS.includes(cs)) {
-  // Remember current font if not already a rare fallback
-  if (S.fontKey !== 'unicode') {
-    S.previousFont = S.fontKey;
+  if (cs !== 'custom') {
+    S.chars = CHARSETS[cs];
+    // Show a warning for rare charsets – no automatic font switch
+    if (RARE_CHARSETS.includes(cs)) {
+      showToast('⚠️ For best results, select “Universal Unicode” font manually');
+    }
+    window._st.rd();
   }
-  // Switch to Unicode font
-  S.fontKey = 'unicode';
-  S.fontStack = FONTS.unicode;
-  document.getElementById('fontSelect').value = 'unicode';
-  invalidateFontCache();
-  showToast(`Switched to Universal Unicode font for ${cs}`);
-} else if (cs !== 'custom' && cs !== 'particles' && !cs.startsWith('randuni')) {
-  // Normal charset: restore previous font if it was changed by rare fallback
-  if (S.fontKey === 'unicode' && S.previousFont && S.previousFont !== 'unicode') {
-    S.fontKey = S.previousFont;
-    S.fontStack = FONTS[S.previousFont];
-    document.getElementById('fontSelect').value = S.previousFont;
-    invalidateFontCache();
-    showToast(`Restored font: ${S.previousFont}`);
-  }
-}
-  
-  // Normal charset
-  RAND_UNICODE_MODE=null;
-  if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
-});
-
-
-  
-//custom text in semicolon separated strings
-document.getElementById('customApply').addEventListener('click', function() {
-  let v = document.getElementById('customInput').value.trim();
-  if (!v) return;
-
-  // Split by semicolon to get items (each item can be a multi‑character string)
-  let items = v.split(';').map(s => s.trim()).filter(s => s.length > 0);
-
-  if (items.length === 0) {
-    // Fallback: treat the whole input as one item
-    items = [v];
-  }
-
-  S.chars = items;
-  RAND_UNICODE_MODE = null;
-  showToast(`Custom charset: ${S.chars.length} items`);
-  window._st.rd();
 });
 
 // ── FONT ──────────────────────────────────────────────────────────────────────
-document.getElementById('fontSelect').addEventListener('change',function(){
-  S.fontKey=this.value;S.fontStack=FONTS[this.value]||FONTS.courier;
-  invalidateFontCache();window._st.rd();
+document.getElementById('fontSelect').addEventListener('change', function() {
+  let newFont = this.value;
+  if (newFont === 'unicode') {
+    if (confirm('⚠️ Universal Unicode font can be slow on mobile with large charsets.\nContinue anyway?')) {
+      S.fontKey = newFont;
+      S.fontStack = FONTS[newFont];
+      invalidateFontCache();
+      window._st.rd();
+      showToast('Unicode font enabled – may be slow');
+    } else {
+      // Revert dropdown to previous value
+      this.value = S.fontKey;
+    }
+  } else {
+    S.fontKey = newFont;
+    S.fontStack = FONTS[newFont] || FONTS.courier;
+    invalidateFontCache();
+    window._st.rd();
+  }
 });
 
 // ── FLIP TOGGLES ─────────────────────────────────────────────────────────────
