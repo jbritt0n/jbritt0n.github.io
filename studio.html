@@ -3726,12 +3726,9 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
   let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
   let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
   
-  // Base size (radius)
   let r = 55 + Math.random() * (Math.min(W, H) * 0.2);
-  
-  // Generate irregular polygon points for specific shape types
   let pts = null;
-  let irregularity = 0.3 + Math.random() * 0.5; // random irregularity between 0.3 and 0.8
+  let irregularity = 0.3 + Math.random() * 0.5;
   
   if (S.selectedShape === 'polygon') {
     pts = irregularPolygon(pos.x, pos.y, r, S.shapeSides, irregularity, 0);
@@ -3740,19 +3737,17 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
   } else if (S.selectedShape === 'hexagon') {
     pts = irregularPolygon(pos.x, pos.y, r, 6, irregularity * 0.7, 0);
   } else if (S.selectedShape === 'star5') {
-    // Star: 10 points, alternating radii (spike factor)
     pts = irregularPolygon(pos.x, pos.y, r, 10, irregularity * 0.5, 0.5 + Math.random() * 0.3);
   } else if (S.selectedShape === 'star6') {
     pts = irregularPolygon(pos.x, pos.y, r, 12, irregularity * 0.5, 0.5 + Math.random() * 0.3);
   }
-  // For circle, ring, rect, band, lissajous – pts remains null (will use native drawing)
 
   shapes.push({
     type: S.selectedShape,
     cx: pos.x, cy: pos.y,
     baseCx: pos.x, baseCy: pos.y,
-    size: r,                       // store radius
-    pts: pts,                      // pre‑generated points (if any)
+    size: r,
+    pts: pts,
     col: col,
     borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
     borderEnabled: true,
@@ -3764,25 +3759,24 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
     orbitAngle: Math.atan2(pos.y - H / 2, pos.x - W / 2),
     textOffset: 0,
     text: _pendingShapeText || '',
-    // Per‑shape properties
     driftEnabled: false,
     driftSpeed: 0.5,
     driftAmpX: 8,
     driftAmpY: 6,
     driftPhase: Math.random() * Math.PI * 2,
     textEnabled: true,
-    textColor: '#ffffff',          // default text color
+    textColor: '#ffffff',
     solidFill: false,
     fillColor: '#c4bcb0',
     fillOpacity: 0.5
   });
-
   S.shapesEnabled = true;
   document.getElementById('btnShapes').textContent = 'On';
   document.getElementById('btnShapes').classList.add('on');
   renderShapeList();
   window._st.rd();
 });
+
   
 function renderShapeList() {
   let W = window._st.w();
@@ -4561,13 +4555,12 @@ document.getElementById('presetBar').addEventListener('click',function(e){
   if(fn){fn();showToast(b.textContent);}
 });
 
-  
 // Collapse all sections on initial load
 ['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets'].forEach(function(id){
   let body=document.getElementById('body-'+id);
   let arrow=document.getElementById('arr-'+id);
   if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
-});
+});  
   
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
 let _panelHidden=false;
