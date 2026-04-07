@@ -3205,8 +3205,6 @@ if (type === 'lissajous') {
         }
       }
     }
-
-
   
     // Draw shape border
     if (sh.borderEnabled !== false) {
@@ -3937,6 +3935,21 @@ function renderShapeList() {
     sizeLabel.style.fontSize = '0.45rem';
     row.appendChild(sizeLabel);
 
+    // Character fill color picker (overrides color mode)
+    let charFillPicker = document.createElement('input');
+    charFillPicker.type = 'color';
+    charFillPicker.value = sh.charFillColor || '#c4bcb0';
+    charFillPicker.style.width = '24px';
+    charFillPicker.style.height = '24px';
+    charFillPicker.style.border = 'none';
+    charFillPicker.style.cursor = 'pointer';
+    charFillPicker.title = 'Character fill color (overrides color mode)';
+    charFillPicker.addEventListener('input', function(e) {
+      sh.charFillColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(charFillPicker);
+  
     // Drift enable/off
     let driftBtn = document.createElement('button');
     driftBtn.className = 'tb';
