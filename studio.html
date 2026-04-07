@@ -3592,6 +3592,7 @@ function renderShapeList() {
     let row = document.createElement('div');
     row.className = 'sh-item';
     row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;padding:4px;border-bottom:1px solid var(--stone);';
+
     // Fill colour swatch (click to randomize)
     let dot = document.createElement('div');
     dot.style.width = '20px';
@@ -3599,7 +3600,7 @@ function renderShapeList() {
     dot.style.borderRadius = '50%';
     dot.style.background = sh.col;
     dot.style.cursor = 'pointer';
-    dot.title = 'Click to randomize fill colour';
+    dot.title = 'Fill colour (click to randomize)';
     dot.addEventListener('click', function(e) {
       e.stopPropagation();
       sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
@@ -3607,7 +3608,22 @@ function renderShapeList() {
       window._st.rd();
     });
     row.appendChild(dot);
-    // Border colour swatch (click to randomize)
+
+    // Solid fill toggle
+    let fillToggle = document.createElement('button');
+    fillToggle.className = 'tb';
+    fillToggle.textContent = (sh.solidFill === true) ? 'Solid Fill On' : 'Solid Fill Off';
+    fillToggle.style.padding = '0.1rem 0.4rem';
+    fillToggle.style.fontSize = '0.45rem';
+    fillToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.solidFill = !(sh.solidFill === true);
+      fillToggle.textContent = sh.solidFill ? 'Solid Fill On' : 'Solid Fill Off';
+      window._st.rd();
+    });
+    row.appendChild(fillToggle);
+
+    // Border colour swatch
     let borderDot = document.createElement('div');
     borderDot.style.width = '16px';
     borderDot.style.height = '16px';
@@ -3623,6 +3639,7 @@ function renderShapeList() {
       window._st.rd();
     });
     row.appendChild(borderDot);
+
     // Border on/off toggle
     let borderToggle = document.createElement('button');
     borderToggle.className = 'tb';
@@ -3636,6 +3653,7 @@ function renderShapeList() {
       window._st.rd();
     });
     row.appendChild(borderToggle);
+
     // Opacity slider
     let opacitySlider = document.createElement('input');
     opacitySlider.type = 'range';
@@ -3654,6 +3672,7 @@ function renderShapeList() {
     opacityLabel.textContent = Math.round(opacitySlider.value * 100) + '%';
     opacityLabel.style.fontSize = '0.45rem';
     row.appendChild(opacityLabel);
+
     // Jitter slider
     let jitterSlider = document.createElement('input');
     jitterSlider.type = 'range';
@@ -3673,11 +3692,13 @@ function renderShapeList() {
     jitterLabel.textContent = (sh.jitter || 0) + 'px';
     jitterLabel.style.fontSize = '0.45rem';
     row.appendChild(jitterLabel);
+
     // Shape label
     let lbl = document.createElement('div');
     lbl.className = 'sh-item-lbl';
     lbl.textContent = sh.type + (sh.text ? ' "' + sh.text.substring(0, 8) + '"' : '') + ' (' + Math.round(sh.cx) + ',' + Math.round(sh.cy) + ')';
     row.appendChild(lbl);
+
     // Remove button
     let rm = document.createElement('button');
     rm.className = 'ca';
@@ -3690,6 +3711,7 @@ function renderShapeList() {
       window._st.rd();
     });
     row.appendChild(rm);
+
     el.appendChild(row);
   });
 }
