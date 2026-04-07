@@ -597,6 +597,7 @@ select option{background:var(--ink)}
           <button class="cb" data-scm="math">Math</button>
           <button class="cb" data-scm="palette">Palette</button>
         </div>
+        <button class="ca" id="btnRandomizeShapeColors" style="width:100%; margin-top:.3rem">Randomize all shape colors</button>
         <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
           <div class="as" data-sfc="#e63946" style="background:#e63946"></div>
           <div class="as" data-sfc="#f4a261" style="background:#f4a261"></div>
@@ -2942,56 +2943,138 @@ function shapeCharColor(x,y,t,shIdx){
   }
 }
 
-function drawShapes(p,t){
-  if(!S.shapesEnabled||!shapes.length) return;
-  let sp=Math.max(3,S.spacing*(1-(S.shapeDens-1)/12));
-  shapes.forEach(function(sh,si){
-    if(S.shapeSpin>0&&S.playing){sh.spinAngle=(sh.spinAngle||0)+(S.shapeSpin*.0008);}
-    let spin=sh.spinAngle||0;
-    let r=sh.r;
-    if(S.shapePulse>0) r=sh.r*(1+Math.sin(t*2+(sh.cx||0)*.01)*S.shapePulse*.02);
-    let cx=sh.cx,cy=sh.cy;
-    if(S.shapeOrbitEnabled&&S.playing){
-      sh.orbitAngle=(sh.orbitAngle||Math.atan2(sh.cy-p.height/2,sh.cx-p.width/2))+(S.shapeSpin||1)*.0005;
-      let or=Math.sqrt((sh.baseCx-p.width/2)*(sh.baseCx-p.width/2)+(sh.baseCy-p.height/2)*(sh.baseCy-p.height/2));
-      cx=p.width/2+Math.cos(sh.orbitAngle)*or;
-      cy=p.height/2+Math.sin(sh.orbitAngle)*or;
-      sh.cx=cx;sh.cy=cy;
+function drawShapes(p, t) {
+  if (!S.shapesEnabled || !shapes.length) return;
+  let sp = Math.max(3, S.spacing * (1 - (S.shapeDens - 1) / 12));
+
+  shapes.forEach(function(sh, si) {
+    // Apply per‑shape spin and pulse
+    if (S.shapeSpin > 0 && S.playing) sh.spinAngle = (sh.spinAngle || 0) + (S.shapeSpin * 0.0008);
+    let spin = sh.spinAngle || 0;
+    let r = sh.r;
+    if (S.shapePulse > 0) r = sh.r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
+    let cx = sh.cx, cy = sh.cy;
+    if (S.shapeOrbitEnabled && S.playing) {
+      sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
+      let or = Math.hypot(sh.baseCx - p.width / 2, sh.baseCy - p.height / 2);
+      cx = p.width / 2 + Math.cos(sh.orbitAngle) * or;
+      cy = p.height / 2 + Math.sin(sh.orbitAngle) * or;
+      sh.cx = cx; sh.cy = cy;
     }
-    let type=sh.type;
-    // Build mask points
-    let pts=null;
-    if(type==='equilateral') pts=polyPts(cx,cy,r,3,spin-Math.PI/2);
-    else if(type==='hexagon') pts=polyPts(cx,cy,r,6,spin);
-    else if(type==='star5') pts=polyPts(cx,cy,r,5,spin-Math.PI/2,r*.45);
-    else if(type==='star6') pts=polyPts(cx,cy,r,6,spin,r*.5);
-    else if(type==='polygon') pts=polyPts(cx,cy,r,sh.sides||7,spin);
+    // Build polygon points for the shape
+    let pts = null;
+    let type = sh.type;
+    if (type === 'circle') {
+      // For circle we'll use arc, not polygon
+    } else if (type === 'ring') {
+      // ring is special
+    } else if (type === 'rect') {
+      // rectangle as polygon
+    } else if (type === 'band') {
+      // horizontal band
+    } else if (type === 'equilateral') pts = polyPts(cx, cy, r, 3, spin - Math.PI / 2);
+    else if (type === 'hexagon') pts = polyPts(cx, cy, r, 6, spin);
+    else if (type === 'star5') pts = polyPts(cx, cy, r, 5, spin - Math.PI / 2, r * 0.45);
+    else if (type === 'star6') pts = polyPts(cx, cy, r, 6, spin, r * 0.5);
+    else if (type === 'polygon') pts = polyPts(cx, cy, r, sh.sides || 7, spin);
+    else if (type === 'lissajous') {
+      let la = sh.la || 2, lb = sh.lb || 3;
+      let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
+      let ly = cy + Math.sin(lb * t) * r * 0.7;
+      pts = [{ x: lx, y: ly }]; // single point – treat as small area
+    }
+    // Apply per‑shape opacity and jitter to characters
+    let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
+    let jitter = sh.jitter || 0;
     // Draw characters inside shape
-    let x0=cx-r-sp,x1=cx+r+sp,y0=cy-r-sp,y1=cy+r+sp;
-    if(type==='band'){x0=0;x1=p.width;y0=cy-r;y1=cy+r;}
-    for(let x=x0;x<x1;x+=sp) for(let y=y0;y<y1;y+=sp){
-      let inside=false;
-      if(type==='circle') inside=(x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r;
-      else if(type==='ring'){let d2=(x-cx)*(x-cx)+(y-cy)*(y-cy);inside=d2<=r*r&&d2>=(r*.55)*(r*.55);}
-      else if(type==='rect'){let hw=r*.8,hh=r*.55;let rx2=Math.cos(-spin)*(x-cx)-Math.sin(-spin)*(y-cy);let ry2=Math.sin(-spin)*(x-cx)+Math.cos(-spin)*(y-cy);inside=Math.abs(rx2)<=hw&&Math.abs(ry2)<=hh;}
-      else if(type==='band') inside=y>=y0&&y<=y1;
-      else if(type==='lissajous'){let la=sh.la||2,lb=sh.lb||3;let lx=cx+Math.cos(la*t+sh.spinAngle||0)*r*.8,ly=cy+Math.sin(lb*t)*r*.7;inside=(x-lx)*(x-lx)+(y-ly)*(y-ly)<(r*.25)*(r*.25);}
-      else if(pts) inside=pointInPoly(x,y,pts);
-      if(!inside) continue;
-      let ch=pickShapeChar(x,y);
-      let col=shapeCharColor(x,y,t,si);
-      let sz=sp*.8+Math.random()*sp*.4;
-      dc(x,y,sz,0,col,ch);
+    let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
+    if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
+    for (let x = x0; x < x1; x += sp) {
+      for (let y = y0; y < y1; y += sp) {
+        let inside = false;
+        if (type === 'circle') inside = (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2;
+        else if (type === 'ring') {
+          let d2 = (x - cx) ** 2 + (y - cy) ** 2;
+          inside = d2 <= r ** 2 && d2 >= (r * 0.55) ** 2;
+        } else if (type === 'rect') {
+          let hw = r * 0.8, hh = r * 0.55;
+          let rx = Math.cos(-spin) * (x - cx) - Math.sin(-spin) * (y - cy);
+          let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
+          inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+        } else if (type === 'band') inside = y >= y0 && y <= y1;
+        else if (type === 'lissajous') {
+          let lx = cx + Math.cos((sh.la || 2) * t + (sh.spinAngle || 0)) * r * 0.8;
+          let ly = cy + Math.sin((sh.lb || 3) * t) * r * 0.7;
+          inside = (x - lx) ** 2 + (y - ly) ** 2 < (r * 0.25) ** 2;
+        } else if (pts) inside = pointInPoly(x, y, pts);
+        if (!inside) continue;
+        let ch = pickShapeChar(x, y);
+        let col = shapeCharColor(x, y, t, si);
+        // Apply jitter to position
+        let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
+        let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
+        let sz = sp * 0.8 + Math.random() * sp * 0.4;
+        CTX.save();
+        CTX.globalAlpha = globalAlpha;
+        dc(x + jx, y + jy, sz, 0, col, ch);
+        CTX.restore();
+      }
     }
-    // Scrolling text along shape boundary
-    if(sh.text&&sh.text.length){
-      if(S.playing) sh.textOffset=(sh.textOffset||0)+S.speed*20;
-      let perim=6.28*r,step=S.maxSize*.7;
-      for(let i=0;i<Math.floor(perim/step);i++){
-        let a=(i*step+sh.textOffset)/r;
-        let tx=cx+Math.cos(a+spin)*r,ty=cy+Math.sin(a+spin)*r;
-        let ci=i%sh.text.length;
-        dc(tx,ty,S.maxSize*.7,a+1.5708,sh.col,sh.text[ci]);
+
+    // Draw the shape border if enabled
+    if (sh.borderEnabled !== false) {
+      CTX.save();
+      CTX.globalAlpha = globalAlpha;
+      CTX.strokeStyle = sh.borderCol || (sh.col === S.accent ? sh.col : '#ffffff');
+      CTX.lineWidth = Math.max(1, S.maxSize * 0.08);
+      CTX.lineCap = 'round';
+      CTX.lineJoin = 'round';
+
+      if (type === 'circle') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.stroke();
+      } else if (type === 'ring') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.stroke();
+        CTX.beginPath();
+        CTX.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+        CTX.stroke();
+      } else if (type === 'rect') {
+        let hw = r * 0.8, hh = r * 0.55;
+        CTX.save();
+        CTX.translate(cx, cy);
+        CTX.rotate(spin);
+        CTX.strokeRect(-hw, -hh, hw * 2, hh * 2);
+        CTX.restore();
+      } else if (type === 'band') {
+        CTX.beginPath();
+        CTX.rect(0, cy - r * 0.3, p.width, r * 0.6);
+        CTX.stroke();
+      } else if (pts && pts.length > 1) {
+        CTX.beginPath();
+        CTX.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+        CTX.closePath();
+        CTX.stroke();
+      }
+      CTX.restore();
+    }
+
+    // Scrolling text along shape boundary (unchanged)
+    if (sh.text && sh.text.length) {
+      if (S.playing) sh.textOffset = (sh.textOffset || 0) + S.speed * 20;
+      let perim = 6.28 * r, step = S.maxSize * 0.7;
+      for (let i = 0; i < Math.floor(perim / step); i++) {
+        let a = (i * step + (sh.textOffset || 0)) / r;
+        let tx = cx + Math.cos(a + spin) * r;
+        let ty = cy + Math.sin(a + spin) * r;
+        let ci = i % sh.text.length;
+        CTX.save();
+        CTX.globalAlpha = globalAlpha;
+        dc(tx, ty, S.maxSize * 0.7, a + 1.5708, sh.borderCol || sh.col, sh.text[ci]);
+        CTX.restore();
       }
     }
   });
@@ -3464,31 +3547,150 @@ document.getElementById('setShapeTextBtn').addEventListener('click',function(){
   if(shapes.length){shapes[shapes.length-1].text=_pendingShapeText;window._st.rd();}
 });
 document.getElementById('shapeTextInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('setShapeTextBtn').click();});
-document.getElementById('btnAddShape').addEventListener('click',function(){
-  let W=window._st.w(),H=window._st.h();
-  let pos=getShapePos(W,H);
-  let col=COMP_PALETTES.default[Math.floor(Math.random()*COMP_PALETTES.default.length)];
-  let la=[2,3,4,5][Math.floor(Math.random()*4)],lb=[1,2,3][Math.floor(Math.random()*3)];
-  shapes.push({type:S.selectedShape,cx:pos.x,cy:pos.y,baseCx:pos.x,baseCy:pos.y,
-    r:55+Math.random()*(Math.min(W,H)*.2),col:col,sides:S.shapeSides,
-    la:la,lb:lb,spinAngle:0,orbitAngle:Math.atan2(pos.y-H/2,pos.x-W/2),
-    textOffset:0,text:_pendingShapeText||''});
-  S.shapesEnabled=true;
-  document.getElementById('btnShapes').textContent='On';
+document.getElementById('btnAddShape').addEventListener('click', function() {
+  let W = window._st.w(), H = window._st.h();
+  let pos = getShapePos(W, H);
+  let col = COMP_PALETTES.default[Math.floor(Math.random() * COMP_PALETTES.default.length)];
+  let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+  let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
+document.getElementById('btnRandomizeShapeColors').addEventListener('click', function() {
+  shapes.forEach(sh => {
+    sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
+    if (sh.borderCol && sh.borderCol !== 'none') sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+  });
+});
+  shapes.push({
+    type: S.selectedShape,
+    cx: pos.x, cy: pos.y,
+    baseCx: pos.x, baseCy: pos.y,
+    r: 55 + Math.random() * (Math.min(W, H) * 0.2),
+    col: col,
+    borderCol: S.accent !== 'none' ? S.accent : '#ffffff',   // new
+    borderEnabled: true,                                    // new
+    opacity: 0.8,                                           // new
+    jitter: 0,                                              // new
+    sides: S.shapeSides,
+    la: la, lb: lb,
+    spinAngle: 0,
+    orbitAngle: Math.atan2(pos.y - H / 2, pos.x - W / 2),
+    textOffset: 0,
+    text: _pendingShapeText || ''
+  });
+
+  S.shapesEnabled = true;
+  document.getElementById('btnShapes').textContent = 'On';
   document.getElementById('btnShapes').classList.add('on');
-  renderShapeList();window._st.rd();
+  renderShapeList();
+  window._st.rd();
 });
 document.getElementById('btnClearShapes').addEventListener('click',function(){shapes=[];renderShapeList();window._st.rd();});
-function renderShapeList(){
-  let el=document.getElementById('shapeList');el.innerHTML='';
-  shapes.forEach(function(sh,i){
-    let row=document.createElement('div');row.className='sh-item';
-    let dot=document.createElement('div');dot.className='sh-item-dot';dot.style.background=sh.col;
-    let lbl=document.createElement('div');lbl.className='sh-item-lbl';
-    lbl.textContent=sh.type+(sh.text?' "'+sh.text.substring(0,8)+'"':'')+' ('+Math.round(sh.cx)+','+Math.round(sh.cy)+')';
-    let rm=document.createElement('button');rm.className='ca';rm.textContent='✕';rm.style.padding='0 .45rem';
-    rm.addEventListener('click',function(){shapes.splice(i,1);renderShapeList();window._st.rd();});
-    row.appendChild(dot);row.appendChild(lbl);row.appendChild(rm);el.appendChild(row);
+  
+function renderShapeList() {
+  let el = document.getElementById('shapeList');
+  el.innerHTML = '';
+  shapes.forEach(function(sh, i) {
+    let row = document.createElement('div');
+    row.className = 'sh-item';
+    row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;padding:4px;border-bottom:1px solid var(--stone);';
+    // Fill colour swatch (click to randomize)
+    let dot = document.createElement('div');
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.borderRadius = '50%';
+    dot.style.background = sh.col;
+    dot.style.cursor = 'pointer';
+    dot.title = 'Click to randomize fill colour';
+    dot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
+      dot.style.background = sh.col;
+      window._st.rd();
+    });
+    row.appendChild(dot);
+    // Border colour swatch (click to randomize)
+    let borderDot = document.createElement('div');
+    borderDot.style.width = '16px';
+    borderDot.style.height = '16px';
+    borderDot.style.borderRadius = '50%';
+    borderDot.style.background = sh.borderCol || '#ffffff';
+    borderDot.style.border = '1px solid var(--stone)';
+    borderDot.style.cursor = 'pointer';
+    borderDot.title = 'Border colour (click to randomize)';
+    borderDot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+      borderDot.style.background = sh.borderCol;
+      window._st.rd();
+    });
+    row.appendChild(borderDot);
+    // Border on/off toggle
+    let borderToggle = document.createElement('button');
+    borderToggle.className = 'tb';
+    borderToggle.textContent = (sh.borderEnabled === false) ? 'Border Off' : 'Border On';
+    borderToggle.style.padding = '0.1rem 0.4rem';
+    borderToggle.style.fontSize = '0.45rem';
+    borderToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.borderEnabled = !(sh.borderEnabled === false);
+      borderToggle.textContent = (sh.borderEnabled === false) ? 'Border Off' : 'Border On';
+      window._st.rd();
+    });
+    row.appendChild(borderToggle);
+    // Opacity slider
+    let opacitySlider = document.createElement('input');
+    opacitySlider.type = 'range';
+    opacitySlider.min = 0.2;
+    opacitySlider.max = 1;
+    opacitySlider.step = 0.05;
+    opacitySlider.value = (sh.opacity !== undefined) ? sh.opacity : 0.8;
+    opacitySlider.style.width = '50px';
+    opacitySlider.addEventListener('input', function(e) {
+      sh.opacity = parseFloat(e.target.value);
+      opacityLabel.textContent = Math.round(sh.opacity * 100) + '%';
+      window._st.rd();
+    });
+    row.appendChild(opacitySlider);
+    let opacityLabel = document.createElement('span');
+    opacityLabel.textContent = Math.round(opacitySlider.value * 100) + '%';
+    opacityLabel.style.fontSize = '0.45rem';
+    row.appendChild(opacityLabel);
+    // Jitter slider
+    let jitterSlider = document.createElement('input');
+    jitterSlider.type = 'range';
+    jitterSlider.min = 0;
+    jitterSlider.max = 20;
+    jitterSlider.step = 1;
+    jitterSlider.value = sh.jitter || 0;
+    jitterSlider.style.width = '50px';
+    jitterSlider.title = 'Position jitter (px)';
+    jitterSlider.addEventListener('input', function(e) {
+      sh.jitter = parseFloat(e.target.value);
+      jitterLabel.textContent = sh.jitter + 'px';
+      window._st.rd();
+    });
+    row.appendChild(jitterSlider);
+    let jitterLabel = document.createElement('span');
+    jitterLabel.textContent = (sh.jitter || 0) + 'px';
+    jitterLabel.style.fontSize = '0.45rem';
+    row.appendChild(jitterLabel);
+    // Shape label
+    let lbl = document.createElement('div');
+    lbl.className = 'sh-item-lbl';
+    lbl.textContent = sh.type + (sh.text ? ' "' + sh.text.substring(0, 8) + '"' : '') + ' (' + Math.round(sh.cx) + ',' + Math.round(sh.cy) + ')';
+    row.appendChild(lbl);
+    // Remove button
+    let rm = document.createElement('button');
+    rm.className = 'ca';
+    rm.textContent = '✕';
+    rm.style.padding = '0 .45rem';
+    rm.addEventListener('click', function(e) {
+      e.stopPropagation();
+      shapes.splice(i, 1);
+      renderShapeList();
+      window._st.rd();
+    });
+    row.appendChild(rm);
+    el.appendChild(row);
   });
 }
 
