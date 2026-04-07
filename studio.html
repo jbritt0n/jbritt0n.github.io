@@ -3020,7 +3020,71 @@ function drawShapes(p, t) {
         CTX.restore();
       }
     }
-
+    // --- Draw solid fill background if enabled ---
+if (sh.solidFill) {
+    CTX.save();
+    CTX.globalAlpha = (sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5);
+    CTX.fillStyle = sh.fillColor || S.palette[0];
+    if (type === 'circle') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI*2);
+        CTX.fill();
+    } else if (type === 'ring') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI*2);
+        CTX.fill();
+        CTX.beginPath();
+        CTX.arc(cx, cy, r*0.55, 0, Math.PI*2);
+        CTX.fill();
+    } else if (type === 'rect') {
+        let hw = r*0.8, hh = r*0.55;
+        CTX.save();
+        CTX.translate(cx, cy);
+        CTX.rotate(spin);
+        CTX.fillRect(-hw, -hh, hw*2, hh*2);
+        CTX.restore();
+    } else if (type === 'band') {
+        CTX.fillRect(0, cy - r*0.3, p.width, r*0.6);
+    } else if (pts && pts.length > 1) {
+        CTX.beginPath();
+        CTX.moveTo(pts[0].x, pts[0].y);
+        for (let i=1; i<pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+        CTX.closePath();
+        CTX.fill();
+    }
+    CTX.restore();
+}
+    // --- Draw text INSIDE shape (scattered) instead of orbiting ---
+if (sh.text && sh.text.length) {
+    let step = Math.max(8, S.spacing * 0.8);
+    let x0 = cx - r - step, x1 = cx + r + step;
+    let y0 = cy - r - step, y1 = cy + r + step;
+    for (let x = x0; x < x1; x += step) {
+        for (let y = y0; y < y1; y += step) {
+            let inside = false;
+            if (type === 'circle') inside = (x-cx)**2 + (y-cy)**2 <= r**2;
+            else if (type === 'ring') {
+                let d2 = (x-cx)**2 + (y-cy)**2;
+                inside = d2 <= r**2 && d2 >= (r*0.55)**2;
+            } else if (type === 'rect') {
+                let hw = r*0.8, hh = r*0.55;
+                let rx = Math.cos(-spin)*(x-cx) - Math.sin(-spin)*(y-cy);
+                let ry = Math.sin(-spin)*(x-cx) + Math.cos(-spin)*(y-cy);
+                inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+            } else if (type === 'band') inside = (y >= cy - r*0.3 && y <= cy + r*0.3);
+            else if (pts) inside = pointInPoly(x, y, pts);
+            if (!inside) continue;
+            let idx = (Math.floor(x/step) + Math.floor(y/step)) % sh.text.length;
+            let ch = sh.text[idx];
+            let col = shapeCharColor(x, y, t, si);
+            let sz = step * 0.7;
+            CTX.save();
+            CTX.globalAlpha = sh.opacity !== undefined ? sh.opacity : 0.8;
+            dc(x, y, sz, 0, col, ch);
+            CTX.restore();
+        }
+    }
+}
     // Draw the shape border if enabled
     if (sh.borderEnabled !== false) {
       CTX.save();
@@ -3556,6 +3620,8 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
 document.getElementById('btnRandomizeShapeColors').addEventListener('click', function() {
   shapes.forEach(sh => {
     sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
+    sh.fillColor = '#c4bcb0';
+    sh.fillOpacity = 0.5;
     if (sh.borderCol && sh.borderCol !== 'none') sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
   });
 });
@@ -3672,7 +3738,40 @@ function renderShapeList() {
     opacityLabel.textContent = Math.round(opacitySlider.value * 100) + '%';
     opacityLabel.style.fontSize = '0.45rem';
     row.appendChild(opacityLabel);
+    // Fill color picker
+let fillColorPicker = document.createElement('input');
+fillColorPicker.type = 'color';
+fillColorPicker.value = sh.fillColor || '#c4bcb0';
+fillColorPicker.style.width = '24px';
+fillColorPicker.style.height = '24px';
+fillColorPicker.style.border = 'none';
+fillColorPicker.style.cursor = 'pointer';
+fillColorPicker.addEventListener('input', function(e) {
+    sh.fillColor = e.target.value;
+    window._st.rd();
+});
+row.appendChild(fillColorPicker);
 
+// Fill opacity slider (overrides global shape opacity for fill)
+let fillOpacitySlider = document.createElement('input');
+fillOpacitySlider.type = 'range';
+fillOpacitySlider.min = 0;
+fillOpacitySlider.max = 1;
+fillOpacitySlider.step = 0.05;
+fillOpacitySlider.value = sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5;
+fillOpacitySlider.style.width = '50px';
+fillOpacitySlider.addEventListener('input', function(e) {
+    sh.fillOpacity = parseFloat(e.target.value);
+    let label = e.target.nextSibling;
+    if (label) label.textContent = Math.round(sh.fillOpacity*100)+'%';
+    window._st.rd();
+});
+row.appendChild(fillOpacitySlider);
+let fillOpacityLabel = document.createElement('span');
+fillOpacityLabel.textContent = Math.round(fillOpacitySlider.value*100)+'%';
+fillOpacityLabel.style.fontSize = '0.45rem';
+row.appendChild(fillOpacityLabel);
+    
     // Jitter slider
     let jitterSlider = document.createElement('input');
     jitterSlider.type = 'range';
