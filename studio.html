@@ -553,82 +553,116 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('shapes')"><span class="sl">Shape overlay</span><span class="sec-arrow" id="arr-shapes">›</span></div>
-      <div class="sec-body collapsed" id="body-shapes">
-        <div class="tr"><span class="tl">Draw shapes on canvas</span><button class="tb" id="btnShapes">Off</button></div>
-        <div class="sl2">Shape type</div>
-        <div class="sh-row" id="shapeTypeRow">
-          <button class="sh-btn active" data-shape="circle">Circle</button>
-          <button class="sh-btn" data-shape="ring">Ring</button>
-          <button class="sh-btn" data-shape="rect">Rect</button>
-          <button class="sh-btn" data-shape="band">Band</button>
-          <button class="sh-btn" data-shape="equilateral">Tri▲</button>
-          <button class="sh-btn" data-shape="hexagon">Hex</button>
-          <button class="sh-btn" data-shape="star5">Star5</button>
-          <button class="sh-btn" data-shape="star6">Star6</button>
-          <button class="sh-btn" data-shape="polygon">Poly-N</button>
-          <button class="sh-btn" data-shape="lissajous">Lissa</button>
-        </div>
-        <div class="rw"><div class="rl"><span class="rn">Polygon sides (Poly-N)</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="16" value="7" step="1" title="Number of sides for the Poly-N shape"></div>
-        <div class="sl2">Position</div>
-        <div class="cg" id="shapePosRow">
-          <button class="cb active" data-pos="center">Center</button>
-          <button class="cb" data-pos="random">Random</button>
-          <button class="cb" data-pos="tl">↖ TL</button>
-          <button class="cb" data-pos="tr">↗ TR</button>
-          <button class="cb" data-pos="bl">↙ BL</button>
-          <button class="cb" data-pos="br">↘ BR</button>
-        </div>
-        <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1" title="Character density inside the shape"></div>
-        <div class="sl2">Shape characters</div>
-        <select id="shapeCharSelect">
-          <option value="same">Same as main field</option>
-          <option value="chinese">Chinese</option>
-          <option value="hiragana">Hiragana</option>
-          <option value="katakana">Katakana</option>
-          <option value="cyrillic">Cyrillic</option>
-          <option value="ascii">ASCII</option>
-          <option value="symbols">Symbols</option>
-          <option value="gradients">Blocks ░▓</option>
-          <option value="dots">Dots</option>
-          <option value="lines">Lines</option>
-          <option value="daggers">Daggers</option>
-          <option value="runes">Runes</option>
-          <option value="math">Math</option>
-        </select>
-        <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5" title="How quickly characters inside the shape cycle"></div>
-        <div class="sl2">Char color mode</div>
-        <div class="cg" id="shapeColModeRow">
-          <button class="cb active" data-scm="inherit">Field</button>
-          <button class="cb" data-scm="fixed">Fixed</button>
-          <button class="cb" data-scm="math">Math</button>
-          <button class="cb" data-scm="palette">Palette</button>
-        </div>
-        <button class="ca" id="btnRandomizeShapeColors" style="width:100%; margin-top:.3rem">Randomize all shape colors</button>
-        <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
-          <div class="as" data-sfc="#e63946" style="background:#e63946"></div>
-          <div class="as" data-sfc="#f4a261" style="background:#f4a261"></div>
-          <div class="as" data-sfc="#ede66c" style="background:#ede66c"></div>
-          <div class="as active" data-sfc="#c4bcb0" style="background:#c4bcb0"></div>
-          <div class="as" data-sfc="#80b8e8" style="background:#80b8e8"></div>
-          <div class="as" data-sfc="#d890d8" style="background:#d890d8"></div>
-          <div class="as" data-sfc="#90d4a0" style="background:#90d4a0"></div>
-          <div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555"></div>
-        </div>
-        <div class="sl2">Shape behavior</div>
-        <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2" title="Shape pulse — radius oscillates in and out"></div>
-        <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5" title="Shape spin speed — rotates the shape and its fill"></div>
-        <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
-        <div class="sl2">Scrolling text in shape</div>
-        <div class="cr" style="margin-bottom:.4rem">
-          <input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60">
-          <button class="ca" id="setShapeTextBtn">Set</button>
-        </div>
-        <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-bottom:.3rem">Add shape</button>
-        <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">Clear all</button>
-        <div id="shapeList" class="sh-list"></div>
-      </div></div>
+      <div class="sec">
+  <div class="sec-hd" onclick="toggleSec('shapes')">
+    <span class="sl">Shape overlay</span>
+    <span class="sec-arrow" id="arr-shapes">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-shapes">
 
+    <!-- Global enable/disable -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="tr"><span class="tl">Draw shapes on canvas</span><button class="tb" id="btnShapes">Off</button></div>
+    </div>
+
+    <!-- New shape defaults -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">➕ New shape defaults</div>
+      <div class="sl2" style="margin-top:0.2rem;">Shape type</div>
+      <div class="sh-row" id="shapeTypeRow">
+        <button class="sh-btn active" data-shape="circle">Circle</button>
+        <button class="sh-btn" data-shape="ring">Ring</button>
+        <button class="sh-btn" data-shape="rect">Rect</button>
+        <button class="sh-btn" data-shape="band">Band</button>
+        <button class="sh-btn" data-shape="equilateral">Tri▲</button>
+        <button class="sh-btn" data-shape="hexagon">Hex</button>
+        <button class="sh-btn" data-shape="star5">Star5</button>
+        <button class="sh-btn" data-shape="star6">Star6</button>
+        <button class="sh-btn" data-shape="polygon">Poly-N</button>
+        <button class="sh-btn" data-shape="lissajous">Lissa</button>
+      </div>
+      <div class="rw"><div class="rl"><span class="rn">Polygon sides (Poly-N)</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="16" value="7" step="1" title="Number of sides for the Poly-N shape"></div>
+      
+      <div class="sl2">Position</div>
+      <div class="cg" id="shapePosRow">
+        <button class="cb active" data-pos="center">Center</button>
+        <button class="cb" data-pos="random">Random</button>
+        <button class="cb" data-pos="tl">↖ TL</button>
+        <button class="cb" data-pos="tr">↗ TR</button>
+        <button class="cb" data-pos="bl">↙ BL</button>
+        <button class="cb" data-pos="br">↘ BR</button>
+      </div>
+
+      <div class="sl2">Text inside new shape</div>
+      <div class="cr" style="margin-bottom:.4rem">
+        <input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60">
+        <button class="ca" id="setShapeTextBtn">Set</button>
+      </div>
+      <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-top:.2rem;">➕ Add shape</button>
+    </div>
+
+    <!-- Global fill / character settings -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">🎨 Fill & characters (global)</div>
+      <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1" title="Character density inside the shape"></div>
+      <div class="sl2">Shape characters</div>
+      <select id="shapeCharSelect">
+        <option value="same">Same as main field</option>
+        <option value="chinese">Chinese</option>
+        <option value="hiragana">Hiragana</option>
+        <option value="katakana">Katakana</option>
+        <option value="cyrillic">Cyrillic</option>
+        <option value="ascii">ASCII</option>
+        <option value="symbols">Symbols</option>
+        <option value="gradients">Blocks ░▓</option>
+        <option value="dots">Dots</option>
+        <option value="lines">Lines</option>
+        <option value="daggers">Daggers</option>
+        <option value="runes">Runes</option>
+        <option value="math">Math</option>
+      </select>
+      <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5" title="How quickly characters inside the shape cycle"></div>
+      
+      <div class="sl2">Char color mode</div>
+      <div class="cg" id="shapeColModeRow">
+        <button class="cb active" data-scm="inherit">Field</button>
+        <button class="cb" data-scm="fixed">Fixed</button>
+        <button class="cb" data-scm="math">Math</button>
+        <button class="cb" data-scm="palette">Palette</button>
+      </div>
+      <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
+        <div class="as" data-sfc="#e63946" style="background:#e63946" title="Fixed color 1"></div>
+        <div class="as" data-sfc="#f4a261" style="background:#f4a261" title="Fixed color 2"></div>
+        <div class="as" data-sfc="#ede66c" style="background:#ede66c" title="Fixed color 3"></div>
+        <div class="as active" data-sfc="#c4bcb0" style="background:#c4bcb0" title="Fixed color 4"></div>
+        <div class="as" data-sfc="#80b8e8" style="background:#80b8e8" title="Fixed color 5"></div>
+        <div class="as" data-sfc="#d890d8" style="background:#d890d8" title="Fixed color 6"></div>
+        <div class="as" data-sfc="#90d4a0" style="background:#90d4a0" title="Fixed color 7"></div>
+        <div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555" title="Fixed color 8 (white)"></div>
+      </div>
+      <button class="ca" id="btnRandomizeShapeColors" style="width:100%; margin-top:.3rem">🎲 Randomize all shape colors</button>
+    </div>
+
+    <!-- Global shape animation (pulse, spin, orbit) -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">⚡ Shape animation (global)</div>
+      <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2" title="Shape pulse — radius oscillates in and out"></div>
+      <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5" title="Shape spin speed — rotates the shape and its fill"></div>
+      <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
+    </div>
+
+    <!-- Per‑shape list -->
+    <div class="shape-group">
+      <div class="sl2">📋 Individual shapes</div>
+      <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">🗑 Clear all shapes</button>
+      <div id="shapeList" class="sh-list"></div>
+    </div>
+
+  </div>
+</div>
+
+
+      <!-- Scrolling Text Stream Overlay -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('overlay')"><span class="sl">Overlay text streams</span><span class="sec-arrow" id="arr-overlay">›</span></div>
       <div class="sec-body collapsed" id="body-overlay">
         <div class="tr"><span class="tl">Enable overlay</span><button class="tb" id="btnOverlay">Off</button></div>
@@ -2972,7 +3006,7 @@ function drawShapes(p, t) {
     
     // Lissajous drift for each shape
     let driftX = 0, driftY = 0;
-    if (sh.driftEnabled !== false) {
+    if (sh.driftEnabled === true) {
       sh.driftPhase = (sh.driftPhase || 0) + 0.02 * (sh.driftSpeed || 0.5);
       driftX = Math.sin(sh.driftPhase * 1.3) * (sh.driftAmpX || 8);
       driftY = Math.cos(sh.driftPhase * 1.7) * (sh.driftAmpY || 6);
@@ -3098,7 +3132,7 @@ function drawShapes(p, t) {
           if (!inside) continue;
           let idx = (Math.floor(x / step) + Math.floor(y / step)) % sh.text.length;
           let ch = sh.text[idx];
-          let col = shapeCharColor(x, y, t, idx);
+          let col = sh.textColor || shapeCharColor(x, y, t, idx);
           let sz = step * 0.7;
           CTX.save();
           CTX.globalAlpha = globalAlpha;
@@ -3666,20 +3700,29 @@ function renderShapeList() {
   let H = window._st.h();
   let el = document.getElementById('shapeList');
   el.innerHTML = '';
-
   shapes.forEach(function(sh, i) {
+    // Initialize missing properties
+    if (sh.size === undefined) sh.size = 55;
+    if (sh.driftEnabled === undefined) sh.driftEnabled = false;
+    if (sh.driftSpeed === undefined) sh.driftSpeed = 0.5;
+    if (sh.driftAmpX === undefined) sh.driftAmpX = 8;
+    if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
+    if (sh.textEnabled === undefined) sh.textEnabled = true;
+    if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
+    if (sh.textColor === undefined) sh.textColor = '#ffffff';
+    
     let row = document.createElement('div');
     row.className = 'sh-item';
     row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;padding:4px;border-bottom:1px solid var(--stone);';
 
-    // Fill colour swatch (click to randomize)
+    // Fill colour swatch
     let dot = document.createElement('div');
     dot.style.width = '20px';
     dot.style.height = '20px';
     dot.style.borderRadius = '50%';
     dot.style.background = sh.col;
     dot.style.cursor = 'pointer';
-    dot.title = 'Fill colour (click to randomize)';
+    dot.title = 'Main shape fill color (click to randomize)';
     dot.addEventListener('click', function(e) {
       e.stopPropagation();
       sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
@@ -3694,6 +3737,7 @@ function renderShapeList() {
     fillToggle.textContent = (sh.solidFill === true) ? 'Solid Fill On' : 'Solid Fill Off';
     fillToggle.style.padding = '0.1rem 0.4rem';
     fillToggle.style.fontSize = '0.45rem';
+    fillToggle.title = 'Fill the entire shape with a solid color (behind characters)';
     fillToggle.addEventListener('click', function(e) {
       e.stopPropagation();
       sh.solidFill = !(sh.solidFill === true);
@@ -3710,7 +3754,7 @@ function renderShapeList() {
     borderDot.style.background = sh.borderCol || '#ffffff';
     borderDot.style.border = '1px solid var(--stone)';
     borderDot.style.cursor = 'pointer';
-    borderDot.title = 'Border colour (click to randomize)';
+    borderDot.title = 'Border color (click to randomize)';
     borderDot.addEventListener('click', function(e) {
       e.stopPropagation();
       sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
@@ -3725,6 +3769,7 @@ function renderShapeList() {
     borderToggle.textContent = (sh.borderEnabled === false) ? 'Border Off' : 'Border On';
     borderToggle.style.padding = '0.1rem 0.4rem';
     borderToggle.style.fontSize = '0.45rem';
+    borderToggle.title = 'Show/hide shape outline';
     borderToggle.addEventListener('click', function(e) {
       e.stopPropagation();
       sh.borderEnabled = !(sh.borderEnabled === false);
@@ -3741,6 +3786,7 @@ function renderShapeList() {
     opacitySlider.step = 0.05;
     opacitySlider.value = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     opacitySlider.style.width = '50px';
+    opacitySlider.title = 'Character opacity inside shape';
     opacitySlider.addEventListener('input', function(e) {
       sh.opacity = parseFloat(e.target.value);
       opacityLabel.textContent = Math.round(sh.opacity * 100) + '%';
@@ -3753,111 +3799,118 @@ function renderShapeList() {
     row.appendChild(opacityLabel);
     
     // Fill color picker
-let fillColorPicker = document.createElement('input');
-fillColorPicker.type = 'color';
-fillColorPicker.value = sh.fillColor || '#c4bcb0';
-fillColorPicker.style.width = '24px';
-fillColorPicker.style.height = '24px';
-fillColorPicker.style.border = 'none';
-fillColorPicker.style.cursor = 'pointer';
-fillColorPicker.addEventListener('input', function(e) {
-    sh.fillColor = e.target.value;
-    window._st.rd();
-});
-row.appendChild(fillColorPicker);
+    let fillColorPicker = document.createElement('input');
+    fillColorPicker.type = 'color';
+    fillColorPicker.value = sh.fillColor || '#c4bcb0';
+    fillColorPicker.style.width = '24px';
+    fillColorPicker.style.height = '24px';
+    fillColorPicker.style.border = 'none';
+    fillColorPicker.style.cursor = 'pointer';
+    fillColorPicker.title = 'Solid fill background color';
+    fillColorPicker.addEventListener('input', function(e) {
+      sh.fillColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(fillColorPicker);
 
-// Fill opacity slider (overrides global shape opacity for fill)
-let fillOpacitySlider = document.createElement('input');
-fillOpacitySlider.type = 'range';
-fillOpacitySlider.min = 0;
-fillOpacitySlider.max = 1;
-fillOpacitySlider.step = 0.05;
-fillOpacitySlider.value = sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5;
-fillOpacitySlider.style.width = '50px';
-fillOpacitySlider.addEventListener('input', function(e) {
-    sh.fillOpacity = parseFloat(e.target.value);
-    let label = e.target.nextSibling;
-    if (label) label.textContent = Math.round(sh.fillOpacity*100)+'%';
-    window._st.rd();
-});
-row.appendChild(fillOpacitySlider);
-let fillOpacityLabel = document.createElement('span');
-fillOpacityLabel.textContent = Math.round(fillOpacitySlider.value*100)+'%';
-fillOpacityLabel.style.fontSize = '0.45rem';
-row.appendChild(fillOpacityLabel);
+    // Fill opacity slider
+    let fillOpacitySlider = document.createElement('input');
+    fillOpacitySlider.type = 'range';
+    fillOpacitySlider.min = 0;
+    fillOpacitySlider.max = 1;
+    fillOpacitySlider.step = 0.05;
+    fillOpacitySlider.value = sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5;
+    fillOpacitySlider.style.width = '50px';
+    fillOpacitySlider.title = 'Solid fill opacity';
+    fillOpacitySlider.addEventListener('input', function(e) {
+      sh.fillOpacity = parseFloat(e.target.value);
+      let label = e.target.nextSibling;
+      if (label) label.textContent = Math.round(sh.fillOpacity*100)+'%';
+      window._st.rd();
+    });
+    row.appendChild(fillOpacitySlider);
+    let fillOpacityLabel = document.createElement('span');
+    fillOpacityLabel.textContent = Math.round(fillOpacitySlider.value*100)+'%';
+    fillOpacityLabel.style.fontSize = '0.45rem';
+    row.appendChild(fillOpacityLabel);
 
-// Size slider
-let sizeSlider = document.createElement('input');
-sizeSlider.type = 'range';
-sizeSlider.min = 20;
-sizeSlider.max = Math.min(W, H) * 0.4;
-sizeSlider.step = 2;
-sizeSlider.value = sh.size || 55;
-sizeSlider.style.width = '70px';
-sizeSlider.addEventListener('input', function(e) {
-    sh.size = parseFloat(e.target.value);
-    sizeLabel.textContent = Math.round(sh.size);
-    window._st.rd();
-});
-row.appendChild(sizeSlider);
-let sizeLabel = document.createElement('span');
-sizeLabel.textContent = Math.round(sizeSlider.value);
-sizeLabel.style.fontSize = '0.45rem';
-row.appendChild(sizeLabel);
+    // Size slider
+    let sizeSlider = document.createElement('input');
+    sizeSlider.type = 'range';
+    sizeSlider.min = 20;
+    sizeSlider.max = Math.min(W, H) * 0.4;
+    sizeSlider.step = 2;
+    sizeSlider.value = sh.size || 55;
+    sizeSlider.style.width = '70px';
+    sizeSlider.title = 'Shape size (radius or dimensions)';
+    sizeSlider.addEventListener('input', function(e) {
+      sh.size = parseFloat(e.target.value);
+      sizeLabel.textContent = Math.round(sh.size);
+      window._st.rd();
+    });
+    row.appendChild(sizeSlider);
+    let sizeLabel = document.createElement('span');
+    sizeLabel.textContent = Math.round(sizeSlider.value);
+    sizeLabel.style.fontSize = '0.45rem';
+    row.appendChild(sizeLabel);
 
     // Drift enable/off
-let driftBtn = document.createElement('button');
-driftBtn.className = 'tb';
-driftBtn.textContent = (sh.driftEnabled === false) ? 'Drift Off' : 'Drift On';
-driftBtn.style.padding = '0.1rem 0.4rem';
-driftBtn.addEventListener('click', function() {
-    sh.driftEnabled = !(sh.driftEnabled === false);
-    driftBtn.textContent = sh.driftEnabled ? 'Drift On' : 'Drift Off';
-    window._st.rd();
-});
-row.appendChild(driftBtn);
+    let driftBtn = document.createElement('button');
+    driftBtn.className = 'tb';
+    driftBtn.textContent = (sh.driftEnabled === true) ? 'Drift On' : 'Drift Off';
+    driftBtn.style.padding = '0.1rem 0.4rem';
+    driftBtn.title = 'Enable/disable Lissajous drift movement';
+    driftBtn.addEventListener('click', function() {
+      sh.driftEnabled = !(sh.driftEnabled === true);
+      driftBtn.textContent = sh.driftEnabled ? 'Drift On' : 'Drift Off';
+      window._st.rd();
+    });
+    row.appendChild(driftBtn);
 
-// Drift speed
-let driftSpeedSlider = document.createElement('input');
-driftSpeedSlider.type = 'range';
-driftSpeedSlider.min = 0;
-driftSpeedSlider.max = 2;
-driftSpeedSlider.step = 0.05;
-driftSpeedSlider.value = sh.driftSpeed || 0.5;
-driftSpeedSlider.style.width = '50px';
-driftSpeedSlider.addEventListener('input', function(e) {
-    sh.driftSpeed = parseFloat(e.target.value);
-    window._st.rd();
-});
-row.appendChild(driftSpeedSlider);
+    // Drift speed
+    let driftSpeedSlider = document.createElement('input');
+    driftSpeedSlider.type = 'range';
+    driftSpeedSlider.min = 0;
+    driftSpeedSlider.max = 2;
+    driftSpeedSlider.step = 0.05;
+    driftSpeedSlider.value = sh.driftSpeed || 0.5;
+    driftSpeedSlider.style.width = '50px';
+    driftSpeedSlider.title = 'Drift speed';
+    driftSpeedSlider.addEventListener('input', function(e) {
+      sh.driftSpeed = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftSpeedSlider);
 
- // Drift Amplitude   
-let driftAmpX = document.createElement('input');
-driftAmpX.type = 'range';
-driftAmpX.min = 0;
-driftAmpX.max = 30;
-driftAmpX.step = 1;
-driftAmpX.value = sh.driftAmpX || 8;
-driftAmpX.style.width = '40px';
-driftAmpX.title = 'Drift X amplitude';
-driftAmpX.addEventListener('input', function(e) {
-    sh.driftAmpX = parseFloat(e.target.value);
-    window._st.rd();
-});
-row.appendChild(driftAmpX);
-let driftAmpY = document.createElement('input');
-driftAmpY.type = 'range';
-driftAmpY.min = 0;
-driftAmpY.max = 30;
-driftAmpY.step = 1;
-driftAmpY.value = sh.driftAmpY || 6;
-driftAmpY.style.width = '40px';
-driftAmpY.title = 'Drift Y amplitude';
-driftAmpY.addEventListener('input', function(e) {
-    sh.driftAmpY = parseFloat(e.target.value);
-    window._st.rd();
-});
-row.appendChild(driftAmpY);
+    // Drift amplitude X
+    let driftAmpX = document.createElement('input');
+    driftAmpX.type = 'range';
+    driftAmpX.min = 0;
+    driftAmpX.max = 30;
+    driftAmpX.step = 1;
+    driftAmpX.value = sh.driftAmpX || 8;
+    driftAmpX.style.width = '40px';
+    driftAmpX.title = 'Horizontal drift amplitude (pixels)';
+    driftAmpX.addEventListener('input', function(e) {
+      sh.driftAmpX = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftAmpX);
+    
+    // Drift amplitude Y
+    let driftAmpY = document.createElement('input');
+    driftAmpY.type = 'range';
+    driftAmpY.min = 0;
+    driftAmpY.max = 30;
+    driftAmpY.step = 1;
+    driftAmpY.value = sh.driftAmpY || 6;
+    driftAmpY.style.width = '40px';
+    driftAmpY.title = 'Vertical drift amplitude (pixels)';
+    driftAmpY.addEventListener('input', function(e) {
+      sh.driftAmpY = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftAmpY);
     
     // Jitter slider
     let jitterSlider = document.createElement('input');
@@ -3867,7 +3920,7 @@ row.appendChild(driftAmpY);
     jitterSlider.step = 1;
     jitterSlider.value = sh.jitter || 0;
     jitterSlider.style.width = '50px';
-    jitterSlider.title = 'Position jitter (px)';
+    jitterSlider.title = 'Random position jitter for characters (pixels)';
     jitterSlider.addEventListener('input', function(e) {
       sh.jitter = parseFloat(e.target.value);
       jitterLabel.textContent = sh.jitter + 'px';
@@ -3879,17 +3932,36 @@ row.appendChild(driftAmpY);
     jitterLabel.style.fontSize = '0.45rem';
     row.appendChild(jitterLabel);
 
-    //Inner Text Toggle
-let textToggle = document.createElement('button');
-textToggle.className = 'tb';
-textToggle.textContent = (sh.textEnabled === false) ? 'Text Off' : 'Text On';
-textToggle.style.padding = '0.1rem 0.4rem';
-textToggle.addEventListener('click', function() {
-    sh.textEnabled = !(sh.textEnabled === false);
-    textToggle.textContent = sh.textEnabled ? 'Text On' : 'Text Off';
-    window._st.rd();
-});
-row.appendChild(textToggle);
+    // Inner Text Toggle
+    let textToggle = document.createElement('button');
+    textToggle.className = 'tb';
+    textToggle.textContent = (sh.textEnabled === false) ? 'Text Off' : 'Text On';
+    textToggle.style.padding = '0.1rem 0.4rem';
+    textToggle.title = 'Show/hide custom text inside shape';
+    textToggle.addEventListener('click', function() {
+      sh.textEnabled = !(sh.textEnabled === false);
+      if (sh.textEnabled && (!sh.text || sh.text.length === 0)) {
+        sh.text = "TEXT";
+      }
+      textToggle.textContent = sh.textEnabled ? 'Text On' : 'Text Off';
+      window._st.rd();
+    });
+    row.appendChild(textToggle);
+
+    // Text color picker
+    let textColorPicker = document.createElement('input');
+    textColorPicker.type = 'color';
+    textColorPicker.value = sh.textColor || '#ffffff';
+    textColorPicker.style.width = '24px';
+    textColorPicker.style.height = '24px';
+    textColorPicker.style.border = 'none';
+    textColorPicker.style.cursor = 'pointer';
+    textColorPicker.title = 'Color of the custom text';
+    textColorPicker.addEventListener('input', function(e) {
+      sh.textColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(textColorPicker);
     
     // Shape label
     let lbl = document.createElement('div');
@@ -3902,6 +3974,7 @@ row.appendChild(textToggle);
     rm.className = 'ca';
     rm.textContent = '✕';
     rm.style.padding = '0 .45rem';
+    rm.title = 'Remove this shape';
     rm.addEventListener('click', function(e) {
       e.stopPropagation();
       shapes.splice(i, 1);
@@ -3913,7 +3986,7 @@ row.appendChild(textToggle);
     el.appendChild(row);
   });
 }
-
+  
 // ── IMAGE ─────────────────────────────────────────────────────────────────────
 document.getElementById('imgFile').addEventListener('change',function(e){
   let file=e.target.files[0];if(!file) return;
