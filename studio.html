@@ -3339,7 +3339,17 @@ new p5(function(p){
     recRects=[];rd();
   }
   window._st={
-    rd:rd,ri:ri,rc:rc,play:function(){S.playing=!S.playing;if(S.playing)p.loop();else p.noLoop();return S.playing;},
+    rd:rd,ri:ri,rc:rc,play: function(){
+  S.playing = !S.playing;
+  console.log("Play clicked, S.playing =", S.playing);
+  if(S.playing) {
+    p.loop();
+    console.log("p.loop() called");   //temporary log for troubleshooting
+  } else {
+    p.noLoop();
+  }
+  return S.playing;
+}
     regen:function(){ri();rd();},
     save:function(){
       // ── WATERMARK ─────────────────────────────────────────────────────────────
@@ -3375,8 +3385,13 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw=function(){
-    S.fc++;
+  p.draw = function(){
+  console.log("draw called, frameCount =", S.fc);
+  if (!CTX) {
+    CTX = p.drawingContext;
+    if (!CTX) return;
+  }
+    //S.fc++;
     // FPS
     let now=performance.now();
     _frameCount++;
@@ -4558,8 +4573,6 @@ const PRESETS={
   worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
   hatch: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
   wfc_tiles: function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
-
-
 };
 
 
