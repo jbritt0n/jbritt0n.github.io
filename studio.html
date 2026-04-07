@@ -2955,12 +2955,32 @@ function drawShapes(p, t) {
   let sp = Math.max(3, S.spacing * (1 - (S.shapeDens - 1) / 12));
 
   shapes.forEach(function(sh, si) {
-    // Apply per‑shape spin and pulse
+    // Apply per‑shape spin
     if (S.shapeSpin > 0 && S.playing) sh.spinAngle = (sh.spinAngle || 0) + (S.shapeSpin * 0.0008);
     let spin = sh.spinAngle || 0;
-    let r = sh.r;
-    if (S.shapePulse > 0) r = sh.r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
-    let cx = sh.cx, cy = sh.cy;
+    let r = sh.size || 55;
+    if (S.shapePulse > 0) r = r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
+    
+    // Drift and Inner Text
+    if (sh.size === undefined) sh.size = 55;
+    if (sh.driftEnabled === undefined) sh.driftEnabled = false;
+    if (sh.driftSpeed === undefined) sh.driftSpeed = 0.5;
+    if (sh.driftAmpX === undefined) sh.driftAmpX = 8;
+    if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
+    if (sh.textEnabled === undefined) sh.textEnabled = true;
+    if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
+    
+    // Lissajous drift for each shape
+    let driftX = 0, driftY = 0;
+    if (sh.driftEnabled !== false) {
+      sh.driftPhase = (sh.driftPhase || 0) + 0.02 * (sh.driftSpeed || 0.5);
+      driftX = Math.sin(sh.driftPhase * 1.3) * (sh.driftAmpX || 8);
+      driftY = Math.cos(sh.driftPhase * 1.7) * (sh.driftAmpY || 6);
+    }
+    let cx = (sh.cx || 0) + driftX;
+    let cy = (sh.cy || 0) + driftY;
+
+    // Orbit around canvas center (overrides drift)
     if (S.shapeOrbitEnabled && S.playing) {
       sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
       let or = Math.hypot(sh.baseCx - p.width / 2, sh.baseCy - p.height / 2);
@@ -2968,18 +2988,11 @@ function drawShapes(p, t) {
       cy = p.height / 2 + Math.sin(sh.orbitAngle) * or;
       sh.cx = cx; sh.cy = cy;
     }
-    // Build polygon points for the shape
+
+    // Build polygon points
     let pts = null;
     let type = sh.type;
-    if (type === 'circle') {
-      // For circle we'll use arc, not polygon
-    } else if (type === 'ring') {
-      // ring is special
-    } else if (type === 'rect') {
-      // rectangle as polygon
-    } else if (type === 'band') {
-      // horizontal band
-    } else if (type === 'equilateral') pts = polyPts(cx, cy, r, 3, spin - Math.PI / 2);
+    if (type === 'equilateral') pts = polyPts(cx, cy, r, 3, spin - Math.PI / 2);
     else if (type === 'hexagon') pts = polyPts(cx, cy, r, 6, spin);
     else if (type === 'star5') pts = polyPts(cx, cy, r, 5, spin - Math.PI / 2, r * 0.45);
     else if (type === 'star6') pts = polyPts(cx, cy, r, 6, spin, r * 0.5);
@@ -2988,12 +3001,13 @@ function drawShapes(p, t) {
       let la = sh.la || 2, lb = sh.lb || 3;
       let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
       let ly = cy + Math.sin(lb * t) * r * 0.7;
-      pts = [{ x: lx, y: ly }]; // single point – treat as small area
+      pts = [{ x: lx, y: ly }];
     }
-    // Apply per‑shape opacity and jitter to characters
+
     let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     let jitter = sh.jitter || 0;
-    // Draw characters inside shape
+
+    // Draw characters inside shape (main field)
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
     for (let x = x0; x < x1; x += sp) {
@@ -3017,7 +3031,6 @@ function drawShapes(p, t) {
         if (!inside) continue;
         let ch = pickShapeChar(x, y);
         let col = shapeCharColor(x, y, t, si);
-        // Apply jitter to position
         let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
         let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
         let sz = sp * 0.8 + Math.random() * sp * 0.4;
@@ -3027,72 +3040,75 @@ function drawShapes(p, t) {
         CTX.restore();
       }
     }
-    // --- Draw solid fill background if enabled ---
-if (sh.solidFill) {
-    CTX.save();
-    CTX.globalAlpha = (sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5);
-    CTX.fillStyle = sh.fillColor || S.palette[0];
-    if (type === 'circle') {
+
+    // --- Solid fill background ---
+    if (sh.solidFill) {
+      CTX.save();
+      CTX.globalAlpha = (sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5);
+      CTX.fillStyle = sh.fillColor || S.palette[0];
+      if (type === 'circle') {
         CTX.beginPath();
-        CTX.arc(cx, cy, r, 0, Math.PI*2);
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
         CTX.fill();
-    } else if (type === 'ring') {
+      } else if (type === 'ring') {
         CTX.beginPath();
-        CTX.arc(cx, cy, r, 0, Math.PI*2);
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
         CTX.fill();
         CTX.beginPath();
-        CTX.arc(cx, cy, r*0.55, 0, Math.PI*2);
+        CTX.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
         CTX.fill();
-    } else if (type === 'rect') {
-        let hw = r*0.8, hh = r*0.55;
+      } else if (type === 'rect') {
+        let hw = r * 0.8, hh = r * 0.55;
         CTX.save();
         CTX.translate(cx, cy);
         CTX.rotate(spin);
-        CTX.fillRect(-hw, -hh, hw*2, hh*2);
+        CTX.fillRect(-hw, -hh, hw * 2, hh * 2);
         CTX.restore();
-    } else if (type === 'band') {
-        CTX.fillRect(0, cy - r*0.3, p.width, r*0.6);
-    } else if (pts && pts.length > 1) {
+      } else if (type === 'band') {
+        CTX.fillRect(0, cy - r * 0.3, p.width, r * 0.6);
+      } else if (pts && pts.length > 1) {
         CTX.beginPath();
         CTX.moveTo(pts[0].x, pts[0].y);
-        for (let i=1; i<pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+        for (let i = 1; i < pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
         CTX.closePath();
         CTX.fill();
+      }
+      CTX.restore();
     }
-    CTX.restore();
-}
-    // --- Draw text INSIDE shape (scattered) instead of orbiting ---
-if (sh.text && sh.text.length) {
-    let step = Math.max(8, S.spacing * 0.8);
-    let x0 = cx - r - step, x1 = cx + r + step;
-    let y0 = cy - r - step, y1 = cy + r + step;
-    for (let x = x0; x < x1; x += step) {
-        for (let y = y0; y < y1; y += step) {
-            let inside = false;
-            if (type === 'circle') inside = (x-cx)**2 + (y-cy)**2 <= r**2;
-            else if (type === 'ring') {
-                let d2 = (x-cx)**2 + (y-cy)**2;
-                inside = d2 <= r**2 && d2 >= (r*0.55)**2;
-            } else if (type === 'rect') {
-                let hw = r*0.8, hh = r*0.55;
-                let rx = Math.cos(-spin)*(x-cx) - Math.sin(-spin)*(y-cy);
-                let ry = Math.sin(-spin)*(x-cx) + Math.cos(-spin)*(y-cy);
-                inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
-            } else if (type === 'band') inside = (y >= cy - r*0.3 && y <= cy + r*0.3);
-            else if (pts) inside = pointInPoly(x, y, pts);
-            if (!inside) continue;
-            let idx = (Math.floor(x/step) + Math.floor(y/step)) % sh.text.length;
-            let ch = sh.text[idx];
-            let col = shapeCharColor(x, y, t, si);
-            let sz = step * 0.7;
-            CTX.save();
-            CTX.globalAlpha = sh.opacity !== undefined ? sh.opacity : 0.8;
-            dc(x, y, sz, 0, col, ch);
-            CTX.restore();
+
+    // --- Draw text INSIDE shape (only if enabled) ---
+    if (sh.textEnabled && sh.text && sh.text.length) {
+      let step = Math.max(8, S.spacing * 0.8);
+      let x0t = cx - r - step, x1t = cx + r + step;
+      let y0t = cy - r - step, y1t = cy + r + step;
+      for (let x = x0t; x < x1t; x += step) {
+        for (let y = y0t; y < y1t; y += step) {
+          let inside = false;
+          if (type === 'circle') inside = (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2;
+          else if (type === 'ring') {
+            let d2 = (x - cx) ** 2 + (y - cy) ** 2;
+            inside = d2 <= r ** 2 && d2 >= (r * 0.55) ** 2;
+          } else if (type === 'rect') {
+            let hw = r * 0.8, hh = r * 0.55;
+            let rx = Math.cos(-spin) * (x - cx) - Math.sin(-spin) * (y - cy);
+            let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
+            inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+          } else if (type === 'band') inside = (y >= cy - r * 0.3 && y <= cy + r * 0.3);
+          else if (pts) inside = pointInPoly(x, y, pts);
+          if (!inside) continue;
+          let idx = (Math.floor(x / step) + Math.floor(y / step)) % sh.text.length;
+          let ch = sh.text[idx];
+          let col = shapeCharColor(x, y, t, idx);
+          let sz = step * 0.7;
+          CTX.save();
+          CTX.globalAlpha = globalAlpha;
+          dc(x, y, sz, 0, col, ch);
+          CTX.restore();
         }
+      }
     }
-}
-    // Draw the shape border if enabled
+
+    // --- Draw shape border ---
     if (sh.borderEnabled !== false) {
       CTX.save();
       CTX.globalAlpha = globalAlpha;
@@ -3131,22 +3147,6 @@ if (sh.text && sh.text.length) {
         CTX.stroke();
       }
       CTX.restore();
-    }
-
-    // Scrolling text along shape boundary (unchanged)
-    if (sh.text && sh.text.length) {
-      if (S.playing) sh.textOffset = (sh.textOffset || 0) + S.speed * 20;
-      let perim = 6.28 * r, step = S.maxSize * 0.7;
-      for (let i = 0; i < Math.floor(perim / step); i++) {
-        let a = (i * step + (sh.textOffset || 0)) / r;
-        let tx = cx + Math.cos(a + spin) * r;
-        let ty = cy + Math.sin(a + spin) * r;
-        let ci = i % sh.text.length;
-        CTX.save();
-        CTX.globalAlpha = globalAlpha;
-        dc(tx, ty, S.maxSize * 0.7, a + 1.5708, sh.borderCol || sh.col, sh.text[ci]);
-        CTX.restore();
-      }
     }
   });
 }
@@ -3624,6 +3624,10 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
   let col = COMP_PALETTES.default[Math.floor(Math.random() * COMP_PALETTES.default.length)];
   let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
   let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
+  size: 55 + Math.random() * (Math.min(W, H) * 0.2),   // replaces fixed r
+  driftX: 0, driftY: 0, driftPhase: Math.random() * Math.PI * 2,
+  textEnabled: true,   // default on
+  textInside: true,    // default inside (not orbiting)
 document.getElementById('btnRandomizeShapeColors').addEventListener('click', function() {
   shapes.forEach(sh => {
     sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
@@ -3745,6 +3749,7 @@ function renderShapeList() {
     opacityLabel.textContent = Math.round(opacitySlider.value * 100) + '%';
     opacityLabel.style.fontSize = '0.45rem';
     row.appendChild(opacityLabel);
+    
     // Fill color picker
 let fillColorPicker = document.createElement('input');
 fillColorPicker.type = 'color';
@@ -3778,6 +3783,79 @@ let fillOpacityLabel = document.createElement('span');
 fillOpacityLabel.textContent = Math.round(fillOpacitySlider.value*100)+'%';
 fillOpacityLabel.style.fontSize = '0.45rem';
 row.appendChild(fillOpacityLabel);
+
+// Size slider
+let sizeSlider = document.createElement('input');
+sizeSlider.type = 'range';
+sizeSlider.min = 20;
+sizeSlider.max = Math.min(W, H) * 0.4;
+sizeSlider.step = 2;
+sizeSlider.value = sh.size || 55;
+sizeSlider.style.width = '70px';
+sizeSlider.addEventListener('input', function(e) {
+    sh.size = parseFloat(e.target.value);
+    sizeLabel.textContent = Math.round(sh.size);
+    window._st.rd();
+});
+row.appendChild(sizeSlider);
+let sizeLabel = document.createElement('span');
+sizeLabel.textContent = Math.round(sizeSlider.value);
+sizeLabel.style.fontSize = '0.45rem';
+row.appendChild(sizeLabel);
+
+    // Drift enable/off
+let driftBtn = document.createElement('button');
+driftBtn.className = 'tb';
+driftBtn.textContent = (sh.driftEnabled === false) ? 'Drift Off' : 'Drift On';
+driftBtn.style.padding = '0.1rem 0.4rem';
+driftBtn.addEventListener('click', function() {
+    sh.driftEnabled = !(sh.driftEnabled === false);
+    driftBtn.textContent = sh.driftEnabled ? 'Drift On' : 'Drift Off';
+    window._st.rd();
+});
+row.appendChild(driftBtn);
+
+// Drift speed
+let driftSpeedSlider = document.createElement('input');
+driftSpeedSlider.type = 'range';
+driftSpeedSlider.min = 0;
+driftSpeedSlider.max = 2;
+driftSpeedSlider.step = 0.05;
+driftSpeedSlider.value = sh.driftSpeed || 0.5;
+driftSpeedSlider.style.width = '50px';
+driftSpeedSlider.addEventListener('input', function(e) {
+    sh.driftSpeed = parseFloat(e.target.value);
+    window._st.rd();
+});
+row.appendChild(driftSpeedSlider);
+
+ // Drift Amplitude   
+let driftAmpX = document.createElement('input');
+driftAmpX.type = 'range';
+driftAmpX.min = 0;
+driftAmpX.max = 30;
+driftAmpX.step = 1;
+driftAmpX.value = sh.driftAmpX || 8;
+driftAmpX.style.width = '40px';
+driftAmpX.title = 'Drift X amplitude';
+driftAmpX.addEventListener('input', function(e) {
+    sh.driftAmpX = parseFloat(e.target.value);
+    window._st.rd();
+});
+row.appendChild(driftAmpX);
+let driftAmpY = document.createElement('input');
+driftAmpY.type = 'range';
+driftAmpY.min = 0;
+driftAmpY.max = 30;
+driftAmpY.step = 1;
+driftAmpY.value = sh.driftAmpY || 6;
+driftAmpY.style.width = '40px';
+driftAmpY.title = 'Drift Y amplitude';
+driftAmpY.addEventListener('input', function(e) {
+    sh.driftAmpY = parseFloat(e.target.value);
+    window._st.rd();
+});
+row.appendChild(driftAmpY);
     
     // Jitter slider
     let jitterSlider = document.createElement('input');
@@ -3799,6 +3877,18 @@ row.appendChild(fillOpacityLabel);
     jitterLabel.style.fontSize = '0.45rem';
     row.appendChild(jitterLabel);
 
+    //Inner Text Toggle
+let textToggle = document.createElement('button');
+textToggle.className = 'tb';
+textToggle.textContent = (sh.textEnabled === false) ? 'Text Off' : 'Text On';
+textToggle.style.padding = '0.1rem 0.4rem';
+textToggle.addEventListener('click', function() {
+    sh.textEnabled = !(sh.textEnabled === false);
+    textToggle.textContent = sh.textEnabled ? 'Text On' : 'Text Off';
+    window._st.rd();
+});
+row.appendChild(textToggle);
+    
     // Shape label
     let lbl = document.createElement('div');
     lbl.className = 'sh-item-lbl';
