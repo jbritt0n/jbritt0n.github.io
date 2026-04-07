@@ -170,7 +170,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="entropy">Entropy</button>
         <button class="pbar-btn" data-preset="aurora">Aurora</button>
         <button class="pbar-btn" data-preset="midnighttokyo">Midnight Tokyo</button>
-        <button class="pbar-btn" data-preset="inkwash">Ink Wash</button>
         <button class="pbar-btn" data-preset="neonjungle">Neon Jungle</button>
         <button class="pbar-btn" data-preset="desertstorm">Desert Storm</button>
         <button class="pbar-btn" data-preset="arcticbloom">Arctic Bloom</button>
@@ -195,7 +194,7 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="bioluminescent">Biolum</button>
         <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
         <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
-        <button class="pbar-btn" data-preset="wfc_tiles">WFC</button>
+        <button class="pbar-btn" data-preset="wfc_tiles">River</button>
     </div>
   </div>
 </div>
@@ -4262,29 +4261,15 @@ const PRESETS={
   deepsea:function(){ap({mode:'topolines',font:'courier',entropy:0,speed:.002,wave:45,bg:'#020d18',spacing:6,maxSize:14,noiseScale:.006,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'DEPTH',color:'#20B2AA',offset:0},{text:'∞~≈',color:'#4682B4',offset:200}],overlayWave:18,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   paperink:function(){ap({mode:'halftone',font:'times',entropy:0,speed:.001,wave:8,bg:'#f5efe0',spacing:11,maxSize:20,noiseScale:.012,palette:'paper',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'dada machine poetry',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:16,overlayAlpha:55,overlayDir:'alt'});},
   machinepoetry:function(){ap({mode:'webster',font:'courier',entropy:.12,speed:.004,wave:12,bg:'#0d0c0a',spacing:9,maxSize:18,palette:'mono',flipChance:.5,compEnabled:true,compPreset:2,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#c4bcb0',offset:0},{text:'MACHINE POETRY',color:'#b8955a',offset:300},{text:'░▒▓█',color:'#5c5550',offset:600}],overlayWave:0,overlaySpeed:3,overlaySize:12,overlayAlpha:40,overlayDir:'alt',signalCollapse:false});},
-  sacredgeo:function(){
-    ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});
-    shapes=[];
-    let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
-    let cx=W/2,cy=H/2;
-    let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];
-    ['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){
-      let a=(i/5)*6.28;
-      shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
-    });
-    S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;
-    document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');
-    renderShapeList();
-    S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];
-    S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;
-    document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
+  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
+    let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
+    });S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');renderShapeList();S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
     renderStreamList();window._st.rd();
   },
   urbannight:function(){ap({mode:'scan',font:'vt323',entropy:.04,speed:.006,wave:35,bg:'#0a0c14',spacing:10,maxSize:22,noiseScale:.01,palette:'navy',compEnabled:true,compPreset:0,compCols:COMP_PALETTES.navy2,overlayStreams:[{text:'CITY',color:'#4a7fb5',offset:0},{text:'███▒░',color:'#1a3050',offset:400}],overlayWave:5,overlaySpeed:4,overlaySize:18,overlayAlpha:35,signalCollapse:false});},
   entropy:function(){ap({mode:'glitch',font:'vt323',entropy:.45,speed:.01,wave:80,bg:'#000',spacing:8,maxSize:24,noiseScale:.015,palette:'fire',compEnabled:false,flipChance:.6,overlayStreams:[{text:'ENTROPY',color:'#e63946',offset:0},{text:'SYSTEM FAILURE',color:'#f4a261',offset:200},{text:'████░░__',color:'#888',offset:500}],overlayWave:25,overlaySpeed:8,overlaySize:20,overlayAlpha:60,overlayDir:'alt',overlayEntropy:60,overlayDistort:20,signalCollapse:true});},
   aurora:function(){ap({mode:'contour',font:'georgia',entropy:0,speed:.003,wave:55,bg:'#020810',spacing:9,maxSize:20,noiseScale:.007,palette:'aurora',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'aurora borealis',color:'#00c9a7',offset:0},{text:'∞∆◊',color:'#845ec2',offset:400}],overlayWave:40,overlaySpeed:2,overlaySize:14,overlayAlpha:30,overlayDir:'alt'});},
   midnighttokyo:function(){ap({mode:'matrix',font:'vt323',entropy:.08,speed:.006,wave:20,bg:'#0a0010',spacing:10,maxSize:20,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'東京 MIDNIGHT',color:'#f72585',offset:0},{text:'アイウエオ',color:'#4cc9f0',offset:300}],overlayWave:8,overlaySpeed:5,overlaySize:18,overlayAlpha:45,chars:CHARSETS.katakana});},
-  inkwash:function(){ap({mode:'calligraphy',font:'playfair',entropy:.02,speed:.002,wave:40,bg:'#f5efe0',spacing:8,maxSize:28,noiseScale:.008,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:30,overlayStreams:[{text:'ink wash',color:'#2e2820',offset:0}],overlayWave:5,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   neonjungle:function(){ap({mode:'mycelium',font:'courier',entropy:.05,speed:.005,wave:30,bg:'#001a0a',spacing:10,maxSize:22,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:60,overlayStreams:[{text:'NEON JUNGLE',color:'#00ff88',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:15,overlaySpeed:3,overlaySize:16,overlayAlpha:40,chars:CHARSETS.symbols});},
   desertstorm:function(){ap({mode:'sand',font:'typewriter',entropy:.04,speed:.004,wave:25,bg:'#1a1008',spacing:8,maxSize:18,noiseScale:.012,palette:'copper',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'desert storm',color:'#b87333',offset:0}],overlayWave:10,overlaySpeed:2,overlaySize:14,overlayAlpha:35,chars:CHARSETS.dots});},
   arcticbloom:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.003,wave:15,bg:'#020810',spacing:8,maxSize:16,noiseScale:.008,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'arctic bloom',color:'#8aaccc',offset:0},{text:'∞∆◊',color:'#c8d8ec',offset:400}],overlayWave:8,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
@@ -4309,7 +4294,7 @@ const PRESETS={
   screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
   worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams: [{ text: 'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
   hatch: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave: 15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
-  wfc_tiles: function(){ap({mode: 'wfc',font:'courier',entropy:0,speed:0.002,wave:20,bg:'#0a0c14',spacing:16,maxSize:20,noiseScale:0.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'WFC TILES',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
+  wfc_tiles: function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:20,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.008,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
 
 
 };
