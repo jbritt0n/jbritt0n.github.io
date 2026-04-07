@@ -22,6 +22,8 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .ph-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;cursor:pointer;transition:all .18s}
 .ph-btn:hover{border-color:var(--pale);color:var(--pale)}
 .ph-btn.chaos-on{border-color:var(--gold);color:var(--gold);animation:chaospulse 1.2s ease-in-out infinite}
+.home-link{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid var(--stone);color:var(--dim);text-decoration:none;font-size:.75rem;transition:all .18s;flex-shrink:0}
+.home-link:hover{border-color:var(--pale);color:var(--pale)} 
 @keyframes chaospulse{0%,100%{opacity:1}50%{opacity:.5}}
 #presetBar{padding:.5rem 1.3rem .55rem;border-bottom:1px solid var(--stone);flex-shrink:0}
 .pbar-label{font-size:.43rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.38rem}
@@ -132,13 +134,14 @@ select option{background:var(--ink)}
   </div>
   <div id="panel">
     <div class="ph">
-      <div class="pt">Generative Studio</div>
+      <div class="pt">Studio</div>
       <div class="ps">jonathanbrittonart.com/studio</div>
-      <div class="ph-actions">
-        <button class="ph-btn" id="btnCollapseAll" title="Collapse all sections">Collapse</button>
-        <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
-        <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
-      </div>
+<div class="ph-actions">
+  <a href="index.html" class="home-link" title="Back to Index">⌂</a>
+  <button class="ph-btn" id="btnCollapseAll" title="Collapse all sections">Collapse</button>
+  <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
+  <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
+</div>
     </div>
         <div class="ar top-actions">
       <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
@@ -147,9 +150,13 @@ select option{background:var(--ink)}
       <button class="ab" id="btnRecordGif" title="Record a 5 second gif">Record GIF</button>    
       <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
     </div>
-    <div id="presetBar">
-      <div class="pbar-label">Quick presets</div>
-      <div class="pbar-grid">
+<div class="sec" id="presetSec">
+  <div class="sec-hd" onclick="toggleSec('presets')">
+    <span class="sl">Presets</span>
+    <span class="sec-arrow" id="arr-presets">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-presets">
+    <div class="pbar-grid" id="presetBar">
         <button class="pbar-btn" data-preset="sacred">Sacred</button>
         <button class="pbar-btn" data-preset="signal">Signal</button>
         <button class="pbar-btn" data-preset="webster">Webster</button>
@@ -189,10 +196,11 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
         <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
         <button class="pbar-btn" data-preset="wfc_tiles">WFC</button>
-      </div>
     </div>
+  </div>
+</div>
+    
     <div id="ctl">
-
       <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
       <div class="sec-body" id="body-mode">
         <div class="mg" id="modeGrid">
@@ -3366,14 +3374,14 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
 document.getElementById('btnCollapseAll').addEventListener('click',function(){
-  ['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
+  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
     let body=document.getElementById('body-'+id);
     let arrow=document.getElementById('arr-'+id);
     if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
   });
 });
 document.getElementById('btnExpandAll').addEventListener('click',function(){
-  ['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
+  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
     let body=document.getElementById('body-'+id);
     let arrow=document.getElementById('arr-'+id);
     if(body){body.classList.remove('collapsed');if(arrow) arrow.classList.add('open');}
@@ -4314,6 +4322,14 @@ document.getElementById('presetBar').addEventListener('click',function(e){
   if(fn){fn();showToast(b.textContent);}
 });
 
+  
+// Collapse all sections on initial load
+['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets'].forEach(function(id){
+  let body=document.getElementById('body-'+id);
+  let arrow=document.getElementById('arr-'+id);
+  if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
+});
+  
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
 let _panelHidden=false;
 function togglePanel(){
