@@ -3254,7 +3254,7 @@ if (type === 'lissajous') {
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
 
 function drawOverlay(p, t) {
-  if (!S.overlayEnabled || !S.overlayStreams.length) return;
+  if (!S.overlayEnabled || !Array.isArray(S.overlayStreams) || !S.overlayStreams.length) return;
   let baseKern = S.overlayKern;
   let baseLineSpacing = S.overlayLineSpacing;
   let sz = S.overlaySize;
@@ -3286,7 +3286,8 @@ function drawOverlay(p, t) {
           let cy = ci * step - voff % ((txt.length + 1) * step) + yOffset;
           if (cy < -sz || cy > p.height + sz) continue;
           let ch = txt[ci % txt.length];
-          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+          let glitchSet = (typeof GLITCH !== 'undefined' && GLITCH.length) ? GLITCH : ['#','@','%','█','_'];
+          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = glitchSet[Math.floor(Math.random() * glitchSet.length)];
           let dx = S.overlayDistort > 0 ? Math.sin(cy * 0.05 + t * 2) * S.overlayDistort : 0;
           CTX.fillStyle = col;
           CTX.fillText(ch, xPos + dx, cy);
