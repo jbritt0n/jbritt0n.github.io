@@ -502,7 +502,7 @@ select option{background:var(--ink)}
         <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
         <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
         <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
-      </div>
+      </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend mode</span><span class="sec-arrow" id="arr-blend">›</span></div>
       <div class="sec-body collapsed" id="body-blend">
@@ -1006,6 +1006,7 @@ let S={
   mycBranch: 3,  //mycelium
   hatchAngle:45,hatchCurve:5,
   vorWire:false,
+  magPoles: 2,
 
 };
   
@@ -1846,7 +1847,7 @@ function drawMycelium(p, t) {
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
       b.age++;
-      if (b.len > 60 + Math.random() * 160 && b.children < b.maxChildren && Math.random() < 0.02) {
+      if (b.len > 80 + Math.random() * 260 && b.children < b.maxChildren && Math.random() < 0.52) {
         b.children++;
         newBranches.push({
           x: b.x, y: b.y,
@@ -1856,13 +1857,13 @@ function drawMycelium(p, t) {
           speed: b.speed * 0.9,
           age: 0,
           col: S.palette[Math.floor(Math.random() * S.palette.length)],
-          children: 0,
-          maxChildren: 6
+          children: 3,
+          maxChildren: 20
         });
       }
       if (b.x < -100 || b.x > p.width + 100 || b.y < -100 || b.y > p.height + 100 || b.len > b.maxLen) {
-        b.dead = false;
-      }
+        b.dead = true;
+        }
     });
     myceliumBranches = myceliumBranches.filter(b => !b.dead);
     myceliumBranches = myceliumBranches.concat(newBranches);
