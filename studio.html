@@ -627,16 +627,15 @@ select option{background:var(--ink)}
         <div class="cr" style="margin-bottom:.5rem">
           <input class="ci" id="ovTextInput" placeholder="text to stream…" maxlength="80">
           <button class="ca" id="ovAddStream">Add</button>
-
-          <div id="streamEditPanel" style="display:none; margin-top:.5rem; border-top:1px solid var(--stone); padding-top:.5rem;">
+        </div>
+        
+        <div id="streamEditPanel" style="display:none; margin-top:.5rem; border-top:1px solid var(--stone); padding-top:.5rem;">
         <div class="sl2">Edit selected stream</div>
         <input class="ci" id="editStreamText" placeholder="new text" maxlength="80">
         <div class="rw"><div class="rl"><span class="rn">Kerning offset</span><span class="rv" id="vEditKern">0</span></div><input type="range" id="sEditKern" min="-20" max="40" value="0" step="1"></div>
         <div class="rw"><div class="rl"><span class="rn">Speed multiplier</span><span class="rv" id="vEditSpeed">1.0</span></div><input type="range" id="sEditSpeed" min="0" max="3" value="1" step="0.05"></div>
         <div class="tr"><span class="tl">Repeat to fill screen</span><button class="tb" id="btnRepeatFill">Off</button></div>
           <button class="ca" id="btnUpdateStream">Update</button>  
-            
-        </div>
           
         <div id="ovStreamList"></div>
         <div class="rw" style="margin-top:.5rem"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vOvSpeed">3</span></div><input type="range" id="sOvSpeed" min="1" max="20" value="3" step="1" title="Overlay scroll speed"></div>
