@@ -4371,8 +4371,8 @@ function resetAllToDefaults(){
   document.querySelectorAll('[data-scm]').forEach(function(b){b.classList.toggle('active',b.dataset.scm==='inherit');});
   invalidateFontCache();
   window._st.ri();window._st.rd();
-  showToast('Reset to defaults');
-}
+showToast('Reset to defaults');
+} // <--- This closes the resetAllToDefaults function
 
 // ── CHAOS MONKEY ─────────────────────────────────────────────────────────────────
 let _chaosInterval=null;
@@ -4437,7 +4437,7 @@ document.getElementById('btnReset').addEventListener('click',function(){resetAll
 let mediaRecorder;
 let recordedChunks = [];
 let recordingTimeout;
-} //added to try to close  
+
 // ── RECORDER ─────────────────────────────────────────────────────────────────
 document.getElementById('btnRecordGif').addEventListener('click', function() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
