@@ -3618,40 +3618,40 @@ document.getElementById('setShapeTextBtn').addEventListener('click',function(){
   if(shapes.length){shapes[shapes.length-1].text=_pendingShapeText;window._st.rd();}
 });
 document.getElementById('shapeTextInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('setShapeTextBtn').click();});
+
 document.getElementById('btnAddShape').addEventListener('click', function() {
   let W = window._st.w(), H = window._st.h();
   let pos = getShapePos(W, H);
   let col = COMP_PALETTES.default[Math.floor(Math.random() * COMP_PALETTES.default.length)];
   let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
   let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
-  size: 55 + Math.random() * (Math.min(W, H) * 0.2),   // replaces fixed r
-  driftX: 0, driftY: 0, driftPhase: Math.random() * Math.PI * 2,
-  textEnabled: true,   // default on
-  textInside: true,    // default inside (not orbiting)
-document.getElementById('btnRandomizeShapeColors').addEventListener('click', function() {
-  shapes.forEach(sh => {
-    sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
-    sh.fillColor = '#c4bcb0';
-    sh.fillOpacity = 0.5;
-    if (sh.borderCol && sh.borderCol !== 'none') sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
-  });
-});
+
   shapes.push({
     type: S.selectedShape,
     cx: pos.x, cy: pos.y,
     baseCx: pos.x, baseCy: pos.y,
-    r: 55 + Math.random() * (Math.min(W, H) * 0.2),
+    size: 55 + Math.random() * (Math.min(W, H) * 0.2),   // replaces fixed r
     col: col,
-    borderCol: S.accent !== 'none' ? S.accent : '#ffffff',   // new
-    borderEnabled: true,                                    // new
-    opacity: 0.8,                                           // new
-    jitter: 0,                                              // new
+    borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
+    borderEnabled: true,
+    opacity: 0.8,
+    jitter: 0,
     sides: S.shapeSides,
     la: la, lb: lb,
     spinAngle: 0,
     orbitAngle: Math.atan2(pos.y - H / 2, pos.x - W / 2),
     textOffset: 0,
-    text: _pendingShapeText || ''
+    text: _pendingShapeText || '',
+    // New per‑shape properties
+    driftEnabled: false,
+    driftSpeed: 0.5,
+    driftAmpX: 8,
+    driftAmpY: 6,
+    driftPhase: Math.random() * Math.PI * 2,
+    textEnabled: true,
+    solidFill: false,
+    fillColor: '#c4bcb0',
+    fillOpacity: 0.5
   });
 
   S.shapesEnabled = true;
@@ -3660,11 +3660,13 @@ document.getElementById('btnRandomizeShapeColors').addEventListener('click', fun
   renderShapeList();
   window._st.rd();
 });
-document.getElementById('btnClearShapes').addEventListener('click',function(){shapes=[];renderShapeList();window._st.rd();});
   
 function renderShapeList() {
+  let W = window._st.w();
+  let H = window._st.h();
   let el = document.getElementById('shapeList');
   el.innerHTML = '';
+
   shapes.forEach(function(sh, i) {
     let row = document.createElement('div');
     row.className = 'sh-item';
