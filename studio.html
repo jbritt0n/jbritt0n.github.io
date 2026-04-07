@@ -501,11 +501,8 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
         <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
         <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
-      </div></div>
-
-     <div class="sl2">Trail persistence</div>
-        <div class="rw"><div class="rl"><span class="rn">Fade (0=none)</span><span class="rv" id="vTrail">0</span></div>
-          <input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div> 
+        <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
+      </div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend mode</span><span class="sec-arrow" id="arr-blend">›</span></div>
       <div class="sec-body collapsed" id="body-blend">
