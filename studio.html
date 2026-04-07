@@ -635,6 +635,8 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Wave</span><span class="rv" id="vOvWave">0</span></div><input type="range" id="sOvWave" min="0" max="60" value="0" step="2" title="Overlay wave — vertical undulation of the text stream"></div>
         <div class="rw"><div class="rl"><span class="rn">Entropy (char glitch)</span><span class="rv" id="vOvEntropy">0</span></div><input type="range" id="sOvEntropy" min="0" max="100" value="0" step="2" title="Overlay entropy — probability of replacing a character with a glitch symbol"></div>
         <div class="rw"><div class="rl"><span class="rn">Distortion (positional)</span><span class="rv" id="vOvDistort">0</span></div><input type="range" id="sOvDistort" min="0" max="60" value="0" step="2" title="Overlay distortion — horizontal jitter applied to each character position"></div>
+        <div class="rw"><div class="rl"><span class="rn">Kerning (px)</span><span class="rv" id="vOvKern">0</span></div><input type="range" id="sOvKern" min="-10" max="40" value="0" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Line spacing (px)</span><span class="rv" id="vOvLineSpacing">0</span></div><input type="range" id="sOvLineSpacing" min="-20" max="60" value="0" step="2"></div>
         <div class="cg" id="ovDirGrid">
           <button class="cb active" data-ovdir="ltr">→</button>
           <button class="cb" data-ovdir="rtl">←</button>
@@ -650,6 +652,14 @@ select option{background:var(--ink)}
           <div class="as" data-ovcol="#d890d8"  style="background:#d890d8"></div>
           <div class="as" data-ovcol="palette"  style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
         </div>
+        <div id="streamEditPanel" style="display:none; margin-top:.5rem; border-top:1px solid var(--stone); padding-top:.5rem;">
+        <div class="sl2">Edit selected stream</div>
+        <input class="ci" id="editStreamText" placeholder="new text" maxlength="80">
+        <div class="rw"><div class="rl"><span class="rn">Kerning offset</span><span class="rv" id="vEditKern">0</span></div><input type="range" id="sEditKern" min="-20" max="40" value="0" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Speed multiplier</span><span class="rv" id="vEditSpeed">1.0</span></div><input type="range" id="sEditSpeed" min="0" max="3" value="1" step="0.05"></div>
+        <div class="tr"><span class="tl">Repeat to fill screen</span><button class="tb" id="btnRepeatFill">Off</button></div>
+          <button class="ca" id="btnUpdateStream">Update</button>
+</div>
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
@@ -929,6 +939,9 @@ let S={
   overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
   overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
   overlayEntropy:0,overlayDistort:0,
+  overlayKern: 0,           // global kerning (pixels)
+  overlayLineSpacing: 0,    // additional vertical spacing (pixels)
+  overlayRepeatFill: false, // if true, each stream repeats to cover whole screen
   shapesEnabled:false,shapeDens:6,selectedShape:'circle',
   shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
   shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
@@ -945,8 +958,18 @@ let S={
   mycBranch: 3,  //mycelium
   hatchAngle:45,hatchCurve:5,
   vorWire:false,
-  
+
 };
+  
+  // When adding a stream, store extra properties
+S.overlayStreams.push({
+  text: v,
+  color: S.overlayColor,
+  offset: Math.random() * 1000,
+  kernOffset: 0,           // per‑stream kerning adjustment
+  speedMult: 1.0,          // per‑stream speed multiplier
+  lineSpacingMult: 1.0     // per‑stream line spacing multiplier (optional)
+});
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
 let imgPix=null,imgW=0,imgH=0;
@@ -2979,48 +3002,63 @@ function drawShapes(p,t){
 }
 
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
-function drawOverlay(p,t){
-  if(!S.overlayEnabled||!S.overlayStreams.length) return;
-  S.overlayStreams.forEach(function(stream,si){
-    let txt=stream.text;if(!txt||!txt.length) return;
-    let col=stream.color==='palette'?S.palette[si%S.palette.length]:stream.color;
-    let sz=S.overlaySize;
-    let fstr=sz+'px '+S.fontStack;
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    CTX.globalAlpha=S.overlayAlpha/100;
-    let off=(t*S.overlaySpeed*40+(stream.offset||0))%(txt.length*sz+p.width);
-    let dir=S.overlayDir;
-    if(dir==='vert'){
-      let voff=(t*S.overlaySpeed*30+(stream.offset||0))%(txt.length*sz+p.height);
-      let xPos=p.width*.15+si*(p.width*.2);
-      for(let ci=0;ci<txt.length+Math.ceil(p.height/sz)+2;ci++){
-        let cy=ci*sz-voff%((txt.length+1)*sz);
-        if(cy<-sz||cy>p.height+sz) continue;
-        let ch=txt[ci%txt.length];
-        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
-        let dx=S.overlayDistort>0?Math.sin(cy*.05+t*2)*S.overlayDistort:0;
-        if(S.overlayWave>0){let wy=Math.sin(cy*.04+t*1.5)*S.overlayWave*.3;xPos+=wy*.01;}
-        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-        CTX.fillText(ch,xPos+dx,cy);
-      }
-    } else {
-      let yPos=p.height*.2+si*(p.height*.18);
-      let mult=dir==='rtl'?-1:1;
-      let xOff=dir==='rtl'?p.width-off%((txt.length+1)*sz+p.width):-(off%(txt.length*sz+p.width));
-      if(dir==='alt') xOff=(si%2===0)?-(off%(txt.length*sz+p.width)):p.width-off%((txt.length+1)*sz+p.width);
-      for(let ci=0;ci<txt.length+Math.ceil(p.width/sz)+2;ci++){
-        let cx=xOff+ci*sz*mult;
-        if(cx<-sz||cx>p.width+sz) continue;
-        let ch=txt[ci%txt.length];
-        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
-        let dy=S.overlayWave>0?Math.sin(cx*.04+t*1.5)*S.overlayWave*.4:0;
-        let dx=S.overlayDistort>0?Math.sin(yPos*.05+t*2)*S.overlayDistort:0;
-        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-        CTX.fillText(ch,cx+dx,yPos+dy);
+function drawOverlay(p, t) {
+  if (!S.overlayEnabled || !S.overlayStreams.length) return;
+  let baseKern = S.overlayKern;
+  let baseLineSpacing = S.overlayLineSpacing;
+  let sz = S.overlaySize;
+  CTX.font = sz + 'px ' + S.fontStack;
+  CTX.globalAlpha = S.overlayAlpha / 100;
+  _lastFont = sz + 'px ' + S.fontStack;
+  for (let si = 0; si < S.overlayStreams.length; si++) {
+    let stream = S.overlayStreams[si];
+    let txt = stream.text;
+    if (!txt || !txt.length) continue;
+    // Per‑stream overrides
+    let kern = baseKern + (stream.kernOffset || 0);
+    let lineSpacing = baseLineSpacing + (stream.lineSpacingMult || 1) * sz * 0.2;
+    let step = sz + kern;
+    let speed = S.overlaySpeed * (stream.speedMult || 1.0);
+    let col = stream.color === 'palette' ? S.palette[si % S.palette.length] : stream.color;
+    // Vertical offset for repeating
+    let yStart = 0;
+    let yStep = sz + lineSpacing;
+    let repeatCount = S.overlayRepeatFill ? Math.ceil(p.height / yStep) + 1 : 1;
+    for (let rep = 0; rep < repeatCount; rep++) {
+      let yOffset = rep * yStep;
+      let dir = S.overlayDir;
+      let off = (t * speed * 40 + (stream.offset || 0)) % (txt.length * step + p.width);
+      if (dir === 'vert') {
+        let voff = (t * speed * 30 + (stream.offset || 0)) % (txt.length * step + p.height);
+        let xPos = p.width * 0.15 + si * (p.width * 0.2);
+        for (let ci = 0; ci < txt.length + Math.ceil(p.height / step) + 2; ci++) {
+          let cy = ci * step - voff % ((txt.length + 1) * step) + yOffset;
+          if (cy < -sz || cy > p.height + sz) continue;
+          let ch = txt[ci % txt.length];
+          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+          let dx = S.overlayDistort > 0 ? Math.sin(cy * 0.05 + t * 2) * S.overlayDistort : 0;
+          CTX.fillStyle = col;
+          CTX.fillText(ch, xPos + dx, cy);
+        }
+      } else {
+        let yPos = p.height * 0.2 + si * (p.height * 0.18) + yOffset;
+        let mult = dir === 'rtl' ? -1 : 1;
+        let xOff = dir === 'rtl' ? p.width - off % ((txt.length + 1) * step + p.width) : -(off % (txt.length * step + p.width));
+        if (dir === 'alt') xOff = (si % 2 === 0) ? -(off % (txt.length * step + p.width)) : p.width - off % ((txt.length + 1) * step + p.width);
+        for (let ci = 0; ci < txt.length + Math.ceil(p.width / step) + 2; ci++) {
+          let cx = xOff + ci * step * mult;
+          if (cx < -sz || cx > p.width + sz) continue;
+          let ch = txt[ci % txt.length];
+          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+          let dy = S.overlayWave > 0 ? Math.sin(cx * 0.04 + t * 1.5) * S.overlayWave * 0.4 : 0;
+          let dx = S.overlayDistort > 0 ? Math.sin(yPos * 0.05 + t * 2) * S.overlayDistort : 0;
+          CTX.fillStyle = col;
+          CTX.fillText(ch, cx + dx, yPos + dy);
+        }
       }
     }
-  });
-  CTX.globalAlpha=1;
+  }
+  CTX.globalAlpha = 1;
 }
 
 // ── P5 SKETCH ─────────────────────────────────────────────────────────────────
@@ -3237,7 +3275,17 @@ wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
 wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
 wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
 wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
-wireSlider('sHatchCurve','vHatchCurve','hatchCurve');  
+wireSlider('sHatchCurve','vHatchCurve','hatchCurve'); 
+
+wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
+wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
+
+document.getElementById('btnRepeatFill').addEventListener('click', function() {
+  S.overlayRepeatFill = !S.overlayRepeatFill;
+  this.textContent = S.overlayRepeatFill ? 'On' : 'Off';
+  this.classList.toggle('on', S.overlayRepeatFill);
+  window._st.rd();
+});  
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
 document.getElementById('modeGrid').addEventListener('click',function(e){
@@ -3518,29 +3566,93 @@ document.getElementById('ovColorRow').addEventListener('click',function(e){
   document.querySelectorAll('#ovColorRow [data-ovcol]').forEach(function(x){x.classList.remove('active');});
   s.classList.add('active');S.overlayColor=s.dataset.ovcol;
 });
-function renderStreamList(){
-  let el=document.getElementById('ovStreamList');el.innerHTML='';
-  S.overlayStreams.forEach(function(stream,i){
-    let row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:3px';
-    let dot=document.createElement('div');dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(stream.color==='palette'?'var(--gold)':stream.color)+';flex-shrink:0';
-    let lbl=document.createElement('span');lbl.style.cssText='flex:1;font-size:.58rem;color:var(--pale);font-family:EB Garamond,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    lbl.textContent=stream.text;
-    let rm=document.createElement('button');rm.className='ca';rm.textContent='✕';rm.style.padding='0 .4rem';
-    rm.addEventListener('click',function(){S.overlayStreams.splice(i,1);renderStreamList();window._st.rd();});
-    row.appendChild(dot);row.appendChild(lbl);row.appendChild(rm);el.appendChild(row);
+document.getElementById('ovAddStream').addEventListener('click', function() {
+  let v = document.getElementById('ovTextInput').value.trim();
+  if (!v) return;
+  if (S.overlayStreams.length >= 6) S.overlayStreams.shift();
+  S.overlayStreams.push({
+    text: v,
+    color: S.overlayColor,
+    offset: Math.random() * 1000,
+    kernOffset: 0,       // new
+    speedMult: 1.0,      // new
+    lineSpacingMult: 1.0 // new (optional)
+  });
+  document.getElementById('ovTextInput').value = '';
+  renderStreamList();
+  S.overlayEnabled = true;
+  document.getElementById('btnOverlay').textContent = 'On';
+  document.getElementById('btnOverlay').classList.add('on');
+  window._st.rd();
+}); 
+function renderStreamList() {
+  let el = document.getElementById('ovStreamList');
+  el.innerHTML = '';
+  S.overlayStreams.forEach(function(stream, i) {
+    let row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:5px;margin-bottom:3px; cursor:pointer';
+    // Click on row to edit this stream
+    row.addEventListener('click', function() {
+      document.getElementById('editStreamText').value = stream.text;
+      document.getElementById('sEditKern').value = stream.kernOffset || 0;
+      document.getElementById('vEditKern').textContent = stream.kernOffset || 0;
+      document.getElementById('sEditSpeed').value = stream.speedMult || 1.0;
+      document.getElementById('vEditSpeed').textContent = stream.speedMult || 1.0;
+      document.getElementById('streamEditPanel').style.display = 'block';
+      window._selectedStreamIndex = i;
+    });
+    let dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (stream.color === 'palette' ? 'var(--gold)' : stream.color) + ';flex-shrink:0';
+    let lbl = document.createElement('span');
+    lbl.style.cssText = 'flex:1;font-size:.58rem;color:var(--pale);font-family:EB Garamond,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    lbl.textContent = stream.text;
+    let rm = document.createElement('button');
+    rm.className = 'ca';
+    rm.textContent = '✕';
+    rm.style.padding = '0 .4rem';
+    rm.addEventListener('click', function(e) {
+      e.stopPropagation();  // prevent row click from firing
+      S.overlayStreams.splice(i, 1);
+      renderStreamList();
+      window._st.rd();
+    });
+    row.appendChild(dot);
+    row.appendChild(lbl);
+    row.appendChild(rm);
+    el.appendChild(row);
   });
 }
-document.getElementById('ovAddStream').addEventListener('click',function(){
-  let v=document.getElementById('ovTextInput').value.trim();if(!v) return;
-  if(S.overlayStreams.length>=6) S.overlayStreams.shift();
-  S.overlayStreams.push({text:v,color:S.overlayColor,offset:Math.random()*1000});
-  document.getElementById('ovTextInput').value='';
-  renderStreamList();S.overlayEnabled=true;
-  document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
-  window._st.rd();
-});
-document.getElementById('ovTextInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('ovAddStream').click();});
 
+  //mini panel wiring
+// Edit panel sliders (these update the stream in real time)
+wireSlider('sEditKern', 'vEditKern', null, null, function() {
+  if (window._selectedStreamIndex !== undefined && S.overlayStreams[window._selectedStreamIndex]) {
+    S.overlayStreams[window._selectedStreamIndex].kernOffset = parseFloat(document.getElementById('sEditKern').value);
+    window._st.rd();
+  }
+});
+wireSlider('sEditSpeed', 'vEditSpeed', null, null, function() {
+  if (window._selectedStreamIndex !== undefined && S.overlayStreams[window._selectedStreamIndex]) {
+    S.overlayStreams[window._selectedStreamIndex].speedMult = parseFloat(document.getElementById('sEditSpeed').value);
+    window._st.rd();
+  }
+});
+
+document.getElementById('btnUpdateStream').addEventListener('click', function() {
+  let idx = window._selectedStreamIndex;
+  if (idx !== undefined && S.overlayStreams[idx]) {
+    let newText = document.getElementById('editStreamText').value.trim();
+    if (newText) S.overlayStreams[idx].text = newText;
+    S.overlayStreams[idx].kernOffset = parseFloat(document.getElementById('sEditKern').value);
+    S.overlayStreams[idx].speedMult = parseFloat(document.getElementById('sEditSpeed').value);
+    renderStreamList();
+    document.getElementById('streamEditPanel').style.display = 'none';
+    window._st.rd();
+  }
+});
+
+
+  
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
 const DEFAULT_STATE={
   mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
