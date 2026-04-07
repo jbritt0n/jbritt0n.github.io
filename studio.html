@@ -3339,12 +3339,11 @@ new p5(function(p){
     recRects=[];rd();
   }
   window._st={
-    rd:rd,ri:ri,rc:rc,play: function(){
+    rd:rd,ri:ri,rc:rc,play:function() {
   S.playing = !S.playing;
-  console.log("Play clicked, S.playing =", S.playing);
-  if(S.playing) {
+  if (S.playing) {
     p.loop();
-    console.log("p.loop() called");   //temporary log for troubleshooting
+    p.redraw();   // forces an immediate frame
   } else {
     p.noLoop();
   }
@@ -3385,92 +3384,106 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw = function(){
-  console.log("draw called, frameCount =", S.fc);
+  p.draw = function() {
+  // Ensure CTX is available (set once, but re-check just in case)
   if (!CTX) {
     CTX = p.drawingContext;
     if (!CTX) return;
   }
-    //S.fc++;
-    // FPS
-    let now=performance.now();
-    _frameCount++;
-    if(now-_fpsTimer>1000){_fps=_frameCount;_frameCount=0;_fpsTimer=now;document.getElementById('fpsLabel').textContent=_fps+' fps';}
-    // Background with optional trail persistence
-    if(S.trailPersist>0){
-      CTX.fillStyle=S.bg;
-      CTX.globalAlpha=1-S.trailPersist/100;
-      CTX.fillRect(0,0,W,H);
-      CTX.globalAlpha=1;
-    } else {
-      CTX.fillStyle=S.bg;
-      CTX.fillRect(0,0,W,H);
+
+  S.fc++;  // ← CRITICAL: increment frame counter
+
+  // FPS display
+  let now = performance.now();
+  _frameCount++;
+  if (now - _fpsTimer > 1000) {
+    _fps = _frameCount;
+    _frameCount = 0;
+    _fpsTimer = now;
+    document.getElementById('fpsLabel').textContent = _fps + ' fps';
+  }
+
+  // Background with trail persistence
+  if (S.trailPersist > 0) {
+    CTX.fillStyle = S.bg;
+    CTX.globalAlpha = 1 - S.trailPersist / 100;
+    CTX.fillRect(0, 0, W, H);
+    CTX.globalAlpha = 1;
+  } else {
+    CTX.fillStyle = S.bg;
+    CTX.fillRect(0, 0, W, H);
+  }
+
+  CTX.textBaseline = 'middle';
+  CTX.globalCompositeOperation = S.blendMode || 'source-over';
+  let t = S.fc * S.speed;
+
+  // Signal collapse effect
+  if (S.signalCollapse) {
+    let elapsed = S.fc - S.signalStart;
+    if (elapsed < 80) {
+      let scanY = p.map(elapsed, 0, 80, 0, H);
+      CTX.fillStyle = 'rgba(230,57,70,.12)';
+      CTX.fillRect(0, scanY - 2, W, 4);
     }
-    CTX.textBaseline='middle';
-    // Apply blend mode
-    CTX.globalCompositeOperation=S.blendMode||'source-over';
-    let t=S.fc*S.speed;
-    // Signal collapse effect
-    if(S.signalCollapse){
-      let elapsed=S.fc-S.signalStart;
-      if(elapsed<80){let scanY=p.map(elapsed,0,80,0,H);CTX.fillStyle='rgba(230,57,70,.12)';CTX.fillRect(0,scanY-2,W,4);}
-    }
-    // Draw mode
-    switch(S.mode){
-      case'bloom':      drawBloom(p,t);break;
-      case'wave':       drawWave(p,t);break;
-      case'rain1':      drawRain1(p,t);break;
-      case'rain2':      drawRain2(p,t);break;
-      case'vortex':     drawVortex(p,t);break;
-      case'ripple':     drawRipple(p,t);break;
-      case'drift':      drawDrift(p,t);break;
-      case'tess':       drawTess(p,t);break;
-      case'warp':       drawWarp(p,t);break;
-      case'glitch':     drawGlitch(p,t);break;
-      case'webster':    drawWebster(p,t);break;
-      case'matrix':     drawMatrix(p,t);break;
-      case'orbit':      drawOrbit(p,t);break;
-      case'spiral':     drawSpiral(p,t);break;
-      case'scan':       drawScan(p,t);break;
-      case'halftone':   drawHalftone(p,t);break;
-      case'shatter':    drawShatter(p,t);break;
-      case'weave':      drawWeave(p,t);break;
-      case'topo':       drawTopo(p,t);break;
-      case'recursive':  drawRecursive(p,t);break;
-      case'contour':    drawContour(p,t);break;
-      case'fabric':     drawFabric(p,t);break;
-      case'loops':      drawLoops(p,t);break;
-      case'imgtext':    drawImgText(p,t);break;
-      case'topolines':  drawTopoLines(p,t);break;
-      case'pipes':      drawPipes(p,t);break;
-      case'reaction':   drawReaction(p,t);break;
-      case'voronoi':    drawVoronoi(p,t);break;
-      case'mycelium':   drawMycelium(p,t);break;
-      case'sand':       drawSand(p,t);break;
-      case'cellular':   drawCellular(p,t);break;
-      case'interference':drawInterference(p,t);break;
-      case'calligraphy':drawCalligraphy(p,t);break;
-      case'lissajous':  drawLissajous(p,t);break;
-      case'wireterrain': drawWireTerrain(p,t);break;
-      case'fractalsubdiv':drawFractalSubdiv(p,t);break;
-      case'truchet':    drawTruchet(p,t);break;
-      case'seisma':     drawSeisma(p,t);break;
-      case'hatch':      drawHatch(p,t);break;  
-      case'warpgrid':   drawWarpGrid(p,t);break;
-      case'isocontour': drawIsoContour(p,t);break;
-      case'tesseract':  drawTesseract(p,t);break;
-      case'hypersphere':drawHypersphere(p,t);break;
-      case'boids':      drawBoids(p,t);break;
-      case'magnetic':   drawMagnetic(p,t);break;
-      case'worms':      drawWorms(p,t); break;
-      case'flowerspin': drawFlowerspin(p,t); break;
-      case 'wfc': drawWFC(p, t); break;  
-    }
-    CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
-    drawShapes(p,t);
-    drawOverlay(p,t);
-  };
-},'canvas-wrap');
+  }
+
+  // Draw current mode
+  switch (S.mode) {
+    case 'bloom': drawBloom(p, t); break;
+    case 'wave': drawWave(p, t); break;
+    case 'rain1': drawRain1(p, t); break;
+    case 'rain2': drawRain2(p, t); break;
+    case 'vortex': drawVortex(p, t); break;
+    case 'ripple': drawRipple(p, t); break;
+    case 'drift': drawDrift(p, t); break;
+    case 'tess': drawTess(p, t); break;
+    case 'warp': drawWarp(p, t); break;
+    case 'glitch': drawGlitch(p, t); break;
+    case 'webster': drawWebster(p, t); break;
+    case 'matrix': drawMatrix(p, t); break;
+    case 'orbit': drawOrbit(p, t); break;
+    case 'spiral': drawSpiral(p, t); break;
+    case 'scan': drawScan(p, t); break;
+    case 'halftone': drawHalftone(p, t); break;
+    case 'shatter': drawShatter(p, t); break;
+    case 'weave': drawWeave(p, t); break;
+    case 'topo': drawTopo(p, t); break;
+    case 'recursive': drawRecursive(p, t); break;
+    case 'contour': drawContour(p, t); break;
+    case 'fabric': drawFabric(p, t); break;
+    case 'loops': drawLoops(p, t); break;
+    case 'imgtext': drawImgText(p, t); break;
+    case 'topolines': drawTopoLines(p, t); break;
+    case 'pipes': drawPipes(p, t); break;
+    case 'reaction': drawReaction(p, t); break;
+    case 'voronoi': drawVoronoi(p, t); break;
+    case 'mycelium': drawMycelium(p, t); break;
+    case 'sand': drawSand(p, t); break;
+    case 'cellular': drawCellular(p, t); break;
+    case 'interference': drawInterference(p, t); break;
+    case 'calligraphy': drawCalligraphy(p, t); break;
+    case 'lissajous': drawLissajous(p, t); break;
+    case 'wireterrain': drawWireTerrain(p, t); break;
+    case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
+    case 'truchet': drawTruchet(p, t); break;
+    case 'seisma': drawSeisma(p, t); break;
+    case 'hatch': drawHatch(p, t); break;
+    case 'warpgrid': drawWarpGrid(p, t); break;
+    case 'isocontour': drawIsoContour(p, t); break;
+    case 'tesseract': drawTesseract(p, t); break;
+    case 'hypersphere': drawHypersphere(p, t); break;
+    case 'boids': drawBoids(p, t); break;
+    case 'magnetic': drawMagnetic(p, t); break;
+    case 'worms': drawWorms(p, t); break;
+    case 'flowerspin': drawFlowerspin(p, t); break;
+    case 'wfc': drawWFC(p, t); break;
+  }
+
+  CTX.globalCompositeOperation = 'source-over';
+  drawShapes(p, t);
+  drawOverlay(p, t);
+};
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
