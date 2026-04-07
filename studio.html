@@ -351,49 +351,6 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
-      <div class="sec-body collapsed" id="body-font">
-        <select id="fontSelect">
-          <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>       
-          <option value="typewriter">Special Elite — typewriter</option>
-          <option value="georgia">Georgia</option>
-          <option value="times">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="playfair">Playfair Display</option>
-          <option value="impact">Impact</option>
-          <option value="mono">Monospace</option>
-          <option value="unicode_lite">Unicode Lite (faster)</option>
-          <option value="unicode">Universal Unicode</option>
-        </select>
-      </div></div>
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
-      <div class="sec-body collapsed" id="body-motion">
-        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
-        <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
-        <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
-      </div></div>
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
-      <div class="sec-body collapsed" id="body-field">
-        <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1" title="Character density — threshold for placing characters (higher = fewer chars)"></div>
-        <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
-        <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
-        <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
-        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
-      </div></div>
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
-      <div class="sec-body collapsed" id="body-entropy">
-        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Entropy: replaces characters with random glitch symbols at this probability"></div>
-        <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Case glitch: randomly flips character case (uppercase ↔ lowercase)"></div>
-        <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
-        <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
-        <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
-      </div></div>
-
       <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
       <div class="sec-body collapsed" id="body-palette">
         <div class="pg" id="palGrid">
@@ -500,9 +457,55 @@ select option{background:var(--ink)}
           <div class="as" data-bg="#000000"  style="background:#000"></div>
           <div class="as" data-bg="#333333"  style="background:#333"></div>
         </div>
-        <div class="sl2">Trail persistence</div>
-        <div class="rw"><div class="rl"><span class="rn">Fade (0=none)</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
+        
       </div></div>
+      
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
+      <div class="sec-body collapsed" id="body-font">
+        <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal</option>       
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="mono">Monospace</option>
+          <option value="unicode_lite">Unicode Lite (faster)</option>
+          <option value="unicode">Universal Unicode</option>
+        </select>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
+      <div class="sec-body collapsed" id="body-motion">
+        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
+        <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
+        <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
+      <div class="sec-body collapsed" id="body-field">
+        <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1" title="Character density — threshold for placing characters (higher = fewer chars)"></div>
+        <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
+        <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
+        <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
+        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
+      </div></div>
+
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
+      <div class="sec-body collapsed" id="body-entropy">
+        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Entropy: replaces characters with random glitch symbols at this probability"></div>
+        <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Case glitch: randomly flips character case (uppercase ↔ lowercase)"></div>
+        <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
+        <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
+        <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
+      </div></div>
+
+     <div class="sl2">Trail persistence</div>
+        <div class="rw"><div class="rl"><span class="rn">Fade (0=none)</span><span class="rv" id="vTrail">0</span></div>
+          <input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div> 
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend mode</span><span class="sec-arrow" id="arr-blend">›</span></div>
       <div class="sec-body collapsed" id="body-blend">
