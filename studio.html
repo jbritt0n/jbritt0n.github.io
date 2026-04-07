@@ -188,6 +188,7 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="bioluminescent">Biolum</button>
         <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
         <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
+        <button class="pbar-btn" data-preset="wfc_tiles">WFC</button>
       </div>
     </div>
     <div id="ctl">
@@ -232,6 +233,7 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
           <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
+          <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
           <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
           <button class="mb" data-mode="topolines">Topo Lines</button>
@@ -2371,6 +2373,48 @@ function drawIsoContour(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
+  
+// ── WAVE FUNCTION COLLAPSE (WFC) ─────────────────────────────────────────────────────────
+function drawWFC(p, t) {
+  let tileSize = Math.max(16, S.spacing * 2);
+  let cols = Math.ceil(p.width / tileSize);
+  let rows = Math.ceil(p.height / tileSize);
+
+  // Tile glyphs – you can expand this list
+  const tileGlyphs = [
+    '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶', '╱', '╲', '◢', '◣', '◤', '◥'
+  ];
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let x = col * tileSize;
+      let y = row * tileSize;
+
+      // Multi‑octave noise to create larger coherent regions
+      let n1 = p.noise(col * 0.15, row * 0.15, t * 0.08);
+      let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
+      let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length) % tileGlyphs.length;
+
+      let ch = tileGlyphs[idx];
+      let colPal = S.palette[(col + row) % S.palette.length];
+      if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
+        colPal = S.accent;
+      }
+
+      let sz = tileSize * 0.7;
+      let cx = x + tileSize / 2;
+      let cy = y + tileSize / 2;
+
+      // Optional small wave displacement
+      let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * 0.15;
+      let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * 0.15;
+
+      dc(cx + wx, cy + wy, sz, 0, colPal, ch);
+    }
+  }
+}
+
+  
 // ── flower spin ─────────────────────────────────────────────────────────
 function drawFlowerspin(p, t) {
   if (!flowerspin.length) initFlowerspin(p.width, p.height);
@@ -3116,7 +3160,8 @@ new p5(function(p){
       case'boids':      drawBoids(p,t);break;
       case'magnetic':   drawMagnetic(p,t);break;
       case'worms':      drawWorms(p,t); break;
-      case'flowerspin': drawFlowerspin(p,t); break;  
+      case'flowerspin': drawFlowerspin(p,t); break;
+      case 'wfc': drawWFC(p, t); break;  
     }
     CTX.globalCompositeOperation='source-over'; // reset before overlay/shapes
     drawShapes(p,t);
@@ -3810,7 +3855,7 @@ const PRESETS={
   turing:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.004,wave:10,bg:'#0d0c0a',spacing:6,maxSize:14,noiseScale:.006,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'TURING MORPHOGENESIS',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   mycelium:function(){ap({mode:'mycelium',font:'courier',entropy:.03,speed:.004,wave:20,bg:'#0a0a08',spacing:10,maxSize:18,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:80,overlayStreams:[{text:'mycelium network',color:'#52b788',offset:0}],overlayWave:8,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   truchet_tiles:function(){ap({mode:'truchet',font:'courier',entropy:0,speed:.002,wave:30,bg:'#0d0c0a',spacing:18,maxSize:14,noiseScale:.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'PATTERN',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:22});},
-  seisma_print:function(){ap({mode:'seisma',font:'courier',entropy:.03,speed:.001,wave:22,bg:'#f5efe0',spacing:8,maxSize:12,noiseScale:.01,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
+  seisma_print:function(){ap({mode:'seisma',font:'courier',entropy:.03,speed:.001,wave:22,bg:'#f5efe0',spacing:8,maxSize:12,noiseScale:.01,palette:'navy',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'unknown_pleasures_',color:'#f4a261',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
   liquid_crystal:function(){ap({mode:'warpgrid',font:'courier',entropy:0,speed:.004,wave:55,bg:'#0a0c14',spacing:14,maxSize:12,noiseScale:.006,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'LATTICE',color:'#8aaccc',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:28});},
   topographic:function(){ap({mode:'isocontour',font:'courier',entropy:0,speed:.002,wave:40,bg:'#0a1628',spacing:6,maxSize:10,noiseScale:.007,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'elevation · depth · form',color:'#4db6ac',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:11,overlayAlpha:25});},
   tesseract4d:function(){ap({mode:'tesseract',font:'courier',entropy:.04,speed:.005,wave:20,bg:'#060410',spacing:12,maxSize:18,noiseScale:.01,palette:'velvet',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'4D ROTATION',color:'#c77dff',offset:0},{text:'w → z → y → x',color:'#7a5a8a',offset:300}],overlayWave:0,overlaySpeed:2,overlaySize:13,overlayAlpha:35});},
@@ -3823,9 +3868,11 @@ const PRESETS={
   kintsugi_breaks:function(){ap({mode:'shatter',font:'playfair',entropy:0,speed:.002,wave:40,bg:'#1a0a05',spacing:12,maxSize:22,noiseScale:.009,palette:'kintsugi',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'金継ぎ KINTSUGI',color:'#e8b87a',offset:0}],overlayWave:3,overlaySpeed:1,overlaySize:14,overlayAlpha:35,chars:CHARSETS.kanji});},
   bioluminescent:function(){ap({mode:'mycelium',font:'courier',entropy:.01,speed:.003,wave:15,bg:'#001a0a',spacing:8,maxSize:18,noiseScale:.008,palette:'biolum',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'bioluminescence',color:'#00FFAA',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
-  worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams: [{ text: '🐛 WORM DANCE 🐛',color:'#e63946',offset:0}],overlayEnabled:true});},
+  worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams: [{ text: 'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
   hatches: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave: 15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
-                   
+  wfc_tiles: function(){ap({mode: 'wfc',font:'courier',entropy:0,speed:0.002,wave:20,bg:'#0a0c14',spacing:16,maxSize:20,noiseScale:0.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'WFC TILES',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
+
+
 };
 
 
