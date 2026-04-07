@@ -2942,18 +2942,31 @@ function pointInPoly(px,py,pts){
   }
   return inside;
 }
-function polyPts(cx,cy,r,n,startAngle,innerR){
-  let pts=[];
-  for(let i=0;i<n;i++){
-    let a=(i/n)*6.28+startAngle;
-    if(innerR!==undefined){
-      pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
-      let a2=((i+.5)/n)*6.28+startAngle;
-      pts.push({x:cx+Math.cos(a2)*innerR,y:cy+Math.sin(a2)*innerR});
-    } else pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+  
+// Generate irregular polygon points
+// cx,cy: center, r: base radius, sides: number of sides
+// irregularity: 0 = perfect regular, 1 = very distorted
+// spike: 0 = convex, >0 creates star-like spikes (for stars)
+function irregularPolygon(cx, cy, r, sides, irregularity = 0.4, spike = 0) {
+  let pts = [];
+  let angleStep = (Math.PI * 2) / sides;
+  for (let i = 0; i < sides; i++) {
+    let baseAngle = i * angleStep;
+    // Random angle offset (irregularity)
+    let angleOffset = (Math.random() - 0.5) * irregularity * angleStep;
+    let angle = baseAngle + angleOffset;
+    // Random radius variation
+    let radiusFactor = 1 + (Math.random() - 0.5) * irregularity * 0.8;
+    let rad = r * radiusFactor;
+    // Spike effect: if spike > 0, alternate radii for star effect
+    if (spike > 0 && i % 2 === 1) rad = r * (0.3 + spike * 0.7);
+    let x = cx + Math.cos(angle) * rad;
+    let y = cy + Math.sin(angle) * rad;
+    pts.push({ x, y });
   }
   return pts;
 }
+  
 function getShapePos(W,H){
   switch(S.shapePosition){
     case'random': return{x:W*.1+Math.random()*W*.8,y:H*.1+Math.random()*H*.8};
@@ -3023,6 +3036,27 @@ function drawShapes(p, t) {
       sh.cx = cx; sh.cy = cy;
     }
 
+    // Polygon definitions
+    let shapePts = null;
+if (type === 'polygon' && sh.pts) {
+  shapePts = sh.pts;
+} else if (type === 'equilateral' && sh.pts) {
+  shapePts = sh.pts;
+} else if (type === 'hexagon' && sh.pts) {
+  shapePts = sh.pts;
+} else if (type === 'star5' && sh.pts) {
+  shapePts = sh.pts;
+} else if (type === 'star6' && sh.pts) {
+  shapePts = sh.pts;
+} else {
+  // fallback to regular generation
+  if (type === 'equilateral') shapePts = polyPts(cx, cy, r, 3, spin - Math.PI/2);
+  else if (type === 'hexagon') shapePts = polyPts(cx, cy, r, 6, spin);
+  else if (type === 'star5') shapePts = polyPts(cx, cy, r, 5, spin - Math.PI/2, r*0.45);
+  else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
+  else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
+}
+    
     // Build polygon points
     let pts = null;
     let type = sh.type;
@@ -3030,7 +3064,7 @@ function drawShapes(p, t) {
     else if (type === 'hexagon') pts = polyPts(cx, cy, r, 6, spin);
     else if (type === 'star5') pts = polyPts(cx, cy, r, 5, spin - Math.PI / 2, r * 0.45);
     else if (type === 'star6') pts = polyPts(cx, cy, r, 6, spin, r * 0.5);
-    else if (type === 'polygon') pts = polyPts(cx, cy, r, sh.sides || 7, spin);
+    else if (type === 'polygon') pts = sh.pts || polyPts(cx, cy, r, sh.sides || 7, spin);
     else if (type === 'lissajous') {
       let la = sh.la || 2, lb = sh.lb || 3;
       let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
@@ -3064,7 +3098,7 @@ function drawShapes(p, t) {
         } else if (pts) inside = pointInPoly(x, y, pts);
         if (!inside) continue;
         let ch = pickShapeChar(x, y);
-        let col = shapeCharColor(x, y, t, si);
+        let col = (sh.textColor && sh.textColor !== 'none') ? sh.textColor : shapeCharColor(x, y, t, idx);
         let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
         let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
         let sz = sp * 0.8 + Math.random() * sp * 0.4;
@@ -3659,12 +3693,34 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
   let col = COMP_PALETTES.default[Math.floor(Math.random() * COMP_PALETTES.default.length)];
   let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
   let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
+  
+  // Base size (radius)
+  let r = 55 + Math.random() * (Math.min(W, H) * 0.2);
+  
+  // Generate irregular polygon points for specific shape types
+  let pts = null;
+  let irregularity = 0.3 + Math.random() * 0.5; // random irregularity between 0.3 and 0.8
+  
+  if (S.selectedShape === 'polygon') {
+    pts = irregularPolygon(pos.x, pos.y, r, S.shapeSides, irregularity, 0);
+  } else if (S.selectedShape === 'equilateral') {
+    pts = irregularPolygon(pos.x, pos.y, r, 3, irregularity * 0.8, 0);
+  } else if (S.selectedShape === 'hexagon') {
+    pts = irregularPolygon(pos.x, pos.y, r, 6, irregularity * 0.7, 0);
+  } else if (S.selectedShape === 'star5') {
+    // Star: 10 points, alternating radii (spike factor)
+    pts = irregularPolygon(pos.x, pos.y, r, 10, irregularity * 0.5, 0.5 + Math.random() * 0.3);
+  } else if (S.selectedShape === 'star6') {
+    pts = irregularPolygon(pos.x, pos.y, r, 12, irregularity * 0.5, 0.5 + Math.random() * 0.3);
+  }
+  // For circle, ring, rect, band, lissajous – pts remains null (will use native drawing)
 
   shapes.push({
     type: S.selectedShape,
     cx: pos.x, cy: pos.y,
     baseCx: pos.x, baseCy: pos.y,
-    size: 55 + Math.random() * (Math.min(W, H) * 0.2),   // replaces fixed r
+    size: r,                       // store radius
+    pts: pts,                      // pre‑generated points (if any)
     col: col,
     borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
     borderEnabled: true,
@@ -3676,13 +3732,14 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
     orbitAngle: Math.atan2(pos.y - H / 2, pos.x - W / 2),
     textOffset: 0,
     text: _pendingShapeText || '',
-    // New per‑shape properties
+    // Per‑shape properties
     driftEnabled: false,
     driftSpeed: 0.5,
     driftAmpX: 8,
     driftAmpY: 6,
     driftPhase: Math.random() * Math.PI * 2,
     textEnabled: true,
+    textColor: '#ffffff',          // default text color
     solidFill: false,
     fillColor: '#c4bcb0',
     fillOpacity: 0.5
