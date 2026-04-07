@@ -2997,6 +2997,19 @@ function shapeCharColor(x,y,t,shIdx){
   }
 }
 
+function polyPts(cx,cy,r,n,startAngle,innerR){
+  let pts=[];
+  for(let i=0;i<n;i++){
+    let a=(i/n)*6.28+startAngle;
+    if(innerR!==undefined){
+      pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+      let a2=((i+.5)/n)*6.28+startAngle;
+      pts.push({x:cx+Math.cos(a2)*innerR,y:cy+Math.sin(a2)*innerR});
+    } else pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+  }
+  return pts;
+}
+  
 function drawShapes(p, t) {
   if (!S.shapesEnabled || !shapes.length) return;
   let sp = Math.max(3, S.spacing * (1 - (S.shapeDens - 1) / 12));
@@ -3008,7 +3021,7 @@ function drawShapes(p, t) {
     let r = sh.size || 55;
     if (S.shapePulse > 0) r = r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
     
-    // Drift and Inner Text
+    // Initialize missing properties
     if (sh.size === undefined) sh.size = 55;
     if (sh.driftEnabled === undefined) sh.driftEnabled = false;
     if (sh.driftSpeed === undefined) sh.driftSpeed = 0.5;
@@ -3017,7 +3030,7 @@ function drawShapes(p, t) {
     if (sh.textEnabled === undefined) sh.textEnabled = true;
     if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
     
-    // Lissajous drift for each shape
+    // Lissajous drift
     let driftX = 0, driftY = 0;
     if (sh.driftEnabled === true) {
       sh.driftPhase = (sh.driftPhase || 0) + 0.02 * (sh.driftSpeed || 0.5);
@@ -3027,7 +3040,7 @@ function drawShapes(p, t) {
     let cx = (sh.cx || 0) + driftX;
     let cy = (sh.cy || 0) + driftY;
 
-    // Orbit around canvas center (overrides drift)
+    // Orbit around canvas center
     if (S.shapeOrbitEnabled && S.playing) {
       sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
       let or = Math.hypot(sh.baseCx - p.width / 2, sh.baseCy - p.height / 2);
@@ -3036,46 +3049,33 @@ function drawShapes(p, t) {
       sh.cx = cx; sh.cy = cy;
     }
 
-    // Polygon definitions
-    let shapePts = null;
-if (type === 'polygon' && sh.pts) {
-  shapePts = sh.pts;
-} else if (type === 'equilateral' && sh.pts) {
-  shapePts = sh.pts;
-} else if (type === 'hexagon' && sh.pts) {
-  shapePts = sh.pts;
-} else if (type === 'star5' && sh.pts) {
-  shapePts = sh.pts;
-} else if (type === 'star6' && sh.pts) {
-  shapePts = sh.pts;
-} else {
-  // fallback to regular generation
-  if (type === 'equilateral') shapePts = polyPts(cx, cy, r, 3, spin - Math.PI/2);
-  else if (type === 'hexagon') shapePts = polyPts(cx, cy, r, 6, spin);
-  else if (type === 'star5') shapePts = polyPts(cx, cy, r, 5, spin - Math.PI/2, r*0.45);
-  else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
-  else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
-}
-    
-    // Build polygon points
-    let pts = null;
     let type = sh.type;
-    if (type === 'equilateral') pts = polyPts(cx, cy, r, 3, spin - Math.PI / 2);
-    else if (type === 'hexagon') pts = polyPts(cx, cy, r, 6, spin);
-    else if (type === 'star5') pts = polyPts(cx, cy, r, 5, spin - Math.PI / 2, r * 0.45);
-    else if (type === 'star6') pts = polyPts(cx, cy, r, 6, spin, r * 0.5);
-    else if (type === 'polygon') pts = sh.pts || polyPts(cx, cy, r, sh.sides || 7, spin);
-    else if (type === 'lissajous') {
+    let shapePts = null;
+    
+    // Use stored irregular points if available
+    if (sh.pts && (type === 'polygon' || type === 'equilateral' || type === 'hexagon' || type === 'star5' || type === 'star6')) {
+      shapePts = sh.pts;
+    } else {
+      // fallback to regular generation
+      if (type === 'equilateral') shapePts = polyPts(cx, cy, r, 3, spin - Math.PI/2);
+      else if (type === 'hexagon') shapePts = polyPts(cx, cy, r, 6, spin);
+      else if (type === 'star5') shapePts = polyPts(cx, cy, r, 5, spin - Math.PI/2, r*0.45);
+      else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
+      else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
+    }
+    
+    // Lissajous special case
+    if (type === 'lissajous') {
       let la = sh.la || 2, lb = sh.lb || 3;
       let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
       let ly = cy + Math.sin(lb * t) * r * 0.7;
-      pts = [{ x: lx, y: ly }];
+      shapePts = [{ x: lx, y: ly }];
     }
 
     let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     let jitter = sh.jitter || 0;
 
-    // Draw characters inside shape (main field)
+    // Draw main field characters inside shape
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
     for (let x = x0; x < x1; x += sp) {
@@ -3091,14 +3091,12 @@ if (type === 'polygon' && sh.pts) {
           let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
           inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
         } else if (type === 'band') inside = y >= y0 && y <= y1;
-        else if (type === 'lissajous') {
-          let lx = cx + Math.cos((sh.la || 2) * t + (sh.spinAngle || 0)) * r * 0.8;
-          let ly = cy + Math.sin((sh.lb || 3) * t) * r * 0.7;
-          inside = (x - lx) ** 2 + (y - ly) ** 2 < (r * 0.25) ** 2;
-        } else if (pts) inside = pointInPoly(x, y, pts);
+        else if (type === 'lissajous' && shapePts && shapePts.length === 1) {
+          inside = (x - shapePts[0].x) ** 2 + (y - shapePts[0].y) ** 2 < (r * 0.25) ** 2;
+        } else if (shapePts && shapePts.length > 1) inside = pointInPoly(x, y, shapePts);
         if (!inside) continue;
         let ch = pickShapeChar(x, y);
-        let col = (sh.textColor && sh.textColor !== 'none') ? sh.textColor : shapeCharColor(x, y, t, idx);
+        let col = shapeCharColor(x, y, t, si);
         let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
         let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
         let sz = sp * 0.8 + Math.random() * sp * 0.4;
@@ -3109,7 +3107,7 @@ if (type === 'polygon' && sh.pts) {
       }
     }
 
-    // --- Solid fill background ---
+    // Solid fill background
     if (sh.solidFill) {
       CTX.save();
       CTX.globalAlpha = (sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5);
@@ -3134,17 +3132,17 @@ if (type === 'polygon' && sh.pts) {
         CTX.restore();
       } else if (type === 'band') {
         CTX.fillRect(0, cy - r * 0.3, p.width, r * 0.6);
-      } else if (pts && pts.length > 1) {
+      } else if (shapePts && shapePts.length > 1) {
         CTX.beginPath();
-        CTX.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+        CTX.moveTo(shapePts[0].x, shapePts[0].y);
+        for (let i = 1; i < shapePts.length; i++) CTX.lineTo(shapePts[i].x, shapePts[i].y);
         CTX.closePath();
         CTX.fill();
       }
       CTX.restore();
     }
 
-    // --- Draw text INSIDE shape (only if enabled) ---
+    // Custom text inside shape (scattered)
     if (sh.textEnabled && sh.text && sh.text.length) {
       let step = Math.max(8, S.spacing * 0.8);
       let x0t = cx - r - step, x1t = cx + r + step;
@@ -3162,7 +3160,9 @@ if (type === 'polygon' && sh.pts) {
             let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
             inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
           } else if (type === 'band') inside = (y >= cy - r * 0.3 && y <= cy + r * 0.3);
-          else if (pts) inside = pointInPoly(x, y, pts);
+          else if (type === 'lissajous' && shapePts && shapePts.length === 1) {
+            inside = (x - shapePts[0].x) ** 2 + (y - shapePts[0].y) ** 2 < (r * 0.25) ** 2;
+          } else if (shapePts && shapePts.length > 1) inside = pointInPoly(x, y, shapePts);
           if (!inside) continue;
           let idx = (Math.floor(x / step) + Math.floor(y / step)) % sh.text.length;
           let ch = sh.text[idx];
@@ -3176,7 +3176,7 @@ if (type === 'polygon' && sh.pts) {
       }
     }
 
-    // --- Draw shape border ---
+    // Draw shape border
     if (sh.borderEnabled !== false) {
       CTX.save();
       CTX.globalAlpha = globalAlpha;
@@ -3207,10 +3207,10 @@ if (type === 'polygon' && sh.pts) {
         CTX.beginPath();
         CTX.rect(0, cy - r * 0.3, p.width, r * 0.6);
         CTX.stroke();
-      } else if (pts && pts.length > 1) {
+      } else if (shapePts && shapePts.length > 1) {
         CTX.beginPath();
-        CTX.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+        CTX.moveTo(shapePts[0].x, shapePts[0].y);
+        for (let i = 1; i < shapePts.length; i++) CTX.lineTo(shapePts[i].x, shapePts[i].y);
         CTX.closePath();
         CTX.stroke();
       }
