@@ -630,6 +630,7 @@ select option{background:var(--ink)}
         <button class="cb" data-scm="math">Math</button>
         <button class="cb" data-scm="palette">Palette</button>
       </div>
+      <!--
       <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
         <div class="as" data-sfc="#e63946" style="background:#e63946" title="Fixed color 1"></div>
         <div class="as" data-sfc="#f4a261" style="background:#f4a261" title="Fixed color 2"></div>
@@ -641,7 +642,7 @@ select option{background:var(--ink)}
         <div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555" title="Fixed color 8 (white)"></div>
       </div>
       <button class="ca" id="btnRandomizeShapeColors" style="width:100%; margin-top:.3rem">🎲 Randomize all shape colors</button>
-    </div>
+    </div> -->
 
     <!-- Global shape animation (pulse, spin, orbit) -->
     <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
@@ -3064,13 +3065,40 @@ function drawShapes(p, t) {
       else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
     }
     
-    // Lissajous special case
-    if (type === 'lissajous') {
-      let la = sh.la || 2, lb = sh.lb || 3;
-      let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
-      let ly = cy + Math.sin(lb * t) * r * 0.7;
-      shapePts = [{ x: lx, y: ly }];
+   // Special handling for Lissajous – draw a cluster of characters around the moving point
+if (type === 'lissajous') {
+  let la = sh.la || 2, lb = sh.lb || 3;
+  let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
+  let ly = cy + Math.sin(lb * t) * r * 0.7;
+  // Draw a small circle of characters around (lx, ly)
+  let clusterR = Math.max(8, S.maxSize * 0.6);
+  let step = Math.max(4, S.spacing * 0.6);
+  for (let dx = -clusterR; dx <= clusterR; dx += step) {
+    for (let dy = -clusterR; dy <= clusterR; dy += step) {
+      if (dx*dx + dy*dy > clusterR*clusterR) continue;
+      let x = lx + dx, y = ly + dy;
+      if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+      let ch = pickShapeChar(x, y);
+      let col = (sh.textColor && sh.textColor !== 'none') ? sh.textColor : shapeCharColor(x, y, t, si);
+      let sz = step * 0.8;
+      CTX.save();
+      CTX.globalAlpha = globalAlpha;
+      dc(x, y, sz, 0, col, ch);
+      CTX.restore();
     }
+  }
+  // Draw a small dot as border (optional)
+  if (sh.borderEnabled !== false) {
+    CTX.save();
+    CTX.globalAlpha = globalAlpha;
+    CTX.fillStyle = sh.borderCol || (sh.col === S.accent ? sh.col : '#ffffff');
+    CTX.beginPath();
+    CTX.arc(lx, ly, Math.max(2, r*0.1), 0, 2*Math.PI);
+    CTX.fill();
+    CTX.restore();
+  }
+  return; // skip the rest of the shape drawing for lissajous
+}
 
     let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     let jitter = sh.jitter || 0;
@@ -3096,7 +3124,7 @@ function drawShapes(p, t) {
         } else if (shapePts && shapePts.length > 1) inside = pointInPoly(x, y, shapePts);
         if (!inside) continue;
         let ch = pickShapeChar(x, y);
-        let col = shapeCharColor(x, y, t, si);
+        let col = sh.charFillColor || shapeCharColor(x, y, t, si);
         let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
         let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
         let sz = sp * 0.8 + Math.random() * sp * 0.4;
@@ -3176,6 +3204,21 @@ function drawShapes(p, t) {
       }
     }
 
+    // Character fill color picker (overrides color mode)
+let charFillPicker = document.createElement('input');
+charFillPicker.type = 'color';
+charFillPicker.value = sh.charFillColor || '#c4bcb0';
+charFillPicker.style.width = '24px';
+charFillPicker.style.height = '24px';
+charFillPicker.style.border = 'none';
+charFillPicker.style.cursor = 'pointer';
+charFillPicker.title = 'Character fill color (overrides color mode)';
+charFillPicker.addEventListener('input', function(e) {
+  sh.charFillColor = e.target.value;
+  window._st.rd();
+});
+row.appendChild(charFillPicker);
+    
     // Draw shape border
     if (sh.borderEnabled !== false) {
       CTX.save();
