@@ -3384,14 +3384,10 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw = function() {
-  // Ensure CTX is available (set once, but re-check just in case)
-  if (!CTX) {
-    CTX = p.drawingContext;
-    if (!CTX) return;
-  }
-
-  S.fc++;  // ← CRITICAL: increment frame counter
+  p.draw = function(){
+  S.fc++;   // ← UNCOMMENTED – frame counter increments each frame
+  // FPS, background, etc.
+  let t = S.fc * S.speed;
 
   // FPS display
   let now = performance.now();
