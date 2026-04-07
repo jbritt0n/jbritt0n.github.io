@@ -4390,7 +4390,11 @@ document.getElementById('btnChaos').addEventListener('click',function(){
 });
 
 // ── ACTIONS ─────────────────────────────────────────────────────────────────
-document.getElementById('btnPlay').addEventListener('click',function(){let on=window._st.play();this.textContent=on?'⏸ Pause':'▶ Play';});
+//document.getElementById('btnPlay').addEventListener('click',function(){let on=window._st.play();this.textContent=on?'⏸ Pause':'▶ Play';});
+document.getElementById('btnPlay').addEventListener('click', function(){isPlaying=!isPlaying;this.textContent=isPlaying ? '⏸ Pause' : '▶ Play';
+  this.classList.toggle('play', isPlaying);
+  if (isPlaying) draw(); // Re-entry point for the loop
+});  
 document.getElementById('btnRegen').addEventListener('click',function(){window._st.regen();showToast('Regenerated');});
 document.getElementById('btnSave').addEventListener('click',function(){window._st.save();});
 document.getElementById('btnReset').addEventListener('click',function(){resetAllToDefaults();});
