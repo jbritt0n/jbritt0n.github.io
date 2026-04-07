@@ -3480,7 +3480,9 @@ new p5(function(p){
   CTX.globalCompositeOperation = 'source-over';
   drawShapes(p, t);
   drawOverlay(p, t);
-};
+}; // <--- This closes p.draw
+
+}); // <--- This closes the "new p5(function(p){" block
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
