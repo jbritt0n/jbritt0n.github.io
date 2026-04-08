@@ -1711,9 +1711,11 @@ function drawImgText(p, t) {
   let palette = getPaletteColors();
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
-    let imgX = Math.floor(p.map(x, 0, W, 0, imgW - 1));
-    let imgY = Math.floor(p.map(y, 0, H, 0, imgH - 1));
-      let idx = (imgY * imgW + imgX) * 4;
+    let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW - 1));
+    let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH - 1));
+      // Add a safety check: if idx is invalid, skip this loop iteration
+    let idx = (imgY * imgW + imgX) * 4;
+      if (!imgPix.data[idx] && imgPix.data[idx] !== 0) return; //
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
       let b = imgPix.data[idx + 2];
@@ -1740,11 +1742,13 @@ function drawImgText(p, t) {
 }
   //drawImgText Helpers
 function renderImgChars(p, br, col) {
-  if (br > 250) return;
-  p.noStroke();
+  // Change 250 to 1000 to force the engine to draw EVERY pixel, 
+  // even if it thinks they are "too bright" (white).
+  if (br > 1000) return; 
   let chars = S.chars || ['#'];
   let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
   p.fill(col);
+  p.noStroke(); // Ensure no borders are hiding the text
   p.textSize(S.spacing * 1.2);
   p.text(chars[charIdx], 0, 0);
 }
@@ -3465,6 +3469,13 @@ new p5(function(p){
   S.fc++;   // ← UNCOMMENTED – frame counter increments each frame
   // FPS, background, etc.
   // FPS display
+  let t = p.frameCount * (S.speed || 0.01);
+  let pal = getPaletteColors();
+  // 1. Draw Background First (using the last color in palette)
+  p.background(pal[pal.length - 1]); 
+  // 2. Draw the Image Logic
+  if (S.mode === 'imgtext') {
+    drawImgText(p, t);  
   let now = performance.now();
   _frameCount++;
   if (now - _fpsTimer > 1000) {
@@ -4252,6 +4263,9 @@ function processImage(img) {
   document.querySelectorAll('[data-mode="imgtext"]').forEach(b => b.classList.add('active'));
   document.getElementById('modeLabel').textContent = 'Img→Text';
   window._st.rd();
+
+  console.log("Image Data Captured:", imgPix.data.length, "pixels");
+  console.log("First Pixel (RGBA):", imgPix.data[0], imgPix.data[1], imgPix.data[2], imgPix.data[3]);
 }
 
 // ── ADDITIONAL IMAGE FUNCTIONALITY (Stretch/Invert) ──────────────────────────────────
