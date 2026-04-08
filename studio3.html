@@ -2067,7 +2067,7 @@ function drawMaze(p, t) {
   // Shift: randomly remove a wall and carve a new passage every N frames
   if (S.playing) {
     mazeShiftTimer++;
-    let shiftRate = Math.max(1, Math.floor(70 - S.speed * 9000));
+    let shiftRate = 1;
     if (mazeShiftTimer > shiftRate) {
       mazeShiftTimer = 0;
       // Pick a random cell and knock out a random wall
