@@ -700,27 +700,30 @@ select option{background:var(--ink)}
 </div>
       </div>
 
-<div class="sec-hd" onclick="toggleSec('img')">
-  <span>Image → Text</span><span id="arr-img" class="arr"></span>
-</div>
-<div id="body-img" class="sec-body collapsed">
-  <input type="file" id="imgUpload" accept="image/*" style="display:none">
-  <button class="btn-main" onclick="document.getElementById('imgUpload').click()">Upload Reference</button>
-  <div class="lbl">Draw Mode</div>
-  <div class="grid-col3" id="imgModeGrid">
-    <div class="mb active" data-imode="chars">Chars</div>
-    <div class="mb" data-imode="hatch">Hatch</div>
-    <div class="mb" data-imode="blocks">Blocks</div>
+<div class="sec">
+  <div class="sec-hd" onclick="toggleSec('img')">
+    <span class="sl">Image → Text</span>
+    <span class="sec-arrow" id="arr-img">›</span>
   </div>
-  <div class="lbl">Color Mapping</div>
-  <div class="grid-col2" id="imgColorModeGrid">
-    <div class="mb active" data-cm="tonal">Tonal</div>
-    <div class="mb" data-cm="random">Random</div>
-  </div>
-  <div class="lbl">Contrast Engine</div>
-  <div class="grid-col2" id="imgDitherGrid">
-    <div class="mb active" data-idither="none">Raw</div>
-    <div class="mb" data-idither="atkinson">Atkinson</div>
+  <div class="sec-body collapsed" id="body-img">
+    <input type="file" id="imgUpload" accept="image/*" style="display:none">
+    <button class="iu" onclick="document.getElementById('imgUpload').click()">Upload Reference</button>
+    <div class="sl2">Draw Mode</div>
+    <div class="mg" id="imgModeGrid">
+      <div class="mb active" data-imode="chars">Chars</div>
+      <div class="mb" data-imode="hatch">Hatch</div>
+      <div class="mb" data-imode="blocks">Blocks</div>
+    </div>
+    <div class="sl2">Color Mapping</div>
+    <div class="mg" id="imgColorModeGrid">
+      <div class="mb active" data-cm="tonal">Tonal</div>
+      <div class="mb" data-cm="random">Random</div>
+    </div>
+    <div class="sl2">Contrast Engine</div>
+    <div class="mg" id="imgDitherGrid">
+      <div class="mb active" data-idither="none">Raw</div>
+      <div class="mb" data-idither="atkinson">Atkinson</div>
+    </div>
   </div>
 </div>
 
