@@ -3297,6 +3297,13 @@ if (type === 'lissajous') {
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
 
 function drawOverlay(p, t) {
+
+    // TEST: draw a red circle
+  CTX.fillStyle = 'red';
+  CTX.beginPath();
+  CTX.arc(100, 100, 50, 0, Math.PI * 2);
+  CTX.fill();
+  
   if (!S.overlayEnabled || !Array.isArray(S.overlayStreams) || !S.overlayStreams.length) return;
   let baseKern = S.overlayKern;
   let baseLineSpacing = S.overlayLineSpacing;
