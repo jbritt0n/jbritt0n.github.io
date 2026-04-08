@@ -1702,10 +1702,8 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
-  
 function drawImgText(p, t) {
   if (!imgPix || !imgW || !imgH) {
-    // Placeholder when no image is loaded
     CTX.fillStyle = S.palette[0];
     CTX.font = '13px ' + S.fontStack;
     CTX.textAlign = 'center';
@@ -1715,18 +1713,33 @@ function drawImgText(p, t) {
   }
   let step = S.spacing || 10;
   let palette = getPaletteColors();
-  // ✅ Use p.width and p.height instead of W and H
+  console.log('Image mode palette:', palette);
+  // Calculate scaling and offset based on stretch mode
+  let scaleX, scaleY, offsetX = 0, offsetY = 0;
+  if (S.imgStretch) {
+    // Stretch to fill the whole canvas
+    scaleX = imgW / p.width;
+    scaleY = imgH / p.height;
+  } else {
+    // Fit inside canvas (preserve aspect ratio)
+    let scale = Math.min(p.width / imgW, p.height / imgH);
+    scaleX = 1 / scale;
+    scaleY = 1 / scale;
+    offsetX = (p.width - imgW * scale) / 2;
+    offsetY = (p.height - imgH * scale) / 2;
+  }
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
-      let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW));
-      let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH));
+      // Map canvas coordinates to image coordinates
+      let imgX = Math.floor((x - offsetX) * scaleX);
+      let imgY = Math.floor((y - offsetY) * scaleY);
+      if (imgX < 0 || imgX >= imgW || imgY < 0 || imgY >= imgH) continue;
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
       let b = imgPix.data[idx + 2];
       let br = 0.299 * r + 0.587 * g + 0.114 * b;
       if (S.imgInvert) br = 255 - br;
-      if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
