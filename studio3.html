@@ -402,17 +402,44 @@ select option{background:var(--ink)}
           <div class="pb" data-pal="midnightrain" title="Midnight Rain" style="background:linear-gradient(135deg,#0f172a,#94a3b8)"></div>
         </div>
         <div class="sl2">Accent 1</div>
-        <div class="ag" id="accentRow1">
-          <div class="as active" data-accent="#e63946" style="background:#e63946"></div>
-          <div class="as" data-accent="#f4a261"   style="background:#f4a261"></div>
-          <div class="as" data-accent="#ede66c"   style="background:#ede66c"></div>
-          <div class="as" data-accent="#90d4a0"   style="background:#90d4a0"></div>
-          <div class="as" data-accent="#80b8e8"   style="background:#80b8e8"></div>
-          <div class="as" data-accent="#d890d8"   style="background:#d890d8"></div>
-          <div class="as" data-accent="#ffffff"   style="background:#fff;border:1px solid #555"></div>
-          <div class="as" data-accent="none"      style="background:var(--stone);border:1px dashed var(--dim)"></div>
-        </div>
+          <div class="ag" id="accentRow1">
+          <!-- Reds & Oranges -->
+          <div class="as active" data-accent="#e63946" style="background:#e63946" title="Red"></div>
+          <div class="as" data-accent="#ff0000" style="background:#ff0000" title="Pure Red"></div>
+          <div class="as" data-accent="#dc143c" style="background:#dc143c" title="Crimson"></div>
+          <div class="as" data-accent="#ff4500" style="background:#ff4500" title="Orange Red"></div>
+          <div class="as" data-accent="#f4a261" style="background:#f4a261" title="Orange"></div>
+          <div class="as" data-accent="#ff8c00" style="background:#ff8c00" title="Dark Orange"></div>
+          <!-- Yellows & Golds -->
+          <div class="as" data-accent="#ede66c" style="background:#ede66c" title="Yellow"></div>
+          <div class="as" data-accent="#ffff00" style="background:#ffff00" title="Bright Yellow"></div>
+          <div class="as" data-accent="#ffd700" style="background:#ffd700" title="Gold"></div>
+          <div class="as" data-accent="#adff2f" style="background:#adff2f" title="Green Yellow"></div>
+          <!-- Greens -->
+          <div class="as" data-accent="#90d4a0" style="background:#90d4a0" title="Mint"></div>
+          <div class="as" data-accent="#00ff00" style="background:#00ff00" title="Lime"></div>
+          <div class="as" data-accent="#00fa9a" style="background:#00fa9a" title="Medium Spring Green"></div>
+          <!-- Cyans & Blues -->
+          <div class="as" data-accent="#00ffff" style="background:#00ffff" title="Cyan"></div>
+          <div class="as" data-accent="#00ced1" style="background:#00ced1" title="Dark Turquoise"></div>
+          <div class="as" data-accent="#80b8e8" style="background:#80b8e8" title="Light Blue"></div>
+          <div class="as" data-accent="#00bfff" style="background:#00bfff" title="Deep Sky Blue"></div>
+          <div class="as" data-accent="#1e90ff" style="background:#1e90ff" title="Dodger Blue"></div>
+          <div class="as" data-accent="#0000ff" style="background:#0000ff" title="Blue"></div>
+          <!-- Purples & Pinks -->
+          <div class="as" data-accent="#d890d8" style="background:#d890d8" title="Lavender"></div>
+          <div class="as" data-accent="#8a2be2" style="background:#8a2be2" title="Blue Violet"></div>
+          <div class="as" data-accent="#ff00ff" style="background:#ff00ff" title="Magenta"></div>
+          <div class="as" data-accent="#ff69b4" style="background:#ff69b4" title="Hot Pink"></div>
+          <div class="as" data-accent="#ff1493" style="background:#ff1493" title="Deep Pink"></div>
+          <div class="as" data-accent="#c71585" style="background:#c71585" title="Medium Violet Red"></div>
+          <!-- Neutrals -->
+          <div class="as" data-accent="#ffffff" style="background:#fff;border:1px solid #555" title="White"></div>
+          <!-- None (always last) -->
+          <div class="as" data-accent="none" style="background:var(--stone);border:1px dashed var(--dim)" title="No accent"></div>
+</div>
         <div class="rw"><div class="rl"><span class="rn">Accent 1</span><span class="rv" id="vAccent1">10</span></div><input type="range" id="sAccent1" min="0" max="60" value="10" step="2" title="Accent 1 strength — how often the accent colour replaces the palette colour"></div>
+       
         <div class="sl2">Accent 2</div>
         <div class="ag" id="accentRow2">
           <div class="as" data-a2="#e63946"  style="background:#e63946"></div>
@@ -428,17 +455,44 @@ select option{background:var(--ink)}
         <div class="sl2">Background</div>
         <div class="ag" id="bgRow">
           <div class="as active" data-bg="#0d0c0a" style="background:#0d0c0a;border:1px solid var(--stone)"></div>
-          <div class="as" data-bg="#234b09"  style="background:#234b09"></div>
-          <div class="as" data-bg="#0a0c14"  style="background:#0a0c14"></div>
-          <div class="as" data-bg="#1a1008"  style="background:#1a1008"></div>
-          <div class="as" data-bg="#f2ede6"  style="background:#f2ede6"></div>
-          <div class="as" data-bg="#14101e"  style="background:#14101e"></div>
-          <div class="as" data-bg="#2e2c28"  style="background:#2e2c28"></div>
-          <div class="as" data-bg="#1a2b3c"  style="background:#1a2b3c"></div>
-          <div class="as" data-bg="#2d1b2d"  style="background:#2d1b2d"></div>
-          <div class="as" data-bg="#f9f5d7"  style="background:#f9f5d7"></div>
-          <div class="as" data-bg="#000000"  style="background:#000"></div>
-          <div class="as" data-bg="#333333"  style="background:#333"></div>
+        <!-- Neutrals & Greys -->
+          <div class="as" data-bg="#000000" style="background:#000" title="Black"></div>
+          <div class="as" data-bg="#333333" style="background:#333" title="Medium Grey"></div>
+          <div class="as" data-bg="#2e2c28" style="background:#2e2c28" title="Dark Grey"></div>
+          <div class="as" data-bg="#f9f5d7" style="background:#f9f5d7" title="Pale Cream"></div>
+          <div class="as" data-bg="#f2ede6" style="background:#f2ede6" title="Warm Ivory"></div>
+          <div class="as" data-bg="#1a1008" style="background:#1a1008" title="Dark Earth"></div>
+        <!-- Blues & Teals -->
+          <div class="as" data-bg="#0a0c14" style="background:#0a0c14" title="Deep Navy"></div>
+          <div class="as" data-bg="#1a2b3c" style="background:#1a2b3c" title="Midnight Blue"></div>
+          <div class="as" data-bg="#add8e6" style="background:#add8e6" title="Light Blue"></div>
+          <div class="as" data-bg="#87ceeb" style="background:#87ceeb" title="Sky Blue"></div>
+          <div class="as" data-bg="#008080" style="background:#008080" title="Teal"></div>
+          <div class="as" data-bg="#3d8080" style="background:#3d8080" title="Teal 2"></div>
+          <div class="as" data-bg="#97baba" style="background:#97baba" title="Pale Teal"></div>
+          <div class="as" data-bg="#00ced1" style="background:#00ced1" title="Dark Turquoise"></div>
+          <div class="as" data-bg="#40e0d0" style="background:#40e0d0" title="Turquoise"></div>
+        <!-- Greens -->
+          <div class="as" data-bg="#234b09" style="background:#234b09" title="Forest Green"></div>
+          <div class="as" data-bg="#006400" style="background:#006400" title="Dark Green"></div>
+          <div class="as" data-bg="#00ff7f" style="background:#00ff7f" title="Spring Green"></div>
+          <div class="as" data-bg="#98fb98" style="background:#98fb98" title="Pale Green"></div>
+          <div class="as" data-bg="#2e8b57" style="background:#2e8b57" title="Sea Green"></div>
+        <!-- Purples & Pinks -->
+          <div class="as" data-bg="#14101e" style="background:#14101e" title="Deep Purple"></div>
+          <div class="as" data-bg="#2d1b2d" style="background:#2d1b2d" title="Plum"></div>
+          <div class="as" data-bg="#dda0dd" style="background:#dda0dd" title="Plum Light"></div>
+          <div class="as" data-bg="#ff69b4" style="background:#ff69b4" title="Hot Pink"></div>
+          <div class="as" data-bg="#ffb6c1" style="background:#ffb6c1" title="Light Pink"></div>
+          <div class="as" data-bg="#ff00ff" style="background:#ff00ff" title="Fuchsia"></div>
+        <!-- Reds, Oranges & Yellows -->
+          <div class="as" data-bg="#ff0000" style="background:#ff0000" title="Red"></div>
+          <div class="as" data-bg="#dc143c" style="background:#dc143c" title="Crimson"></div>
+          <div class="as" data-bg="#ffa500" style="background:#ffa500" title="Orange"></div>
+          <div class="as" data-bg="#ff8c00" style="background:#ff8c00" title="Dark Orange"></div>
+          <div class="as" data-bg="#ffb347" style="background:#ffb347" title="Pastel Orange"></div>
+          <div class="as" data-bg="#ffff00" style="background:#ffff00" title="Bright Yellow"></div>
+          <div class="as" data-bg="#fffacd" style="background:#fffacd" title="Lemon Chiffon"></div>
         </div>
         
       </div></div>
