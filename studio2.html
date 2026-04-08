@@ -4591,15 +4591,24 @@ document.getElementById('presetBar').addEventListener('click',function(e){
 });  
   
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
-let _panelHidden=false;
-function togglePanel(){
-  let panel=document.getElementById('panel');
-  _panelHidden=!_panelHidden;
-  panel.style.display=_panelHidden?'none':'flex';
-  document.getElementById('panelBtn').textContent=_panelHidden?'⊕ Controls':'✕ Close';
-  setTimeout(function(){
-    if(window._st){let wrap=document.getElementById('canvas-wrap');window._st.rsz(wrap.offsetWidth,wrap.offsetHeight);}
-  },50);
+let _panelHidden = false;
+function togglePanel() {
+  let panel = document.getElementById('panel');
+  _panelHidden = !_panelHidden;
+  panel.style.display = _panelHidden ? 'none' : 'flex';
+  document.getElementById('panelBtn').textContent = _panelHidden ? '⊕ Controls' : '✕ Close';
+  setTimeout(function() {
+    if (window._st) {
+      let wrap = document.getElementById('canvas-wrap');
+      window._st.rsz(wrap.offsetWidth, wrap.offsetHeight);
+    }
+    // Force scroll container to recalc its height
+    let ctl = document.getElementById('ctl');
+    if (ctl) {
+      ctl.style.overflow = 'hidden';
+      setTimeout(() => { ctl.style.overflow = 'auto'; }, 10);
+    }
+  }, 50);
 }
 </script>
 </body>
