@@ -700,18 +700,29 @@ select option{background:var(--ink)}
 </div>
       </div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
-      <div class="sec-body collapsed" id="body-img">
-        <input type="file" id="imgFile" accept="image/*" style="display:none">
-        <button class="iu" onclick="document.getElementById('imgFile').click()">Upload image</button>
-        <div class="cr" style="margin-bottom:.4rem">
-          <input class="ci" id="imgUrlInput" placeholder="or paste image URL…">
-          <button class="ca" id="imgUrlApply">Load</button>
-        </div>
-        <div class="is" id="imgStatus">No image loaded</div>
-        <div class="tr"><span class="tl">Stretch to fill</span><button class="tb" id="btnStretch">Off</button></div>
-        <div class="tr"><span class="tl">Invert brightness</span><button class="tb" id="btnInvert">Off</button></div>
-      </div></div>
+<div class="sec-hd" onclick="toggleSec('img')">
+  <span>Image → Text</span><span id="arr-img" class="arr"></span>
+</div>
+<div id="body-img" class="sec-body collapsed">
+  <input type="file" id="imgUpload" accept="image/*" style="display:none">
+  <button class="btn-main" onclick="document.getElementById('imgUpload').click()">Upload Reference</button>
+  <div class="lbl">Draw Mode</div>
+  <div class="grid-col3" id="imgModeGrid">
+    <div class="mb active" data-imode="chars">Chars</div>
+    <div class="mb" data-imode="hatch">Hatch</div>
+    <div class="mb" data-imode="blocks">Blocks</div>
+  </div>
+  <div class="lbl">Color Mapping</div>
+  <div class="grid-col2" id="imgColorModeGrid">
+    <div class="mb active" data-cm="tonal">Tonal</div>
+    <div class="mb" data-cm="random">Random</div>
+  </div>
+  <div class="lbl">Contrast Engine</div>
+  <div class="grid-col2" id="imgDitherGrid">
+    <div class="mb active" data-idither="none">Raw</div>
+    <div class="mb" data-idither="atkinson">Atkinson</div>
+  </div>
+</div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('size')"><span class="sl">Canvas size</span><span class="sec-arrow" id="arr-size">›</span></div>
       <div class="sec-body collapsed" id="body-size">
@@ -987,6 +998,9 @@ let S={
   shapePosition:'center',shapeSides:7,shapeText:'',
   signalCollapse:false,signalStart:0,
   blendMode:'source-over',
+  imgMode: 'chars',
+  imgColorMode: 'tonal',
+  imgDither: 'none',
   playing:false,fc:0,
   useParticleMode:false, 
   reactFeed: 0.033, //reaction
@@ -1692,6 +1706,38 @@ function drawImgText(p,t){
     dc(x+wx,y+wy,p.map(d,.1,1,1.5,S.maxSize),0,res.col,res.ch);
   }
 }
+  //drawImgText Helpers
+function renderImgChars(p, br, col) {
+  if (br > 250) return; // Skip highlights for a cleaner look
+  let chars = S.chars || ['#'];
+  let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
+  p.fill(col);
+  p.textSize(S.spacing * 1.2);
+  p.text(chars[charIdx], 0, 0);
+}
+function renderImgHatch(p, br, col, t) {
+  if (br > 220) return;
+  let weight = p.map(br, 0, 220, 2.5, 0.3);
+  let n = p.noise(p.frameCount * 0.01, br * 0.01);
+  p.rotate(n * p.TWO_PI);
+  p.stroke(col);
+  p.strokeWeight(weight);
+  p.line(-S.spacing/2, 0, S.spacing/2, 0);
+}
+function renderImgBlocks(p, br, col) {
+  if (br > 240) return;
+  let s = p.map(br, 0, 255, S.spacing, 1);
+  p.noStroke();
+  p.fill(col);
+  p.rectMode(p.CENTER);
+  p.rect(0, 0, s, s);
+}
+function getPaletteColors() {
+    // This looks at your current state and returns the hex codes
+    return PALETTES[S.palette] || PALETTES['site'];
+}
+  
+  
 function drawTopoLines(p,t){
   let W=p.width,H=p.height;
   let res=Math.max(6,S.spacing*.9);
@@ -2560,7 +2606,6 @@ function drawTesseract(p,t){
   let W=p.width,H=p.height;
   let cx=W/2,cy=H/2;
   let scale=Math.min(W,H)*.28*(0.7+S.wave*.004);
-
   // 16 vertices of a tesseract in 4D: all combinations of ±1 in xyzw
   let verts4D=[];
   for(let i=0;i<16;i++){
@@ -2571,14 +2616,12 @@ function drawTesseract(p,t){
       (i&8)?1:-1
     ]);
   }
-
   // 32 edges: vertices that differ in exactly one bit
   let edges=[];
   for(let a=0;a<16;a++) for(let b=a+1;b<16;b++){
     let diff=(a^b);
     if(diff&&(diff&(diff-1))===0) edges.push([a,b]); // power of 2 = one bit
   }
-
   // 4D rotation matrices (XY plane and ZW plane, and XW for hypercube feel)
   let a1=t*S.speed*80, a2=t*S.speed*55, a3=t*S.speed*33;
   function rot4(v){
@@ -2591,7 +2634,6 @@ function drawTesseract(p,t){
     let x2=x1*Math.cos(a3)-z1*Math.sin(a3), z2=x1*Math.sin(a3)+z1*Math.cos(a3);
     return [x2,y1,z2,w1];
   }
-
   // Project 4D → 3D (perspective from w axis)
   function proj4to3(v){
     let [x,y,z,w]=v;
@@ -2599,7 +2641,6 @@ function drawTesseract(p,t){
     let wFac=d/(d-w);
     return [x*wFac,y*wFac,z*wFac];
   }
-
   // Project 3D → 2D (simple perspective)
   function proj3to2(v){
     let [x,y,z]=v;
@@ -2607,14 +2648,11 @@ function drawTesseract(p,t){
     let zFac=d/(d-z);
     return [x*zFac*scale+cx, y*zFac*scale+cy, zFac];
   }
-
   // Project all vertices
   let proj=verts4D.map(function(v){
     return proj3to2(proj4to3(rot4(v)));
   });
-
   CTX.save();
-
   // Draw edges
   edges.forEach(function(e,ei){
     let [ai,bi]=e;
@@ -2635,7 +2673,6 @@ function drawTesseract(p,t){
     CTX.moveTo(pa[0],pa[1]);CTX.lineTo(pb[0],pb[1]);
     CTX.stroke();
   });
-
   // Draw vertices with characters
   proj.forEach(function(pv,i){
     if(pv[2]<0.1) return;
@@ -2649,7 +2686,6 @@ function drawTesseract(p,t){
     if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
     CTX.fillText(ch,pv[0],pv[1]);
   });
-
   CTX.globalAlpha=1;
   CTX.restore();
   _lastFont='';_lastFill='';
@@ -2714,23 +2750,18 @@ function drawHypersphere(p,t){
         let y4=Math.sin(phi)*Math.sin(v)*Math.sin(u);
         let z4=Math.sin(phi)*Math.cos(v);
         let w4=Math.cos(phi);
-
         let [rx,ry,rz,rw]=rot4(x4,y4,z4,w4);
-
         // Project 4D→2D via stereographic projection from north pole (w=1)
         let denom=2-rw;
         if(Math.abs(denom)<0.05) continue;
         let sx=cx+rx/denom*R;
         let sy=cy+ry/denom*R;
         let depth=(rz/denom+1)/2; // 0..1 depth for sizing/alpha
-
         if(sx<-50||sx>W+50||sy<-50||sy>H+50) continue;
-
         let sz=Math.max(2,depth*S.maxSize*.8);
         let ci=Math.floor((ui*stepsV+vi)/(stepsU*stepsV)*S.palette.length)%S.palette.length;
         let col=S.palette[ci];
         if(wi===0&&S.accent!=='none') col=S.accent;
-
         CTX.globalAlpha=0.2+depth*.7;
         let ch=pickChar(p,sx,sy,t);
         let fstr=(sz|0)+'px '+S.fontStack;
@@ -2836,7 +2867,6 @@ function initMagnetic(W,H){
 function drawMagnetic(p,t){
   let W=p.width,H=p.height;
   if(!magneticPoles.length) initMagnetic(W,H);
-
   // Slowly rotate poles for animation
   if(S.playing){
     let angle=S.fc*S.speed*.8;
@@ -2849,7 +2879,6 @@ function drawMagnetic(p,t){
       pole.y=cy2+Math.sin(rotAngle)*dist;
     });
   }
-
   function fieldAt(x,y){
     let fx=0,fy=0;
     magneticPoles.forEach(function(pole){
@@ -2862,17 +2891,14 @@ function drawMagnetic(p,t){
     let mag=Math.sqrt(fx*fx+fy*fy)||1;
     return {bx:fx/mag,by:fy/mag,mag};
   }
-
   // Seed field lines from positive poles at many angles
   let nLines=Math.floor(8+S.density*24);
   let stepSize=Math.max(2,S.spacing*.4);
   let maxSteps=Math.floor(Math.min(W,H)/stepSize*2.5);
-
   CTX.save();
   CTX.lineCap='round';
   CTX.lineJoin='round';
   CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
-
   let positivePoles=magneticPoles.filter(function(p2){return p2.sign>0;});
   positivePoles.forEach(function(pole,pi){
     for(let li=0;li<nLines;li++){
@@ -2883,17 +2909,14 @@ function drawMagnetic(p,t){
       if(li===0&&S.accent!=='none') col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.45;
-
       CTX.beginPath();
       CTX.moveTo(px2,py2);
       let charStep=Math.floor(maxSteps/(8+Math.floor(S.density*8)));
-
       for(let si=0;si<maxSteps;si++){
         let {bx,by}=fieldAt(px2,py2);
         px2+=bx*stepSize;py2+=by*stepSize;
         if(px2<0||px2>W||py2<0||py2>H) break;
         CTX.lineTo(px2,py2);
-
         // Place character periodically along field line
         if(si%charStep===charStep-1){
           CTX.stroke();
@@ -2921,7 +2944,6 @@ function drawMagnetic(p,t){
     CTX.arc(pole2.x,pole2.y,5,0,6.28);
     CTX.fill();
   });
-
   CTX.globalAlpha=1;
   CTX.restore();
   _lastFont='';_lastFill='';
@@ -2960,7 +2982,6 @@ function irregularPolygon(cx, cy, r, sides, irregularity = 0.4, spike = 0) {
   }
   return pts;
 }
-  
 function getShapePos(W,H){
   switch(S.shapePosition){
     case'random': return{x:W*.1+Math.random()*W*.8,y:H*.1+Math.random()*H*.8};
@@ -2990,7 +3011,6 @@ function shapeCharColor(x,y,t,shIdx){
     default: return S.palette[Math.floor(Math.abs(Math.sin(x*.01+y*.01+t))*S.palette.length)%S.palette.length];
   }
 }
-
 function polyPts(cx,cy,r,n,startAngle,innerR){
   let pts=[];
   for(let i=0;i<n;i++){
@@ -3014,7 +3034,6 @@ function drawShapes(p, t) {
     let spin = sh.spinAngle || 0;
     let r = sh.size || 55;
     if (S.shapePulse > 0) r = r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
-    
     // Initialize missing properties
     if (sh.size === undefined) sh.size = 55;
     if (sh.driftEnabled === undefined) sh.driftEnabled = false;
@@ -3023,7 +3042,6 @@ function drawShapes(p, t) {
     if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
     if (sh.textEnabled === undefined) sh.textEnabled = true;
     if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
-    
     // Lissajous drift
     let driftX = 0, driftY = 0;
     if (sh.driftEnabled === true) {
@@ -3033,7 +3051,6 @@ function drawShapes(p, t) {
     }
     let cx = (sh.cx || 0) + driftX;
     let cy = (sh.cy || 0) + driftY;
-
     // Orbit around canvas center
     if (S.shapeOrbitEnabled && S.playing) {
       sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
@@ -3042,10 +3059,8 @@ function drawShapes(p, t) {
       cy = p.height / 2 + Math.sin(sh.orbitAngle) * or;
       sh.cx = cx; sh.cy = cy;
     }
-
     let type = sh.type;
     let shapePts = null;
-    
     // Use stored irregular points if available
     if (sh.pts && (type === 'polygon' || type === 'equilateral' || type === 'hexagon' || type === 'star5' || type === 'star6')) {
       shapePts = sh.pts;
@@ -3057,11 +3072,9 @@ function drawShapes(p, t) {
       else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
       else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
     }
-
     // Opacity and Jitter
     let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     let jitter = sh.jitter || 0;
-    
    // Special handling for Lissajous – draw a cluster of characters around the moving point
 if (type === 'lissajous') {
   let la = sh.la || 2, lb = sh.lb || 3;
@@ -3097,7 +3110,6 @@ if (type === 'lissajous') {
   return; // skip the rest of the shape drawing for lissajous
 }
 
-
     // Draw main field characters inside shape
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
@@ -3129,7 +3141,6 @@ if (type === 'lissajous') {
         CTX.restore();
       }
     }
-
     // Solid fill background
     if (sh.solidFill) {
       CTX.save();
@@ -3164,7 +3175,6 @@ if (type === 'lissajous') {
       }
       CTX.restore();
     }
-
     // Custom text inside shape (scattered)
     if (sh.textEnabled && sh.text && sh.text.length) {
       let step = Math.max(8, S.spacing * 0.8);
@@ -3198,7 +3208,6 @@ if (type === 'lissajous') {
         }
       }
     }
-  
     // Draw shape border
     if (sh.borderEnabled !== false) {
       CTX.save();
@@ -3363,6 +3372,44 @@ new p5(function(p){
     },
     rsz:resize,w:function(){return W;},h:function(){return H;},p:p
   };
+
+  function drawImgText(p, t) {
+  if (!S.img) return;
+  let img = S.img;
+  let step = S.spacing || 10;
+  img.loadPixels();
+  let palette = getPaletteColors(); 
+  for (let x = 0; x < W; x += step) {
+    for (let y = 0; y < H; y += step) {
+      let imgX = Math.floor(p.map(x, 0, W, 0, img.width));
+      let imgY = Math.floor(p.map(y, 0, H, 0, img.height));
+      let i = (imgX + imgY * img.width) * 4;
+      // Calculate Perceptual Brightness
+      let r = img.pixels[i], g = img.pixels[i+1], b = img.pixels[i+2];
+      let br = (0.299 * r + 0.587 * g + 0.114 * b);
+      // Apply Atkinson Thresholding if enabled
+      if (S.imgDither === 'atkinson') {
+        br = br < 128 ? 0 : 255;
+      }
+      // Determine Color based on Mapping mode
+      let col;
+      if (S.imgColorMode === 'tonal') {
+        let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
+        col = palette[colIdx];
+      } else {
+        col = palette[Math.floor(p.random() * palette.length)];
+      }
+      p.push();
+      p.translate(x, y);
+      // Route to sub-renderers based on Draw Mode
+      if (S.imgMode === 'chars') renderImgChars(p, br, col);
+      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
+      else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
+      p.pop();
+    }
+  }
+}
+  
   p.setup=function(){
     let wrap=document.getElementById('canvas-wrap');
     W=wrap.offsetWidth;H=wrap.offsetHeight;
@@ -3473,6 +3520,24 @@ new p5(function(p){
   drawOverlay(p, t);
 }; // <--- This closes p.draw
 
+  // Wire Image Modes
+['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
+  let el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('click', function(e) {
+      let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
+      if (!b) return;
+      el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      // Update the state based on which grid was clicked
+      if (b.dataset.imode) S.imgMode = b.dataset.imode;
+      if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
+      if (b.dataset.idither) S.imgDither = b.dataset.idither;
+      window._st.rd(); // Redraw
+    });
+  }
+});
+  
 }); // <--- This closes the "new p5(function(p){" block
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
