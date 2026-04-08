@@ -2229,11 +2229,9 @@ function buildMondrian(x, y, w, h, depth) {
 }
 
 function drawMondrian(p, t) {
-  // Rebuild when empty or on regen
   if (!mondrianRects.length) {
     buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
   }
-  // Slow shift: rebuild every N frames
   if (S.playing) {
     mondrianShiftTimer = (mondrianShiftTimer || 0) + 1;
     let rate = Math.max(1, Math.floor(180 - S.speed * 15000));
@@ -2245,7 +2243,7 @@ function drawMondrian(p, t) {
   }
   let border = Math.max(2, S.maxSize * 0.18);
   CTX.save();
-  // Draw filled cells – using current palette
+  // Draw filled cells
   mondrianRects.forEach(function(r) {
     let col = r.colored
       ? S.palette[r.palIdx % S.palette.length]
@@ -2254,7 +2252,7 @@ function drawMondrian(p, t) {
     CTX.fillRect(r.x + border * 0.5, r.y + border * 0.5,
                  r.w - border,       r.h - border);
   });
-  // Draw borders – use accent if available, otherwise darkest palette color
+  // Draw borders – use accent if set, otherwise darkest palette color
   let borderCol = (S.accent !== 'none') ? S.accent : S.palette[S.palette.length - 1];
   CTX.strokeStyle = borderCol;
   CTX.lineWidth = border;
@@ -2263,12 +2261,11 @@ function drawMondrian(p, t) {
     CTX.strokeRect(r.x + border * 0.5, r.y + border * 0.5,
                    r.w - border,       r.h - border);
   });
-  // Optional: overlay characters inside cells (low opacity, readable)
+  // Optional character overlay (contrast based on luminance)
   if (S.chars && S.chars.length && S.maxSize > 8) {
     mondrianRects.forEach(function(r) {
       if (r.w < S.spacing * 2 || r.h < S.spacing * 2) return;
       let fillCol = r.colored ? S.palette[r.palIdx % S.palette.length] : S.bg;
-      // Calculate approximate luminance (0 = dark, 255 = light)
       let rCol = parseInt(fillCol.slice(1,3), 16);
       let gCol = parseInt(fillCol.slice(3,5), 16);
       let bCol = parseInt(fillCol.slice(5,7), 16);
