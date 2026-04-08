@@ -1749,13 +1749,12 @@ function drawImgText(p, t) {
 }
   //drawImgText Helpers
 function renderImgChars(p, br, col) {
-  // Change 250 to 1000 to force the engine to draw EVERY pixel, 
-  // even if it thinks they are "too bright" (white).
+  // Set to 1000 for testing to ensure pixels are drawing
   if (br > 1000) return; 
   let chars = S.chars || ['#'];
   let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
+  p.noStroke();
   p.fill(col);
-  p.noStroke(); // Ensure no borders are hiding the text
   p.textSize(S.spacing * 1.2);
   p.text(chars[charIdx], 0, 0);
 }
