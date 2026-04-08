@@ -3720,11 +3720,8 @@ document.getElementById('shapeColModeRow').addEventListener('click',function(e){
   document.querySelectorAll('[data-scm]').forEach(function(x){x.classList.remove('active');});
   b.classList.add('active');S.shapeCharColorMode=b.dataset.scm;window._st.rd();
 });
-document.getElementById('shapeFixedColRow').addEventListener('click',function(e){
-  let s=e.target.closest('[data-sfc]');if(!s) return;
-  document.querySelectorAll('[data-sfc]').forEach(function(x){x.classList.remove('active');});
-  s.classList.add('active');S.shapeCharFixedColor=s.dataset.sfc;window._st.rd();
-});
+
+
 document.getElementById('shapeTextInput').addEventListener('input',function(){_pendingShapeText=this.value;});
 document.getElementById('setShapeTextBtn').addEventListener('click',function(){
   _pendingShapeText=document.getElementById('shapeTextInput').value.trim();
