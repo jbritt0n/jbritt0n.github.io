@@ -1737,15 +1737,18 @@ function drawImgText(p, t) {
       let imgX = Math.floor((x - offsetX) * scaleX);
       let imgY = Math.floor((y - offsetY) * scaleY);
       if (imgX < 0 || imgX >= imgW || imgY < 0 || imgY >= imgH) continue;
+
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
       let b = imgPix.data[idx + 2];
       let br = 0.299 * r + 0.587 * g + 0.114 * b;
+
       if (S.imgInvert) br = 255 - br;
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
+
       let col;
       if (S.imgColorMode === 'tonal') {
         let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
@@ -1753,22 +1756,24 @@ function drawImgText(p, t) {
       } else {
         col = palette[Math.floor(p.random() * palette.length)];
       }
-            let edgeVal = 0;
+
+      // Edge strength (only needed for edge mode)
+      let edgeVal = 0;
       if (S.imgMode === 'edge' && imgEdgeStrength) {
         edgeVal = imgEdgeStrength[imgY * imgW + imgX] || 0;
       }
+
       p.push();
       p.translate(x, y);
+
       if (S.imgMode === 'chars') renderImgChars(p, br, col);
       else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
       else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
-      p.pop();
+      else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
+      else if (S.imgMode === 'stipple') renderImgStipple(p, br, col);
+      else if (S.imgMode === 'edge') renderImgEdge(p, br, col, t, edgeVal);
 
-      let edgeVal = 0;
-      if (S.imgMode === 'edge' && imgEdgeStrength) {
-      let edgeIdx = imgY * imgW + imgX;
-      edgeVal = imgEdgeStrength[edgeIdx] || 0;
-}
+      p.pop();
     }
   }
 }
