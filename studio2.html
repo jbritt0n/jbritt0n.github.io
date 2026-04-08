@@ -3458,18 +3458,11 @@ p.draw = function() {
     if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
 
-  //  Background – respects S.bg and trail persistence
-  //CTX.save();
-  //CTX.globalCompositeOperation = 'source-over';
- // if (S.trailPersist > 0) {
-  //  CTX.fillStyle = S.bg;          // S.bg is set by palette UI
-  //  CTX.globalAlpha = 1 - S.trailPersist / 100;
- //   CTX.fillRect(0, 0, W, H);
-  //} else {
-  //  CTX.fillStyle = S.bg;
- //  CTX.fillRect(0, 0, W, H);
- // }
- // CTX.restore();
+// Clear canvas with solid color (no save/restore needed)
+CTX.globalCompositeOperation = 'source-over';
+CTX.globalAlpha = 1;
+CTX.fillStyle = S.bg;
+CTX.fillRect(0, 0, W, H);
   
   CTX.textBaseline = 'middle';
   CTX.globalCompositeOperation = S.blendMode || 'source-over';
