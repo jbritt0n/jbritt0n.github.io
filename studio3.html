@@ -3035,14 +3035,10 @@ function initStripedRects(W, H) {
       let rw = tall ? 12 + Math.random() * 48 : 40 + Math.random() * 90;
       let rh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
       let isStriped = Math.random() < 0.44;
-      let palCol = S.palette[Math.floor(Math.random() * S.palette.length)];
-      // Striped rects use accent or a palette color; solid use palette
-      let col = isStriped
-        ? (S.accent !== 'none' && Math.random() < 0.4 ? S.accent : palCol)
-        : palCol;
-      stripedRects.push({
+stripedRects.push({
         x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh,
-        col,
+        palIdx: Math.floor(Math.random() * 5),   // index 0-4
+        useAccent: isStriped && S.accent !== 'none' && Math.random() < 0.4,
         type: isStriped ? 'striped' : 'solid',
         gap: 2 + Math.floor(Math.random() * 5),   // px between stripes
         lw:  1 + (Math.random() < 0.3 ? 1 : 0),   // stripe line width
@@ -3062,19 +3058,23 @@ function drawStripedRects(p, t) {
       if (r.y > p.height + r.h) r.y = -r.h * 2;
       if (r.y < -r.h * 2)       r.y =  p.height + r.h;
     }
-    // Subtle horizontal wobble from wave
+    // Live palette lookup — always reads current S.palette so changes take effect immediately
+    let rCol = r.useAccent && S.accent !== 'none'
+      ? S.accent
+      : S.palette[r.palIdx % S.palette.length];
+
     let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
     let rx = r.x + wx;
+
     if (r.type === 'solid') {
-      CTX.fillStyle = r.col;
+      CTX.fillStyle = rCol;
       CTX.fillRect(rx, r.y, r.w, r.h);
     } else {
-      // Clip to rect bounds, then draw vertical stripe lines
       CTX.save();
       CTX.beginPath();
       CTX.rect(rx, r.y, r.w, r.h);
       CTX.clip();
-      CTX.strokeStyle = r.col;
+      CTX.strokeStyle = rCol;
       CTX.lineWidth   = r.lw;
       for (let lx = rx; lx <= rx + r.w; lx += r.gap) {
         CTX.beginPath();
@@ -3088,7 +3088,6 @@ function drawStripedRects(p, t) {
   CTX.restore();
   _lastFill = '';
 }
-
 // ── TONAL DENSITY ──────────────────────────────────────────────────────────
 // A repeating phrase/charset fills the canvas. Noise drives both font size
 // and letter spacing — high noise = large tight text (dark), low noise =
@@ -3606,7 +3605,7 @@ new p5(function(p){
     ri();rd();
   }
   function ri(){
-    initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);
+    initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
     recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];
     sandParticles=[];caGrid=null;lissParticles=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
