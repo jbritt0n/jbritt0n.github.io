@@ -3471,44 +3471,39 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw = function(){
-  S.fc++;   // ← UNCOMMENTED – frame counter increments each frame
-  // FPS, background, etc.
-  // FPS display
-  let t = p.frameCount * (S.speed || 0.01);
+  
+  p.draw = function() {
+  S.fc++; // Frame counter
+  
+  // 1. Setup Variables
+  let t = S.fc * (S.speed || 0.01);
   let pal = getPaletteColors();
   const canvas = p.canvas; 
-  const ctx = canvas.getContext('2d');  
-  // 1. Draw Background First (using the last color in palette)
-  p.background(pal[pal.length - 1]); 
-  // 2. Draw the Image Logic
-  if (S.mode === 'imgtext') {
-    drawImgText(p, t);  
+  const CTX = canvas.getContext('2d'); // Unified as CTX to match your logic
+  // 2. FPS logic
   let now = performance.now();
   _frameCount++;
   if (now - _fpsTimer > 1000) {
     _fps = _frameCount;
     _frameCount = 0;
     _fpsTimer = now;
-    document.getElementById('fpsLabel').textContent = _fps + ' fps';
+    let fpsLabel = document.getElementById('fpsLabel');
+    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
-
-  // Background with trail persistence
+  // 3. Background & Trail Persistence
   if (S.trailPersist > 0) {
     CTX.fillStyle = S.bg;
     CTX.globalAlpha = 1 - S.trailPersist / 100;
     CTX.fillRect(0, 0, W, H);
     CTX.globalAlpha = 1;
   } else {
-    CTX.fillStyle = S.bg;
-    CTX.fillRect(0, 0, W, H);
+    // Fallback to p5 background or CTX fill
+    p.background(pal[pal.length - 1] || S.bg); 
   }
-
+  // 4. Drawing State
   CTX.textBaseline = 'middle';
   CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  let t = S.fc * S.speed;
-
-  // Signal collapse effect
+  // 5. Signal collapse effect
   if (S.signalCollapse) {
     let elapsed = S.fc - S.signalStart;
     if (elapsed < 80) {
@@ -3517,8 +3512,7 @@ new p5(function(p){
       CTX.fillRect(0, scanY - 2, W, 4);
     }
   }
-
-  // Draw current mode
+  // 6. Draw current mode (Switch Case)
   switch (S.mode) {
     case 'bloom': drawBloom(p, t); break;
     case 'wave': drawWave(p, t); break;
@@ -3569,13 +3563,12 @@ new p5(function(p){
     case 'flowerspin': drawFlowerspin(p, t); break;
     case 'wfc': drawWFC(p, t); break;
   }
-
+  // 7. Cleanup & Overlays
   CTX.globalCompositeOperation = 'source-over';
   drawShapes(p, t);
   drawOverlay(p, t);
-}; // <--- This closes p.draw
-
-  // Wire Image Modes
+}; 
+// --- Event Listeners (Outside Draw, Inside p5 instance) ---
 ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
   let el = document.getElementById(id);
   if (el) {
@@ -3584,15 +3577,12 @@ new p5(function(p){
       if (!b) return;
       el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
-      // Update the state based on which grid was clicked
       if (b.dataset.imode) S.imgMode = b.dataset.imode;
       if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
       if (b.dataset.idither) S.imgDither = b.dataset.idither;
-      window._st.rd(); // Redraw
+      if (window._st && window._st.rd) window._st.rd(); 
     });
   }
-});
-  
 }); // <--- This closes the "new p5(function(p){" block
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
