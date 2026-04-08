@@ -3417,13 +3417,13 @@ new p5(function(p){
   };
 
 p.draw = function() {
-  S.fc++; // Frame counter
+p.draw = function() {
+  S.fc++;
 
+  // Ensure CTX is defined (fallback to p5 drawingContext)
+  if (!CTX) CTX = p.drawingContext;
+  if (!CTX) return;  // safety: exit if still null
   let t = S.fc * (S.speed || 0.01);
-  let pal = getPaletteColors();
-
-  // ✅ Use the global CTX (set in resize/setup) – do NOT declare a new one
-  // (global CTX is already available)
 
   // FPS display
   let now = performance.now();
@@ -3436,7 +3436,7 @@ p.draw = function() {
     if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
 
-  // ✅ Background – respects S.bg and trail persistence
+  //  Background – respects S.bg and trail persistence
   CTX.save();
   CTX.globalCompositeOperation = 'source-over';
   if (S.trailPersist > 0) {
