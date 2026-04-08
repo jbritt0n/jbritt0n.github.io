@@ -3477,6 +3477,8 @@ new p5(function(p){
   // FPS display
   let t = p.frameCount * (S.speed || 0.01);
   let pal = getPaletteColors();
+  const canvas = p.canvas; 
+  const ctx = canvas.getContext('2d');  
   // 1. Draw Background First (using the last color in palette)
   p.background(pal[pal.length - 1]); 
   // 2. Draw the Image Logic
