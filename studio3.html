@@ -369,6 +369,7 @@ select option{background:var(--ink)}
           <div class="pb" data-pal="abyss"       title="Abyss"         style="background:linear-gradient(135deg,#003566,#ffd60a)"></div>
           <div class="pb" data-pal="infrared"    title="Infrared"      style="background:linear-gradient(135deg,#ff0055,#00ff88)"></div>
           <div class="pb" data-pal="amberterm"   title="Amber Term"    style="background:linear-gradient(135deg,#1a0a00,#ffb000)"></div>
+          <div class="pb" data-pal="mondrian" title="Piet Mondrian" style="background:linear-gradient(135deg,#FAFAFA,#212121,#D32F2F,#1A237E,#FDD835)"></div>
           <!-- Green -->
           <div class="pb" data-pal="jade"        title="Jade"          style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
           <div class="pb" data-pal="moss"        title="Moss"          style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)"></div>
@@ -985,7 +986,7 @@ const PALETTES={
   rust:      ['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],
   copper:    ['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],
   aurora:    ['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],
-  // New palettes
+  mondrian:   ['#FAFAFA', '#212121', '#D32F2F', '#1A237E', '#FDD835', '#9E9E9E'],
   brutalist: ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],
   risograph: ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],
   cyanotype: ['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],
@@ -994,7 +995,6 @@ const PALETTES={
   velvet:    ['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],
   tidal:     ['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],
   solaris:   ['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
-  // ── NEW PALETTES 2025 ─────────────────────────────────────
   // Warm & Fire
   volcanic:   ['#FF4500','#8B0000','#FF8C00','#2F0A00','#5C1A00'],
   lava:       ['#ff1493','#ff8c00','#ffd700','#ff4500','#8b008b'],
@@ -5271,7 +5271,7 @@ const PRESETS={
   ink_wash_density:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.001,wave: 8,bg:'#f0ede6',spacing:5,maxSize:18,noiseScale:.009,palette:'moss',compEnabled:false,signalCollapse:false,chars:CHARSETS.chinese,});},
   maze_shift: function(){ap({mode:'maze',font:'courier',entropy:0,speed:.003,wave:0, bg:'#0d0c0a',spacing: 10,maxSize:12,noiseScale: .01,palette:'site',compEnabled: false,signalCollapse: false,});},
   unknown_pleasures: function(){ap({mode:'unknownpleasures',font:'courier',entropy:0,speed:.002,wave:55,bg:'#000000',spacing:8,maxSize:14,noiseScale:.008, palette:'ghost',compEnabled: false,signalCollapse: false,});},
-  mondrian_shift: function(){ap({mode:'mondrian',font:'courier',entropy:0,speed:.001,wave:0,bg:'#f2eee4',spacing:22,maxSize:22,noiseScale:.01,palette:'white',compEnabled:false,signalCollapse: false,});},
+  mondrian_shift: function(){ap({mode:'mondrian',font:'courier',entropy:0,speed:.001,wave:0,palette:'mondrian',bg:'#FAFAFA',spacing:22,maxSize:22,noiseScale:.01,compEnabled:false,signalCollapse: false,});},
 
 };
 
