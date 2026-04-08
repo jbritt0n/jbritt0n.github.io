@@ -3462,119 +3462,127 @@ new p5(function(p){
     });
   };
   
-  p.draw = function() {
-  S.fc++; // Frame counter
-  
-  // 1. Setup Variables
-  let t = S.fc * (S.speed || 0.01);
-  let pal = getPaletteColors();
-  const canvas = p.canvas; 
-  const CTX = canvas.getContext('2d'); // Unified as CTX to match your logic
-  // 2. FPS logic
-  let now = performance.now();
-  _frameCount++;
-  if (now - _fpsTimer > 1000) {
-    _fps = _frameCount;
-    _frameCount = 0;
-    _fpsTimer = now;
-    let fpsLabel = document.getElementById('fpsLabel');
-    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
-  }
-  // 3. Background & Trail Persistence
-  if (S.trailPersist > 0) {
-    CTX.fillStyle = S.bg;
-    CTX.globalAlpha = 1 - S.trailPersist / 100;
-    CTX.fillRect(0, 0, W, H);
-    CTX.globalAlpha = 1;
-  } else {
-    // Fallback to p5 background or CTX fill
-    p.background(pal[pal.length - 1] || S.bg); 
-  }
-  // 4. Drawing State
-  CTX.textBaseline = 'middle';
-  CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  // 5. Signal collapse effect
-  if (S.signalCollapse) {
-    let elapsed = S.fc - S.signalStart;
-    if (elapsed < 80) {
-      let scanY = p.map(elapsed, 0, 80, 0, H);
-      CTX.fillStyle = 'rgba(230,57,70,.12)';
-      CTX.fillRect(0, scanY - 2, W, 4);
+p.draw = function() {
+    S.fc++; // Frame counter
+    
+    // 1. Setup Variables
+    let t = S.fc * (S.speed || 0.01);
+    let pal = getPaletteColors();
+    const canvas = p.canvas; 
+    const CTX = canvas.getContext('2d'); 
+
+    // 2. FPS logic
+    let now = performance.now();
+    _frameCount++;
+    if (now - _fpsTimer > 1000) {
+      _fps = _frameCount;
+      _frameCount = 0;
+      _fpsTimer = now;
+      let fpsLabel = document.getElementById('fpsLabel');
+      if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
     }
-  }
-  // 6. Draw current mode (Switch Case)
-  switch (S.mode) {
-    case 'bloom': drawBloom(p, t); break;
-    case 'wave': drawWave(p, t); break;
-    case 'rain1': drawRain1(p, t); break;
-    case 'rain2': drawRain2(p, t); break;
-    case 'vortex': drawVortex(p, t); break;
-    case 'ripple': drawRipple(p, t); break;
-    case 'drift': drawDrift(p, t); break;
-    case 'tess': drawTess(p, t); break;
-    case 'warp': drawWarp(p, t); break;
-    case 'glitch': drawGlitch(p, t); break;
-    case 'webster': drawWebster(p, t); break;
-    case 'matrix': drawMatrix(p, t); break;
-    case 'orbit': drawOrbit(p, t); break;
-    case 'spiral': drawSpiral(p, t); break;
-    case 'scan': drawScan(p, t); break;
-    case 'halftone': drawHalftone(p, t); break;
-    case 'shatter': drawShatter(p, t); break;
-    case 'weave': drawWeave(p, t); break;
-    case 'topo': drawTopo(p, t); break;
-    case 'recursive': drawRecursive(p, t); break;
-    case 'contour': drawContour(p, t); break;
-    case 'fabric': drawFabric(p, t); break;
-    case 'loops': drawLoops(p, t); break;
-    case 'imgtext': drawImgText(p, t); break;
-    case 'topolines': drawTopoLines(p, t); break;
-    case 'pipes': drawPipes(p, t); break;
-    case 'reaction': drawReaction(p, t); break;
-    case 'voronoi': drawVoronoi(p, t); break;
-    case 'mycelium': drawMycelium(p, t); break;
-    case 'sand': drawSand(p, t); break;
-    case 'cellular': drawCellular(p, t); break;
-    case 'interference': drawInterference(p, t); break;
-    case 'calligraphy': drawCalligraphy(p, t); break;
-    case 'lissajous': drawLissajous(p, t); break;
-    case 'wireterrain': drawWireTerrain(p, t); break;
-    case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
-    case 'truchet': drawTruchet(p, t); break;
-    case 'seisma': drawSeisma(p, t); break;
-    case 'hatch': drawHatch(p, t); break;
-    case 'warpgrid': drawWarpGrid(p, t); break;
-    case 'isocontour': drawIsoContour(p, t); break;
-    case 'tesseract': drawTesseract(p, t); break;
-    case 'hypersphere': drawHypersphere(p, t); break;
-    case 'boids': drawBoids(p, t); break;
-    case 'magnetic': drawMagnetic(p, t); break;
-    case 'worms': drawWorms(p, t); break;
-    case 'flowerspin': drawFlowerspin(p, t); break;
-    case 'wfc': drawWFC(p, t); break;
-  }
-  // 7. Cleanup & Overlays
-  CTX.globalCompositeOperation = 'source-over';
-  drawShapes(p, t);
-  drawOverlay(p, t);
-}; 
-// --- Event Listeners (Outside Draw, Inside p5 instance) ---
-['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
-  let el = document.getElementById(id);
-  if (el) {
-    el.addEventListener('click', function(e) {
-      let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
-      if (!b) return;
-      el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      if (b.dataset.imode) S.imgMode = b.dataset.imode;
-      if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
-      if (b.dataset.idither) S.imgDither = b.dataset.idither;
-      if (window._st && window._st.rd) window._st.rd(); 
-    });
-  }
+
+    // 3. Background & Trail Persistence
+    // FIX: Ensure fillStyle uses palette if S.bg is null to prevent yellow lock
+    if (S.trailPersist > 0) {
+      CTX.fillStyle = S.bg || pal[pal.length - 1] || '#000';
+      CTX.globalAlpha = 1 - S.trailPersist / 100;
+      CTX.fillRect(0, 0, W, H);
+      CTX.globalAlpha = 1;
+    } else {
+      p.background(pal[pal.length - 1] || S.bg || 0); 
+    }
+
+    // 4. Drawing State
+    CTX.textBaseline = 'middle';
+    CTX.globalCompositeOperation = S.blendMode || 'source-over';
+
+    // 5. Signal collapse effect
+    if (S.signalCollapse) {
+      let elapsed = S.fc - S.signalStart;
+      if (elapsed < 80) {
+        let scanY = p.map(elapsed, 0, 80, 0, H);
+        CTX.fillStyle = 'rgba(230,57,70,.12)';
+        CTX.fillRect(0, scanY - 2, W, 4);
+      }
+    }
+
+    // 6. Draw current mode (Switch Case)
+    switch (S.mode) {
+      case 'bloom': drawBloom(p, t); break;
+      case 'wave': drawWave(p, t); break;
+      case 'rain1': drawRain1(p, t); break;
+      case 'rain2': drawRain2(p, t); break;
+      case 'vortex': drawVortex(p, t); break;
+      case 'ripple': drawRipple(p, t); break;
+      case 'drift': drawDrift(p, t); break;
+      case 'tess': drawTess(p, t); break;
+      case 'warp': drawWarp(p, t); break;
+      case 'glitch': drawGlitch(p, t); break;
+      case 'webster': drawWebster(p, t); break;
+      case 'matrix': drawMatrix(p, t); break;
+      case 'orbit': drawOrbit(p, t); break;
+      case 'spiral': drawSpiral(p, t); break;
+      case 'scan': drawScan(p, t); break;
+      case 'halftone': drawHalftone(p, t); break;
+      case 'shatter': drawShatter(p, t); break;
+      case 'weave': drawWeave(p, t); break;
+      case 'topo': drawTopo(p, t); break;
+      case 'recursive': drawRecursive(p, t); break;
+      case 'contour': drawContour(p, t); break;
+      case 'fabric': drawFabric(p, t); break;
+      case 'loops': drawLoops(p, t); break;
+      case 'imgtext': drawImgText(p, t); break;
+      case 'topolines': drawTopoLines(p, t); break;
+      case 'pipes': drawPipes(p, t); break;
+      case 'reaction': drawReaction(p, t); break;
+      case 'voronoi': drawVoronoi(p, t); break;
+      case 'mycelium': drawMycelium(p, t); break;
+      case 'sand': drawSand(p, t); break;
+      case 'cellular': drawCellular(p, t); break;
+      case 'interference': drawInterference(p, t); break;
+      case 'calligraphy': drawCalligraphy(p, t); break;
+      case 'lissajous': drawLissajous(p, t); break;
+      case 'wireterrain': drawWireTerrain(p, t); break;
+      case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
+      case 'truchet': drawTruchet(p, t); break;
+      case 'seisma': drawSeisma(p, t); break;
+      case 'hatch': drawHatch(p, t); break;
+      case 'warpgrid': drawWarpGrid(p, t); break;
+      case 'isocontour': drawIsoContour(p, t); break;
+      case 'tesseract': drawTesseract(p, t); break;
+      case 'hypersphere': drawHypersphere(p, t); break;
+      case 'boids': drawBoids(p, t); break;
+      case 'magnetic': drawMagnetic(p, t); break;
+      case 'worms': drawWorms(p, t); break;
+      case 'flowerspin': drawFlowerspin(p, t); break;
+      case 'wfc': drawWFC(p, t); break;
+    }
+
+    // 7. Cleanup & Overlays
+    CTX.globalCompositeOperation = 'source-over';
+    drawShapes(p, t);
+    drawOverlay(p, t);
+  }; 
+
+  // --- Event Listeners (Outside Draw, Inside p5 instance) ---
+  ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
+    let el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', function(e) {
+        let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
+        if (!b) return;
+        el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        if (b.dataset.imode) S.imgMode = b.dataset.imode;
+        if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
+        if (b.dataset.idither) S.imgDither = b.dataset.idither;
+        if (window._st && window._st.rd) window._st.rd(); 
+      });
+    }
   });
-}); // <--- This closes the "new p5(function(p){" block
+
+}); // Closes the p5 instance
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
