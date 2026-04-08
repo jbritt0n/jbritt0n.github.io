@@ -1693,17 +1693,16 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
-
-let imgPix, imgW, imgH; // Declare these so they are accessible globally in the p5 block
   
 function drawImgText(p, t) {
   if (!imgPix || !imgW || !imgH) {
-    // Show a placeholder if no image is loaded
-    CTX.fillStyle = S.palette[0];
-    CTX.font = '13px ' + S.fontStack;
-    CTX.textAlign = 'center';
-    CTX.fillText('Upload an image →', p.width / 2, p.height / 2);
-    CTX.textAlign = 'left';
+    let palette = getPaletteColors();
+    p.fill(palette[0]);
+    p.noStroke();
+    p.textSize(13);
+    p.textAlign(p.CENTER);
+    p.text('Upload an image →', p.width / 2, p.height / 2);
+    p.textAlign(p.LEFT);
     return;
   }
   let step = S.spacing || 10;
@@ -1749,7 +1748,9 @@ function renderImgChars(p, br, col) {
 function renderImgHatch(p, br, col, t) {
   if (br > 220) return;
   let weight = p.map(br, 0, 220, 2.5, 0.3);
-  let n = p.noise(p.frameCount * 0.01, br * 0.01);
+  // Using spatial noise makes the texture feel more like physical graphite
+  // We use the current translation context
+  let n = p.noise(p.frameCount * 0.005, br * 0.01); 
   p.rotate(n * p.TWO_PI);
   p.stroke(col);
   p.strokeWeight(weight);
