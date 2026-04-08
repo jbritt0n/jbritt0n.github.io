@@ -1692,25 +1692,45 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
-function drawImgText(p,t){
-  if(!imgPix){
-    CTX.fillStyle=S.palette[0];CTX.font='13px '+S.fontStack;
-    CTX.textAlign='center';CTX.fillText('Upload an image →',p.width/2,p.height/2);
-    CTX.textAlign='left';return;
+function drawImgText(p, t) {
+  if (!imgPix || !imgW || !imgH) {
+    // Show a placeholder if no image is loaded
+    CTX.fillStyle = S.palette[0];
+    CTX.font = '13px ' + S.fontStack;
+    CTX.textAlign = 'center';
+    CTX.fillText('Upload an image →', p.width / 2, p.height / 2);
+    CTX.textAlign = 'left';
+    return;
   }
-  let sp=S.spacing,sx,sy,ox=0,oy=0;
-  if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}
-  else{let sc=Math.min(p.width/imgW,p.height/imgH);sx=sy=1/sc;ox=(p.width-imgW*sc)/2;oy=(p.height-imgH*sc)/2;}
-  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
-    let ix=Math.floor((x-ox)*sx),iy=Math.floor((y-oy)*sy);
-    if(ix<0||ix>=imgW||iy<0||iy>=imgH) continue;
-    let idx=(iy*imgW+ix)*4,rv=imgPix.data[idx],gv=imgPix.data[idx+1],bv=imgPix.data[idx+2];
-    let bri=(rv*.299+gv*.587+bv*.114)/255;
-    if(S.imgInvert) bri=1-bri;
-    let d=1-bri;if(d<.1) continue;
-    let wx=Math.sin(y*.01+t)*S.wave*.07,wy=Math.cos(x*.01+t*.7)*S.wave*.05;
-    let res=pcc(p,x,y,t);
-    dc(x+wx,y+wy,p.map(d,.1,1,1.5,S.maxSize),0,res.col,res.ch);
+  let step = S.spacing || 10;
+  let palette = getPaletteColors();
+  for (let x = 0; x < p.width; x += step) {
+    for (let y = 0; y < p.height; y += step) {
+      let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW));
+      let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH));
+      let idx = (imgY * imgW + imgX) * 4;
+      let r = imgPix.data[idx];
+      let g = imgPix.data[idx + 1];
+      let b = imgPix.data[idx + 2];
+      let br = 0.299 * r + 0.587 * g + 0.114 * b;
+      // Atkinson dithering (simple threshold)
+      if (S.imgDither === 'atkinson') {
+        br = br < 128 ? 0 : 255;
+      }
+      let col;
+      if (S.imgColorMode === 'tonal') {
+        let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
+        col = palette[colIdx];
+      } else {
+        col = palette[Math.floor(p.random() * palette.length)];
+      }
+      p.push();
+      p.translate(x, y);
+      if (S.imgMode === 'chars') renderImgChars(p, br, col);
+      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
+      else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
+      p.pop();
+    }
   }
 }
   //drawImgText Helpers
