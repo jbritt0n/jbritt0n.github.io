@@ -3023,26 +3023,29 @@ function drawBoids(p,t){
 // Works best with a pale background (paper, cream, f5f0ea).
 function initStripedRects(W, H) {
   stripedRects = [];
-  let density = S.density;
   let cols = Math.floor(W / (S.spacing * 5)) + 2;
   let rows = Math.floor(H / (S.spacing * 2.5)) + 2;
   for (let ci = 0; ci < cols; ci++) {
     for (let ri = 0; ri < rows; ri++) {
-      if (Math.random() > (0.3 + density * 0.5)) continue;
+      // Generate all possible rects — density filters them live in draw
+      if (Math.random() > 0.75) continue;
       let cx = (ci / cols) * W + (Math.random() - 0.5) * (W / cols) * 0.8;
       let cy = (ri / rows) * H + (Math.random() - 0.5) * (H / rows) * 0.6;
       let tall = Math.random() < 0.72;
-      let rw = tall ? 12 + Math.random() * 48 : 40 + Math.random() * 90;
-      let rh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
+      // Store BASE sizes — drawStripedRects will scale by S.maxSize
+      let bw = tall ? 12 + Math.random() * 48  : 40 + Math.random() * 90;
+      let bh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
       let isStriped = Math.random() < 0.44;
-stripedRects.push({
-        x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh,
-        palIdx: Math.floor(Math.random() * 5),   // index 0-4
-        useAccent: isStriped && S.accent !== 'none' && Math.random() < 0.4,
+      stripedRects.push({
+        x: cx - bw / 2, y: cy - bh / 2,
+        bw, bh,                                      // base dimensions
+        palIdx: Math.floor(Math.random() * 5),        // live palette index
+        useAccent: isStriped && Math.random() < 0.4,
+        rand: Math.random(),                          // for live density filter
         type: isStriped ? 'striped' : 'solid',
-        gap: 2 + Math.floor(Math.random() * 5),   // px between stripes
-        lw:  1 + (Math.random() < 0.3 ? 1 : 0),   // stripe line width
-        vy:  (Math.random() - 0.5) * 0.5,           // drift speed
+        gap: 2 + Math.floor(Math.random() * 5),
+        lw:  1 + (Math.random() < 0.3 ? 1 : 0),
+        vy:  (Math.random() - 0.5) * 0.5,
         phase: Math.random() * Math.PI * 2,
       });
     }
@@ -3053,33 +3056,68 @@ function drawStripedRects(p, t) {
   if (!stripedRects.length) initStripedRects(p.width, p.height);
   CTX.save();
   stripedRects.forEach(function(r) {
+
+    // ── DENSITY (live) ────────────────────────────────────────────────────
+    // S.density runs 0 (dense) → 0.9 (sparse). Skip rect if rand < density.
+    if (r.rand < S.density) return;
+
     if (S.playing) {
       r.y += r.vy * S.speed * 120;
       if (r.y > p.height + r.h) r.y = -r.h * 2;
       if (r.y < -r.h * 2)       r.y =  p.height + r.h;
     }
-    // Live palette lookup — always reads current S.palette so changes take effect immediately
+
+    // ── SIZE (live via maxSize) ───────────────────────────────────────────
+    // Scale base dimensions proportionally to maxSize (default = 20)
+    let scale = S.maxSize / 20;
+    let rw = r.bw * scale;
+    let rh = r.bh * scale;
+
+    // ── PALETTE (live) ────────────────────────────────────────────────────
     let rCol = r.useAccent && S.accent !== 'none'
       ? S.accent
       : S.palette[r.palIdx % S.palette.length];
 
+    // ── WAVE wobble ───────────────────────────────────────────────────────
     let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
     let rx = r.x + wx;
+    let ry = r.y;
+
+    // ── ENTROPY / GLITCH (live) ───────────────────────────────────────────
+    if (S.entropy > 0) {
+      // Randomly drop some rects entirely
+      if (Math.random() < S.entropy * 0.12) return;
+      // Positional jitter
+      if (Math.random() < S.entropy * 0.35) {
+        rx += (Math.random() - 0.5) * S.entropy * 80;
+        ry += (Math.random() - 0.5) * S.entropy * 40;
+      }
+      // Random palette swap on individual rects
+      if (Math.random() < S.entropy * 0.2) {
+        rCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+      }
+      // Occasionally flip striped ↔ solid
+      if (Math.random() < S.entropy * 0.08) {
+        r.type = r.type === 'solid' ? 'striped' : 'solid';
+      }
+    }
 
     if (r.type === 'solid') {
       CTX.fillStyle = rCol;
-      CTX.fillRect(rx, r.y, r.w, r.h);
+      CTX.fillRect(rx, ry, rw, rh);
     } else {
       CTX.save();
       CTX.beginPath();
-      CTX.rect(rx, r.y, r.w, r.h);
+      CTX.rect(rx, ry, rw, rh);
       CTX.clip();
       CTX.strokeStyle = rCol;
-      CTX.lineWidth   = r.lw;
-      for (let lx = rx; lx <= rx + r.w; lx += r.gap) {
+      CTX.lineWidth = r.lw;
+      // Scale stripe gap with size too
+      let gap = Math.max(1, r.gap * scale);
+      for (let lx = rx; lx <= rx + rw; lx += gap) {
         CTX.beginPath();
-        CTX.moveTo(lx, r.y);
-        CTX.lineTo(lx, r.y + r.h);
+        CTX.moveTo(lx, ry);
+        CTX.lineTo(lx, ry + rh);
         CTX.stroke();
       }
       CTX.restore();
