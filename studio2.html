@@ -1711,8 +1711,8 @@ function drawImgText(p, t) {
   let palette = getPaletteColors();
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
-      let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW));
-      let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH));
+    let imgX = Math.floor(p.map(x, 0, W, 0, imgW - 1));
+    let imgY = Math.floor(p.map(y, 0, H, 0, imgH - 1));
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
@@ -1740,7 +1740,8 @@ function drawImgText(p, t) {
 }
   //drawImgText Helpers
 function renderImgChars(p, br, col) {
-  if (br > 250) return; // Skip highlights for a cleaner look
+  if (br > 250) return;
+  p.noStroke();
   let chars = S.chars || ['#'];
   let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
   p.fill(col);
@@ -1767,8 +1768,9 @@ function renderImgBlocks(p, br, col) {
   p.rect(0, 0, s, s);
 }
 function getPaletteColors() {
-    // This looks at your current state and returns the hex codes
-    return PALETTES[S.palette] || PALETTES['site'];
+    // Force a fallback to a known palette if the state is undefined
+    let activePalette = PALETTES[S.palette] || PALETTES['site'] || ['#0d0c0a', '#c4bcb0', '#b8955a', '#ede9e2'];
+    return activePalette;
 }
   
   
