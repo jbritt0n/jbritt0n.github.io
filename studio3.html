@@ -250,6 +250,9 @@ select option{background:var(--ink)}
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
           <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
           <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
+          <button class="mb new-mode" data-mode="maze"             title="Recursive-backtracker maze, walls shift over time">Maze</button>
+          <button class="mb new-mode" data-mode="unknownpleasures" title="Joy Division Unknown Pleasures — stacked noise peaks">Unknown Pleasures</button>
+          <button class="mb new-mode" data-mode="mondrian"         title="Mondrian — recursive subdivision with primary color fills">Mondrian</button>
           <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
@@ -1104,6 +1107,12 @@ let shapes=[];
 let recRects=[];
 let loopParticles=[];
 let topoSegs=[];
+// Maze
+let mazeGrid = null, mazeCols = 0, mazeRows = 0;
+let mazeShiftTimer = 0;
+// Mondrian
+let mondrianRects = [];
+let mondrianShiftTimer = 0;  
 // Striped Rects
 let stripedRects = [];  
 // Boids state
@@ -2000,7 +2009,305 @@ function drawReaction(p,t){
   }
 }
 
-// ── NEW MODE: VORONOI ─────────────────────────────────────────────────────────
+// ── MAZE ─────────────────────────────────────────────────────────────────────
+// Recursive-backtracker maze. Walls dissolve and regenerate over time.
+// Characters fill corridors; walls are CTX lines.
+
+function buildMaze(cols, rows) {
+  // Each cell stores which walls are open: N E S W
+  let cells = new Array(cols * rows).fill(null).map(() => ({
+    visited: false, N: true, E: true, S: true, W: true
+  }));
+  let idx = (c, r) => r * cols + c;
+  let stack = [];
+  let start = idx(Math.floor(cols / 2), Math.floor(rows / 2));
+  cells[start].visited = true;
+  stack.push(start);
+  while (stack.length) {
+    let cur = stack[stack.length - 1];
+    let c = cur % cols, r = Math.floor(cur / cols);
+    let neighbors = [];
+    if (r > 0       && !cells[idx(c, r-1)].visited) neighbors.push([c, r-1, 'N', 'S']);
+    if (c < cols-1  && !cells[idx(c+1, r)].visited) neighbors.push([c+1, r, 'E', 'W']);
+    if (r < rows-1  && !cells[idx(c, r+1)].visited) neighbors.push([c, r+1, 'S', 'N']);
+    if (c > 0       && !cells[idx(c-1, r)].visited) neighbors.push([c-1, r, 'W', 'E']);
+    if (!neighbors.length) { stack.pop(); continue; }
+    let [nc, nr, d1, d2] = neighbors[Math.floor(Math.random() * neighbors.length)];
+    cells[cur][d1] = false;
+    cells[idx(nc, nr)][d2] = false;
+    cells[idx(nc, nr)].visited = true;
+    stack.push(idx(nc, nr));
+  }
+  return cells;
+}
+
+function drawMaze(p, t) {
+  let cw = Math.max(12, S.spacing * 2);
+  let ch = Math.max(12, S.spacing * 2);
+  let cols = Math.floor(p.width  / cw) + 1;
+  let rows = Math.floor(p.height / ch) + 1;
+
+  // Rebuild when size changes or on regen
+  if (!mazeGrid || mazeCols !== cols || mazeRows !== rows) {
+    mazeCols = cols; mazeRows = rows;
+    mazeGrid = buildMaze(cols, rows);
+  }
+
+  // Shift: randomly remove a wall and carve a new passage every N frames
+  if (S.playing) {
+    mazeShiftTimer++;
+    let shiftRate = Math.max(1, Math.floor(60 - S.speed * 8000));
+    if (mazeShiftTimer > shiftRate) {
+      mazeShiftTimer = 0;
+      // Pick a random cell and knock out a random wall
+      let c = Math.floor(Math.random() * cols);
+      let r = Math.floor(Math.random() * rows);
+      let dirs = ['N','E','S','W'];
+      let d1 = dirs[Math.floor(Math.random() * 4)];
+      let nc = c + (d1==='E'?1:d1==='W'?-1:0);
+      let nr = r + (d1==='S'?1:d1==='N'?-1:0);
+      let opp = {N:'S',S:'N',E:'W',W:'E'};
+      if (nc>=0 && nc<cols && nr>=0 && nr<rows) {
+        mazeGrid[r * cols + c][d1]         = false;
+        mazeGrid[nr * cols + nc][opp[d1]]  = false;
+        // Optionally close a different wall elsewhere to keep it maze-like
+        let rc2 = Math.floor(Math.random() * cols);
+        let rr2 = Math.floor(Math.random() * rows);
+        let d2  = dirs[Math.floor(Math.random() * 4)];
+        mazeGrid[rr2 * cols + rc2][d2] = true;
+      }
+    }
+  }
+
+  // Draw walls
+  let wallCol = S.palette[0];
+  CTX.save();
+  CTX.strokeStyle = wallCol;
+  CTX.lineWidth   = Math.max(1, S.maxSize * 0.06);
+  CTX.lineCap     = 'square';
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let cell = mazeGrid[r * cols + c];
+      let x = c * cw, y = r * ch;
+      // Draw only walls that are still closed
+      if (cell.N) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x + cw, y);      CTX.stroke(); }
+      if (cell.W) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x, y + ch);      CTX.stroke(); }
+      // Draw S and E only at edges to avoid double-drawing
+      if (r === rows-1 && cell.S) { CTX.beginPath(); CTX.moveTo(x, y+ch); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
+      if (c === cols-1 && cell.E) { CTX.beginPath(); CTX.moveTo(x+cw, y); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
+    }
+  }
+
+  // Fill corridors (open passages) with characters
+  if (S.chars && S.chars.length) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        let cell = mazeGrid[r * cols + c];
+        let openCount = (cell.N?0:1)+(cell.E?0:1)+(cell.S?0:1)+(cell.W?0:1);
+        if (openCount < 1) continue; // dead end — skip to keep visual clarity
+        let x = c * cw + cw * 0.5;
+        let y = r * ch + ch * 0.5;
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        let col = pickColor(p, x, y, t);
+        let ch2 = pickChar(p, x, y, t);
+        dc(x, y, p.map(n, 0, 1, S.maxSize * 0.3, S.maxSize * 0.8), 0, col, ch2);
+      }
+    }
+  }
+  CTX.restore();
+  _lastFill = '';
+}
+
+
+// ── UNKNOWN PLEASURES ─────────────────────────────────────────────────────────
+// Joy Division "Unknown Pleasures" — stacked horizontal lines with
+// noise-driven peaks that are tallest at vertical center.
+// Each line is a polyline; lines are filled below (solid ink style).
+
+function drawUnknownPleasures(p, t) {
+  let lineCount   = Math.floor(20 + S.density * 60);     // number of stacked lines
+  let lineSpacing = p.height / (lineCount + 1);
+  let peakHeight  = p.height * 0.25 + S.wave * 1.8;      // max amplitude
+  let pts         = 120;                                  // horizontal resolution
+  let ns          = S.noiseScale * 2;
+
+  CTX.save();
+
+  // Draw back-to-front so front lines occlude rear ones
+  for (let li = 0; li < lineCount; li++) {
+    let baseY  = p.height - lineSpacing * (li + 1);
+    // Gaussian-style envelope: peaks are tallest near vertical center of stack
+    let env = Math.exp(-Math.pow((li / lineCount) - 0.5, 2) / 0.06);
+
+    let lineCol = S.palette[li % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0) {
+      if (p.noise(li * 0.3, t * 0.5) > (1 - S.accentAmt)) lineCol = S.accent;
+    }
+
+    CTX.beginPath();
+    // Start left edge at baseline
+    CTX.moveTo(0, baseY);
+
+    for (let pi = 0; pi <= pts; pi++) {
+      let x    = (pi / pts) * p.width;
+      // Two noise octaves for organic peaks
+      let n1   = p.noise(x * ns,        li * 0.4 + 100, t * 0.6);
+      let n2   = p.noise(x * ns * 3.1,  li * 0.4 + 200, t * 0.9) * 0.3;
+      let nv   = (n1 + n2) / 1.3;
+      // Horizontal Gaussian: peaks cluster toward horizontal center
+      let henv = Math.exp(-Math.pow((pi / pts) - 0.5, 2) / 0.12);
+      let dy   = -nv * peakHeight * env * henv;
+      // Entropy: occasional spike glitches
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.04) {
+        dy -= Math.random() * peakHeight * 0.4 * env;
+      }
+      CTX.lineTo(x, baseY + dy);
+    }
+
+    // Close path back along baseline then fill (background color)
+    // This makes each line "erase" the lines behind it — the classic UP look
+    CTX.lineTo(p.width, baseY);
+    CTX.lineTo(p.width, baseY + lineSpacing * 0.5);
+    CTX.lineTo(0,       baseY + lineSpacing * 0.5);
+    CTX.closePath();
+
+    // Fill with background to occlude lines below
+    CTX.fillStyle = S.bg;
+    CTX.fill();
+
+    // Stroke the top profile line
+    CTX.lineWidth   = Math.max(0.5, S.maxSize * 0.055);
+    CTX.strokeStyle = lineCol;
+    // Re-draw just the top curve for the stroke
+    CTX.beginPath();
+    CTX.moveTo(0, baseY);
+    for (let pi = 0; pi <= pts; pi++) {
+      let x    = (pi / pts) * p.width;
+      let n1   = p.noise(x * ns,       li * 0.4 + 100, t * 0.6);
+      let n2   = p.noise(x * ns * 3.1, li * 0.4 + 200, t * 0.9) * 0.3;
+      let nv   = (n1 + n2) / 1.3;
+      let henv = Math.exp(-Math.pow((pi / pts) - 0.5, 2) / 0.12);
+      let dy   = -nv * peakHeight * env * henv;
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.04) {
+        dy -= Math.random() * peakHeight * 0.4 * env;
+      }
+      CTX.lineTo(x, baseY + dy);
+    }
+    CTX.stroke();
+  }
+  CTX.restore();
+}
+
+
+// ── MONDRIAN ─────────────────────────────────────────────────────────────────
+// Recursive subdivision into rectangles filled with Mondrian primaries.
+// Thick black borders. Slowly shifts subdivisions over time.
+
+const MONDRIAN_PALETTE = {
+  red:    '#D40920',
+  yellow: '#F5C800',
+  blue:   '#1B4299',
+  white:  '#F2EEE4',
+  white2: '#EDE8DC',
+  black:  '#0D0C0A',
+};
+
+function buildMondrian(x, y, w, h, depth) {
+  // Stop subdividing when rects are small enough or by chance
+  let minSize = 60 + S.spacing * 3;
+  if (depth <= 0 || w < minSize || h < minSize || Math.random() < 0.22) {
+    // Assign color — mostly white/cream, some primaries
+    let r = Math.random();
+    let col;
+    if      (r < 0.12) col = MONDRIAN_PALETTE.red;
+    else if (r < 0.22) col = MONDRIAN_PALETTE.yellow;
+    else if (r < 0.30) col = MONDRIAN_PALETTE.blue;
+    else if (r < 0.55) col = MONDRIAN_PALETTE.white2;
+    else               col = MONDRIAN_PALETTE.white;
+    // Let S.palette influence color selection if not using default
+    if (S.palette !== PALETTES.white && S.palette !== PALETTES.mono) {
+      if (r < 0.12) col = S.palette[0];
+      else if (r < 0.22) col = S.palette[1] || col;
+      else if (r < 0.30) col = S.palette[2] || col;
+    }
+    mondrianRects.push({ x, y, w, h, col });
+    return;
+  }
+  // Decide split direction — prefer splitting the longer axis
+  let splitVert = w >= h ? (Math.random() < 0.65) : (Math.random() < 0.35);
+  if (splitVert) {
+    let split = w * (0.25 + Math.random() * 0.5);
+    buildMondrian(x,         y, split,     h, depth - 1);
+    buildMondrian(x + split, y, w - split, h, depth - 1);
+  } else {
+    let split = h * (0.25 + Math.random() * 0.5);
+    buildMondrian(x, y,         w, split,     depth - 1);
+    buildMondrian(x, y + split, w, h - split, depth - 1);
+  }
+}
+
+function drawMondrian(p, t) {
+  // Rebuild when empty or on regen
+  if (!mondrianRects.length) {
+    buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
+  }
+
+  // Slow shift: rebuild one random rect every N frames
+  if (S.playing) {
+    mondrianShiftTimer++;
+    let rate = Math.max(1, Math.floor(180 - S.speed * 15000));
+    if (mondrianShiftTimer > rate) {
+      mondrianShiftTimer = 0;
+      mondrianRects = [];
+      buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
+    }
+  }
+
+  let border = Math.max(2, S.maxSize * 0.18);
+
+  CTX.save();
+  // Draw filled cells
+  mondrianRects.forEach(function(r) {
+    CTX.fillStyle = r.col;
+    CTX.fillRect(r.x + border * 0.5, r.y + border * 0.5,
+                 r.w - border,       r.h - border);
+  });
+
+  // Draw all borders on top as a single thick black grid
+  CTX.strokeStyle = MONDRIAN_PALETTE.black;
+  CTX.lineWidth   = border;
+  CTX.lineJoin    = 'miter';
+  mondrianRects.forEach(function(r) {
+    CTX.strokeRect(r.x + border * 0.5, r.y + border * 0.5,
+                   r.w - border,       r.h - border);
+  });
+
+  // Optionally overlay characters in each cell (subtle — use low maxSize)
+  if (S.chars && S.chars.length && S.maxSize > 8) {
+    mondrianRects.forEach(function(r) {
+      if (r.w < S.spacing * 2 || r.h < S.spacing * 2) return;
+      // Determine readable contrast color
+      let isDark = (r.col === MONDRIAN_PALETTE.black ||
+                    r.col === MONDRIAN_PALETTE.blue   ||
+                    r.col === MONDRIAN_PALETTE.red);
+      let charCol = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)';
+      let sp = S.spacing;
+      for (let cx = r.x + sp; cx < r.x + r.w - sp; cx += sp) {
+        for (let cy = r.y + sp; cy < r.y + r.h - sp; cy += sp) {
+          let n = p.noise(cx * S.noiseScale, cy * S.noiseScale,
+                          S.fc * S.speed);
+          if (n < 0.5) continue;
+          dc(cx, cy, S.maxSize * 0.55, 0, charCol, pickChar(p, cx, cy, S.fc * S.speed));
+        }
+      }
+    });
+  }
+  CTX.restore();
+  _lastFill = '';
+}
+  
+// ── VORONOI ─────────────────────────────────────────────────────────
 // Living Voronoi diagram — cells drift and breathe
 function drawVoronoi(p,t){
   if(!voronoiSites.length) initVoronoi(p.width,p.height);
@@ -3644,7 +3951,7 @@ new p5(function(p){
   }
   function ri(){
     initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
-    recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];
+    recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
     sandParticles=[];caGrid=null;lissParticles=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
     boidAgents=[];magneticPoles=[];
@@ -3794,7 +4101,10 @@ CTX.fillRect(0, 0, W, H);
     case 'flowerspin': drawFlowerspin(p, t); break;
     case 'wfc': drawWFC(p, t); break;
     case 'stripedrects':  drawStripedRects(p, t);  break;
-    case 'tonaldensity':  drawTonalDensity(p, t);  break;  
+    case 'tonaldensity':  drawTonalDensity(p, t);  break;
+    case 'maze':        drawMaze(p, t);               break;
+    case 'unknownpleasures': drawUnknownPleasures(p, t); break;
+    case 'mondrian':    drawMondrian(p, t);            break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
@@ -4985,6 +5295,10 @@ const PRESETS={
   stripe_rects:function(){ap({mode:'stripedrects',font:'courier',entropy: 0,speed: .003,wave:12,bg:'#f5f0ea',spacing: 14,maxSize:18,noiseScale:.008,palette:'pumpkin',compEnabled:false,signalCollapse:false,});window._st.ri();},
   does_not_compute:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.002,wave: 0,bg:'#e8e4dc',spacing:6,maxSize:22,noiseScale:.007,palette:'ember',compEnabled:false,signalCollapse:false,chars:'does not compute'.split(''),});},
   ink_wash_density:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.001,wave: 8,bg:'#f0ede6',spacing:5,maxSize:18,noiseScale:.009,palette:'moss',compEnabled:false,signalCollapse:false,chars:CHARSETS.chinese,});},
+  maze_shift: function(){ap({mode:'maze',font:'courier',entropy:0,speed:.003,wave:0, bg:'#0d0c0a',spacing: 10,maxSize:12,noiseScale: .01,palette:'site',compEnabled: false,signalCollapse: false,});},
+  unknown_pleasures: function(){ap({mode:'unknownpleasures',font:'courier',entropy:0,speed:.002,wave:55,bg:'#000000',spacing:8,maxSize:14,noiseScale:.008, palette:'ghost',compEnabled: false,signalCollapse: false,});},
+  mondrian_shift: function(){ap({mode:'mondrian',font:'courier',entropy:0,speed:.001,wave:0,bg:'#f2eee4',spacing:22,maxSize:22,noiseScale:.01,palette:'white',compEnabled:false,signalCollapse: false,});},
+
 };
 
 
