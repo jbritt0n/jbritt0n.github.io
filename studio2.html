@@ -1039,6 +1039,7 @@ let S={
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
 let imgPix=null,imgW=0,imgH=0;
+let imgEdgeStrength = null;  
 let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[];
 let shapes=[];
 let recRects=[];
@@ -1831,6 +1832,13 @@ function renderImgStipple(p, br, col) {
   p.fill(col);
   p.circle(0, 0, dotSize);
 }
+function renderImgEdge(p, br, col, t, edgeVal) {
+  if (edgeVal < 30) return;
+  let sz = p.map(edgeVal, 30, 255, 1, S.spacing * 0.8);
+  p.noStroke();
+  p.fill(col);
+  p.circle(0, 0, sz);
+}  
   
 function getPaletteColors() {
     // Force a fallback to a known palette if the state is undefined
