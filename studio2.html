@@ -1693,6 +1693,9 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
+
+let imgPix, imgW, imgH; // Declare these so they are accessible globally in the p5 block
+  
 function drawImgText(p, t) {
   if (!imgPix || !imgW || !imgH) {
     // Show a placeholder if no image is loaded
