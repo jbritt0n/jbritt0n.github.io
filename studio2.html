@@ -4298,11 +4298,7 @@ function processImage(img) {
   console.log("First Pixel (RGBA):", imgPix.data[0], imgPix.data[1], imgPix.data[2], imgPix.data[3]);
 } //processimage function
 
-      let mag = Math.sqrt(gx*gx + gy*gy);
-      imgEdgeStrength[y * w + x] = Math.min(255, mag);
-    }
-  }
-}
+
 // ── ADDITIONAL IMAGE FUNCTIONALITY (Stretch/Invert) ──────────────────────────────────
 document.getElementById('btnStretch').addEventListener('click', function() {
   S.imgStretch = !S.imgStretch;
