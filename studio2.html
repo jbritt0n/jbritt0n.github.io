@@ -1697,30 +1697,36 @@ function drawLoops(p,t){
 }
   
 function drawImgText(p, t) {
-  if (!imgPix || !imgW || !imgH) {
-    let palette = getPaletteColors();
-    p.fill(palette[0]);
+  // 1. Safety Check: If data is missing, don't even try to loop
+  if (!imgPix || !imgPix.data || !imgW || !imgH) {
+    let pal = getPaletteColors();
+    p.fill(pal[0]);
     p.noStroke();
-    p.textSize(13);
     p.textAlign(p.CENTER);
     p.text('Upload an image →', p.width / 2, p.height / 2);
-    p.textAlign(p.LEFT);
     return;
   }
+
   let step = S.spacing || 10;
   let palette = getPaletteColors();
+
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
-    let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW - 1));
-    let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH - 1));
-      // Add a safety check: if idx is invalid, skip this loop iteration
-    let idx = (imgY * imgW + imgX) * 4;
-      if (!imgPix.data[idx] && imgPix.data[idx] !== 0) return; //
+      // 2. Map coordinates with a safety buffer
+      let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW - 1));
+      let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH - 1));
+      // Clamp values so they never go out of the array bounds
+      imgX = Math.max(0, Math.min(imgX, imgW - 1));
+      imgY = Math.max(0, Math.min(imgY, imgH - 1));
+      let idx = (imgY * imgW + imgX) * 4;
+      // 3. Extract RGBA
       let r = imgPix.data[idx];
-      let g = imgPix.data[idx + 1];
-      let b = imgPix.data[idx + 2];
+      let g = imgPix.data[idx+1];
+      let b = imgPix.data[idx+2];
+      let a = imgPix.data[idx+3];
+      // Skip fully transparent pixels
+      if (a === 0) continue;
       let br = 0.299 * r + 0.587 * g + 0.114 * b;
-      // Atkinson dithering (simple threshold)
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
@@ -1733,8 +1739,9 @@ function drawImgText(p, t) {
       }
       p.push();
       p.translate(x, y);
+      // Pass 'br' to the helpers
       if (S.imgMode === 'chars') renderImgChars(p, br, col);
-      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
+      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t, x, y);
       else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
       p.pop();
     }
