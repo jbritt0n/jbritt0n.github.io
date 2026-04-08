@@ -1712,7 +1712,7 @@ function drawImgText(p, t) {
     return;
   }
   let step = S.spacing || 10;
-  let palette = getPaletteColors();
+  let palette = Array.isArray(S.palette) ? S.palette : (PALETTES[S.palette] || PALETTES['site']);
   console.log('Image mode palette:', palette);
   // Calculate scaling and offset based on stretch mode
   let scaleX, scaleY, offsetX = 0, offsetY = 0;
