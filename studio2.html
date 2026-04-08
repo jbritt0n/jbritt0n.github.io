@@ -257,50 +257,7 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <!-- Mode Specific Controls -->
-      
-      <!-- Reaction Controls -->
-<div id="ctrl-reaction" class="mode-ctrl">
-  <div class="sl2">Reaction Parameters</div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
-    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
-    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
-  </div>
-  <div class="tr">
-  <span class="tl">Oscillate</span>
-  <button class="tb" id="btnReactOscillate">Off</button>
-  </div>
-  </div>
-  <div id="ctrl-magnetic" class="mode-ctrl">
-  <div class="sl2">Magnetic Parameters</div>
-    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
-        </div>
-        <div id="ctrl-hatch" class="mode-ctrl">
-          <div class="sl2">Hatch Parameters</div>
-          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
-          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
-        </div>
-        <div id="ctrl-voronoi" class="mode-ctrl">
-          <div class="sl2">Voronoi Style</div>
-          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
-        
-        </div>
 
-
-      
-      <!-- Mycelium Controls -->
-<div id="ctrl-mycelium" class="mode-ctrl">
-  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
-  <input type="range" id="sMycSpeed" min="0" max="50" value="1" step="0.1"></div>
-  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
-  <input type="range" id="sMycBranch" min="1" max="50" value="3" step="1"></div>
-  <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
-  <input type="range" id="sMycLifespan" min="0.2" max="50" value="1.0" step="0.05"></div>
-</div>
 
       
  <!-- Character Controls -->     
@@ -351,8 +308,9 @@ select option{background:var(--ink)}
           <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
           <button class="ca" id="customApply">Set</button>
         </div>
-        <div class="sec-body collapsed" id="body-font">
-        <select id="fontSelect">
+   <!-- Font selector now directly inside body-chars -->
+    <div class="sl2" style="margin-top:0.8rem;">Font</div>
+    <select id="fontSelect">
           <option value="courier">Courier New</option>
           <option value="vt323">VT323 — terminal</option>       
           <option value="typewriter">Special Elite — typewriter</option>
@@ -478,7 +436,50 @@ select option{background:var(--ink)}
         
       </div></div>
       
-  
+            <!-- Mode Specific Controls -->
+      
+      <!-- Reaction Controls -->
+<div id="ctrl-reaction" class="mode-ctrl">
+  <div class="sl2">Reaction Parameters</div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
+    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
+  </div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
+    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
+  </div>
+  <div class="tr">
+  <span class="tl">Oscillate</span>
+  <button class="tb" id="btnReactOscillate">Off</button>
+  </div>
+  </div>
+  <div id="ctrl-magnetic" class="mode-ctrl">
+  <div class="sl2">Magnetic Parameters</div>
+    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        </div>
+
+      
+      <!-- Mycelium Controls -->
+<div id="ctrl-mycelium" class="mode-ctrl">
+  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
+  <input type="range" id="sMycSpeed" min="0" max="50" value="1" step="0.1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
+  <input type="range" id="sMycBranch" min="1" max="50" value="3" step="1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
+  <input type="range" id="sMycLifespan" min="0.2" max="50" value="1.0" step="0.05"></div>
+</div>
+
+      
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
       <div class="sec-body collapsed" id="body-motion">
