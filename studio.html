@@ -30,7 +30,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .pbar-grid{display:flex;flex-wrap:wrap;gap:3px}
 .pbar-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .45rem;cursor:pointer;transition:all .18s;white-space:nowrap}
 .pbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
-#ctl{flex:1;overflow-y:auto;padding:0}
+#ctl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;max-height: 100%;}
 #ctl::-webkit-scrollbar{width:3px}
 #ctl::-webkit-scrollbar-thumb{background:var(--stone)}
 .sec{border-bottom:1px solid var(--stone)}
@@ -110,10 +110,10 @@ select option{background:var(--ink)}
 #panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
 @media(max-width:1024px){:root{--panel-w:268px}}
 @media(max-width:768px){
-  html,body{overflow:hidden}
-  #app{display:flex;flex-direction:column;height:100dvh;height:100vh}
+  html,body{height:100%;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100%;height:100dvh;height:100vh;max-height:100dvh;overflow:hidden;}
   #canvas-wrap{flex:0 0 42vh;min-height:150px}
-  #panel{flex:1;min-height:0;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
+  #panel{flex:1;min-height:0;height:100%;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
   #panelBtn{display:block}
   .ph{padding:.65rem 1.1rem .5rem}
   .sec-body{padding:.05rem 1.1rem .6rem}
@@ -257,52 +257,11 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <!-- Mode Specific Controls -->
-      
-      <!-- Reaction Controls -->
-<div id="ctrl-reaction" class="mode-ctrl">
-  <div class="sl2">Reaction Parameters</div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
-    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
-    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
-  </div>
-  <div class="tr">
-  <span class="tl">Oscillate</span>
-  <button class="tb" id="btnReactOscillate">Off</button>
-  </div>
-  </div>
-  <div id="ctrl-magnetic" class="mode-ctrl">
-  <div class="sl2">Magnetic Parameters</div>
-    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
-        </div>
-        <div id="ctrl-hatch" class="mode-ctrl">
-          <div class="sl2">Hatch Parameters</div>
-          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
-          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
-        </div>
-        <div id="ctrl-voronoi" class="mode-ctrl">
-          <div class="sl2">Voronoi Style</div>
-          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
-        
-        </div>
 
-
-      
-      <!-- Mycelium Controls -->
-<div id="ctrl-mycelium" class="mode-ctrl">
-  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
-  <input type="range" id="sMycSpeed" min="0" max="5" value="1" step="0.1"></div>
-  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
-  <input type="range" id="sMycBranch" min="1" max="8" value="3" step="1"></div>
-</div>
 
       
  <!-- Character Controls -->     
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters & Font</span><span class="sec-arrow open" id="arr-chars">›</span></div>
       <div class="sec-body collapsed" id="body-chars">
         <div class="cg" id="charsetGrid">
           <button class="cb" data-cs="hex">Hex</button>
@@ -349,7 +308,24 @@ select option{background:var(--ink)}
           <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
           <button class="ca" id="customApply">Set</button>
         </div>
-      </div></div>
+   <!-- Font selector now directly inside body-chars -->
+    <div class="sl2" style="margin-top:0.8rem;">Font</div>
+    <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal</option>       
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="mono">Monospace</option>
+          <option value="unicode_lite">Unicode Lite (faster)</option>
+          <option value="unicode">Universal Unicode</option>
+        </select>
+      </div>
+      </div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
       <div class="sec-body collapsed" id="body-palette">
@@ -460,23 +436,50 @@ select option{background:var(--ink)}
         
       </div></div>
       
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
-      <div class="sec-body collapsed" id="body-font">
-        <select id="fontSelect">
-          <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>       
-          <option value="typewriter">Special Elite — typewriter</option>
-          <option value="georgia">Georgia</option>
-          <option value="times">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="playfair">Playfair Display</option>
-          <option value="impact">Impact</option>
-          <option value="mono">Monospace</option>
-          <option value="unicode_lite">Unicode Lite (faster)</option>
-          <option value="unicode">Universal Unicode</option>
-        </select>
-      </div></div>
+            <!-- Mode Specific Controls -->
+      
+      <!-- Reaction Controls -->
+<div id="ctrl-reaction" class="mode-ctrl">
+  <div class="sl2">Reaction Parameters</div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
+    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
+  </div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
+    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
+  </div>
+  <div class="tr">
+  <span class="tl">Oscillate</span>
+  <button class="tb" id="btnReactOscillate">Off</button>
+  </div>
+  </div>
+  <div id="ctrl-magnetic" class="mode-ctrl">
+  <div class="sl2">Magnetic Parameters</div>
+    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        </div>
+
+      
+      <!-- Mycelium Controls -->
+<div id="ctrl-mycelium" class="mode-ctrl">
+  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
+  <input type="range" id="sMycSpeed" min="0" max="50" value="1" step="0.1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
+  <input type="range" id="sMycBranch" min="1" max="50" value="3" step="1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
+  <input type="range" id="sMycLifespan" min="0.2" max="50" value="1.0" step="0.05"></div>
+</div>
+
+      
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
       <div class="sec-body collapsed" id="body-motion">
@@ -647,9 +650,9 @@ select option{background:var(--ink)}
       <div id="shapeList" class="sh-list"></div>
     </div>
 
-  </div>
+  </div></div>
 
-
+</div>
 
       <!-- Scrolling Text Stream Overlay -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('overlay')"><span class="sl">Overlay text streams</span><span class="sec-arrow" id="arr-overlay">›</span></div>
@@ -726,7 +729,7 @@ select option{background:var(--ink)}
           <input type="number" class="ni" id="chInput" value="800" min="200" max="3000">
           <button class="ca" id="applySizeBtn">Set</button>
         </div>
-      </div>
+      </div></div>
     
     </div><!-- /ctl -->
     
@@ -994,6 +997,7 @@ let S={
   hatchAngle:45,hatchCurve:5,
   vorWire:false,
   magPoles: 2,
+  mycLifespan: 1.0,
 
 };
   
@@ -1196,7 +1200,7 @@ function initMycelium(W, H) {
       y: startY,
       angle: angle,
       len: 0,
-      maxLen: 100 + Math.random() * 200,
+      maxLen: (100 + Math.random() * 200) * S.mycLifespan,
       speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
       age: 0,
       col: S.palette[i % S.palette.length],
@@ -1829,18 +1833,18 @@ function drawMycelium(p, t) {
   if (S.playing) {
     let newBranches = [];
     myceliumBranches.forEach(function(b) {
-      b.angle += p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) * 0.4 - 0.2 + S.wave * 0.003;
+      b.angle += (p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) - 0.5) * 0.8 + S.wave * 0.005;
       b.x += Math.cos(b.angle) * b.speed;
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
       b.age++;
-    if (b.len > 20 + Math.random() * 160 && b.children < b.maxChildren && Math.random() < 0.02) {
+    if (b.len > 20 + Math.random() * 300 && b.children < b.maxChildren && Math.random() < 0.22) {
       b.children++;
       newBranches.push({
         x: b.x, y: b.y,
         angle: b.angle + (Math.random() - 0.5) * 1.2,
         len: 0,
-        maxLen: b.maxLen * 4.7,
+        maxLen: b.maxLen * 10,
         speed: b.speed * 0.9,
         age: 0,
         col: S.palette[Math.floor(Math.random() * S.palette.length)],
@@ -3537,6 +3541,7 @@ wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
 wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
 wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
 wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
+wireSlider('sMycLifespan', 'vMycLifespan', 'mycLifespan', null, () => window._st.ri()); 
 wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
 wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
 wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
@@ -4586,15 +4591,24 @@ document.getElementById('presetBar').addEventListener('click',function(e){
 });  
   
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
-let _panelHidden=false;
-function togglePanel(){
-  let panel=document.getElementById('panel');
-  _panelHidden=!_panelHidden;
-  panel.style.display=_panelHidden?'none':'flex';
-  document.getElementById('panelBtn').textContent=_panelHidden?'⊕ Controls':'✕ Close';
-  setTimeout(function(){
-    if(window._st){let wrap=document.getElementById('canvas-wrap');window._st.rsz(wrap.offsetWidth,wrap.offsetHeight);}
-  },50);
+let _panelHidden = false;
+function togglePanel() {
+  let panel = document.getElementById('panel');
+  _panelHidden = !_panelHidden;
+  panel.style.display = _panelHidden ? 'none' : 'flex';
+  document.getElementById('panelBtn').textContent = _panelHidden ? '⊕ Controls' : '✕ Close';
+  setTimeout(function() {
+    if (window._st) {
+      let wrap = document.getElementById('canvas-wrap');
+      window._st.rsz(wrap.offsetWidth, wrap.offsetHeight);
+    }
+    // Force scroll container to recalc its height
+    let ctl = document.getElementById('ctl');
+    if (ctl) {
+      ctl.style.overflow = 'hidden';
+      setTimeout(() => { ctl.style.overflow = 'auto'; }, 10);
+    }
+  }, 50);
 }
 </script>
 </body>
