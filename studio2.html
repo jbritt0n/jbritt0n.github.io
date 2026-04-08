@@ -3489,18 +3489,18 @@ p.draw = function() {
       if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
     }
 
-    // 3. Background & Trail Persistence
-    // FIX: Ensure fillStyle uses palette if S.bg is null to prevent yellow lock
+//  THE BACKGROUND FIX (Prevents the Yellow Lock)
+    CTX.save(); // Capture clean state
+    CTX.globalCompositeOperation = 'source-over';
     if (S.trailPersist > 0) {
+      // Use the palette color or a safe default if S.bg is yellowing out
       CTX.fillStyle = S.bg || pal[pal.length - 1] || '#000';
       CTX.globalAlpha = 1 - S.trailPersist / 100;
       CTX.fillRect(0, 0, W, H);
-      CTX.globalAlpha = 1;
     } else {
       p.background(pal[pal.length - 1] || S.bg || 0); 
     }
-
-    // 4. Drawing State
+    CTX.restore(); // RESET alpha and fillStyle to full visibility
     CTX.textBaseline = 'middle';
     CTX.globalCompositeOperation = S.blendMode || 'source-over';
 
