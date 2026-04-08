@@ -295,9 +295,11 @@ select option{background:var(--ink)}
       <!-- Mycelium Controls -->
 <div id="ctrl-mycelium" class="mode-ctrl">
   <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
-  <input type="range" id="sMycSpeed" min="0" max="30" value="1" step="0.1"></div>
+  <input type="range" id="sMycSpeed" min="0" max="5" value="1" step="0.1"></div>
   <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
-  <input type="range" id="sMycBranch" min="1" max="30" value="3" step="1"></div>
+  <input type="range" id="sMycBranch" min="1" max="8" value="3" step="1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
+  <input type="range" id="sMycLifespan" min="0.2" max="3.0" value="1.0" step="0.05"></div>
 </div>
 
       
@@ -994,6 +996,7 @@ let S={
   hatchAngle:45,hatchCurve:5,
   vorWire:false,
   magPoles: 2,
+  mycLifespan: 1.0,
 
 };
   
@@ -1196,7 +1199,7 @@ function initMycelium(W, H) {
       y: startY,
       angle: angle,
       len: 0,
-      maxLen: 100 + Math.random() * 200,
+      maxLen: (100 + Math.random() * 200) * S.mycLifespan,
       speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
       age: 0,
       col: S.palette[i % S.palette.length],
@@ -3537,6 +3540,7 @@ wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
 wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
 wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
 wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
+wireSlider('sMycLifespan', 'vMycLifespan', 'mycLifespan', null, () => window._st.ri()); 
 wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
 wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
 wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
