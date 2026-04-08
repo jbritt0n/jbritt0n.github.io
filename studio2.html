@@ -4199,47 +4199,75 @@ function renderShapeList() {
   });
 }
   
-// ── IMAGE ─────────────────────────────────────────────────────────────────────
-document.getElementById('imgFile').addEventListener('change',function(e){
-  let file=e.target.files[0];if(!file) return;
-  let reader=new FileReader();
-  reader.onload=function(ev){
-    let img=new Image();
-    img.onload=function(){
-      let oc=document.createElement('canvas');oc.width=img.width;oc.height=img.height;
-      let cx2=oc.getContext('2d');cx2.drawImage(img,0,0);
-      imgPix=cx2.getImageData(0,0,img.width,img.height);imgW=img.width;imgH=img.height;
-      document.getElementById('imgStatus').textContent=img.width+'×'+img.height+' — ready';
-      S.mode='imgtext';
-      document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
-      document.querySelectorAll('[data-mode="imgtext"]').forEach(function(b){b.classList.add('active');});
-      document.getElementById('modeLabel').textContent='Img→Text';
-      window._st.rd();
-    };img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-});
-document.getElementById('imgUrlApply').addEventListener('click',function(){
-  let url=document.getElementById('imgUrlInput').value.trim();if(!url) return;
-  document.getElementById('imgStatus').textContent='Loading…';
-  let img=new Image();img.crossOrigin='anonymous';
-  img.onload=function(){
-    let oc=document.createElement('canvas');oc.width=img.width;oc.height=img.height;
-    let cx2=oc.getContext('2d');cx2.drawImage(img,0,0);
-    try{imgPix=cx2.getImageData(0,0,img.width,img.height);imgW=img.width;imgH=img.height;
-      document.getElementById('imgStatus').textContent=img.width+'×'+img.height+' — ready';
-    }catch(e){document.getElementById('imgStatus').textContent='CORS blocked — use upload';}
-    S.mode='imgtext';
-    document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('[data-mode="imgtext"]').forEach(function(b){b.classList.add('active');});
-    document.getElementById('modeLabel').textContent='Img→Text';window._st.rd();
+// ── IMAGE PROCESSING ──────────────────────────────────────────────────────────
+document.getElementById('imgFile').addEventListener('change', function(e) {
+  let file = e.target.files[0]; if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function(ev) {
+    let img = new Image();
+    img.onload = function() {
+      processImage(img);
+    };
+    img.src = ev.target.result;
   };
-  img.onerror=function(){document.getElementById('imgStatus').textContent='Failed';};
-  img.src=url;
+  reader.readAsDataURL(file);
 });
-document.getElementById('imgUrlInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('imgUrlApply').click();});
-document.getElementById('btnStretch').addEventListener('click',function(){S.imgStretch=!S.imgStretch;this.textContent=S.imgStretch?'On':'Off';this.classList.toggle('on',S.imgStretch);window._st.rd();});
-document.getElementById('btnInvert').addEventListener('click',function(){S.imgInvert=!S.imgInvert;this.textContent=S.imgInvert?'On':'Off';this.classList.toggle('on',S.imgInvert);window._st.rd();});
 
+document.getElementById('imgUrlApply').addEventListener('click', function() {
+  let url = document.getElementById('imgUrlInput').value.trim(); if (!url) return;
+  document.getElementById('imgStatus').textContent = 'Loading…';
+  let img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    try {
+      processImage(img);
+    } catch (e) {
+      document.getElementById('imgStatus').textContent = 'CORS blocked — use upload';
+    }
+  };
+  img.onerror = function() { document.getElementById('imgStatus').textContent = 'Failed'; };
+  img.src = url;
+});
+
+// Helper to convert loaded images into the format our new drawImgText needs
+function processImage(img) {
+  let oc = document.createElement('canvas');
+  oc.width = img.width;
+  oc.height = img.height;
+  let cx2 = oc.getContext('2d');
+  cx2.drawImage(img, 0, 0);
+  
+  // These are the global variables line 1029 is looking for
+  imgPix = cx2.getImageData(0, 0, img.width, img.height);
+  imgW = img.width;
+  imgH = img.height;
+
+  document.getElementById('imgStatus').textContent = img.width + '×' + img.height + ' — ready';
+  S.mode = 'imgtext';
+  
+  // UI Updates
+  document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-mode="imgtext"]').forEach(b => b.classList.add('active'));
+  document.getElementById('modeLabel').textContent = 'Img→Text';
+  window._st.rd();
+}
+
+// ── ADDITIONAL IMAGE FUNCTIONALITY (Stretch/Invert) ──────────────────────────────────
+document.getElementById('btnStretch').addEventListener('click', function() {
+  S.imgStretch = !S.imgStretch;
+  this.textContent = S.imgStretch ? 'On' : 'Off';
+  this.classList.toggle('on', S.imgStretch);
+  window._st.rd();
+});
+
+document.getElementById('btnInvert').addEventListener('click', function() {
+  S.imgInvert = !S.imgInvert;
+  this.textContent = S.imgInvert ? 'On' : 'Off';
+  this.classList.toggle('on', S.imgInvert);
+  window._st.rd();
+});
+
+  
 // ── CANVAS SIZE ───────────────────────────────────────────────────────────────
 document.getElementById('sizeGrid').addEventListener('click',function(e){
   let b=e.target.closest('[data-size]');if(!b) return;
