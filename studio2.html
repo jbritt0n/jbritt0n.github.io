@@ -1725,6 +1725,8 @@ function drawImgText(p, t) {
       let g = imgPix.data[idx + 1];
       let b = imgPix.data[idx + 2];
       let br = 0.299 * r + 0.587 * g + 0.114 * b;
+      if (S.imgInvert) br = 255 - br;
+      if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
@@ -3724,10 +3726,15 @@ document.getElementById('btnReactOscillate').addEventListener('click', function(
   window._st.rd();
 });
 // ── PALETTE ───────────────────────────────────────────────────────────────────
-document.getElementById('palGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.pb');if(!b) return;
-  document.querySelectorAll('.pb').forEach(function(x){x.classList.remove('active');});
-  b.classList.add('active');S.palette=PALETTES[b.dataset.pal];window._st.rd();
+document.getElementById('palGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.pb');
+  if (!b) return;
+  document.querySelectorAll('.pb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  let newPalKey = b.dataset.pal;
+  S.palette = PALETTES[newPalKey];
+  console.log('Palette changed to:', newPalKey, S.palette); // debug
+  window._st.rd();
 });
 document.getElementById('accentRow1').addEventListener('click',function(e){
   let s=e.target.closest('[data-accent]');if(!s) return;
