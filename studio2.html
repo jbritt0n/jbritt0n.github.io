@@ -1832,7 +1832,7 @@ function drawMycelium(p, t) {
   if (S.playing) {
     let newBranches = [];
     myceliumBranches.forEach(function(b) {
-      b.angle += p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) * 0.4 - 0.2 + S.wave * 0.003;
+      b.angle += (p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) - 0.5) * 0.8 + S.wave * 0.005;
       b.x += Math.cos(b.angle) * b.speed;
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
