@@ -1713,13 +1713,13 @@ function drawImgText(p, t) {
     CTX.textAlign = 'left';
     return;
   }
-
   let step = S.spacing || 10;
   let palette = getPaletteColors();
-  for (let x = 0; x < W; x += step) {
-    for (let y = 0; y < H; y += step) {
-      let imgX = Math.floor(p.map(x, 0, W, 0, imgW));
-      let imgY = Math.floor(p.map(y, 0, H, 0, imgH));
+  // ✅ Use p.width and p.height instead of W and H
+  for (let x = 0; x < p.width; x += step) {
+    for (let y = 0; y < p.height; y += step) {
+      let imgX = Math.floor(p.map(x, 0, p.width, 0, imgW));
+      let imgY = Math.floor(p.map(y, 0, p.height, 0, imgH));
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
@@ -3739,10 +3739,14 @@ document.getElementById('accentRow2').addEventListener('click',function(e){
   document.querySelectorAll('#accentRow2 [data-a2]').forEach(function(x){x.classList.remove('active');});
   s.classList.add('active');S.accent2=s.dataset.a2;window._st.rd();
 });
-document.getElementById('bgRow').addEventListener('click',function(e){
-  let s=e.target.closest('[data-bg]');if(!s) return;
-  document.querySelectorAll('[data-bg]').forEach(function(x){x.classList.remove('active');});
-  s.classList.add('active');S.bg=s.dataset.bg;window._st.rd();
+document.getElementById('bgRow').addEventListener('click', function(e) {
+  let s = e.target.closest('[data-bg]');
+  if (!s) return;
+  document.querySelectorAll('[data-bg]').forEach(x => x.classList.remove('active'));
+  s.classList.add('active');
+  S.bg = s.dataset.bg;
+  console.log('Background changed to:', S.bg); // temporary debug
+  window._st.rd();
 });
 
 // ── BLEND MODE ────────────────────────────────────────────────────────────────
