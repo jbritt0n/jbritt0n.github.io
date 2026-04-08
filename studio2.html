@@ -351,6 +351,22 @@ select option{background:var(--ink)}
           <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
           <button class="ca" id="customApply">Set</button>
         </div>
+        <div class="sec-body collapsed" id="body-font">
+        <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal</option>       
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="mono">Monospace</option>
+          <option value="unicode_lite">Unicode Lite (faster)</option>
+          <option value="unicode">Universal Unicode</option>
+        </select>
+      </div>
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
@@ -462,23 +478,7 @@ select option{background:var(--ink)}
         
       </div></div>
       
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
-      <div class="sec-body collapsed" id="body-font">
-        <select id="fontSelect">
-          <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>       
-          <option value="typewriter">Special Elite — typewriter</option>
-          <option value="georgia">Georgia</option>
-          <option value="times">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="playfair">Playfair Display</option>
-          <option value="impact">Impact</option>
-          <option value="mono">Monospace</option>
-          <option value="unicode_lite">Unicode Lite (faster)</option>
-          <option value="unicode">Universal Unicode</option>
-        </select>
-      </div></div>
+  
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
       <div class="sec-body collapsed" id="body-motion">
