@@ -295,11 +295,11 @@ select option{background:var(--ink)}
       <!-- Mycelium Controls -->
 <div id="ctrl-mycelium" class="mode-ctrl">
   <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
-  <input type="range" id="sMycSpeed" min="0" max="5" value="1" step="0.1"></div>
+  <input type="range" id="sMycSpeed" min="0" max="50" value="1" step="0.1"></div>
   <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
-  <input type="range" id="sMycBranch" min="1" max="8" value="3" step="1"></div>
+  <input type="range" id="sMycBranch" min="1" max="50" value="3" step="1"></div>
   <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
-  <input type="range" id="sMycLifespan" min="0.2" max="10.0" value="1.0" step="0.05"></div>
+  <input type="range" id="sMycLifespan" min="0.2" max="50" value="1.0" step="0.05"></div>
 </div>
 
       
@@ -1837,13 +1837,13 @@ function drawMycelium(p, t) {
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
       b.age++;
-    if (b.len > 20 + Math.random() * 160 && b.children < b.maxChildren && Math.random() < 0.02) {
+    if (b.len > 20 + Math.random() * 300 && b.children < b.maxChildren && Math.random() < 0.22) {
       b.children++;
       newBranches.push({
         x: b.x, y: b.y,
         angle: b.angle + (Math.random() - 0.5) * 1.2,
         len: 0,
-        maxLen: b.maxLen * 4.7,
+        maxLen: b.maxLen * 10,
         speed: b.speed * 0.9,
         age: 0,
         col: S.palette[Math.floor(Math.random() * S.palette.length)],
