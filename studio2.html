@@ -3459,18 +3459,18 @@ p.draw = function() {
   }
 
   //  Background – respects S.bg and trail persistence
-  CTX.save();
-  CTX.globalCompositeOperation = 'source-over';
-  if (S.trailPersist > 0) {
-    CTX.fillStyle = S.bg;          // S.bg is set by palette UI
-    CTX.globalAlpha = 1 - S.trailPersist / 100;
-    CTX.fillRect(0, 0, W, H);
-  } else {
-    CTX.fillStyle = S.bg;
-    CTX.fillRect(0, 0, W, H);
-  }
-  CTX.restore();
-
+  //CTX.save();
+  //CTX.globalCompositeOperation = 'source-over';
+ // if (S.trailPersist > 0) {
+  //  CTX.fillStyle = S.bg;          // S.bg is set by palette UI
+  //  CTX.globalAlpha = 1 - S.trailPersist / 100;
+ //   CTX.fillRect(0, 0, W, H);
+  //} else {
+  //  CTX.fillStyle = S.bg;
+ //  CTX.fillRect(0, 0, W, H);
+ // }
+ // CTX.restore();
+  
   CTX.textBaseline = 'middle';
   CTX.globalCompositeOperation = S.blendMode || 'source-over';
 
