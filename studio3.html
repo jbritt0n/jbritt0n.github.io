@@ -202,6 +202,9 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
         <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
         <button class="pbar-btn" data-preset="wfc_tiles">River</button>
+        <button class="pbar-btn" data-preset="stripe_rects">Stripe Rects</button>
+        <button class="pbar-btn" data-preset="does_not_compute">Does Not Compute</button>
+        <button class="pbar-btn" data-preset="ink_wash_density">Ink Wash</button>
     </div>
   </div>
 </div>
@@ -242,6 +245,8 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="cellular">Cellular</button>
           <button class="mb" data-mode="worms">Worms</button>
           <button class="mb" data-mode="interference">Interfere</button>
+          <button class="mb new-mode" data-mode="stripedrects" title="Striped Rects — solid and barcode rectangles on a light ground">Stripe Rects</button>
+          <button class="mb new-mode" data-mode="tonaldensity"  title="Tonal Density — phrase repeats at noise-driven size and spacing, creating ink-wash tones">Tonal Density</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
           <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
           <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
@@ -1099,6 +1104,8 @@ let shapes=[];
 let recRects=[];
 let loopParticles=[];
 let topoSegs=[];
+// Striped Rects
+let stripedRects = [];  
 // Boids state
 let boidAgents=[];
 // Magnetic field state
@@ -3011,7 +3018,116 @@ function drawBoids(p,t){
   });
   CTX.globalAlpha=1;
 }
+// ── STRIPED RECTS (Webster) ───────────────────────────────────────────────
+// Solid and barcode-striped rectangles on a light ground.
+// Works best with a pale background (paper, cream, f5f0ea).
+function initStripedRects(W, H) {
+  stripedRects = [];
+  let density = S.density;
+  let cols = Math.floor(W / (S.spacing * 5)) + 2;
+  let rows = Math.floor(H / (S.spacing * 2.5)) + 2;
+  for (let ci = 0; ci < cols; ci++) {
+    for (let ri = 0; ri < rows; ri++) {
+      if (Math.random() > (0.3 + density * 0.5)) continue;
+      let cx = (ci / cols) * W + (Math.random() - 0.5) * (W / cols) * 0.8;
+      let cy = (ri / rows) * H + (Math.random() - 0.5) * (H / rows) * 0.6;
+      let tall = Math.random() < 0.72;
+      let rw = tall ? 12 + Math.random() * 48 : 40 + Math.random() * 90;
+      let rh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
+      let isStriped = Math.random() < 0.44;
+      let palCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+      // Striped rects use accent or a palette color; solid use palette
+      let col = isStriped
+        ? (S.accent !== 'none' && Math.random() < 0.4 ? S.accent : palCol)
+        : palCol;
+      stripedRects.push({
+        x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh,
+        col,
+        type: isStriped ? 'striped' : 'solid',
+        gap: 2 + Math.floor(Math.random() * 5),   // px between stripes
+        lw:  1 + (Math.random() < 0.3 ? 1 : 0),   // stripe line width
+        vy:  (Math.random() - 0.5) * 0.5,           // drift speed
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+}
 
+function drawStripedRects(p, t) {
+  if (!stripedRects.length) initStripedRects(p.width, p.height);
+  CTX.save();
+  stripedRects.forEach(function(r) {
+    if (S.playing) {
+      r.y += r.vy * S.speed * 120;
+      if (r.y > p.height + r.h) r.y = -r.h * 2;
+      if (r.y < -r.h * 2)       r.y =  p.height + r.h;
+    }
+    // Subtle horizontal wobble from wave
+    let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
+    let rx = r.x + wx;
+    if (r.type === 'solid') {
+      CTX.fillStyle = r.col;
+      CTX.fillRect(rx, r.y, r.w, r.h);
+    } else {
+      // Clip to rect bounds, then draw vertical stripe lines
+      CTX.save();
+      CTX.beginPath();
+      CTX.rect(rx, r.y, r.w, r.h);
+      CTX.clip();
+      CTX.strokeStyle = r.col;
+      CTX.lineWidth   = r.lw;
+      for (let lx = rx; lx <= rx + r.w; lx += r.gap) {
+        CTX.beginPath();
+        CTX.moveTo(lx, r.y);
+        CTX.lineTo(lx, r.y + r.h);
+        CTX.stroke();
+      }
+      CTX.restore();
+    }
+  });
+  CTX.restore();
+  _lastFill = '';
+}
+
+// ── TONAL DENSITY ──────────────────────────────────────────────────────────
+// A repeating phrase/charset fills the canvas. Noise drives both font size
+// and letter spacing — high noise = large tight text (dark), low noise =
+// tiny spaced text (light). Creates ink-wash tonal areas from pure text.
+function drawTonalDensity(p, t) {
+  let tokens = S.chars;
+  if (!tokens || !tokens.length) tokens = ['·'];
+  // Slow character index offset for gentle cycling (0 = static)
+  let globalOffset = Math.floor(S.fc * S.speed * 0.5);
+  let y = S.spacing * 0.5;
+  let tokenCount = 0;
+  while (y < p.height) {
+    let x = 0;
+    let rowMaxSz = 0;
+    while (x < p.width + S.maxSize) {
+      // Two-octave noise for smoother large blobs + fine texture
+      let n  = p.noise(x * S.noiseScale,        y * S.noiseScale * 0.55,  t * 0.18);
+      let n2 = p.noise(x * S.noiseScale * 3.2,  y * S.noiseScale * 3.2,   t * 0.35) * 0.22;
+      let nv = Math.min(1, Math.max(0, n + n2));
+      // Map noise → size
+      let sz = p.map(nv, 0, 1, 1.5, S.maxSize);
+      rowMaxSz = Math.max(rowMaxSz, sz);
+      // Map noise → advance (spacing).
+      // Dense (high nv) = tight overlap; sparse (low nv) = wide gaps.
+      let advance = p.map(nv, 0, 1, sz * 2.8, sz * 0.55);
+      advance = Math.max(2, advance);
+      // Skip near-invisible placements to save draw calls
+      if (sz >= 1.8 && nv > 0.06) {
+        let tok = tokens[(globalOffset + tokenCount) % tokens.length];
+        let col = pickColor(p, x, y, t);
+        dc(x, y, sz, 0, col, tok);
+      }
+      tokenCount++;
+      x += advance;
+    }
+    // Row height tracks the tallest character in that row
+    y += Math.max(3, rowMaxSz * (0.75 + S.wave * 0.003));
+  }
+}
 // ── MAGNETIC FIELD LINES ──────────────────────────────────────────────────────
 // Dipole (and multipole) magnetic field: trace field lines from seed angles,
 // render as smooth curves with characters placed along them.
@@ -3640,6 +3756,8 @@ CTX.fillRect(0, 0, W, H);
     case 'worms': drawWorms(p, t); break;
     case 'flowerspin': drawFlowerspin(p, t); break;
     case 'wfc': drawWFC(p, t); break;
+    case 'stripedrects':  drawStripedRects(p, t);  break;
+    case 'tonaldensity':  drawTonalDensity(p, t);  break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
@@ -4824,9 +4942,12 @@ const PRESETS={
   kintsugi_breaks:function(){ap({mode:'shatter',font:'playfair',entropy:0,speed:.002,wave:40,bg:'#1a0a05',spacing:12,maxSize:22,noiseScale:.009,palette:'kintsugi',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'金継ぎ KINTSUGI',color:'#e8b87a',offset:0}],overlayWave:3,overlaySpeed:1,overlaySize:14,overlayAlpha:35,chars:CHARSETS.kanji});},
   bioluminescent:function(){ap({mode:'mycelium',font:'courier',entropy:.01,speed:.003,wave:15,bg:'#001a0a',spacing:8,maxSize:18,noiseScale:.008,palette:'biolum',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'bioluminescence',color:'#00FFAA',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
-  worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
-  hatch: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
-  wfc_tiles: function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
+  worms:function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
+  hatch:function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
+  wfc_tiles:function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});},             
+  stripe_rects:function(){ap({mode:'stripedrects',font:'courier',entropy: 0,speed: .003,wave:12,bg:'#f5f0ea',spacing: 14,maxSize:18,noiseScale:.008,palette:'pumpkin',compEnabled:false,signalCollapse:false,});window._st.ri();},
+  does_not_compute:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.002,wave: 0,bg:'#e8e4dc',spacing:6,maxSize:22,noiseScale:.007,palette:'ember',compEnabled:false,signalCollapse:false,chars:'does not compute'.split(''),});},
+  ink_wash_density:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.001,wave: 8,bg:'#f0ede6',spacing:5,maxSize:18,noiseScale:.009,palette:'moss',compEnabled:false,signalCollapse:false,chars:CHARSETS.chinese,});},
 };
 
 
