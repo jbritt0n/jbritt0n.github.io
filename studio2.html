@@ -12,7 +12,7 @@
 :root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--panel-w:296px}
 html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',sans-serif;font-weight:300}
 #app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
-#canvas-wrap{position:relative;overflow:hidden;background:var(--ink)}
+#canvas-wrap{position: relative;width: 100%;height: 100%;position:relative;overflow:hidden;background:var(--ink)}
 #canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
 #panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
 .ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
@@ -22,6 +22,8 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .ph-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;cursor:pointer;transition:all .18s}
 .ph-btn:hover{border-color:var(--pale);color:var(--pale)}
 .ph-btn.chaos-on{border-color:var(--gold);color:var(--gold);animation:chaospulse 1.2s ease-in-out infinite}
+.home-link{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid var(--stone);color:var(--dim);text-decoration:none;font-size:.75rem;transition:all .18s;flex-shrink:0}
+.home-link:hover{border-color:var(--pale);color:var(--pale)} 
 @keyframes chaospulse{0%,100%{opacity:1}50%{opacity:.5}}
 #presetBar{padding:.5rem 1.3rem .55rem;border-bottom:1px solid var(--stone);flex-shrink:0}
 .pbar-label{font-size:.43rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-bottom:.38rem}
@@ -34,6 +36,8 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .sec{border-bottom:1px solid var(--stone)}
 .sec-hd{padding:.7rem 1.3rem .5rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .sec-hd:hover{background:rgba(255,255,255,.018)}
+.mode-ctrl { display: none; }
+.mode-ctrl.active { display: block; padding: 0.05rem 1.3rem 0.7rem; }  
 .sl{font-size:.49rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
 .sec-arrow{font-size:.6rem;color:var(--stone);transition:transform .2s;margin-left:4px}
 .sec-arrow.open{transform:rotate(90deg)}
@@ -71,6 +75,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3)}
 .as:hover{transform:scale(1.2)}
 .as.active{border-color:var(--cream)}
 .ar{display:flex;gap:5px;padding:.72rem 1.3rem;border-top:1px solid var(--stone);flex-shrink:0;background:var(--dark)}
+.top-actions {margin: 0.5rem 1.3rem 0.5rem;padding: 0;border-top: none;background: transparent;}  
 .ab{flex:1;background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.12em;text-transform:uppercase;padding:.56rem 0;cursor:pointer;transition:all .18s;text-align:center}
 .ab:hover{border-color:var(--pale);color:var(--pale)}
 .ab.play{border-color:var(--gold);color:var(--gold)}
@@ -129,17 +134,29 @@ select option{background:var(--ink)}
   </div>
   <div id="panel">
     <div class="ph">
-      <div class="pt">Generative Studio</div>
+      <div class="pt">Studio</div>
       <div class="ps">jonathanbrittonart.com/studio</div>
-      <div class="ph-actions">
-        <button class="ph-btn" id="btnCollapseAll" title="Collapse all sections">Collapse</button>
-        <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
-        <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
-      </div>
+<div class="ph-actions">
+  <a href="index.html" class="home-link" title="Back to Index">⌂</a>
+  <button class="ph-btn" id="btnCollapseAll" title="Collapse all sections">Collapse</button>
+  <button class="ph-btn" id="btnExpandAll" title="Expand all sections">Expand</button>
+  <button class="ph-btn" id="btnChaos" title="Chaos Monkey: randomly tweaks a parameter every few seconds">Chaos</button>
+</div>
     </div>
-    <div id="presetBar">
-      <div class="pbar-label">Quick presets</div>
-      <div class="pbar-grid">
+        <div class="ar top-actions">
+      <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
+      <button class="ab" id="btnRegen" title="Regenerate with new random seed (R)">Regen</button>
+      <button class="ab" id="btnSave" title="Save canvas as PNG (S)">Save PNG</button>
+      <button class="ab" id="btnRecordGif" title="Record a 5 second gif">Record GIF</button>    
+      <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
+    </div>
+<div class="sec" id="presetSec">
+  <div class="sec-hd" onclick="toggleSec('presets')">
+    <span class="sl">Presets</span>
+    <span class="sec-arrow" id="arr-presets">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-presets">
+    <div class="pbar-grid" id="presetBar">
         <button class="pbar-btn" data-preset="sacred">Sacred</button>
         <button class="pbar-btn" data-preset="signal">Signal</button>
         <button class="pbar-btn" data-preset="webster">Webster</button>
@@ -153,7 +170,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="entropy">Entropy</button>
         <button class="pbar-btn" data-preset="aurora">Aurora</button>
         <button class="pbar-btn" data-preset="midnighttokyo">Midnight Tokyo</button>
-        <button class="pbar-btn" data-preset="inkwash">Ink Wash</button>
         <button class="pbar-btn" data-preset="neonjungle">Neon Jungle</button>
         <button class="pbar-btn" data-preset="desertstorm">Desert Storm</button>
         <button class="pbar-btn" data-preset="arcticbloom">Arctic Bloom</button>
@@ -162,13 +178,32 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="sakurarain">Sakura Rain</button>
         <button class="pbar-btn" data-preset="turing">Turing Spots</button>
         <button class="pbar-btn" data-preset="mycelium">Mycelium</button>
-      </div>
+        <button class="pbar-btn" data-preset="truchet_tiles">Truchet</button>
+        <button class="pbar-btn" data-preset="seisma_print">Seisma Print</button>
+        <button class="pbar-btn" data-preset="hatch">Hatches</button>
+        <button class="pbar-btn" data-preset="liquid_crystal">Liquid Crystal</button>
+        <button class="pbar-btn" data-preset="topographic">Topographic</button>
+        <button class="pbar-btn" data-preset="tesseract4d">Tesseract 4D</button>
+        <button class="pbar-btn" data-preset="hypersphere4d">Hypersphere</button>
+        <button class="pbar-btn" data-preset="flock">Flock</button>
+        <button class="pbar-btn" data-preset="dipole">Dipole Field</button>
+        <button class="pbar-btn" data-preset="volcanic_flow">Volcanic</button>
+        <button class="pbar-btn" data-preset="neon_grid">Neon Grid</button>
+        <button class="pbar-btn" data-preset="fingerprint">Fingerprint</button>
+        <button class="pbar-btn" data-preset="kintsugi_breaks">Kintsugi</button>
+        <button class="pbar-btn" data-preset="bioluminescent">Biolum</button>
+        <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
+        <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
+        <button class="pbar-btn" data-preset="wfc_tiles">River</button>
     </div>
+  </div>
+</div>
+    
     <div id="ctl">
-
       <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
-      <div class="sec-body" id="body-mode">
+      <div class="sec-body collapsed" id="body-mode">
         <div class="mg" id="modeGrid">
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.18rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px">✦ Character</div>
           <button class="mb active" data-mode="bloom">Bloom</button>
           <button class="mb" data-mode="wave">Wave</button>
           <button class="mb" data-mode="rain1">Rain</button>
@@ -193,27 +228,86 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="fabric">Fabric</button>
           <button class="mb" data-mode="loops">Loops</button>
           <button class="mb" data-mode="imgtext">Img→Text</button>
-          <button class="mb" data-mode="topolines">Topo Lines</button>
           <button class="mb" data-mode="pipes">Pipes</button>
+          <button class="mb" data-mode="calligraphy">Calligr.</button>
+          <button class="mb" data-mode="lissajous">Lissajous</button>
           <button class="mb new-mode" data-mode="reaction">Reaction</button>
-          <button class="mb new-mode" data-mode="voronoi">Voronoi</button>
-          <button class="mb new-mode" data-mode="mycelium">Mycelium</button>
-          <button class="mb new-mode" data-mode="sand">Sand</button>
-          <button class="mb new-mode" data-mode="cellular">Cellular</button>
-          <button class="mb new-mode" data-mode="interference">Interfere</button>
-          <button class="mb new-mode" data-mode="calligraphy">Calligr.</button>
-          <button class="mb new-mode" data-mode="lissajous">Lissajous</button>
-          <button class="mb new-mode" data-mode="wireterrain" title="3D wireframe terrain generated from Perlin noise heightmap">Terrain</button>
-          <button class="mb new-mode" data-mode="fractalsubdiv" title="Recursive polygon subdivision — Koch-like fractal structures">Fractal</button>
+          <button class="mb" data-mode="cellular">Cellular</button>
+          <button class="mb" data-mode="worms">Worms</button>
+          <button class="mb" data-mode="interference">Interfere</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
+          <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
+          <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
+          <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
+          <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
+          <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
+          <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
+          <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
+          <button class="mb" data-mode="topolines">Topo Lines</button>
+          <button class="mb" data-mode="wireterrain">Terrain</button>
+          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
+          <button class="mb" data-mode="fractalsubdiv">Fractal</button>
+          <button class="mb" data-mode="voronoi">Voronoi</button>
+          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
+          <button class="mb" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
+          <button class="mb" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
+          <button class="mb" data-mode="sand">Sand</button>
+          <button class="mb" data-mode="mycelium">Mycelium</button>
+          <button class="mb new-mode" data-mode="flowerspin">Flower Spin</button>
         </div>
       </div></div>
 
+      <!-- Mode Specific Controls -->
+      
+      <!-- Reaction Controls -->
+<div id="ctrl-reaction" class="mode-ctrl">
+  <div class="sl2">Reaction Parameters</div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
+    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
+  </div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
+    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
+  </div>
+  <div class="tr">
+  <span class="tl">Oscillate</span>
+  <button class="tb" id="btnReactOscillate">Off</button>
+  </div>
+  </div>
+  <div id="ctrl-magnetic" class="mode-ctrl">
+  <div class="sl2">Magnetic Parameters</div>
+    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
+        </div>
+        <div id="ctrl-hatch" class="mode-ctrl">
+          <div class="sl2">Hatch Parameters</div>
+          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
+          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
+        </div>
+        <div id="ctrl-voronoi" class="mode-ctrl">
+          <div class="sl2">Voronoi Style</div>
+          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+        
+        </div>
+
+
+      
+      <!-- Mycelium Controls -->
+<div id="ctrl-mycelium" class="mode-ctrl">
+  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
+  <input type="range" id="sMycSpeed" min="0" max="5" value="1" step="0.1"></div>
+  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
+  <input type="range" id="sMycBranch" min="1" max="8" value="3" step="1"></div>
+</div>
+
+      
+ <!-- Character Controls -->     
       <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters</span><span class="sec-arrow open" id="arr-chars">›</span></div>
-      <div class="sec-body" id="body-chars">
+      <div class="sec-body collapsed" id="body-chars">
         <div class="cg" id="charsetGrid">
-          <button class="cb active" data-cs="hex">Hex</button>
-          <button class="cb active" data-cs="gothic">Gothic</button>
-          <button class="cb active" data-cs="cursive">Cursive</button>
+          <button class="cb" data-cs="hex">Hex</button>
+          <button class="cb" data-cs="gothic">Gothic</button>
+          <button class="cb" data-cs="cursive">Cursive</button>
           <button class="cb active" data-cs="chinese">Chinese</button>
           <button class="cb" data-cs="hiragana">Hiragana</button>
           <button class="cb" data-cs="katakana">Katakana</button>
@@ -237,12 +331,14 @@ select option{background:var(--ink)}
           <button class="cb" data-cs="barcode">Barcode</button>
           <button class="cb" data-cs="gradients">Blocks ░▓</button>
           <button class="cb" data-cs="squares">Squares</button>
+          <button class="cb" data-cs="crossstitch">Cross-stitch</button>
           <button class="cb" data-cs="circles">Circles</button>
           <button class="cb" data-cs="daggers">Daggers</button>
           <button class="cb" data-cs="lines">Lines</button>
           <button class="cb" data-cs="dots">Dots</button>
           <button class="cb" data-cs="braille">Braille</button>
           <button class="cb" data-cs="void">Void</button>
+          <button class="cb" data-cs="particles">Particles</button>
           <button class="cb" data-cs="custom">Custom ↓</button>
           <button class="cb" data-cs="randuni" title="Randomly chosen Unicode character each frame — full spectrum">Rand Unicode</button>
           <button class="cb" data-cs="randuni_weighted" title="Random Unicode with weighted ranges: more Latin, fewer rare scripts">Rand Weighted</button>
@@ -255,53 +351,72 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
-      <div class="sec-body" id="body-font">
-        <select id="fontSelect">
-          <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>
-          <option value="typewriter">Special Elite — typewriter</option>
-          <option value="georgia">Georgia</option>
-          <option value="times">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="playfair">Playfair Display</option>
-          <option value="impact">Impact</option>
-          <option value="mono">Monospace</option>
-        </select>
-      </div></div>
-
       <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
-      <div class="sec-body" id="body-palette">
+      <div class="sec-body collapsed" id="body-palette">
         <div class="pg" id="palGrid">
-          <div class="pb active" data-pal="site"       title="Studio"     style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
-          <div class="pb" data-pal="ember"      title="Ember"      style="background:linear-gradient(135deg,#c8632a,#e08040)"></div>
-          <div class="pb" data-pal="frost"      title="Frost"      style="background:linear-gradient(135deg,#8aaccc,#c8d8ec)"></div>
-          <div class="pb" data-pal="jade"       title="Jade"       style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
-          <div class="pb" data-pal="dusk"       title="Dusk"       style="background:linear-gradient(135deg,#7a5a8a,#c890d8)"></div>
-          <div class="pb" data-pal="mono"       title="Mono"       style="background:linear-gradient(135deg,#505048,#a0a098)"></div>
-          <div class="pb" data-pal="fire"       title="Fire"       style="background:linear-gradient(135deg,#e63946,#f4a261)"></div>
-          <div class="pb" data-pal="ghost"      title="Ghost"      style="background:linear-gradient(135deg,#f8f9fa,#495057)"></div>
-          <div class="pb" data-pal="abyss"      title="Abyss"      style="background:linear-gradient(135deg,#003566,#ffd60a)"></div>
-          <div class="pb" data-pal="sakura"     title="Sakura"     style="background:linear-gradient(135deg,#ffb7c5,#b97375)"></div>
-          <div class="pb" data-pal="moss"       title="Moss"       style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)"></div>
-          <div class="pb" data-pal="neon"       title="Neon"       style="background:linear-gradient(135deg,#f72585,#4cc9f0)"></div>
-          <div class="pb" data-pal="terracotta" title="Terracotta" style="background:linear-gradient(135deg,#e27396,#b3dee2)"></div>
-          <div class="pb" data-pal="white"      title="White"      style="background:linear-gradient(135deg,#e8e0d4,#fff)"></div>
-          <div class="pb" data-pal="matrix"     title="Matrix"     style="background:linear-gradient(135deg,#003300,#00cc00)"></div>
-          <div class="pb" data-pal="paper"      title="Paper"      style="background:linear-gradient(135deg,#f5efe0,#2e2820)"></div>
-          <div class="pb" data-pal="navy"       title="Navy"       style="background:linear-gradient(135deg,#0a1628,#4a7fb5)"></div>
-          <div class="pb" data-pal="rust"       title="Rust"       style="background:linear-gradient(135deg,#8b2500,#e8a87c)"></div>
-          <div class="pb" data-pal="copper"     title="Copper"     style="background:linear-gradient(135deg,#b87333,#f9e4b7)"></div>
-          <div class="pb" data-pal="aurora"     title="Aurora"     style="background:linear-gradient(135deg,#00c9a7,#845ec2)"></div>
-          <div class="pb" data-pal="brutalist"  title="Brutalist"  style="background:linear-gradient(135deg,#1a1a1a,#f5f500)"></div>
-          <div class="pb" data-pal="risograph"  title="Risograph"  style="background:linear-gradient(135deg,#ff6b35,#00b4d8)"></div>
-          <div class="pb" data-pal="cyanotype"  title="Cyanotype"  style="background:linear-gradient(135deg,#003f88,#a8d8ea)"></div>
-          <div class="pb" data-pal="infrared"   title="Infrared"   style="background:linear-gradient(135deg,#ff0055,#00ff88)"></div>
-          <div class="pb" data-pal="oxidized"   title="Oxidized"   style="background:linear-gradient(135deg,#3d6b4f,#c8a96e)"></div>
-          <div class="pb" data-pal="velvet"     title="Velvet"     style="background:linear-gradient(135deg,#2d0a31,#c77dff)"></div>
-          <div class="pb" data-pal="tidal"      title="Tidal"      style="background:linear-gradient(135deg,#0077b6,#90e0ef)"></div>
-          <div class="pb" data-pal="solaris"    title="Solaris"    style="background:linear-gradient(135deg,#ff9500,#ff2d55)"></div>
+          <!-- Warm neutrals -->
+          <div class="pb active" data-pal="site"        title="Studio"        style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
+          <div class="pb" data-pal="burnedpaper" title="Burned Paper"  style="background:linear-gradient(135deg,#2b1e12,#cfaa70)"></div>
+          <div class="pb" data-pal="kintsugi"    title="Kintsugi"      style="background:linear-gradient(135deg,#1a0a05,#f5d7b3)"></div>
+          <div class="pb" data-pal="incense"     title="Incense"       style="background:linear-gradient(135deg,#8A5A44,#E6C7A0)"></div>
+          <div class="pb" data-pal="mushroom"    title="Mushroom"      style="background:linear-gradient(135deg,#2a1a0a,#d9bf77)"></div>
+          <div class="pb" data-pal="copper"      title="Copper"        style="background:linear-gradient(135deg,#6b3a18,#f9e4b7)"></div>
+          <div class="pb" data-pal="rust"        title="Rust"          style="background:linear-gradient(135deg,#8b2500,#e8a87c)"></div>
+          <div class="pb" data-pal="paper"       title="Paper"         style="background:linear-gradient(135deg,#f5efe0,#2e2820)"></div>
+          <!-- Fire / Orange -->
+          <div class="pb" data-pal="ember"       title="Ember"         style="background:linear-gradient(135deg,#c8632a,#e08040)"></div>
+          <div class="pb" data-pal="fire"        title="Fire"          style="background:linear-gradient(135deg,#e63946,#f4a261)"></div>
+          <div class="pb" data-pal="volcanic"    title="Volcanic"      style="background:linear-gradient(135deg,#8B0000,#FF4500)"></div>
+          <div class="pb" data-pal="adobesunset" title="Adobe Sunset"  style="background:linear-gradient(135deg,#9d0208,#ffba08)"></div>
+          <div class="pb" data-pal="pumpkin"     title="Pumpkin"       style="background:linear-gradient(135deg,#3e2723,#e65100)"></div>
+          <div class="pb" data-pal="solaris"     title="Solaris"       style="background:linear-gradient(135deg,#ff9500,#ff2d55)"></div>
+          <div class="pb" data-pal="lava"        title="Lava Lamp"     style="background:linear-gradient(135deg,#8b008b,#ff1493)"></div>
+          <!-- Yellow / Warm Light -->
+          <div class="pb" data-pal="abyss"       title="Abyss"         style="background:linear-gradient(135deg,#003566,#ffd60a)"></div>
+          <div class="pb" data-pal="infrared"    title="Infrared"      style="background:linear-gradient(135deg,#ff0055,#00ff88)"></div>
+          <div class="pb" data-pal="amberterm"   title="Amber Term"    style="background:linear-gradient(135deg,#1a0a00,#ffb000)"></div>
+          <!-- Green -->
+          <div class="pb" data-pal="jade"        title="Jade"          style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
+          <div class="pb" data-pal="moss"        title="Moss"          style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)"></div>
+          <div class="pb" data-pal="biolum"      title="Bioluminescence"style="background:linear-gradient(135deg,#003322,#00FFAA)"></div>
+          <div class="pb" data-pal="moldavite"   title="Moldavite"     style="background:linear-gradient(135deg,#0a2a1a,#8aeaba)"></div>
+          <div class="pb" data-pal="oxcopper"    title="Oxidized Copper"style="background:linear-gradient(135deg,#1e2a12,#8fbc6e)"></div>
+          <div class="pb" data-pal="radioactive" title="Radioactive"   style="background:linear-gradient(135deg,#003300,#ccff00)"></div>
+          <div class="pb" data-pal="siliconvalley" title="Silicon Valley"style="background:linear-gradient(135deg,#1a1a1a,#00ff41)"></div>
+          <div class="pb" data-pal="matrix"      title="Matrix"        style="background:linear-gradient(135deg,#003300,#00cc00)"></div>
+          <!-- Cyan / Teal -->
+          <div class="pb" data-pal="tidal"       title="Tidal"         style="background:linear-gradient(135deg,#0077b6,#90e0ef)"></div>
+          <div class="pb" data-pal="lagoon"      title="Lagoon"        style="background:linear-gradient(135deg,#001f3f,#4db6ac)"></div>
+          <div class="pb" data-pal="frost"       title="Frost"         style="background:linear-gradient(135deg,#8aaccc,#c8d8ec)"></div>
+          <div class="pb" data-pal="glacier"     title="Glacier"       style="background:linear-gradient(135deg,#0a2a4a,#e0f0ff)"></div>
+          <div class="pb" data-pal="cyanotype"   title="Cyanotype"     style="background:linear-gradient(135deg,#003f88,#a8d8ea)"></div>
+          <div class="pb" data-pal="navy"        title="Navy"          style="background:linear-gradient(135deg,#0a1628,#4a7fb5)"></div>
+          <!-- Purple / Pink -->
+          <div class="pb" data-pal="dusk"        title="Dusk"          style="background:linear-gradient(135deg,#7a5a8a,#c890d8)"></div>
+          <div class="pb" data-pal="velvet"      title="Velvet"        style="background:linear-gradient(135deg,#2d0a31,#c77dff)"></div>
+          <div class="pb" data-pal="deepnebula"  title="Deep Nebula"   style="background:linear-gradient(135deg,#0b0b2a,#ffaad4)"></div>
+          <div class="pb" data-pal="electricsheep" title="Electric Sheep"style="background:linear-gradient(135deg,#2a0a4a,#f2a2be)"></div>
+          <div class="pb" data-pal="neon"        title="Neon"          style="background:linear-gradient(135deg,#f72585,#4cc9f0)"></div>
+          <div class="pb" data-pal="vaporwave"   title="Vaporwave"     style="background:linear-gradient(135deg,#ff71ce,#fffb96)"></div>
+          <div class="pb" data-pal="retro80s"    title="Retro 80s"     style="background:linear-gradient(135deg,#FF0055,#9900FF)"></div>
+          <div class="pb" data-pal="neonpastel"  title="Neon Pastel"   style="background:linear-gradient(135deg,#FFB3BA,#C7CEEA)"></div>
+          <!-- Pink -->
+          <div class="pb" data-pal="sakura"      title="Sakura"        style="background:linear-gradient(135deg,#ffb7c5,#b97375)"></div>
+          <div class="pb" data-pal="sakurasnow"  title="Sakura Snow"   style="background:linear-gradient(135deg,#fff0f5,#e68ab8)"></div>
+          <div class="pb" data-pal="terracotta"  title="Terracotta"    style="background:linear-gradient(135deg,#e27396,#b3dee2)"></div>
+          <!-- Rainbow / Multi -->
+          <div class="pb" data-pal="spectral"    title="Spectral"      style="background:linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#0000FF)"></div>
+          <div class="pb" data-pal="aurora"      title="Aurora"        style="background:linear-gradient(135deg,#00c9a7,#845ec2)"></div>
+          <div class="pb" data-pal="risograph"   title="Risograph"     style="background:linear-gradient(135deg,#ff6b35,#00b4d8)"></div>
+          <div class="pb" data-pal="oxidized"    title="Oxidized"      style="background:linear-gradient(135deg,#3d6b4f,#c8a96e)"></div>
+          <!-- Mono / Greyscale -->
+          <div class="pb" data-pal="mono"        title="Mono"          style="background:linear-gradient(135deg,#505048,#a0a098)"></div>
+          <div class="pb" data-pal="ghost"       title="Ghost"         style="background:linear-gradient(135deg,#f8f9fa,#495057)"></div>
+          <div class="pb" data-pal="plasma"      title="Plasma Mono"   style="background:linear-gradient(135deg,#000,#fff)"></div>
+          <div class="pb" data-pal="phantom"     title="Phantom"       style="background:linear-gradient(135deg,#000,#f0f0f0)"></div>
+          <div class="pb" data-pal="white"       title="White"         style="background:linear-gradient(135deg,#e8e0d4,#fff)"></div>
+          <div class="pb" data-pal="brutalist"   title="Brutalist"     style="background:linear-gradient(135deg,#1a1a1a,#f5f500)"></div>
+          <div class="pb" data-pal="midnightrain" title="Midnight Rain" style="background:linear-gradient(135deg,#0f172a,#94a3b8)"></div>
         </div>
         <div class="sl2">Accent 1</div>
         <div class="ag" id="accentRow1">
@@ -342,16 +457,36 @@ select option{background:var(--ink)}
           <div class="as" data-bg="#000000"  style="background:#000"></div>
           <div class="as" data-bg="#333333"  style="background:#333"></div>
         </div>
+        
+      </div></div>
       
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('font')"><span class="sl">Font</span><span class="sec-arrow open" id="arr-font">›</span></div>
+      <div class="sec-body collapsed" id="body-font">
+        <select id="fontSelect">
+          <option value="courier">Courier New</option>
+          <option value="vt323">VT323 — terminal</option>       
+          <option value="typewriter">Special Elite — typewriter</option>
+          <option value="georgia">Georgia</option>
+          <option value="times">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="bebas">Bebas Neue</option>
+          <option value="playfair">Playfair Display</option>
+          <option value="impact">Impact</option>
+          <option value="mono">Monospace</option>
+          <option value="unicode_lite">Unicode Lite (faster)</option>
+          <option value="unicode">Universal Unicode</option>
+        </select>
+      </div></div>
+
       <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
-      <div class="sec-body" id="body-motion">
+      <div class="sec-body collapsed" id="body-motion">
         <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
         <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
         <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
-      <div class="sec-body" id="body-field">
+      <div class="sec-body collapsed" id="body-field">
         <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1" title="Character density — threshold for placing characters (higher = fewer chars)"></div>
         <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
         <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
@@ -360,17 +495,38 @@ select option{background:var(--ink)}
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
-      <div class="sec-body" id="body-entropy">
+      <div class="sec-body collapsed" id="body-entropy">
         <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Entropy: replaces characters with random glitch symbols at this probability"></div>
         <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Case glitch: randomly flips character case (uppercase ↔ lowercase)"></div>
         <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
         <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
         <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
+        <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
       </div></div>
 
-
-        <div class="sl2">Trail persistence</div>
-        <div class="rw"><div class="rl"><span class="rn">Fade (0=none)</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
+      <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend mode</span><span class="sec-arrow" id="arr-blend">›</span></div>
+      <div class="sec-body collapsed" id="body-blend">
+        <div class="sl2" style="margin-bottom:.4rem">Canvas compositing</div>
+        <select id="blendSelect" title="Canvas blend mode — changes how new pixels are composited over the background">
+          <option value="source-over">Normal (default)</option>
+          <option value="screen">Screen — lighten, neon glow</option>
+          <option value="multiply">Multiply — darken, print-like</option>
+          <option value="overlay">Overlay — contrast boost</option>
+          <option value="hard-light">Hard Light — intense overlay</option>
+          <option value="soft-light">Soft Light — subtle dodge/burn</option>
+          <option value="color-dodge">Color Dodge — bright, luminous</option>
+          <option value="linear-dodge">Linear Dodge — Add: very bright</option>
+          <option value="color-burn">Color Burn — deep darken</option>
+          <option value="difference">Difference — invert-like, psychedelic</option>
+          <option value="exclusion">Exclusion — lower contrast difference</option>
+          <option value="lighten">Lighten — keep max</option>
+          <option value="darken">Darken — keep min</option>
+          <option value="hue">Hue — apply hue only</option>
+          <option value="saturation">Saturation — apply saturation</option>
+          <option value="luminosity">Luminosity — apply luminosity</option>
+          <option value="xor">XOR — exclusive or, abstract</option>
+        </select>
+        <p class="hn">Blend mode applies to every draw call. Screen and Color Dodge create neon/glow effects. Multiply works best on light backgrounds.</p>
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
@@ -398,81 +554,104 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('shapes')"><span class="sl">Shape overlay</span><span class="sec-arrow" id="arr-shapes">›</span></div>
-      <div class="sec-body collapsed" id="body-shapes">
-        <div class="tr"><span class="tl">Draw shapes on canvas</span><button class="tb" id="btnShapes">Off</button></div>
-        <div class="sl2">Shape type</div>
-        <div class="sh-row" id="shapeTypeRow">
-          <button class="sh-btn active" data-shape="circle">Circle</button>
-          <button class="sh-btn" data-shape="ring">Ring</button>
-          <button class="sh-btn" data-shape="rect">Rect</button>
-          <button class="sh-btn" data-shape="band">Band</button>
-          <button class="sh-btn" data-shape="equilateral">Tri▲</button>
-          <button class="sh-btn" data-shape="hexagon">Hex</button>
-          <button class="sh-btn" data-shape="star5">Star5</button>
-          <button class="sh-btn" data-shape="star6">Star6</button>
-          <button class="sh-btn" data-shape="polygon">Poly-N</button>
-          <button class="sh-btn" data-shape="lissajous">Lissa</button>
-        </div>
-        <div class="rw"><div class="rl"><span class="rn">Polygon sides (Poly-N)</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="16" value="7" step="1" title="Number of sides for the Poly-N shape"></div>
-        <div class="sl2">Position</div>
-        <div class="cg" id="shapePosRow">
-          <button class="cb active" data-pos="center">Center</button>
-          <button class="cb" data-pos="random">Random</button>
-          <button class="cb" data-pos="tl">↖ TL</button>
-          <button class="cb" data-pos="tr">↗ TR</button>
-          <button class="cb" data-pos="bl">↙ BL</button>
-          <button class="cb" data-pos="br">↘ BR</button>
-        </div>
-        <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1" title="Character density inside the shape"></div>
-        <div class="sl2">Shape characters</div>
-        <select id="shapeCharSelect">
-          <option value="same">Same as main field</option>
-          <option value="chinese">Chinese</option>
-          <option value="hiragana">Hiragana</option>
-          <option value="katakana">Katakana</option>
-          <option value="cyrillic">Cyrillic</option>
-          <option value="ascii">ASCII</option>
-          <option value="symbols">Symbols</option>
-          <option value="gradients">Blocks ░▓</option>
-          <option value="dots">Dots</option>
-          <option value="lines">Lines</option>
-          <option value="daggers">Daggers</option>
-          <option value="runes">Runes</option>
-          <option value="math">Math</option>
-        </select>
-        <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5" title="How quickly characters inside the shape cycle"></div>
-        <div class="sl2">Char color mode</div>
-        <div class="cg" id="shapeColModeRow">
-          <button class="cb active" data-scm="inherit">Field</button>
-          <button class="cb" data-scm="fixed">Fixed</button>
-          <button class="cb" data-scm="math">Math</button>
-          <button class="cb" data-scm="palette">Palette</button>
-        </div>
-        <div class="ag" id="shapeFixedColRow" style="margin-top:.4rem">
-          <div class="as" data-sfc="#e63946" style="background:#e63946"></div>
-          <div class="as" data-sfc="#f4a261" style="background:#f4a261"></div>
-          <div class="as" data-sfc="#ede66c" style="background:#ede66c"></div>
-          <div class="as active" data-sfc="#c4bcb0" style="background:#c4bcb0"></div>
-          <div class="as" data-sfc="#80b8e8" style="background:#80b8e8"></div>
-          <div class="as" data-sfc="#d890d8" style="background:#d890d8"></div>
-          <div class="as" data-sfc="#90d4a0" style="background:#90d4a0"></div>
-          <div class="as" data-sfc="#ffffff" style="background:#fff;border:1px solid #555"></div>
-        </div>
-        <div class="sl2">Shape behavior</div>
-        <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2" title="Shape pulse — radius oscillates in and out"></div>
-        <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5" title="Shape spin speed — rotates the shape and its fill"></div>
-        <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
-        <div class="sl2">Scrolling text in shape</div>
-        <div class="cr" style="margin-bottom:.4rem">
-          <input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60">
-          <button class="ca" id="setShapeTextBtn">Set</button>
-        </div>
-        <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-bottom:.3rem">Add shape</button>
-        <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">Clear all</button>
-        <div id="shapeList" class="sh-list"></div>
-      </div></div>
+      <div class="sec">
+  <div class="sec-hd" onclick="toggleSec('shapes')">
+    <span class="sl">Shape overlay</span>
+    <span class="sec-arrow" id="arr-shapes">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-shapes">
 
+    <!-- Global enable/disable -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="tr"><span class="tl">Draw shapes on canvas</span><button class="tb" id="btnShapes">Off</button></div>
+    </div>
+
+    <!-- New shape defaults -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">➕ New shape defaults</div>
+      <div class="sl2" style="margin-top:0.2rem;">Shape type</div>
+      <div class="sh-row" id="shapeTypeRow">
+        <button class="sh-btn active" data-shape="circle">Circle</button>
+        <button class="sh-btn" data-shape="ring">Ring</button>
+        <button class="sh-btn" data-shape="rect">Rect</button>
+        <button class="sh-btn" data-shape="band">Band</button>
+        <button class="sh-btn" data-shape="equilateral">Tri▲</button>
+        <button class="sh-btn" data-shape="hexagon">Hex</button>
+        <button class="sh-btn" data-shape="star5">Star5</button>
+        <button class="sh-btn" data-shape="star6">Star6</button>
+        <button class="sh-btn" data-shape="polygon">Poly-N</button>
+        <button class="sh-btn" data-shape="lissajous">Lissa</button>
+      </div>
+      <div class="rw"><div class="rl"><span class="rn">Polygon sides (Poly-N)</span><span class="rv" id="vShapeSides">7</span></div><input type="range" id="sShapeSides" min="3" max="16" value="7" step="1" title="Number of sides for the Poly-N shape"></div>
+      
+      <div class="sl2">Position</div>
+      <div class="cg" id="shapePosRow">
+        <button class="cb active" data-pos="center">Center</button>
+        <button class="cb" data-pos="random">Random</button>
+        <button class="cb" data-pos="tl">↖ TL</button>
+        <button class="cb" data-pos="tr">↗ TR</button>
+        <button class="cb" data-pos="bl">↙ BL</button>
+        <button class="cb" data-pos="br">↘ BR</button>
+      </div>
+
+      <div class="sl2">Text inside new shape</div>
+      <div class="cr" style="margin-bottom:.4rem">
+        <input class="ci" id="shapeTextInput" placeholder="text within shape…" maxlength="60">
+        <button class="ca" id="setShapeTextBtn">Set</button>
+      </div>
+      <button class="ca" id="btnAddShape" style="width:100%;padding:.5rem 0;margin-top:.2rem;">➕ Add shape</button>
+    </div>
+
+    <!-- Global fill / character settings -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">🎨 Fill & characters (global)</div>
+      <div class="rw"><div class="rl"><span class="rn">Fill density</span><span class="rv" id="vShapeDens">6</span></div><input type="range" id="sShapeDens" min="1" max="10" value="6" step="1" title="Character density inside the shape"></div>
+      <div class="sl2">Shape characters</div>
+      <select id="shapeCharSelect">
+        <option value="same">Same as main field</option>
+        <option value="chinese">Chinese</option>
+        <option value="hiragana">Hiragana</option>
+        <option value="katakana">Katakana</option>
+        <option value="cyrillic">Cyrillic</option>
+        <option value="ascii">ASCII</option>
+        <option value="symbols">Symbols</option>
+        <option value="gradients">Blocks ░▓</option>
+        <option value="dots">Dots</option>
+        <option value="lines">Lines</option>
+        <option value="daggers">Daggers</option>
+        <option value="runes">Runes</option>
+        <option value="math">Math</option>
+      </select>
+      <div class="rw"><div class="rl"><span class="rn">Char change speed</span><span class="rv" id="vShapeCharSpd">50</span></div><input type="range" id="sShapeCharSpd" min="0" max="100" value="50" step="5" title="How quickly characters inside the shape cycle"></div>
+      
+      <div class="sl2">Char color mode</div>
+      <div class="cg" id="shapeColModeRow">
+        <button class="cb active" data-scm="inherit">Field</button>
+        <button class="cb" data-scm="fixed">Fixed</button>
+        <button class="cb" data-scm="math">Math</button>
+        <button class="cb" data-scm="palette">Palette</button>
+      </div>
+
+    <!-- Global shape animation (pulse, spin, orbit) -->
+    <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
+      <div class="sl2">⚡ Shape animation (global)</div>
+      <div class="rw"><div class="rl"><span class="rn">Pulse amount</span><span class="rv" id="vShapePulse">0</span></div><input type="range" id="sShapePulse" min="0" max="50" value="0" step="2" title="Shape pulse — radius oscillates in and out"></div>
+      <div class="rw"><div class="rl"><span class="rn">Spin speed</span><span class="rv" id="vShapeSpin">0</span></div><input type="range" id="sShapeSpin" min="0" max="100" value="0" step="5" title="Shape spin speed — rotates the shape and its fill"></div>
+      <div class="tr"><span class="tl">Orbit canvas center</span><button class="tb" id="btnShapeOrbit">Off</button></div>
+    </div>
+
+    <!-- Per‑shape list -->
+    <div class="shape-group">
+      <div class="sl2">📋 Individual shapes</div>
+      <button class="ca" id="btnClearShapes" style="width:100%;padding:.4rem 0;margin-bottom:.4rem">🗑 Clear all shapes</button>
+      <div id="shapeList" class="sh-list"></div>
+    </div>
+
+  </div>
+
+
+
+      <!-- Scrolling Text Stream Overlay -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('overlay')"><span class="sl">Overlay text streams</span><span class="sec-arrow" id="arr-overlay">›</span></div>
       <div class="sec-body collapsed" id="body-overlay">
         <div class="tr"><span class="tl">Enable overlay</span><button class="tb" id="btnOverlay">Off</button></div>
@@ -480,6 +659,16 @@ select option{background:var(--ink)}
           <input class="ci" id="ovTextInput" placeholder="text to stream…" maxlength="80">
           <button class="ca" id="ovAddStream">Add</button>
         </div>
+        
+        <div id="streamEditPanel" style="display:none; margin-top:.5rem; border-top:1px solid var(--stone); padding-top:.5rem;">
+        <div class="sl2">Edit selected stream</div>
+        <input class="ci" id="editStreamText" placeholder="new text" maxlength="80">
+        <div class="rw"><div class="rl"><span class="rn">Kerning offset</span><span class="rv" id="vEditKern">0</span></div><input type="range" id="sEditKern" min="-20" max="40" value="0" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Speed multiplier</span><span class="rv" id="vEditSpeed">1.0</span></div><input type="range" id="sEditSpeed" min="0" max="3" value="1" step="0.05"></div>
+        <div class="tr"><span class="tl">Repeat to fill screen</span><button class="tb" id="btnRepeatFill">Off</button></div>
+          <button class="ca" id="btnUpdateStream">Update</button>  
+        </div>
+          
         <div id="ovStreamList"></div>
         <div class="rw" style="margin-top:.5rem"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vOvSpeed">3</span></div><input type="range" id="sOvSpeed" min="1" max="20" value="3" step="1" title="Overlay scroll speed"></div>
         <div class="rw"><div class="rl"><span class="rn">Size</span><span class="rv" id="vOvSize">18</span></div><input type="range" id="sOvSize" min="8" max="60" value="18" step="2" title="Overlay character font size"></div>
@@ -487,6 +676,8 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Wave</span><span class="rv" id="vOvWave">0</span></div><input type="range" id="sOvWave" min="0" max="60" value="0" step="2" title="Overlay wave — vertical undulation of the text stream"></div>
         <div class="rw"><div class="rl"><span class="rn">Entropy (char glitch)</span><span class="rv" id="vOvEntropy">0</span></div><input type="range" id="sOvEntropy" min="0" max="100" value="0" step="2" title="Overlay entropy — probability of replacing a character with a glitch symbol"></div>
         <div class="rw"><div class="rl"><span class="rn">Distortion (positional)</span><span class="rv" id="vOvDistort">0</span></div><input type="range" id="sOvDistort" min="0" max="60" value="0" step="2" title="Overlay distortion — horizontal jitter applied to each character position"></div>
+        <div class="rw"><div class="rl"><span class="rn">Kerning (px)</span><span class="rv" id="vOvKern">0</span></div><input type="range" id="sOvKern" min="-10" max="40" value="0" step="1"></div>
+        <div class="rw"><div class="rl"><span class="rn">Line spacing (px)</span><span class="rv" id="vOvLineSpacing">0</span></div><input type="range" id="sOvLineSpacing" min="-20" max="60" value="0" step="2"></div>
         <div class="cg" id="ovDirGrid">
           <button class="cb active" data-ovdir="ltr">→</button>
           <button class="cb" data-ovdir="rtl">←</button>
@@ -502,7 +693,9 @@ select option{background:var(--ink)}
           <div class="as" data-ovcol="#d890d8"  style="background:#d890d8"></div>
           <div class="as" data-ovcol="palette"  style="background:linear-gradient(135deg,#c4bcb0,#b8955a)"></div>
         </div>
-      </div></div>
+
+</div>
+      </div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
       <div class="sec-body collapsed" id="body-img">
@@ -533,19 +726,15 @@ select option{background:var(--ink)}
           <input type="number" class="ni" id="chInput" value="800" min="200" max="3000">
           <button class="ca" id="applySizeBtn">Set</button>
         </div>
-      </div></div>
-
+      </div>
+    
     </div><!-- /ctl -->
-    <div class="ar">
-      <button class="ab play" id="btnPlay" title="Play or pause the animation (Space)">▶ Play</button>
-      <button class="ab" id="btnRegen" title="Regenerate with new random seed (R)">Regen</button>
-      <button class="ab" id="btnSave" title="Save canvas as PNG (S)">Save PNG</button>
-      <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
-    </div>
+    
   </div><!-- /panel -->
 </div><!-- /app -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
+  
 // ── CHARSETS ─────────────────────────────────────────────────────────────────
 // NOTE: Do NOT remove or modify CHARSETS — it is used by presets, shape overlay,
 // and custom charset logic throughout the code.
@@ -570,199 +759,6 @@ const UNICODE_RANGES=[
   {start:0x1F300,end:0x1F9FF,weight:2}, // Emoji & Misc Symbols
   {start:0x10000,end:0x1007F,weight:1}, // Linear B Syllabary
   {start:0x13000,end:0x1342F,weight:1}, // Egyptian Hieroglyphs
-  
-{start:0x0250,end:0x02AF,weight:1},  // IPA Extensions
-{start:0x0530,end:0x058F,weight:1},  // Armenian
-{start:0x0590,end:0x05FF,weight:1},  // Hebrew
-{start:0x0600,end:0x06FF,weight:1},  // Arabic
-{start:0x0700,end:0x074F,weight:1},  // Syriac
-{start:0x0900,end:0x097F,weight:1},  // Devanagari
-{start:0x0980,end:0x09FF,weight:1},  // Bengali
-{start:0x0A00,end:0x0A7F,weight:1},  // Gurmukhi
-{start:0x0A80,end:0x0AFF,weight:1},  // Gujarati
-{start:0x0B00,end:0x0B7F,weight:1},  // Oriya
-{start:0x0B80,end:0x0BFF,weight:1},  // Tamil
-{start:0x0C00,end:0x0C7F,weight:1},  // Telugu
-{start:0x0C80,end:0x0CFF,weight:1},  // Kannada
-{start:0x0D00,end:0x0D7F,weight:1},  // Malayalam
-{start:0x0E00,end:0x0E7F,weight:1},  // Thai
-{start:0x0E80,end:0x0EFF,weight:1},  // Lao
-{start:0x0F00,end:0x0FFF,weight:1},  // Tibetan
-{start:0x1000,end:0x109F,weight:1},  // Myanmar
-{start:0x10A0,end:0x10FF,weight:1},  // Georgian
-{start:0x1100,end:0x11FF,weight:1},  // Hangul Jamo
-{start:0x1200,end:0x137F,weight:5},  // Ethiopic
-{start:0x13A0,end:0x13FF,weight:1},  // Cherokee
-{start:0x1400,end:0x167F,weight:5},  // Unified Canadian Aboriginal Syllabics
-{start:0x1680,end:0x169F,weight:1},  // Ogham
-{start:0x16A0,end:0x16FF,weight:1},  // Runic
-{start:0x1700,end:0x171F,weight:1},  // Tagalog
-{start:0x1720,end:0x173F,weight:1},  // Hanunoo
-{start:0x1740,end:0x175F,weight:1},  // Buhid
-{start:0x1760,end:0x177F,weight:1},  // Tagbanwa
-{start:0x1780,end:0x17FF,weight:1},  // Khmer
-{start:0x1800,end:0x18AF,weight:1},  // Mongolian
-{start:0x1900,end:0x194F,weight:1},  // Limbu
-{start:0x1950,end:0x197F,weight:1},  // Tai Le
-{start:0x1980,end:0x19DF,weight:1},  // New Tai Lue
-{start:0x1A00,end:0x1A1F,weight:1},  // Buginese
-{start:0x1A20,end:0x1AAF,weight:1},  // Tai Tham
-{start:0x1B00,end:0x1B7F,weight:1},  // Balinese
-{start:0x1B80,end:0x1BBF,weight:1},  // Sundanese
-{start:0x1C00,end:0x1C4F,weight:1},  // Lepcha
-{start:0x1C50,end:0x1C7F,weight:1},  // Ol Chiki
-{start:0x20A0,end:0x20CF,weight:1},  // Currency Symbols
-{start:0x2200,end:0x22FF,weight:1},  // Mathematical Operators
-{start:0x2300,end:0x23FF,weight:1},  // Miscellaneous Technical
-{start:0x2400,end:0x243F,weight:1},  // Control Pictures
-{start:0x2440,end:0x245F,weight:1},  // Optical Character Recognition
-{start:0x2460,end:0x24FF,weight:1},  // Enclosed Alphanumerics
-{start:0x2580,end:0x259F,weight:1},  // Block Elements
-{start:0x25A0,end:0x25FF,weight:1},  // Geometric Shapes
-{start:0x2600,end:0x26FF,weight:1},  // Miscellaneous Symbols
-{start:0x2700,end:0x27BF,weight:1},  // Dingbats
-{start:0x27C0,end:0x27EF,weight:1},  // Miscellaneous Mathematical Symbols-A
-{start:0x2800,end:0x28FF,weight:1},  // Braille Patterns
-{start:0x2980,end:0x29FF,weight:1},  // Miscellaneous Mathematical Symbols-B
-{start:0x2C00,end:0x2C5F,weight:1},  // Glagolitic
-{start:0x2C80,end:0x2CFF,weight:1},  // Coptic
-{start:0x2D30,end:0x2D7F,weight:1},  // Tifinagh
-{start:0x3100,end:0x312F,weight:1},  // Bopomofo
-{start:0x3190,end:0x319F,weight:1},  // Kanbun
-{start:0xA4D0,end:0xA4FF,weight:1},  // Lisu
-{start:0xA500,end:0xA63F,weight:1},  // Vai
-{start:0xA6A0,end:0xA6FF,weight:1},  // Bamum
-{start:0xA800,end:0xA82F,weight:1},  // Syloti Nagri
-{start:0xA830,end:0xA83F,weight:1},  // Common Indic Number Forms
-{start:0xA840,end:0xA87F,weight:1},  // Phags-pa
-{start:0xA880,end:0xA8DF,weight:1},  // Saurashtra
-{start:0xA8E0,end:0xA8FF,weight:1},  // Devanagari Extended
-{start:0xA900,end:0xA92F,weight:1},  // Kayah Li
-{start:0xA930,end:0xA95F,weight:1},  // Rejang
-{start:0xA980,end:0xA9DF,weight:1},  // Javanese
-{start:0xAA00,end:0xAA5F,weight:1},  // Cham
-{start:0xAA80,end:0xAADF,weight:1},  // Tai Viet
-{start:0xABC0,end:0xABFF,weight:1},  // Meetei Mayek
-{start:0x10080,end:0x100FF,weight:1},  // Linear B Ideograms
-{start:0x10100,end:0x1013F,weight:1},  // Aegean Numbers
-{start:0x10140,end:0x1018F,weight:1},  // Ancient Greek Numbers
-{start:0x10190,end:0x101CF,weight:1},  // Ancient Symbols
-{start:0x101D0,end:0x101FF,weight:5},  // Phaistos Disc
-{start:0x10280,end:0x1029F,weight:1},  // Lycian
-{start:0x102A0,end:0x102DF,weight:1},  // Carian
-{start:0x10300,end:0x1032F,weight:1},  // Old Italic
-{start:0x10330,end:0x1034F,weight:1},  // Gothic
-{start:0x10350,end:0x1037F,weight:1},  // Old Permic
-{start:0x10380,end:0x1039F,weight:1},  // Ugaritic
-{start:0x103A0,end:0x103DF,weight:1},  // Old Persian
-{start:0x10400,end:0x1044F,weight:5},  // Deseret
-{start:0x10450,end:0x1047F,weight:1},  // Shavian
-{start:0x10480,end:0x104AF,weight:1},  // Osmanya
-{start:0x104B0,end:0x104FF,weight:1},  // Osage
-{start:0x10500,end:0x1052F,weight:1},  // Elbasan
-{start:0x10530,end:0x1056F,weight:1},  // Caucasian Albanian
-{start:0x10600,end:0x1077F,weight:1},  // Linear A
-{start:0x10800,end:0x1083F,weight:1},  // Cypriot Syllabary
-{start:0x10840,end:0x1085F,weight:1},  // Imperial Aramaic
-{start:0x10860,end:0x1087F,weight:1},  // Palmyrene
-{start:0x10880,end:0x108AF,weight:1},  // Nabataean
-{start:0x10900,end:0x1091F,weight:1},  // Phoenician
-{start:0x10920,end:0x1093F,weight:1},  // Lydian
-{start:0x10980,end:0x1099F,weight:1},  // Meroitic Hieroglyphs
-{start:0x109A0,end:0x109FF,weight:1},  // Meroitic Cursive
-{start:0x10A00,end:0x10A5F,weight:1},  // Kharoshthi
-{start:0x10A60,end:0x10A7F,weight:1},  // Old South Arabian
-{start:0x10A80,end:0x10A9F,weight:1},  // Old North Arabian
-{start:0x10AC0,end:0x10AFF,weight:1},  // Manichaean
-{start:0x10B00,end:0x10B3F,weight:1},  // Avestan
-{start:0x10B40,end:0x10B5F,weight:1},  // Inscriptional Parthian
-{start:0x10B60,end:0x10B7F,weight:1},  // Inscriptional Pahlavi
-{start:0x10B80,end:0x10BAF,weight:1},  // Psalter Pahlavi
-{start:0x10C00,end:0x10C4F,weight:4},  // Old Turkic
-{start:0x10C80,end:0x10CFF,weight:1},  // Old Hungarian
-{start:0x10E60,end:0x10E7F,weight:1},  // Rumi Numeral Symbols
-{start:0x10F00,end:0x10F2F,weight:1},  // Old Sogdian
-{start:0x10F30,end:0x10F6F,weight:1},  // Sogdian
-{start:0x10FB0,end:0x10FDF,weight:1},  // Chorasmian
-{start:0x10FE0,end:0x10FFF,weight:1},  // Elymaic
-{start:0x11000,end:0x1107F,weight:1},  // Brahmi
-{start:0x11080,end:0x110CF,weight:1},  // Kaithi
-{start:0x110D0,end:0x110FF,weight:1},  // Sora Sompeng
-{start:0x11100,end:0x1114F,weight:1},  // Chakma
-{start:0x11150,end:0x1117F,weight:1},  // Mahajani
-{start:0x11180,end:0x111DF,weight:1},  // Sharada
-{start:0x111E0,end:0x111FF,weight:1},  // Sinhala Archaic Numbers
-{start:0x11200,end:0x1124F,weight:1},  // Khojki
-{start:0x11280,end:0x112AF,weight:1},  // Multani
-{start:0x112B0,end:0x112FF,weight:1},  // Khudawadi
-{start:0x11300,end:0x1137F,weight:1},  // Grantha
-{start:0x11400,end:0x1147F,weight:1},  // Newa
-{start:0x11480,end:0x114DF,weight:1},  // Tirhuta
-{start:0x11580,end:0x115FF,weight:1},  // Siddham
-{start:0x11600,end:0x1165F,weight:1},  // Modi
-{start:0x11680,end:0x116CF,weight:1},  // Takri
-{start:0x11700,end:0x1174F,weight:1},  // Ahom
-{start:0x11800,end:0x1184F,weight:1},  // Dogra
-{start:0x118A0,end:0x118FF,weight:1},  // Warang Citi
-{start:0x11900,end:0x1195F,weight:1},  // Zanabazar Square
-{start:0x119A0,end:0x119FF,weight:1},  // Soyombo
-{start:0x11A00,end:0x11A4F,weight:1},  // Pau Cin Hau
-{start:0x11A50,end:0x11AAF,weight:1},  // Bhaiksuki
-{start:0x11AB0,end:0x11ABF,weight:1},  // Marchen
-{start:0x11AC0,end:0x11AFF,weight:1},  // Masaram Gondi
-{start:0x11D60,end:0x11DAF,weight:1},  // Gunjala Gondi
-{start:0x11EE0,end:0x11EFF,weight:1},  // Makasar
-{start:0x12000,end:0x123FF,weight:5},  // Cuneiform
-{start:0x12400,end:0x1247F,weight:1},  // Cuneiform Numbers and Punctuation
-{start:0x12F90,end:0x12FFF,weight:1},  // Cypro-Minoan
-{start:0x14400,end:0x1467F,weight:6},  // Anatolian Hieroglyphs
-{start:0x16A40,end:0x16A6F,weight:1},  // Mro
-{start:0x16A70,end:0x16ACF,weight:1},  // Tangsa
-{start:0x16AD0,end:0x16AFF,weight:1},  // Bassa Vah
-{start:0x16B00,end:0x16B8F,weight:1},  // Pahawh Hmong
-{start:0x16E40,end:0x16E9F,weight:1},  // Medefaidrin
-{start:0x16F00,end:0x16F9F,weight:1},  // Miao
-{start:0x17000,end:0x187FF,weight:1},  // Tangut
-{start:0x1B170,end:0x1B2FF,weight:1},  // Nushu
-{start:0x1BC00,end:0x1BC9F,weight:1},  // Duployan
-{start:0x1CF00,end:0x1CFCF,weight:2},  // Znamenny Musical Notation
-{start:0x1D000,end:0x1D0FF,weight:2},  // Byzantine Musical Symbols
-{start:0x1D100,end:0x1D1FF,weight:8},  // Musical Symbols
-{start:0x1D200,end:0x1D24F,weight:1},  // Ancient Greek Musical Notation
-{start:0x1D2E0,end:0x1D2FF,weight:1},  // Mayan Numerals
-{start:0x1D300,end:0x1D35F,weight:1},  // Tai Xuan Jing Symbols
-{start:0x1D360,end:0x1D37F,weight:1},  // Counting Rod Numerals
-{start:0x1D400,end:0x1D7FF,weight:1},  // Mathematical Alphanumeric Symbols
-{start:0x1D800,end:0x1DAAF,weight:1},  // Sutton SignWriting
-{start:0x1E000,end:0x1E02F,weight:1},  // Glagolitic Supplement
-{start:0x1E100,end:0x1E14F,weight:1},  // Nyiakeng Puachue Hmong
-{start:0x1E290,end:0x1E2BF,weight:1},  // Toto
-{start:0x1E2C0,end:0x1E2FF,weight:1},  // Wancho
-{start:0x1E7E0,end:0x1E7FF,weight:1},  // Ethiopic Extended-B
-{start:0x1E800,end:0x1E8DF,weight:1},  // Mende Kikakui
-{start:0x1E900,end:0x1E95F,weight:1},  // Adlam
-{start:0x1EC70,end:0x1ECBF,weight:1},  // Indic Siyaq Numbers
-{start:0x1ED00,end:0x1ED4F,weight:1},  // Ottoman Siyaq Numbers
-{start:0x1EE00,end:0x1EEFF,weight:1},  // Arabic Mathematical Alphabetic Symbols
-{start:0x1F000,end:0x1F02F,weight:1},  // Mahjong Tiles
-{start:0x1F030,end:0x1F09F,weight:1},  // Domino Tiles
-{start:0x1F0A0,end:0x1F0FF,weight:1},  // Playing Cards
-{start:0x1F100,end:0x1F1FF,weight:1},  // Enclosed Alphanumeric Supplement
-{start:0x1F200,end:0x1F2FF,weight:1},  // Enclosed Ideographic Supplement
-{start:0x1F300,end:0x1F5FF,weight:1},  // Miscellaneous Symbols and Pictographs
-{start:0x1F600,end:0x1F64F,weight:1},  // Emoticons
-{start:0x1F650,end:0x1F67F,weight:1},  // Ornamental Dingbats
-{start:0x1F680,end:0x1F6FF,weight:1},  // Transport and Map Symbols
-{start:0x1F700,end:0x1F77F,weight:1},  // Alchemical Symbols
-{start:0x1F780,end:0x1F7FF,weight:1},  // Geometric Shapes Extended
-{start:0x1F800,end:0x1F8FF,weight:1},  // Supplemental Arrows-C
-{start:0x1F900,end:0x1F9FF,weight:1},  // Supplemental Symbols and Pictographs
-{start:0x1FA00,end:0x1FA6F,weight:1},  // Chess Symbols
-
-
-
-
-  
 ];
 let _weightedCumulative=null;
 function _buildWeightedCumulative(){
@@ -843,7 +839,7 @@ const CHARSETS={
   georgian: 'აბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ'.split(''),
   cyrillic: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёЄІЇ'.split(''),
   sanskrit: 'अआइईउऊएओकखगघचछजझटठडढतथदधनपफबभमयरलवशषसहॐ।।'.split(''),
-  hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀇𓀈𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀝𓀞𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀪𓀫𓀬𓀭𓀮𓀯𓀰𓀱𓀲𓀳𓀴𓀵𓀶𓀷𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀𓁁𓁂𓁃𓁄𓁅𓁆𓁇𓁈𓁉𓁊𓁋𓁌𓁍𓁎𓁏𓁐𓁑𓁒𓁓𓁔𓁕𓁖𓁗𓁘𓁙𓁚𓁛𓁜𓁝𓁞𓁟𓁠𓁡'.split(''),
+  hieroglyphs: '𓀀𓀁𓀂𓀃𓀄𓀅𓀆𓀉𓀊𓀋𓀌𓀍𓀎𓀏𓀐𓀑𓀒𓀓𓀔𓀕𓀖𓀗𓀘𓀙𓀚𓀛𓀜𓀟𓀠𓀡𓀢𓀣𓀤𓀥𓀦𓀧𓀨𓀩𓀬𓀸𓀹𓀺𓀻𓀼𓀽𓀾𓀿𓁀'.split(''),
   arcane:   'ᚻᚦᛄᛖᛯᛣᚷᚳᛟ፠֎֍⚴⊕⊗⸎⸽⸾⁙⁜※ᛗᛚᛜᛝᛞᚱᚨᚹᚾ'.split(''),
   runes:    'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟᛣᛤᛥᛦᛧᛨᛩᛪ'.split(''),
   alchemy: '🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜎🜏🜐🜑🜒🜓🜔🜕🜖🜗🜘🜙🜚🜛🜜🜝🜞🜟🜠🜡🜢🜣🜤🜥🜦🜧🜨🜩🜪🜫🜬🜭🜮🜯'.split(''),
@@ -856,6 +852,7 @@ const CHARSETS={
   barcode:  '▏▎▍▌▋▊▉█01'.split(''),
   gradients:'░▒▓█▀▄▌▐▖▗▘▙▚▛▜▝▞▟'.split(''),
   squares:  '■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯'.split(''),
+  crossstitch: '×•⨳╳✕'.split(''),
   circles:  '☻☺⊕⊗⊙○●◌˚¤°·֎֍◎◉◐◑◒◓'.split(''),
   music: ['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓'],
   daggers:  '†‡⸶⸸⸷✁✂✃✄'.split(''),
@@ -865,6 +862,8 @@ const CHARSETS={
   custom:   ['J','O','N'],
 };
 
+const RARE_CHARSETS = ['hieroglyphs', 'alchemy', 'gothic', 'runes', 'celtic', 'arcane', 'braille', 'music', 'math', 'sacred'];
+  
 // ── PALETTES ─────────────────────────────────────────────────────────────────
 const PALETTES={
   site:      ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
@@ -896,6 +895,39 @@ const PALETTES={
   velvet:    ['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],
   tidal:     ['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],
   solaris:   ['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
+  // ── NEW PALETTES 2025 ─────────────────────────────────────
+  // Warm & Fire
+  volcanic:   ['#FF4500','#8B0000','#FF8C00','#2F0A00','#5C1A00'],
+  lava:       ['#ff1493','#ff8c00','#ffd700','#ff4500','#8b008b'],
+  adobesunset:['#e85d04','#f48c06','#faa307','#ffba08','#dc2f02','#9d0208'],
+  pumpkin:    ['#e65100','#ff8c00','#ffb300','#ffe082','#3e2723'],
+  burnedpaper:['#2b1e12','#4a3320','#6b4c2e','#8c663c','#ad804a','#cfaa70'],
+  // Cool & Ocean
+  biolum:     ['#00FFAA','#00CC88','#003322','#66FFCC','#004422'],
+  lagoon:     ['#001f3f','#005a6b','#009688','#4db6ac','#b2dfdb'],
+  glacier:    ['#e0f0ff','#b0d4ff','#80b8ff','#4a90e2','#1e5a99','#0a2a4a'],
+  deepnebula: ['#0b0b2a','#1a1a4a','#3a2a6a','#7a4a8a','#c86aaa','#ffaad4'],
+  midnightrain:['#0f172a','#1e293b','#334155','#475569','#64748b','#94a3b8'],
+  moldavite:  ['#0a2a1a','#1a5a3a','#2a8a5a','#5aba8a','#8aeaba'],
+  // Purple & Synth
+  electricsheep:['#2a0a4a','#5a1a7a','#aa2e8e','#ea5a9e','#f2a2be'],
+  vaporwave:  ['#ff71ce','#01cdfe','#05ffa1','#b967ff','#fffb96'],
+  neonpastel: ['#FFB3BA','#C5E99B','#B5EAD7','#A0E7E5','#C7CEEA'],
+  retro80s:   ['#FF0055','#00E5FF','#FFDD00','#9900FF','#FF5500'],
+  // Gold & Earth
+  kintsugi:   ['#1a0a05','#3a2a1a','#6a4a2a','#aa7a4a','#e8b87a','#f5d7b3'],
+  incense:    ['#D4A373','#B5835A','#8A5A44','#CC8B65','#E6C7A0'],
+  mushroom:   ['#d9bf77','#b88a5c','#7c4a3a','#4a2a1a','#2a1a0a','#8a6e4a'],
+  // Mono & Technical
+  spectral:   ['#FF0000','#FF7700','#FFFF00','#00FF00','#0000FF','#8B00FF'],
+  plasma:     ['#FFFFFF','#AAAAAA','#555555','#222222','#000000'],
+  phantom:    ['#f0f0f0','#c0c0c0','#808080','#404040','#000000'],
+  radioactive:['#ccff00','#99ff00','#66ff00','#33ff00','#00ff00','#00cc00'],
+  siliconvalley:['#00ff41','#00cc33','#009926','#006614','#003300','#1a1a1a'],
+  amberterm:  ['#ffb000','#e69500','#cc7a00','#b35f00','#994400','#7f2a00','#1a0a00'],
+  sakurasnow: ['#fff0f5','#ffe4e1','#ffc0cb','#ffb7c5','#ff99cc','#e68ab8'],
+  // Green & Organic
+  oxcopper:   ['#4a5d23','#6b8e23','#8fbc6e','#b5d88c','#2e3b1f','#1e2a12'],
 };
 
 const FONTS={
@@ -909,6 +941,8 @@ const FONTS={
   playfair:"'Playfair Display',serif",
   impact:'Impact,sans-serif',
   mono:'monospace',
+  unicode: "'Noto Sans Symbols 2', 'Noto Emoji', 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans', sans-serif",
+  unicode_lite: "'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans', sans-serif",
 };
 
 const GLITCH=['█','_','░','▒','?','#','%','■','□',' '];
@@ -929,6 +963,7 @@ const COMP_PALETTES={
 let S={
   mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
   accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
+  previousFont: 'courier',   // default
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
@@ -939,14 +974,30 @@ let S={
   overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
   overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
   overlayEntropy:0,overlayDistort:0,
+  overlayKern: 0,           // global kerning (pixels)
+  overlayLineSpacing: 0,    // additional vertical spacing (pixels)
+  overlayRepeatFill: false, // if true, each stream repeats to cover whole screen
   shapesEnabled:false,shapeDens:6,selectedShape:'circle',
   shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
   shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
   shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
   shapePosition:'center',shapeSides:7,shapeText:'',
   signalCollapse:false,signalStart:0,
+  blendMode:'source-over',
   playing:false,fc:0,
+  useParticleMode:false, 
+  reactFeed: 0.033, //reaction
+  reactKill: 0.062, //reaction
+  reactOscillate: false,
+  mycSpeed: 1.0, //mycelium
+  mycBranch: 3,  //mycelium
+  hatchAngle:45,hatchCurve:5,
+  vorWire:false,
+  magPoles: 2,
+
 };
+  
+
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
 let imgPix=null,imgW=0,imgH=0;
@@ -955,6 +1006,10 @@ let shapes=[];
 let recRects=[];
 let loopParticles=[];
 let topoSegs=[];
+// Boids state
+let boidAgents=[];
+// Magnetic field state
+let magneticPoles=[];
 // Wireframe Terrain state
 let wtHeightmap=null,wtW=0,wtH=0;
 // Fractal Subdivision state
@@ -963,6 +1018,8 @@ let fsPolygons=[];
 let rdGrid=null,rdW=0,rdH=0; // reaction-diffusion
 let voronoiSites=[];
 let myceliumBranches=[];
+let wormAgents = [];
+let flowerspin = [];   
 let sandParticles=[];
 let caGrid=null,caW=0,caH=0,caNext=null;
 let lissParticles=[];
@@ -971,10 +1028,27 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 // Native ctx
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
+ 
 
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 
-function dc(x,y,sz,rot,col,ch){
+function dc(x, y, sz, rot, col, ch) {
+  if (!CTX) return;
+  if (S.useParticleMode) {
+    CTX.fillStyle = col;
+    CTX.beginPath();
+    let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
+    if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
+    else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+    else {
+      CTX.moveTo(x, y - sz * 0.4);
+      CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
+      CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
+      CTX.closePath();
+    }
+    CTX.fill();
+    return;
+  }
   if(!CTX||!ch) return;
   if(!ch.trim()&&S.entropy<.1) return;
   let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
@@ -1110,12 +1184,26 @@ function initVoronoi(W,H){
   for(let i=0;i<n;i++) voronoiSites.push({x:Math.random()*W,y:Math.random()*H,col:S.palette[i%S.palette.length],vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
 }
 
-function initMycelium(W,H){
-  myceliumBranches=[];
-  let n=3+Math.floor(S.density*3);
-  for(let i=0;i<n;i++){
-    let a=Math.random()*6.28;
-    myceliumBranches.push({x:W/2+(Math.random()-.5)*W*.3,y:H/2+(Math.random()-.5)*H*.3,angle:a,len:0,maxLen:80+Math.random()*200,speed:1+Math.random()*2,age:0,col:S.palette[i%S.palette.length],children:0,maxChildren:3+Math.floor(Math.random()*4)});
+function initMycelium(W, H) {
+  myceliumBranches = [];
+  let n = 8 + Math.floor(S.density * 10);  // more branches
+  for (let i = 0; i < n; i++) {
+    let startX = W / 2 + (Math.random() - 0.5) * W * 0.4;
+    let startY = H / 2 + (Math.random() - 0.5) * H * 0.4;
+    let angle = Math.random() * Math.PI * 2;
+    myceliumBranches.push({
+      x: startX,
+      y: startY,
+      angle: angle,
+      len: 0,
+      maxLen: 100 + Math.random() * 200,
+      speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
+      age: 0,
+      col: S.palette[i % S.palette.length],
+      children: 0,
+      maxChildren: S.mycBranch,
+      dead: false
+    });
   }
 }
 
@@ -1133,6 +1221,39 @@ function initCellular(W,H){
   for(let i=0;i<caW*caH;i++) caGrid[i]=Math.random()<.35?1:0;
 }
 
+function initWorms(W, H) {
+  wormAgents = [];
+  let n = Math.floor(20 + S.density * 40);
+  for (let i = 0; i < n; i++) {
+    wormAgents.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      angle: Math.random() * Math.PI * 2,
+      col: S.palette[i % S.palette.length],
+      history: []
+    });
+  }
+}  
+
+function initFlowerspin(W, H) {
+  flowerspin = [];
+  let count = Math.max(7, Math.floor(S.density * 23)); // 1 to 5 creatures
+  for (let i = 0; i < count; i++) {
+    flowerspin.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      angle: Math.random() * Math.PI * 2,
+      phase: Math.random() * Math.PI * 2,
+      bodyLength: 40 + Math.random() * 60,   // pixels
+      bodyWidth: 20 + Math.random() * 30,
+      wiggle: 0.5 + Math.random() * 1.5,
+      col: S.palette[i % S.palette.length],
+      borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
+      pulse: 0
+    });
+  }
+}
+  
 // ── WIREFRAME TERRAIN INIT ─────────────────────────────────────────────────────────────────
 function initWireTerrain(p,W,H){
   // Grid resolution driven by spacing slider
@@ -1627,7 +1748,7 @@ function drawReaction(p,t){
   if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
   let g=rdGrid,W=rdW,H=rdH;
   // Gray-Scott parameters (feed/kill tuned for spots)
-  let feed=0.035+S.density*.008,kill=0.065+S.wave*.0002;
+  let feed = S.reactFeed, kill = S.reactKill;
   let dA=1.0,dB=0.5;
   // Simulate steps
   let steps=S.playing?2:0;
@@ -1703,44 +1824,58 @@ function drawVoronoi(p,t){
   }
 }
 
-// ── NEW MODE: MYCELIUM ────────────────────────────────────────────────────────
-// Branching organic network — like fungal growth or neural dendrites
-function drawMycelium(p,t){
-  if(!myceliumBranches.length) initMycelium(p.width,p.height);
-  if(S.playing){
-    let newBranches=[];
-    myceliumBranches.forEach(function(b){
-      // Grow
-      b.angle+=p.noise(b.x*.008,b.y*.008,t*.3)*.4-.2+S.wave*.003;
-      b.x+=Math.cos(b.angle)*b.speed;
-      b.y+=Math.sin(b.angle)*b.speed;
-      b.len+=b.speed;b.age++;
-      // Branch
-      if(b.len>30+Math.random()*60&&b.children<b.maxChildren&&Math.random()<.02){
-        b.children++;
-        newBranches.push({x:b.x,y:b.y,angle:b.angle+(Math.random()-.5)*1.2,
-          len:0,maxLen:b.maxLen*.7,speed:b.speed*.9,age:0,
-          col:S.palette[Math.floor(Math.random()*S.palette.length)],
-          children:0,maxChildren:2});
-      }
-      // Die at edges or max length
-      if(b.x<0||b.x>p.width||b.y<0||b.y>p.height||b.len>b.maxLen) b.dead=true;
-    });
-    myceliumBranches=myceliumBranches.filter(function(b){return !b.dead;});
-    myceliumBranches=myceliumBranches.concat(newBranches);
-    // Respawn
-    if(myceliumBranches.length<5){
-      initMycelium(p.width,p.height);
+function drawMycelium(p, t) {
+  if (!myceliumBranches.length) initMycelium(p.width, p.height);
+  if (S.playing) {
+    let newBranches = [];
+    myceliumBranches.forEach(function(b) {
+      b.angle += p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) * 0.4 - 0.2 + S.wave * 0.003;
+      b.x += Math.cos(b.angle) * b.speed;
+      b.y += Math.sin(b.angle) * b.speed;
+      b.len += b.speed;
+      b.age++;
+    if (b.len > 20 + Math.random() * 160 && b.children < b.maxChildren && Math.random() < 0.02) {
+      b.children++;
+      newBranches.push({
+        x: b.x, y: b.y,
+        angle: b.angle + (Math.random() - 0.5) * 1.2,
+        len: 0,
+        maxLen: b.maxLen * 4.7,
+        speed: b.speed * 0.9,
+        age: 0,
+        col: S.palette[Math.floor(Math.random() * S.palette.length)],
+        children: 0,
+        maxChildren: 10
+      });
     }
-    if(myceliumBranches.length>400) myceliumBranches.splice(0,50);
+      if (b.x < -100 || b.x > p.width + 100 || b.y < -100 || b.y > p.height + 100 || b.len > b.maxLen) {
+        b.dead = true;
+        }
+    });
+    myceliumBranches = myceliumBranches.filter(b => !b.dead);
+    myceliumBranches = myceliumBranches.concat(newBranches);
+    if (myceliumBranches.length < 5) initMycelium(p.width, p.height);
+    if (myceliumBranches.length > 400) myceliumBranches.splice(0, 50);
   }
-  myceliumBranches.forEach(function(b){
-    let alpha=Math.min(1,b.len/20)*(1-b.len/b.maxLen);
-    CTX.globalAlpha=Math.max(0,alpha);
-    let sz=p.map(b.len/b.maxLen,0,1,S.maxSize*.6,2);
-    dc(b.x,b.y,sz,b.angle,b.col,pickChar(p,b.x,b.y,t));
+  // Debug: log branch count once every 60 frames
+  if (S.fc % 60 === 0) console.log("Mycelium branches:", myceliumBranches.length);
+  myceliumBranches.forEach(function(b) {
+    // Size: never smaller than 6px, never larger than S.maxSize
+    let sz = Math.max(6, Math.min(S.maxSize, p.map(b.len / b.maxLen, 0, 1, 8, S.maxSize)));
+    // Alpha: always at least 0.6, fades slightly at the end of life
+    let alpha = 0.6 + 0.3 * (1 - b.len / b.maxLen);
+    CTX.globalAlpha = alpha;
+    // Draw a bright dot (use accent colour for contrast)
+    CTX.fillStyle = S.accent !== 'none' ? S.accent : b.col;
+    CTX.beginPath();
+    CTX.arc(b.x, b.y, sz * 0.4, 0, Math.PI * 2);
+    CTX.fill();
+    // Draw the character (with fallback)
+    let ch = pickChar(p, b.x, b.y, t);
+    if (!ch || ch === '') ch = '●';  // fallback
+    dc(b.x, b.y, sz, b.angle, b.col, ch);
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
 
 // ── NEW MODE: SAND DRIFT ──────────────────────────────────────────────────────
@@ -2059,6 +2194,735 @@ function drawFractalSubdiv(p,t){
   _lastFont='';_lastFill='';
 }
 
+// ── TRUCHET TILES ─────────────────────────────────────────────────────────────
+// Each tile gets two quarter-circles connecting opposite corners.
+// Noise decides orientation; wave drives animation; density controls opacity.
+function drawTruchet(p,t){
+  let W=p.width,H=p.height;
+  let sz=Math.max(8,S.spacing*1.8); // tile size
+  let cols=Math.ceil(W/sz)+1,rows=Math.ceil(H/sz)+1;
+  CTX.save();
+  CTX.lineCap='round';
+  CTX.lineWidth=Math.max(0.5,S.maxSize*.04);
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      let tx=c*sz, ty=r*sz;
+      // Noise determines orientation; animate slowly
+      let n=p.noise(c*S.noiseScale*4,r*S.noiseScale*4,t*.08);
+      let flip=n>0.5;
+      // Pick color from palette
+      let ci=Math.floor(p.noise(c*S.noiseScale*2,r*S.noiseScale*2,t*.05)*S.palette.length);
+      let col=S.palette[ci%S.palette.length];
+      if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.25) col=S.accent;
+      CTX.strokeStyle=col;
+      CTX.globalAlpha=0.55+n*.45;
+
+      CTX.beginPath();
+      if(flip){
+        // Arc from bottom-left corner to top-right corner
+        CTX.arc(tx,ty+sz,sz,Math.PI*1.5,0); // bottom-left → top-right arc
+        CTX.moveTo(tx+sz,ty);
+        CTX.arc(tx+sz,ty+sz,sz,Math.PI,Math.PI*1.5); // other arc through top-right
+      } else {
+        // Arc from top-left corner to bottom-right corner
+        CTX.arc(tx,ty,sz,0,Math.PI*.5);
+        CTX.moveTo(tx+sz,ty+sz);
+        CTX.arc(tx+sz,ty,sz,Math.PI*.5,Math.PI);
+      }
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha=1;
+  CTX.restore();
+}
+
+// ── SEISMA (PLOTTER HATCH) ─────────────────────────────────────────────────────────────
+// Parallel lines across the canvas; spacing, curvature, and direction driven
+// by Perlin noise. Cross-hatching when wave is high.
+function drawSeisma(p,t){
+  let W=p.width,H=p.height;
+  let lineGap=Math.max(2,S.spacing*.6);
+  let nLines=Math.ceil(Math.max(W,H)/lineGap)+2;
+  let ns=S.noiseScale*2;
+  let amp=S.wave*1.2; // curvature amplitude
+  let lw=Math.max(0.3,S.maxSize*.04);
+
+  CTX.save();
+  CTX.lineCap='round';
+  CTX.lineWidth=lw;
+
+  // Draw horizontal hatching passes (1 or 2 for cross-hatch)
+  let passes=S.wave>40?2:1;
+  for(let pass=0;pass<passes;pass++){
+    let baseAngle=pass===0?0:Math.PI*.5;
+    let ci=pass===0?0:Math.floor(S.palette.length/2);
+
+    for(let li=0;li<nLines;li++){
+      let progress=li/nLines;
+      let col=S.palette[(ci+Math.floor(progress*S.palette.length))%S.palette.length];
+      if(S.accent!=='none'&&S.accentAmt>0&&li%(Math.ceil(nLines/5))===0) col=S.accent;
+      CTX.strokeStyle=col;
+      CTX.globalAlpha=0.4+p.noise(progress,t*.05)*0.5;
+
+      let perpOffset=li*lineGap-Math.max(W,H)*.05;
+      CTX.beginPath();
+      let steps=Math.ceil(Math.max(W,H)/Math.max(4,S.spacing*.3))+1;
+      for(let si=0;si<=steps;si++){
+        let along=(si/steps)*Math.max(W,H)*1.1-Math.max(W,H)*.05;
+        // Noise-driven curvature perpendicular to line direction
+        let nx=pass===0?along:perpOffset;
+        let ny=pass===0?perpOffset:along;
+        let curv=p.noise(nx*ns*.5+t*.05,ny*ns*.5+pass*5)*amp - amp*.5;
+        // Break lines occasionally for broken/sketchy feel
+        if(S.entropy>0&&Math.random()<S.entropy*.15){
+          CTX.stroke();CTX.beginPath();
+          si+=Math.floor(Math.random()*3)+1; continue;
+        }
+        let px2=pass===0?along:perpOffset+curv;
+        let py2=pass===0?perpOffset+curv:along;
+        if(si===0) CTX.moveTo(px2,py2);
+        else CTX.lineTo(px2,py2);
+      }
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha=1;
+  CTX.restore();
+}
+// ── HATCH LINES ───────────────────────────────────────────────────────────────
+function drawHatch(p,t){
+  let sp=S.spacing,ang=S.hatchAngle*Math.PI/180;
+  CTX.lineWidth=1;
+  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
+    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
+    if(n<S.density) continue;
+    let localAng=ang+(n-.5)*S.hatchCurve*0.2;
+    let x2=x+Math.cos(localAng)*sp*2,y2=y+Math.sin(localAng)*sp*2;
+    CTX.strokeStyle=pickColor(p,x,y,t);
+    CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x2,y2);CTX.stroke();
+    if(n>S.density+0.2){
+      let x3=x+Math.cos(localAng+Math.PI/2)*sp*2,y3=y+Math.sin(localAng+Math.PI/2)*sp*2;
+      CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x3,y3);CTX.stroke();
+    }
+  }
+}
+  
+// ── WARPED GRID ───────────────────────────────────────────────────────────────
+// Regular grid displaced by a noise vector field. Draw grid lines as quads.
+// Liquid crystals, waving fabric, twisting tunnels.
+function drawWarpGrid(p,t){
+  let W=p.width,H=p.height;
+  let sp=Math.max(8,S.spacing*1.4);
+  let cols=Math.ceil(W/sp)+2, rows=Math.ceil(H/sp)+2;
+  let ns=S.noiseScale*3;
+  let disp=S.wave*1.5; // displacement magnitude
+
+  // Build displaced grid
+  let pts=[];
+  for(let r=0;r<=rows;r++){
+    pts.push([]);
+    for(let c=0;c<=cols;c++){
+      let bx=(c-1)*sp, by=(r-1)*sp;
+      // Two noise channels for X and Y displacement
+      let dx=(p.noise(bx*ns,by*ns,t*.2)-.5)*disp*2;
+      let dy=(p.noise(bx*ns+100,by*ns+100,t*.2)-.5)*disp*2;
+      pts[r].push({x:bx+dx,y:by+dy});
+    }
+  }
+
+  CTX.save();
+  CTX.lineWidth=Math.max(0.4,S.maxSize*.035);
+  CTX.lineCap='round';
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      let p00=pts[r][c],p10=pts[r][c+1],p01=pts[r+1][c],p11=pts[r+1][c+1];
+      let avgX=(p00.x+p10.x+p01.x+p11.x)/4;
+      let avgY=(p00.y+p10.y+p01.y+p11.y)/4;
+      if(avgX<-sp*2||avgX>W+sp*2||avgY<-sp*2||avgY>H+sp*2) continue;
+
+      let ci=Math.floor(p.noise(c*S.noiseScale*2,r*S.noiseScale*2,t*.1)*S.palette.length);
+      let col=S.palette[ci%S.palette.length];
+      if(S.accent!=='none'&&S.accentAmt>0&&(r+c)%Math.ceil(1/S.accentAmt+1)===0) col=S.accent;
+      CTX.strokeStyle=col;
+      CTX.globalAlpha=0.5+p.noise(c*ns*.5,r*ns*.5,t*.15)*.4;
+
+      // Draw quad as two line segments (grid lines)
+      CTX.beginPath();
+      CTX.moveTo(p00.x,p00.y);CTX.lineTo(p10.x,p10.y); // top edge
+      CTX.moveTo(p00.x,p00.y);CTX.lineTo(p01.x,p01.y); // left edge
+      CTX.stroke();
+    }
+  }
+  CTX.globalAlpha=1;
+  CTX.restore();
+}
+
+// ── ISO CONTOUR LINES ─────────────────────────────────────────────────────────
+// Pure line version: marching squares extracts isolines from noise field.
+// No characters — clean topographic / fingerprint aesthetic.
+function drawIsoContour(p,t){
+  let W=p.width,H=p.height;
+  let res=Math.max(3,Math.floor(S.spacing*.6));
+  let cols=Math.ceil(W/res)+1, rows=Math.ceil(H/res)+1;
+  let nLevels=4+Math.floor((1-S.density)*12);
+  let ns=S.noiseScale;
+  let lw=Math.max(0.4,S.maxSize*.03);
+  CTX.save();
+  CTX.lineCap='round';
+  CTX.lineJoin='round';
+  // Sample noise field
+  let field=new Float32Array(rows*cols);
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    field[r*cols+c]=p.noise(c*res*ns,r*res*ns,t*.12);
+  }
+  // For each iso level, trace lines using marching squares
+  for(let lv=0;lv<nLevels;lv++){
+    let level=(lv+1)/(nLevels+1);
+    // Animate level breathing
+    level+=Math.sin(t*.3+lv*0.8)*0.025;
+    level=Math.max(0.05,Math.min(0.95,level));
+    let ci=Math.floor((lv/nLevels)*S.palette.length)%S.palette.length;
+    let col=S.palette[ci];
+    if(S.accent!=='none'&&lv===0) col=S.accent;
+    CTX.strokeStyle=col;
+    CTX.lineWidth=lv===0?lw*1.8:lv===nLevels-1?lw*1.4:lw;
+    CTX.globalAlpha=0.4+0.5*(1-Math.abs(lv-nLevels/2)/(nLevels/2));
+    for(let r=0;r<rows-1;r++){
+      for(let c=0;c<cols-1;c++){
+        let f00=field[r*cols+c],     f10=field[r*cols+c+1];
+        let f01=field[(r+1)*cols+c], f11=field[(r+1)*cols+c+1];
+        let bitmask=((f00>level)?1:0)|((f10>level)?2:0)|((f01>level)?4:0)|((f11>level)?8:0);
+        if(bitmask===0||bitmask===15) continue;
+        // Interpolate crossing points on each edge
+        function interp(fa,fb,x0,y0,x1,y1){
+          let t2=(fa===fb)?0.5:(level-fa)/(fb-fa);
+          return {x:x0+(x1-x0)*t2,y:y0+(y1-y0)*t2};
+        }
+        let x0=c*res,y0=r*res,x1=(c+1)*res,y1=(r+1)*res;
+        let e0=interp(f00,f10,x0,y0,x1,y0); // top
+        let e1=interp(f10,f11,x1,y0,x1,y1); // right
+        let e2=interp(f01,f11,x0,y1,x1,y1); // bottom
+        let e3=interp(f00,f01,x0,y0,x0,y1); // left
+        CTX.beginPath();
+        // Standard marching squares line segments
+        switch(bitmask){
+          case 1:case 14:CTX.moveTo(e0.x,e0.y);CTX.lineTo(e3.x,e3.y);break;
+          case 2:case 13:CTX.moveTo(e0.x,e0.y);CTX.lineTo(e1.x,e1.y);break;
+          case 3:case 12:CTX.moveTo(e3.x,e3.y);CTX.lineTo(e1.x,e1.y);break;
+          case 4:case 11:CTX.moveTo(e2.x,e2.y);CTX.lineTo(e3.x,e3.y);break;
+          case 5:CTX.moveTo(e0.x,e0.y);CTX.lineTo(e3.x,e3.y);CTX.moveTo(e2.x,e2.y);CTX.lineTo(e1.x,e1.y);break;
+          case 6:case 9:CTX.moveTo(e0.x,e0.y);CTX.lineTo(e2.x,e2.y);break;
+          case 7:case 8:CTX.moveTo(e1.x,e1.y);CTX.lineTo(e2.x,e2.y);break;
+          case 10:CTX.moveTo(e0.x,e0.y);CTX.lineTo(e1.x,e1.y);CTX.moveTo(e2.x,e2.y);CTX.lineTo(e3.x,e3.y);break;
+        }
+        CTX.stroke();
+      }
+    }
+  }
+  CTX.globalAlpha=1;
+  CTX.restore();
+}
+  
+// ── WAVE FUNCTION COLLAPSE (WFC) ─────────────────────────────────────────────────────────
+function drawWFC(p, t) {
+  let tileSize = Math.max(16, S.spacing * 2);
+  let cols = Math.ceil(p.width / tileSize);
+  let rows = Math.ceil(p.height / tileSize);
+
+  // Tile glyphs – you can expand this list
+  const tileGlyphs = [
+    '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶', '╱', '╲', '◢', '◣', '◤', '◥'
+  ];
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let x = col * tileSize;
+      let y = row * tileSize;
+
+      // Multi‑octave noise to create larger coherent regions
+      let n1 = p.noise(col * 0.15, row * 0.15, t * 0.08);
+      let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
+      let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length) % tileGlyphs.length;
+
+      let ch = tileGlyphs[idx];
+      let colPal = S.palette[(col + row) % S.palette.length];
+      if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
+        colPal = S.accent;
+      }
+
+      let sz = tileSize * 0.7;
+      let cx = x + tileSize / 2;
+      let cy = y + tileSize / 2;
+
+      // Optional small wave displacement
+      let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * 0.15;
+      let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * 0.15;
+
+      dc(cx + wx, cy + wy, sz, 0, colPal, ch);
+    }
+  }
+}
+
+  
+// ── flower spin ─────────────────────────────────────────────────────────
+function drawFlowerspin(p, t) {
+  if (!flowerspin.length) initFlowerspin(p.width, p.height);
+
+  let wiggleAmp = S.wave * 0.15;        // how much they wiggle
+  let pulseAmp = S.turb * 0.02;         // how much they pulse
+  let speed = S.speed * 100;
+
+  for (let i = 0; i < flowerspin.length; i++) {
+    let td = flowerspin[i];
+
+    // Update position with Perlin noise (smooth wandering)
+    if (S.playing) {
+      let angleNoise = p.noise(td.x * 0.01, td.y * 0.01, t * 0.2) * Math.PI * 2;
+      td.angle = td.angle * 0.95 + angleNoise * 0.05;
+      td.x += Math.cos(td.angle) * speed * 0.5;
+      td.y += Math.sin(td.angle) * speed * 0.5;
+      // Wrap around edges
+      if (td.x < -50) td.x = p.width + 50;
+      if (td.x > p.width + 50) td.x = -50;
+      if (td.y < -50) td.y = p.height + 50;
+      if (td.y > p.height + 50) td.y = -50;
+      td.phase += 0.02 * S.speed * 20;
+    }
+    // Body dimensions with pulse
+    let pulse = 1 + Math.sin(t * pulseAmp + td.phase) * 0.05;
+    let w = td.bodyWidth * pulse;
+    let h = td.bodyLength * pulse;
+    // Build a rounded polygon (an elongated ellipse with wiggly edges)
+    let segments = 24;
+    let points = [];
+    for (let s = 0; s < segments; s++) {
+      let angle = (s / segments) * Math.PI * 2;
+      // Wiggle: displace radius based on sine of angle and noise
+      let wiggle = Math.sin(angle * 3 + t * wiggleAmp) * wiggleAmp * 8;
+      let rx = (w / 2 + wiggle) * Math.cos(angle);
+      let ry = (h / 2 + wiggle) * Math.sin(angle);
+      // Rotate the whole creature by its movement angle
+      let cosA = Math.cos(td.angle);
+      let sinA = Math.sin(td.angle);
+      let x = td.x + rx * cosA - ry * sinA;
+      let y = td.y + rx * sinA + ry * cosA;
+      points.push({x, y});
+    }
+    // Draw the blob body with a border
+    CTX.save();
+    CTX.beginPath();
+    CTX.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      CTX.lineTo(points[i].x, points[i].y);
+    }
+    CTX.closePath();
+    // Fill with semi‑transparent colour
+    CTX.fillStyle = td.col;
+    CTX.fill();
+    // Stroke the border
+    CTX.strokeStyle = td.borderCol;
+    CTX.lineWidth = Math.max(2, S.maxSize * 0.1);
+    CTX.stroke();
+    // (Optional) draw characters inside the blob
+    // Sample points inside the bounding box
+    let bbox = {
+      minX: Math.min(...points.map(p => p.x)),
+      maxX: Math.max(...points.map(p => p.x)),
+      minY: Math.min(...points.map(p => p.y)),
+      maxY: Math.max(...points.map(p => p.y))
+    };
+    let step = Math.max(8, S.spacing);
+    for (let x = bbox.minX; x <= bbox.maxX; x += step) {
+      for (let y = bbox.minY; y <= bbox.maxY; y += step) {
+        // Check if point is inside the blob (simple polygon test)
+        if (pointInPoly(x, y, points)) {
+          let ch = pickChar(p, x, y, t);
+          let sz = S.maxSize * 0.6;
+          let col = S.palette[Math.floor(Math.abs(Math.sin(x * y)) * S.palette.length) % S.palette.length];
+          dc(x, y, sz, 0, col, ch);
+        }
+      }
+    }
+    CTX.restore();
+  }
+}
+  
+// ── TESSERACT (4D HYPERCUBE) ──────────────────────────────────────────────────
+// 4D hypercube vertices projected through 4D→3D→2D.
+// Two independent 4D rotations animate; characters sit on vertices, edges glow.
+function drawTesseract(p,t){
+  let W=p.width,H=p.height;
+  let cx=W/2,cy=H/2;
+  let scale=Math.min(W,H)*.28*(0.7+S.wave*.004);
+
+  // 16 vertices of a tesseract in 4D: all combinations of ±1 in xyzw
+  let verts4D=[];
+  for(let i=0;i<16;i++){
+    verts4D.push([
+      (i&1)?1:-1,
+      (i&2)?1:-1,
+      (i&4)?1:-1,
+      (i&8)?1:-1
+    ]);
+  }
+
+  // 32 edges: vertices that differ in exactly one bit
+  let edges=[];
+  for(let a=0;a<16;a++) for(let b=a+1;b<16;b++){
+    let diff=(a^b);
+    if(diff&&(diff&(diff-1))===0) edges.push([a,b]); // power of 2 = one bit
+  }
+
+  // 4D rotation matrices (XY plane and ZW plane, and XW for hypercube feel)
+  let a1=t*S.speed*80, a2=t*S.speed*55, a3=t*S.speed*33;
+  function rot4(v){
+    let [x,y,z,w]=v;
+    // XY rotation
+    let x1=x*Math.cos(a1)-y*Math.sin(a1), y1=x*Math.sin(a1)+y*Math.cos(a1);
+    // ZW rotation
+    let z1=z*Math.cos(a2)-w*Math.sin(a2), w1=z*Math.sin(a2)+w*Math.cos(a2);
+    // XZ rotation (gives the "inside-out" flip)
+    let x2=x1*Math.cos(a3)-z1*Math.sin(a3), z2=x1*Math.sin(a3)+z1*Math.cos(a3);
+    return [x2,y1,z2,w1];
+  }
+
+  // Project 4D → 3D (perspective from w axis)
+  function proj4to3(v){
+    let [x,y,z,w]=v;
+    let d=2.5; // viewer distance in w
+    let wFac=d/(d-w);
+    return [x*wFac,y*wFac,z*wFac];
+  }
+
+  // Project 3D → 2D (simple perspective)
+  function proj3to2(v){
+    let [x,y,z]=v;
+    let d=3.5;
+    let zFac=d/(d-z);
+    return [x*zFac*scale+cx, y*zFac*scale+cy, zFac];
+  }
+
+  // Project all vertices
+  let proj=verts4D.map(function(v){
+    return proj3to2(proj4to3(rot4(v)));
+  });
+
+  CTX.save();
+
+  // Draw edges
+  edges.forEach(function(e,ei){
+    let [ai,bi]=e;
+    let pa=proj[ai],pb=proj[bi];
+    // Skip if either vertex is too far behind camera
+    if(pa[2]<0.1||pb[2]<0.1) return;
+    // Edge color: inner cube (no bit 3) vs outer cube (bit 3 set)
+    let isInner=(ai&8)===0&&(bi&8)===0;
+    let isOuter=(ai&8)===8&&(bi&8)===8;
+    let colIdx=isInner?0:isOuter?Math.floor(S.palette.length/2):Math.floor(ei/edges.length*S.palette.length);
+    let col=S.palette[colIdx%S.palette.length];
+    if(isInner&&S.accent!=='none') col=S.accent;
+    let alpha=(pa[2]+pb[2])*.25;
+    CTX.strokeStyle=col;
+    CTX.globalAlpha=Math.min(1,alpha);
+    CTX.lineWidth=isInner?1.8:isOuter?1.2:0.7;
+    CTX.beginPath();
+    CTX.moveTo(pa[0],pa[1]);CTX.lineTo(pb[0],pb[1]);
+    CTX.stroke();
+  });
+
+  // Draw vertices with characters
+  proj.forEach(function(pv,i){
+    if(pv[2]<0.1) return;
+    let sz=Math.max(4,Math.min(S.maxSize,(pv[2]-0.5)*S.maxSize*.8));
+    let col=S.palette[i%S.palette.length];
+    if(i===0&&S.accent!=='none') col=S.accent;
+    CTX.globalAlpha=Math.min(1,pv[2]*.7);
+    let ch=pickChar(p,pv[0],pv[1],t);
+    let fstr=(sz|0)+'px '+S.fontStack;
+    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+    CTX.fillText(ch,pv[0],pv[1]);
+  });
+
+  CTX.globalAlpha=1;
+  CTX.restore();
+  _lastFont='';_lastFill='';
+}
+  
+// ── WORMS ───────────────────────────────────────────────────────────────
+function drawWorms(p, t) {
+  if (!wormAgents.length) initWorms(p.width, p.height);
+  wormAgents.forEach(w => {
+    if (S.playing) {
+      w.angle += (p.noise(w.x * 0.01, w.y * 0.01, t * 0.1) - 0.5) * 0.5;
+      w.x += Math.cos(w.angle) * S.speed * 400;
+      w.y += Math.sin(w.angle) * S.speed * 400;
+      if (w.x < 0) w.x = p.width;
+      if (w.x > p.width) w.x = 0;
+      if (w.y < 0) w.y = p.height;
+      if (w.y > p.height) w.y = 0;
+      w.history.push({ x: w.x, y: w.y });
+      if (w.history.length > 15) w.history.shift();
+    }
+    w.history.forEach((pos, idx) => {
+      let sz = p.map(idx, 0, 15, 2, S.maxSize);
+      let angle = w.angle + Math.sin(idx) * 0.5;
+      dc(pos.x, pos.y, sz, angle, w.col, pickChar(p, pos.x, pos.y, t));
+    });
+  });
+}
+  
+// ── HYPERSPHERE ───────────────────────────────────────────────────────────────
+// 4D hypersphere: sample points on S³ surface, rotate in 4D, project to 2D.
+// Characters trace the curved surface as it rotates through higher dimensions.
+function drawHypersphere(p,t){
+  let W=p.width,H=p.height;
+  let cx=W/2,cy=H/2;
+  let R=Math.min(W,H)*.3*(0.8+S.wave*.005);
+
+  let a1=t*S.speed*60, a2=t*S.speed*40, a3=t*S.speed*25;
+  function rot4(x,y,z,w){
+    // XY
+    let x1=x*Math.cos(a1)-y*Math.sin(a1), y1=x*Math.sin(a1)+y*Math.cos(a1);
+    // ZW
+    let z1=z*Math.cos(a2)-w*Math.sin(a2), w1=z*Math.sin(a2)+w*Math.cos(a2);
+    // XW
+    let x2=x1*Math.cos(a3)-w1*Math.sin(a3), w2=x1*Math.sin(a3)+w1*Math.cos(a3);
+    return [x2,y1,z1,w2];
+  }
+
+  // Sample points uniformly on S³ using Hopf fibration-like parameterization
+  let stepsU=Math.floor(12+S.density*8);
+  let stepsV=Math.floor(12+S.density*8);
+  let stepsW=6;
+
+  for(let ui=0;ui<stepsU;ui++){
+    for(let vi=0;vi<stepsV;vi++){
+      if(Math.random()>(1-S.density*.08)&&S.density>.4) continue; // density gate
+      let u=(ui/stepsU)*Math.PI*2;
+      let v=(vi/stepsV)*Math.PI;
+      for(let wi=0;wi<stepsW;wi++){
+        let phi=(wi/stepsW)*Math.PI;
+        // Parameterize S³
+        let x4=Math.sin(phi)*Math.sin(v)*Math.cos(u);
+        let y4=Math.sin(phi)*Math.sin(v)*Math.sin(u);
+        let z4=Math.sin(phi)*Math.cos(v);
+        let w4=Math.cos(phi);
+
+        let [rx,ry,rz,rw]=rot4(x4,y4,z4,w4);
+
+        // Project 4D→2D via stereographic projection from north pole (w=1)
+        let denom=2-rw;
+        if(Math.abs(denom)<0.05) continue;
+        let sx=cx+rx/denom*R;
+        let sy=cy+ry/denom*R;
+        let depth=(rz/denom+1)/2; // 0..1 depth for sizing/alpha
+
+        if(sx<-50||sx>W+50||sy<-50||sy>H+50) continue;
+
+        let sz=Math.max(2,depth*S.maxSize*.8);
+        let ci=Math.floor((ui*stepsV+vi)/(stepsU*stepsV)*S.palette.length)%S.palette.length;
+        let col=S.palette[ci];
+        if(wi===0&&S.accent!=='none') col=S.accent;
+
+        CTX.globalAlpha=0.2+depth*.7;
+        let ch=pickChar(p,sx,sy,t);
+        let fstr=(sz|0)+'px '+S.fontStack;
+        if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
+        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
+        CTX.fillText(ch,sx,sy);
+      }
+    }
+  }
+  CTX.globalAlpha=1;
+  _lastFont='';_lastFill='';
+}
+
+// ── BOIDS ─────────────────────────────────────────────────────────────────────
+// Reynolds flocking: separation, alignment, cohesion.
+// Characters ride on each agent, rotate toward velocity. Completely emergent.
+function initBoids(W,H){
+  let n=Math.floor(30+S.density*120);
+  boidAgents=[];
+  for(let i=0;i<n;i++){
+    let a=Math.random()*6.28;
+    boidAgents.push({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:Math.cos(a)*1.5, vy:Math.sin(a)*1.5,
+      ci:Math.floor(Math.random()*8) // color index
+    });
+  }
+}
+function drawBoids(p,t){
+  let W=p.width,H=p.height;
+  if(!boidAgents.length) initBoids(W,H);
+
+  let n=boidAgents.length;
+  let perception=S.spacing*4+20;
+  let maxSpd=S.speed*600+1.5;
+  let sep=S.wave*.015+0.8; // separation force
+  let aln=0.06, coh=0.004;
+
+  if(S.playing){
+    for(let i=0;i<n;i++){
+      let b=boidAgents[i];
+      let sx=0,sy=0,ax=0,ay=0,cohx=0,cohy=0,count=0;
+
+      for(let j=0;j<n;j++){
+        if(i===j) continue;
+        let o=boidAgents[j];
+        let dx=o.x-b.x, dy=o.y-b.y;
+        let d2=dx*dx+dy*dy;
+        if(d2>perception*perception) continue;
+        let d=Math.sqrt(d2)+0.001;
+        // Separation: push away
+        sx-=dx/d2;sy-=dy/d2;
+        // Alignment: steer toward avg velocity
+        ax+=o.vx;ay+=o.vy;
+        // Cohesion: steer toward avg position
+        cohx+=o.x;cohy+=o.y;
+        count++;
+      }
+      if(count>0){
+        ax/=count;ay/=count;
+        cohx=cohx/count-b.x;cohy=cohy/count-b.y;
+        b.vx+=sx*sep+ax*aln+cohx*coh;
+        b.vy+=sy*sep+ay*aln+cohy*coh;
+      }
+      // Speed limit
+      let spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy)||1;
+      if(spd>maxSpd){b.vx=b.vx/spd*maxSpd;b.vy=b.vy/spd*maxSpd;}
+      b.x+=b.vx;b.y+=b.vy;
+      // Wrap edges
+      if(b.x<0)b.x=W;if(b.x>W)b.x=0;
+      if(b.y<0)b.y=H;if(b.y>H)b.y=0;
+    }
+  }
+
+  // Draw
+  boidAgents.forEach(function(b,i){
+    let col=S.palette[(b.ci+Math.floor(i/n*S.palette.length))%S.palette.length];
+    if(i<3&&S.accent!=='none') col=S.accent;
+    let sz=S.maxSize*.4+Math.min(S.maxSize*.5,Math.sqrt(b.vx*b.vx+b.vy*b.vy)*S.maxSize*.15);
+    let rot=Math.atan2(b.vy,b.vx);
+    let ch=pickChar(p,b.x,b.y,t);
+    CTX.globalAlpha=0.75+Math.random()*.2;
+    dc(b.x,b.y,sz,rot,col,ch);
+  });
+  CTX.globalAlpha=1;
+}
+
+// ── MAGNETIC FIELD LINES ──────────────────────────────────────────────────────
+// Dipole (and multipole) magnetic field: trace field lines from seed angles,
+// render as smooth curves with characters placed along them.
+function initMagnetic(W,H){
+  // Place poles: one positive, one negative
+  magneticPoles=[
+    {x:W*.35,y:H*.5,sign:+1},
+    {x:W*.65,y:H*.5,sign:-1}
+  ];
+  // Optional extra poles driven by wave slider
+  if(S.wave>40){
+    magneticPoles.push({x:W*.5,y:H*.25,sign:+1});
+    magneticPoles.push({x:W*.5,y:H*.75,sign:-1});
+  }
+}
+function drawMagnetic(p,t){
+  let W=p.width,H=p.height;
+  if(!magneticPoles.length) initMagnetic(W,H);
+
+  // Slowly rotate poles for animation
+  if(S.playing){
+    let angle=S.fc*S.speed*.8;
+    let cx2=W*.5,cy2=H*.5;
+    magneticPoles.forEach(function(pole,i){
+      let dist=Math.sqrt((pole.x-cx2)*(pole.x-cx2)+(pole.y-cy2)*(pole.y-cy2));
+      let baseAngle=Math.atan2(pole.y-cy2,pole.x-cx2);
+      let rotAngle=baseAngle+angle*(i%2===0?1:-1)*.015;
+      pole.x=cx2+Math.cos(rotAngle)*dist;
+      pole.y=cy2+Math.sin(rotAngle)*dist;
+    });
+  }
+
+  function fieldAt(x,y){
+    let fx=0,fy=0;
+    magneticPoles.forEach(function(pole){
+      let dx=x-pole.x,dy=y-pole.y;
+      let r2=dx*dx+dy*dy+100;
+      let r3=Math.pow(r2,1.5);
+      fx+=pole.sign*dx/r3;
+      fy+=pole.sign*dy/r3;
+    });
+    let mag=Math.sqrt(fx*fx+fy*fy)||1;
+    return {bx:fx/mag,by:fy/mag,mag};
+  }
+
+  // Seed field lines from positive poles at many angles
+  let nLines=Math.floor(8+S.density*24);
+  let stepSize=Math.max(2,S.spacing*.4);
+  let maxSteps=Math.floor(Math.min(W,H)/stepSize*2.5);
+
+  CTX.save();
+  CTX.lineCap='round';
+  CTX.lineJoin='round';
+  CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
+
+  let positivePoles=magneticPoles.filter(function(p2){return p2.sign>0;});
+  positivePoles.forEach(function(pole,pi){
+    for(let li=0;li<nLines;li++){
+      let seedAngle=(li/nLines)*Math.PI*2;
+      let px2=pole.x+Math.cos(seedAngle)*8;
+      let py2=pole.y+Math.sin(seedAngle)*8;
+      let col=S.palette[(pi*nLines/Math.ceil(nLines/S.palette.length)+li)%S.palette.length];
+      if(li===0&&S.accent!=='none') col=S.accent;
+      CTX.strokeStyle=col;
+      CTX.globalAlpha=0.45;
+
+      CTX.beginPath();
+      CTX.moveTo(px2,py2);
+      let charStep=Math.floor(maxSteps/(8+Math.floor(S.density*8)));
+
+      for(let si=0;si<maxSteps;si++){
+        let {bx,by}=fieldAt(px2,py2);
+        px2+=bx*stepSize;py2+=by*stepSize;
+        if(px2<0||px2>W||py2<0||py2>H) break;
+        CTX.lineTo(px2,py2);
+
+        // Place character periodically along field line
+        if(si%charStep===charStep-1){
+          CTX.stroke();
+          CTX.beginPath();
+          CTX.moveTo(px2,py2);
+          let rot=Math.atan2(by,bx);
+          let ch=pickChar(p,px2,py2,t+si*.01);
+          let sz=Math.max(4,S.maxSize*(0.3+0.5*Math.min(1,fieldAt(px2,py2).mag*100)));
+          CTX.globalAlpha=0.7;
+          dc(px2,py2,sz,rot,col,ch);
+          CTX.globalAlpha=0.45;
+          CTX.strokeStyle=col;
+          CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
+        }
+      }
+      CTX.stroke();
+    }
+  });
+
+  // Draw poles as glowing dots
+  magneticPoles.forEach(function(pole2){
+    CTX.globalAlpha=0.8;
+    CTX.fillStyle=pole2.sign>0?(S.accent!=='none'?S.accent:S.palette[0]):S.palette[Math.floor(S.palette.length/2)];
+    CTX.beginPath();
+    CTX.arc(pole2.x,pole2.y,5,0,6.28);
+    CTX.fill();
+  });
+
+  CTX.globalAlpha=1;
+  CTX.restore();
+  _lastFont='';_lastFill='';
+}
+
 // ── SHAPE HELPERS ─────────────────────────────────────────────────────────────────
 function pointInPoly(px,py,pts){
   let inside=false;
@@ -2068,18 +2932,31 @@ function pointInPoly(px,py,pts){
   }
   return inside;
 }
-function polyPts(cx,cy,r,n,startAngle,innerR){
-  let pts=[];
-  for(let i=0;i<n;i++){
-    let a=(i/n)*6.28+startAngle;
-    if(innerR!==undefined){
-      pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
-      let a2=((i+.5)/n)*6.28+startAngle;
-      pts.push({x:cx+Math.cos(a2)*innerR,y:cy+Math.sin(a2)*innerR});
-    } else pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+  
+// Generate irregular polygon points
+// cx,cy: center, r: base radius, sides: number of sides
+// irregularity: 0 = perfect regular, 1 = very distorted
+// spike: 0 = convex, >0 creates star-like spikes (for stars)
+function irregularPolygon(cx, cy, r, sides, irregularity = 0.4, spike = 0) {
+  let pts = [];
+  let angleStep = (Math.PI * 2) / sides;
+  for (let i = 0; i < sides; i++) {
+    let baseAngle = i * angleStep;
+    // Random angle offset (irregularity)
+    let angleOffset = (Math.random() - 0.5) * irregularity * angleStep;
+    let angle = baseAngle + angleOffset;
+    // Random radius variation
+    let radiusFactor = 1 + (Math.random() - 0.5) * irregularity * 0.8;
+    let rad = r * radiusFactor;
+    // Spike effect: if spike > 0, alternate radii for star effect
+    if (spike > 0 && i % 2 === 1) rad = r * (0.3 + spike * 0.7);
+    let x = cx + Math.cos(angle) * rad;
+    let y = cy + Math.sin(angle) * rad;
+    pts.push({ x, y });
   }
   return pts;
 }
+  
 function getShapePos(W,H){
   switch(S.shapePosition){
     case'random': return{x:W*.1+Math.random()*W*.8,y:H*.1+Math.random()*H*.8};
@@ -2110,104 +2987,317 @@ function shapeCharColor(x,y,t,shIdx){
   }
 }
 
-function drawShapes(p,t){
-  if(!S.shapesEnabled||!shapes.length) return;
-  let sp=Math.max(3,S.spacing*(1-(S.shapeDens-1)/12));
-  shapes.forEach(function(sh,si){
-    if(S.shapeSpin>0&&S.playing){sh.spinAngle=(sh.spinAngle||0)+(S.shapeSpin*.0008);}
-    let spin=sh.spinAngle||0;
-    let r=sh.r;
-    if(S.shapePulse>0) r=sh.r*(1+Math.sin(t*2+(sh.cx||0)*.01)*S.shapePulse*.02);
-    let cx=sh.cx,cy=sh.cy;
-    if(S.shapeOrbitEnabled&&S.playing){
-      sh.orbitAngle=(sh.orbitAngle||Math.atan2(sh.cy-p.height/2,sh.cx-p.width/2))+(S.shapeSpin||1)*.0005;
-      let or=Math.sqrt((sh.baseCx-p.width/2)*(sh.baseCx-p.width/2)+(sh.baseCy-p.height/2)*(sh.baseCy-p.height/2));
-      cx=p.width/2+Math.cos(sh.orbitAngle)*or;
-      cy=p.height/2+Math.sin(sh.orbitAngle)*or;
-      sh.cx=cx;sh.cy=cy;
+function polyPts(cx,cy,r,n,startAngle,innerR){
+  let pts=[];
+  for(let i=0;i<n;i++){
+    let a=(i/n)*6.28+startAngle;
+    if(innerR!==undefined){
+      pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+      let a2=((i+.5)/n)*6.28+startAngle;
+      pts.push({x:cx+Math.cos(a2)*innerR,y:cy+Math.sin(a2)*innerR});
+    } else pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
+  }
+  return pts;
+}
+  
+function drawShapes(p, t) {
+  if (!S.shapesEnabled || !shapes.length) return;
+  let sp = Math.max(3, S.spacing * (1 - (S.shapeDens - 1) / 12));
+
+  shapes.forEach(function(sh, si) {
+    // Apply per‑shape spin
+    if (S.shapeSpin > 0 && S.playing) sh.spinAngle = (sh.spinAngle || 0) + (S.shapeSpin * 0.0008);
+    let spin = sh.spinAngle || 0;
+    let r = sh.size || 55;
+    if (S.shapePulse > 0) r = r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
+    
+    // Initialize missing properties
+    if (sh.size === undefined) sh.size = 55;
+    if (sh.driftEnabled === undefined) sh.driftEnabled = false;
+    if (sh.driftSpeed === undefined) sh.driftSpeed = 0.5;
+    if (sh.driftAmpX === undefined) sh.driftAmpX = 8;
+    if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
+    if (sh.textEnabled === undefined) sh.textEnabled = true;
+    if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
+    
+    // Lissajous drift
+    let driftX = 0, driftY = 0;
+    if (sh.driftEnabled === true) {
+      sh.driftPhase = (sh.driftPhase || 0) + 0.02 * (sh.driftSpeed || 0.5);
+      driftX = Math.sin(sh.driftPhase * 1.3) * (sh.driftAmpX || 8);
+      driftY = Math.cos(sh.driftPhase * 1.7) * (sh.driftAmpY || 6);
     }
-    let type=sh.type;
-    // Build mask points
-    let pts=null;
-    if(type==='equilateral') pts=polyPts(cx,cy,r,3,spin-Math.PI/2);
-    else if(type==='hexagon') pts=polyPts(cx,cy,r,6,spin);
-    else if(type==='star5') pts=polyPts(cx,cy,r,5,spin-Math.PI/2,r*.45);
-    else if(type==='star6') pts=polyPts(cx,cy,r,6,spin,r*.5);
-    else if(type==='polygon') pts=polyPts(cx,cy,r,sh.sides||7,spin);
-    // Draw characters inside shape
-    let x0=cx-r-sp,x1=cx+r+sp,y0=cy-r-sp,y1=cy+r+sp;
-    if(type==='band'){x0=0;x1=p.width;y0=cy-r;y1=cy+r;}
-    for(let x=x0;x<x1;x+=sp) for(let y=y0;y<y1;y+=sp){
-      let inside=false;
-      if(type==='circle') inside=(x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r;
-      else if(type==='ring'){let d2=(x-cx)*(x-cx)+(y-cy)*(y-cy);inside=d2<=r*r&&d2>=(r*.55)*(r*.55);}
-      else if(type==='rect'){let hw=r*.8,hh=r*.55;let rx2=Math.cos(-spin)*(x-cx)-Math.sin(-spin)*(y-cy);let ry2=Math.sin(-spin)*(x-cx)+Math.cos(-spin)*(y-cy);inside=Math.abs(rx2)<=hw&&Math.abs(ry2)<=hh;}
-      else if(type==='band') inside=y>=y0&&y<=y1;
-      else if(type==='lissajous'){let la=sh.la||2,lb=sh.lb||3;let lx=cx+Math.cos(la*t+sh.spinAngle||0)*r*.8,ly=cy+Math.sin(lb*t)*r*.7;inside=(x-lx)*(x-lx)+(y-ly)*(y-ly)<(r*.25)*(r*.25);}
-      else if(pts) inside=pointInPoly(x,y,pts);
-      if(!inside) continue;
-      let ch=pickShapeChar(x,y);
-      let col=shapeCharColor(x,y,t,si);
-      let sz=sp*.8+Math.random()*sp*.4;
-      dc(x,y,sz,0,col,ch);
+    let cx = (sh.cx || 0) + driftX;
+    let cy = (sh.cy || 0) + driftY;
+
+    // Orbit around canvas center
+    if (S.shapeOrbitEnabled && S.playing) {
+      sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
+      let or = Math.hypot(sh.baseCx - p.width / 2, sh.baseCy - p.height / 2);
+      cx = p.width / 2 + Math.cos(sh.orbitAngle) * or;
+      cy = p.height / 2 + Math.sin(sh.orbitAngle) * or;
+      sh.cx = cx; sh.cy = cy;
     }
-    // Scrolling text along shape boundary
-    if(sh.text&&sh.text.length){
-      if(S.playing) sh.textOffset=(sh.textOffset||0)+S.speed*20;
-      let perim=6.28*r,step=S.maxSize*.7;
-      for(let i=0;i<Math.floor(perim/step);i++){
-        let a=(i*step+sh.textOffset)/r;
-        let tx=cx+Math.cos(a+spin)*r,ty=cy+Math.sin(a+spin)*r;
-        let ci=i%sh.text.length;
-        dc(tx,ty,S.maxSize*.7,a+1.5708,sh.col,sh.text[ci]);
+
+    let type = sh.type;
+    let shapePts = null;
+    
+    // Use stored irregular points if available
+    if (sh.pts && (type === 'polygon' || type === 'equilateral' || type === 'hexagon' || type === 'star5' || type === 'star6')) {
+      shapePts = sh.pts;
+    } else {
+      // fallback to regular generation
+      if (type === 'equilateral') shapePts = polyPts(cx, cy, r, 3, spin - Math.PI/2);
+      else if (type === 'hexagon') shapePts = polyPts(cx, cy, r, 6, spin);
+      else if (type === 'star5') shapePts = polyPts(cx, cy, r, 5, spin - Math.PI/2, r*0.45);
+      else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
+      else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
+    }
+
+    // Opacity and Jitter
+    let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
+    let jitter = sh.jitter || 0;
+    
+   // Special handling for Lissajous – draw a cluster of characters around the moving point
+if (type === 'lissajous') {
+  let la = sh.la || 2, lb = sh.lb || 3;
+  let lx = cx + Math.cos(la * t + (sh.spinAngle || 0)) * r * 0.8;
+  let ly = cy + Math.sin(lb * t) * r * 0.7;
+  // Draw a small circle of characters around (lx, ly)
+  let clusterR = Math.max(8, S.maxSize * 0.6);
+  let step = Math.max(4, S.spacing * 0.6);
+  for (let dx = -clusterR; dx <= clusterR; dx += step) {
+    for (let dy = -clusterR; dy <= clusterR; dy += step) {
+      if (dx*dx + dy*dy > clusterR*clusterR) continue;
+      let x = lx + dx, y = ly + dy;
+      if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+      let ch = pickShapeChar(x, y);
+      let col = (sh.textColor && sh.textColor !== 'none') ? sh.textColor : shapeCharColor(x, y, t, si);
+      let sz = step * 0.8;
+      CTX.save();
+      CTX.globalAlpha = globalAlpha;
+      dc(x, y, sz, 0, col, ch);
+      CTX.restore();
+    }
+  }
+  // Draw a small dot as border (optional)
+  if (sh.borderEnabled !== false) {
+    CTX.save();
+    CTX.globalAlpha = globalAlpha;
+    CTX.fillStyle = sh.borderCol || (sh.col === S.accent ? sh.col : '#ffffff');
+    CTX.beginPath();
+    CTX.arc(lx, ly, Math.max(2, r*0.1), 0, 2*Math.PI);
+    CTX.fill();
+    CTX.restore();
+  }
+  return; // skip the rest of the shape drawing for lissajous
+}
+
+
+    // Draw main field characters inside shape
+    let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
+    if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
+    for (let x = x0; x < x1; x += sp) {
+      for (let y = y0; y < y1; y += sp) {
+        let inside = false;
+        if (type === 'circle') inside = (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2;
+        else if (type === 'ring') {
+          let d2 = (x - cx) ** 2 + (y - cy) ** 2;
+          inside = d2 <= r ** 2 && d2 >= (r * 0.55) ** 2;
+        } else if (type === 'rect') {
+          let hw = r * 0.8, hh = r * 0.55;
+          let rx = Math.cos(-spin) * (x - cx) - Math.sin(-spin) * (y - cy);
+          let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
+          inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+        } else if (type === 'band') inside = y >= y0 && y <= y1;
+        else if (type === 'lissajous' && shapePts && shapePts.length === 1) {
+          inside = (x - shapePts[0].x) ** 2 + (y - shapePts[0].y) ** 2 < (r * 0.25) ** 2;
+        } else if (shapePts && shapePts.length > 1) inside = pointInPoly(x, y, shapePts);
+        if (!inside) continue;
+        let ch = pickShapeChar(x, y);
+        let col = sh.charFillColor || shapeCharColor(x, y, t, si);
+        let jx = jitter ? (Math.random() - 0.5) * jitter : 0;
+        let jy = jitter ? (Math.random() - 0.5) * jitter : 0;
+        let sz = sp * 0.8 + Math.random() * sp * 0.4;
+        CTX.save();
+        CTX.globalAlpha = globalAlpha;
+        dc(x + jx, y + jy, sz, 0, col, ch);
+        CTX.restore();
       }
+    }
+
+    // Solid fill background
+    if (sh.solidFill) {
+      CTX.save();
+      CTX.globalAlpha = (sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5);
+      CTX.fillStyle = sh.fillColor || S.palette[0];
+      if (type === 'circle') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.fill();
+      } else if (type === 'ring') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.fill();
+        CTX.beginPath();
+        CTX.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+        CTX.fill();
+      } else if (type === 'rect') {
+        let hw = r * 0.8, hh = r * 0.55;
+        CTX.save();
+        CTX.translate(cx, cy);
+        CTX.rotate(spin);
+        CTX.fillRect(-hw, -hh, hw * 2, hh * 2);
+        CTX.restore();
+      } else if (type === 'band') {
+        CTX.fillRect(0, cy - r * 0.3, p.width, r * 0.6);
+      } else if (shapePts && shapePts.length > 1) {
+        CTX.beginPath();
+        CTX.moveTo(shapePts[0].x, shapePts[0].y);
+        for (let i = 1; i < shapePts.length; i++) CTX.lineTo(shapePts[i].x, shapePts[i].y);
+        CTX.closePath();
+        CTX.fill();
+      }
+      CTX.restore();
+    }
+
+    // Custom text inside shape (scattered)
+    if (sh.textEnabled && sh.text && sh.text.length) {
+      let step = Math.max(8, S.spacing * 0.8);
+      let x0t = cx - r - step, x1t = cx + r + step;
+      let y0t = cy - r - step, y1t = cy + r + step;
+      for (let x = x0t; x < x1t; x += step) {
+        for (let y = y0t; y < y1t; y += step) {
+          let inside = false;
+          if (type === 'circle') inside = (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2;
+          else if (type === 'ring') {
+            let d2 = (x - cx) ** 2 + (y - cy) ** 2;
+            inside = d2 <= r ** 2 && d2 >= (r * 0.55) ** 2;
+          } else if (type === 'rect') {
+            let hw = r * 0.8, hh = r * 0.55;
+            let rx = Math.cos(-spin) * (x - cx) - Math.sin(-spin) * (y - cy);
+            let ry = Math.sin(-spin) * (x - cx) + Math.cos(-spin) * (y - cy);
+            inside = Math.abs(rx) <= hw && Math.abs(ry) <= hh;
+          } else if (type === 'band') inside = (y >= cy - r * 0.3 && y <= cy + r * 0.3);
+          else if (type === 'lissajous' && shapePts && shapePts.length === 1) {
+            inside = (x - shapePts[0].x) ** 2 + (y - shapePts[0].y) ** 2 < (r * 0.25) ** 2;
+          } else if (shapePts && shapePts.length > 1) inside = pointInPoly(x, y, shapePts);
+          if (!inside) continue;
+          let idx = (Math.floor(x / step) + Math.floor(y / step)) % sh.text.length;
+          let ch = sh.text[idx];
+          let col = sh.textColor || shapeCharColor(x, y, t, idx);
+          let sz = step * 0.7;
+          CTX.save();
+          CTX.globalAlpha = globalAlpha;
+          dc(x, y, sz, 0, col, ch);
+          CTX.restore();
+        }
+      }
+    }
+  
+    // Draw shape border
+    if (sh.borderEnabled !== false) {
+      CTX.save();
+      CTX.globalAlpha = globalAlpha;
+      CTX.strokeStyle = sh.borderCol || (sh.col === S.accent ? sh.col : '#ffffff');
+      CTX.lineWidth = Math.max(1, S.maxSize * 0.08);
+      CTX.lineCap = 'round';
+      CTX.lineJoin = 'round';
+
+      if (type === 'circle') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.stroke();
+      } else if (type === 'ring') {
+        CTX.beginPath();
+        CTX.arc(cx, cy, r, 0, Math.PI * 2);
+        CTX.stroke();
+        CTX.beginPath();
+        CTX.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+        CTX.stroke();
+      } else if (type === 'rect') {
+        let hw = r * 0.8, hh = r * 0.55;
+        CTX.save();
+        CTX.translate(cx, cy);
+        CTX.rotate(spin);
+        CTX.strokeRect(-hw, -hh, hw * 2, hh * 2);
+        CTX.restore();
+      } else if (type === 'band') {
+        CTX.beginPath();
+        CTX.rect(0, cy - r * 0.3, p.width, r * 0.6);
+        CTX.stroke();
+      } else if (shapePts && shapePts.length > 1) {
+        CTX.beginPath();
+        CTX.moveTo(shapePts[0].x, shapePts[0].y);
+        for (let i = 1; i < shapePts.length; i++) CTX.lineTo(shapePts[i].x, shapePts[i].y);
+        CTX.closePath();
+        CTX.stroke();
+      }
+      CTX.restore();
     }
   });
 }
 
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
-function drawOverlay(p,t){
-  if(!S.overlayEnabled||!S.overlayStreams.length) return;
-  S.overlayStreams.forEach(function(stream,si){
-    let txt=stream.text;if(!txt||!txt.length) return;
-    let col=stream.color==='palette'?S.palette[si%S.palette.length]:stream.color;
-    let sz=S.overlaySize;
-    let fstr=sz+'px '+S.fontStack;
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    CTX.globalAlpha=S.overlayAlpha/100;
-    let off=(t*S.overlaySpeed*40+(stream.offset||0))%(txt.length*sz+p.width);
-    let dir=S.overlayDir;
-    if(dir==='vert'){
-      let voff=(t*S.overlaySpeed*30+(stream.offset||0))%(txt.length*sz+p.height);
-      let xPos=p.width*.15+si*(p.width*.2);
-      for(let ci=0;ci<txt.length+Math.ceil(p.height/sz)+2;ci++){
-        let cy=ci*sz-voff%((txt.length+1)*sz);
-        if(cy<-sz||cy>p.height+sz) continue;
-        let ch=txt[ci%txt.length];
-        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
-        let dx=S.overlayDistort>0?Math.sin(cy*.05+t*2)*S.overlayDistort:0;
-        if(S.overlayWave>0){let wy=Math.sin(cy*.04+t*1.5)*S.overlayWave*.3;xPos+=wy*.01;}
-        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-        CTX.fillText(ch,xPos+dx,cy);
-      }
-    } else {
-      let yPos=p.height*.2+si*(p.height*.18);
-      let mult=dir==='rtl'?-1:1;
-      let xOff=dir==='rtl'?p.width-off%((txt.length+1)*sz+p.width):-(off%(txt.length*sz+p.width));
-      if(dir==='alt') xOff=(si%2===0)?-(off%(txt.length*sz+p.width)):p.width-off%((txt.length+1)*sz+p.width);
-      for(let ci=0;ci<txt.length+Math.ceil(p.width/sz)+2;ci++){
-        let cx=xOff+ci*sz*mult;
-        if(cx<-sz||cx>p.width+sz) continue;
-        let ch=txt[ci%txt.length];
-        if(S.overlayEntropy>0&&Math.random()<S.overlayEntropy*.01) ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
-        let dy=S.overlayWave>0?Math.sin(cx*.04+t*1.5)*S.overlayWave*.4:0;
-        let dx=S.overlayDistort>0?Math.sin(yPos*.05+t*2)*S.overlayDistort:0;
-        if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-        CTX.fillText(ch,cx+dx,yPos+dy);
+
+function drawOverlay(p, t) {
+  if (!S.overlayEnabled || !Array.isArray(S.overlayStreams) || !S.overlayStreams.length) return;
+  let baseKern = S.overlayKern;
+  let baseLineSpacing = S.overlayLineSpacing;
+  let sz = S.overlaySize;
+  CTX.font = sz + 'px ' + S.fontStack;
+  CTX.globalAlpha = S.overlayAlpha / 100;
+  _lastFont = sz + 'px ' + S.fontStack;
+  for (let si = 0; si < S.overlayStreams.length; si++) {
+    let stream = S.overlayStreams[si];
+    let txt = stream.text;
+    if (!txt || !txt.length) continue;
+    // Per‑stream overrides
+    let kern = baseKern + (stream.kernOffset || 0);
+    let lineSpacing = baseLineSpacing + (stream.lineSpacingMult || 1) * sz * 0.2;
+    let step = sz + kern;
+    let speed = S.overlaySpeed * (stream.speedMult || 1.0);
+    let col = stream.color === 'palette' ? S.palette[si % S.palette.length] : stream.color;
+    // Vertical offset for repeating
+    let yStart = 0;
+    let yStep = sz + lineSpacing;
+    let repeatCount = S.overlayRepeatFill ? Math.ceil(p.height / yStep) + 1 : 1;
+    for (let rep = 0; rep < repeatCount; rep++) {
+      let yOffset = rep * yStep;
+      let dir = S.overlayDir;
+      let off = (t * speed * 40 + (stream.offset || 0)) % (txt.length * step + p.width);
+      if (dir === 'vert') {
+        let voff = (t * speed * 30 + (stream.offset || 0)) % (txt.length * step + p.height);
+        let xPos = p.width * 0.15 + si * (p.width * 0.2);
+        for (let ci = 0; ci < txt.length + Math.ceil(p.height / step) + 2; ci++) {
+          let cy = ci * step - voff % ((txt.length + 1) * step) + yOffset;
+          if (cy < -sz || cy > p.height + sz) continue;
+          let ch = txt[ci % txt.length];
+          let glitchSet = (typeof GLITCH !== 'undefined' && GLITCH.length) ? GLITCH : ['#','@','%','█','_'];
+          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = glitchSet[Math.floor(Math.random() * glitchSet.length)];
+          let dx = S.overlayDistort > 0 ? Math.sin(cy * 0.05 + t * 2) * S.overlayDistort : 0;
+          CTX.fillStyle = col;
+          CTX.fillText(ch, xPos + dx, cy);
+        }
+      } else {
+        let yPos = p.height * 0.2 + si * (p.height * 0.18) + yOffset;
+        let mult = dir === 'rtl' ? -1 : 1;
+        let xOff = dir === 'rtl' ? p.width - off % ((txt.length + 1) * step + p.width) : -(off % (txt.length * step + p.width));
+        if (dir === 'alt') xOff = (si % 2 === 0) ? -(off % (txt.length * step + p.width)) : p.width - off % ((txt.length + 1) * step + p.width);
+        for (let ci = 0; ci < txt.length + Math.ceil(p.width / step) + 2; ci++) {
+          let cx = xOff + ci * step * mult;
+          if (cx < -sz || cx > p.width + sz) continue;
+          let ch = txt[ci % txt.length];
+          if (S.overlayEntropy > 0 && Math.random() < S.overlayEntropy * 0.01) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+          let dy = S.overlayWave > 0 ? Math.sin(cx * 0.04 + t * 1.5) * S.overlayWave * 0.4 : 0;
+          let dx = S.overlayDistort > 0 ? Math.sin(yPos * 0.05 + t * 2) * S.overlayDistort : 0;
+          CTX.fillStyle = col;
+          CTX.fillText(ch, cx + dx, yPos + dy);
+        }
       }
     }
-  });
-  CTX.globalAlpha=1;
+  }
+  CTX.globalAlpha = 1;
 }
 
 // ── P5 SKETCH ─────────────────────────────────────────────────────────────────
@@ -2228,6 +3318,7 @@ new p5(function(p){
     recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];
     sandParticles=[];caGrid=null;lissParticles=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
+    boidAgents=[];magneticPoles=[];
     if(S.compEnabled) buildComp(S.compPreset,W,H);
   }
   function rd(){p.redraw();}
@@ -2237,7 +3328,17 @@ new p5(function(p){
     recRects=[];rd();
   }
   window._st={
-    rd:rd,ri:ri,rc:rc,play:function(){S.playing=!S.playing;if(S.playing)p.loop();else p.noLoop();return S.playing;},
+    rd:rd,ri:ri,rc:rc,
+    play:function() {
+  S.playing = !S.playing;
+  if (S.playing) {
+    p.loop();
+    p.redraw();   // forces an immediate frame
+  } else {
+    p.noLoop();
+  }
+  return S.playing;
+},
     regen:function(){ri();rd();},
     save:function(){
       // ── WATERMARK ─────────────────────────────────────────────────────────────
@@ -2273,72 +3374,102 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw=function(){
-    S.fc++;
-    // FPS
-    let now=performance.now();
-    _frameCount++;
-    if(now-_fpsTimer>1000){_fps=_frameCount;_frameCount=0;_fpsTimer=now;document.getElementById('fpsLabel').textContent=_fps+' fps';}
-    // Background with optional trail persistence
-    if(S.trailPersist>0){
-      CTX.fillStyle=S.bg;
-      CTX.globalAlpha=1-S.trailPersist/100;
-      CTX.fillRect(0,0,W,H);
-      CTX.globalAlpha=1;
-    } else {
-      CTX.fillStyle=S.bg;
-      CTX.fillRect(0,0,W,H);
+  p.draw = function(){
+  S.fc++;   // ← UNCOMMENTED – frame counter increments each frame
+  // FPS, background, etc.
+  // FPS display
+  let now = performance.now();
+  _frameCount++;
+  if (now - _fpsTimer > 1000) {
+    _fps = _frameCount;
+    _frameCount = 0;
+    _fpsTimer = now;
+    document.getElementById('fpsLabel').textContent = _fps + ' fps';
+  }
+
+  // Background with trail persistence
+  if (S.trailPersist > 0) {
+    CTX.fillStyle = S.bg;
+    CTX.globalAlpha = 1 - S.trailPersist / 100;
+    CTX.fillRect(0, 0, W, H);
+    CTX.globalAlpha = 1;
+  } else {
+    CTX.fillStyle = S.bg;
+    CTX.fillRect(0, 0, W, H);
+  }
+
+  CTX.textBaseline = 'middle';
+  CTX.globalCompositeOperation = S.blendMode || 'source-over';
+  let t = S.fc * S.speed;
+
+  // Signal collapse effect
+  if (S.signalCollapse) {
+    let elapsed = S.fc - S.signalStart;
+    if (elapsed < 80) {
+      let scanY = p.map(elapsed, 0, 80, 0, H);
+      CTX.fillStyle = 'rgba(230,57,70,.12)';
+      CTX.fillRect(0, scanY - 2, W, 4);
     }
-    CTX.textBaseline='middle';
-    let t=S.fc*S.speed;
-    // Signal collapse effect
-    if(S.signalCollapse){
-      let elapsed=S.fc-S.signalStart;
-      if(elapsed<80){let scanY=p.map(elapsed,0,80,0,H);CTX.fillStyle='rgba(230,57,70,.12)';CTX.fillRect(0,scanY-2,W,4);}
-    }
-    // Draw mode
-    switch(S.mode){
-      case'bloom':      drawBloom(p,t);break;
-      case'wave':       drawWave(p,t);break;
-      case'rain1':      drawRain1(p,t);break;
-      case'rain2':      drawRain2(p,t);break;
-      case'vortex':     drawVortex(p,t);break;
-      case'ripple':     drawRipple(p,t);break;
-      case'drift':      drawDrift(p,t);break;
-      case'tess':       drawTess(p,t);break;
-      case'warp':       drawWarp(p,t);break;
-      case'glitch':     drawGlitch(p,t);break;
-      case'webster':    drawWebster(p,t);break;
-      case'matrix':     drawMatrix(p,t);break;
-      case'orbit':      drawOrbit(p,t);break;
-      case'spiral':     drawSpiral(p,t);break;
-      case'scan':       drawScan(p,t);break;
-      case'halftone':   drawHalftone(p,t);break;
-      case'shatter':    drawShatter(p,t);break;
-      case'weave':      drawWeave(p,t);break;
-      case'topo':       drawTopo(p,t);break;
-      case'recursive':  drawRecursive(p,t);break;
-      case'contour':    drawContour(p,t);break;
-      case'fabric':     drawFabric(p,t);break;
-      case'loops':      drawLoops(p,t);break;
-      case'imgtext':    drawImgText(p,t);break;
-      case'topolines':  drawTopoLines(p,t);break;
-      case'pipes':      drawPipes(p,t);break;
-      case'reaction':   drawReaction(p,t);break;
-      case'voronoi':    drawVoronoi(p,t);break;
-      case'mycelium':   drawMycelium(p,t);break;
-      case'sand':       drawSand(p,t);break;
-      case'cellular':   drawCellular(p,t);break;
-      case'interference':drawInterference(p,t);break;
-      case'calligraphy':drawCalligraphy(p,t);break;
-      case'lissajous':  drawLissajous(p,t);break;
-      case'wireterrain': drawWireTerrain(p,t);break;
-      case'fractalsubdiv':drawFractalSubdiv(p,t);break;
-    }
-    drawShapes(p,t);
-    drawOverlay(p,t);
-  };
-},'canvas-wrap');
+  }
+
+  // Draw current mode
+  switch (S.mode) {
+    case 'bloom': drawBloom(p, t); break;
+    case 'wave': drawWave(p, t); break;
+    case 'rain1': drawRain1(p, t); break;
+    case 'rain2': drawRain2(p, t); break;
+    case 'vortex': drawVortex(p, t); break;
+    case 'ripple': drawRipple(p, t); break;
+    case 'drift': drawDrift(p, t); break;
+    case 'tess': drawTess(p, t); break;
+    case 'warp': drawWarp(p, t); break;
+    case 'glitch': drawGlitch(p, t); break;
+    case 'webster': drawWebster(p, t); break;
+    case 'matrix': drawMatrix(p, t); break;
+    case 'orbit': drawOrbit(p, t); break;
+    case 'spiral': drawSpiral(p, t); break;
+    case 'scan': drawScan(p, t); break;
+    case 'halftone': drawHalftone(p, t); break;
+    case 'shatter': drawShatter(p, t); break;
+    case 'weave': drawWeave(p, t); break;
+    case 'topo': drawTopo(p, t); break;
+    case 'recursive': drawRecursive(p, t); break;
+    case 'contour': drawContour(p, t); break;
+    case 'fabric': drawFabric(p, t); break;
+    case 'loops': drawLoops(p, t); break;
+    case 'imgtext': drawImgText(p, t); break;
+    case 'topolines': drawTopoLines(p, t); break;
+    case 'pipes': drawPipes(p, t); break;
+    case 'reaction': drawReaction(p, t); break;
+    case 'voronoi': drawVoronoi(p, t); break;
+    case 'mycelium': drawMycelium(p, t); break;
+    case 'sand': drawSand(p, t); break;
+    case 'cellular': drawCellular(p, t); break;
+    case 'interference': drawInterference(p, t); break;
+    case 'calligraphy': drawCalligraphy(p, t); break;
+    case 'lissajous': drawLissajous(p, t); break;
+    case 'wireterrain': drawWireTerrain(p, t); break;
+    case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
+    case 'truchet': drawTruchet(p, t); break;
+    case 'seisma': drawSeisma(p, t); break;
+    case 'hatch': drawHatch(p, t); break;
+    case 'warpgrid': drawWarpGrid(p, t); break;
+    case 'isocontour': drawIsoContour(p, t); break;
+    case 'tesseract': drawTesseract(p, t); break;
+    case 'hypersphere': drawHypersphere(p, t); break;
+    case 'boids': drawBoids(p, t); break;
+    case 'magnetic': drawMagnetic(p, t); break;
+    case 'worms': drawWorms(p, t); break;
+    case 'flowerspin': drawFlowerspin(p, t); break;
+    case 'wfc': drawWFC(p, t); break;
+  }
+
+  CTX.globalCompositeOperation = 'source-over';
+  drawShapes(p, t);
+  drawOverlay(p, t);
+}; // <--- This closes p.draw
+
+}); // <--- This closes the "new p5(function(p){" block
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
@@ -2356,14 +3487,14 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
 document.getElementById('btnCollapseAll').addEventListener('click',function(){
-  ['mode','chars','font','motion','field','entropy','palette','comp','shapes','overlay','img','size'].forEach(function(id){
+  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
     let body=document.getElementById('body-'+id);
     let arrow=document.getElementById('arr-'+id);
     if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
   });
 });
 document.getElementById('btnExpandAll').addEventListener('click',function(){
-  ['mode','chars','font','motion','field','entropy','palette','comp','shapes','overlay','img','size'].forEach(function(id){
+  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size'].forEach(function(id){
     let body=document.getElementById('body-'+id);
     let arrow=document.getElementById('arr-'+id);
     if(body){body.classList.remove('collapsed');if(arrow) arrow.classList.add('open');}
@@ -2402,6 +3533,22 @@ wireSlider('sOvAlpha','vOvAlpha','overlayAlpha');
 wireSlider('sOvWave','vOvWave','overlayWave');
 wireSlider('sOvEntropy','vOvEntropy','overlayEntropy',function(v){return v;});
 wireSlider('sOvDistort','vOvDistort','overlayDistort',function(v){return v;});
+wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
+wireSlider('sReactKill', 'vReactKill', 'reactKill', v => v * 0.001);
+wireSlider('sMycSpeed', 'vMycSpeed', 'mycSpeed');
+wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
+wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
+wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
+wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
+wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
+wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
+
+document.getElementById('btnRepeatFill').addEventListener('click', function() {
+  S.overlayRepeatFill = !S.overlayRepeatFill;
+  this.textContent = S.overlayRepeatFill ? 'On' : 'Off';
+  this.classList.toggle('on', S.overlayRepeatFill);
+  window._st.rd();
+});  
 
 // ── MODE ──────────────────────────────────────────────────────────────────────
 document.getElementById('modeGrid').addEventListener('click',function(e){
@@ -2409,39 +3556,75 @@ document.getElementById('modeGrid').addEventListener('click',function(e){
   document.querySelectorAll('.mb').forEach(function(x){x.classList.remove('active');});
   b.classList.add('active');S.mode=b.dataset.mode;
   document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
-  window._st.ri();window._st.rd();
+  
+  // Hide all mode-specific control panels
+  document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
+    ctrl.classList.remove('active');
+  });
+  // Show the panel for the current mode (if any)
+  let activeCtrl = document.getElementById('ctrl-' + S.mode);
+  if (activeCtrl) activeCtrl.classList.add('active');
+  
+  window._st.ri(); window._st.rd();
 });
+
 
 // ── CHARSET ───────────────────────────────────────────────────────────────────
-document.getElementById('charsetGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.cb');if(!b||!b.dataset.cs) return;
-  document.querySelectorAll('#charsetGrid .cb').forEach(function(x){x.classList.remove('active');});
+document.getElementById('charsetGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b || !b.dataset.cs) return;
+  document.querySelectorAll('#charsetGrid .cb').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  let cs=b.dataset.cs;
-  document.getElementById('customRow').style.display=cs==='custom'?'flex':'none';
+  let cs = b.dataset.cs;
+  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
+
   // Handle Random Unicode modes
-  if(cs==='randuni'){RAND_UNICODE_MODE='full';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_weighted'){RAND_UNICODE_MODE='weighted';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_pos'){RAND_UNICODE_MODE='pos';_driftMap.clear();window._st.rd();return;}
-  if(cs==='randuni_drift'){RAND_UNICODE_MODE='drift';_driftMap.clear();window._st.rd();return;}
-  // Normal charset
-  RAND_UNICODE_MODE=null;
-  if(cs!=='custom'){S.chars=CHARSETS[cs];window._st.rd();}
+  if (cs === 'randuni') { RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_weighted') { RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_pos') { RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; }
+  if (cs === 'randuni_drift') { RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; }
+
+  // Handle Particles mode
+  if (cs === 'particles') {
+    S.useParticleMode = true;
+    RAND_UNICODE_MODE = null;
+    window._st.rd();
+    return;
+  }
+  S.useParticleMode = false;
+
+  // Normal charset (non‑custom)
+  RAND_UNICODE_MODE = null;
+  if (cs !== 'custom') {
+    S.chars = CHARSETS[cs];
+    // Show a warning for rare charsets – no automatic font switch
+    if (RARE_CHARSETS.includes(cs)) {
+      showToast('⚠️ For best results, select “Universal Unicode” font manually');
+    }
+    window._st.rd();
+  }
 });
-document.getElementById('customApply').addEventListener('click',function(){
-  let v=document.getElementById('customInput').value.trim();if(!v) return;
-  let parts=v.split(/[\s,]+/).filter(function(x){return x.length>0;});
-  S.chars=parts.length>1?parts:v.split('').filter(function(c){return c.trim()!=='';});
-  if(!S.chars.length) S.chars=['?'];
-  RAND_UNICODE_MODE=null; // custom input overrides random unicode mode
-  window._st.rd();
-});
-document.getElementById('customInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('customApply').click();});
 
 // ── FONT ──────────────────────────────────────────────────────────────────────
-document.getElementById('fontSelect').addEventListener('change',function(){
-  S.fontKey=this.value;S.fontStack=FONTS[this.value]||FONTS.courier;
-  invalidateFontCache();window._st.rd();
+document.getElementById('fontSelect').addEventListener('change', function() {
+  let newFont = this.value;
+  if (newFont === 'unicode') {
+    if (confirm('⚠️ Universal Unicode font can be slow on mobile with large charsets.\nContinue anyway?')) {
+      S.fontKey = newFont;
+      S.fontStack = FONTS[newFont];
+      invalidateFontCache();
+      window._st.rd();
+      showToast('Unicode font enabled – may be slow');
+    } else {
+      // Revert dropdown to previous value
+      this.value = S.fontKey;
+    }
+  } else {
+    S.fontKey = newFont;
+    S.fontStack = FONTS[newFont] || FONTS.courier;
+    invalidateFontCache();
+    window._st.rd();
+  }
 });
 
 // ── FLIP TOGGLES ─────────────────────────────────────────────────────────────
@@ -2451,7 +3634,12 @@ document.getElementById('btnFlipH').addEventListener('click',function(){
 document.getElementById('btnFlipV').addEventListener('click',function(){
   S.flipVMirror=!S.flipVMirror;this.textContent=S.flipVMirror?'On':'Off';this.classList.toggle('on',S.flipVMirror);window._st.rd();
 });
-
+document.getElementById('btnReactOscillate').addEventListener('click', function() {
+  S.reactOscillate = !S.reactOscillate;
+  this.textContent = S.reactOscillate ? 'On' : 'Off';
+  this.classList.toggle('on', S.reactOscillate);
+  window._st.rd();
+});
 // ── PALETTE ───────────────────────────────────────────────────────────────────
 document.getElementById('palGrid').addEventListener('click',function(e){
   let b=e.target.closest('.pb');if(!b) return;
@@ -2474,7 +3662,15 @@ document.getElementById('bgRow').addEventListener('click',function(e){
   s.classList.add('active');S.bg=s.dataset.bg;window._st.rd();
 });
 
-// ── COMPOSITION ───────────────────────────────────────────────────────────────
+// ── BLEND MODE ────────────────────────────────────────────────────────────────
+(function(){
+  var sel=document.getElementById('blendSelect');
+  if(sel) sel.addEventListener('change',function(){
+    S.blendMode=this.value;
+    window._st.rd();
+  });
+})();
+
 document.getElementById('btnComp').addEventListener('click',function(){
   S.compEnabled=!S.compEnabled;this.textContent=S.compEnabled?'On':'Off';this.classList.toggle('on',S.compEnabled);
   if(S.compEnabled&&!compBlocks.length) buildComp(S.compPreset,window._st.w(),window._st.h());
@@ -2524,45 +3720,381 @@ document.getElementById('shapeColModeRow').addEventListener('click',function(e){
   document.querySelectorAll('[data-scm]').forEach(function(x){x.classList.remove('active');});
   b.classList.add('active');S.shapeCharColorMode=b.dataset.scm;window._st.rd();
 });
-document.getElementById('shapeFixedColRow').addEventListener('click',function(e){
-  let s=e.target.closest('[data-sfc]');if(!s) return;
-  document.querySelectorAll('[data-sfc]').forEach(function(x){x.classList.remove('active');});
-  s.classList.add('active');S.shapeCharFixedColor=s.dataset.sfc;window._st.rd();
-});
+
+
 document.getElementById('shapeTextInput').addEventListener('input',function(){_pendingShapeText=this.value;});
 document.getElementById('setShapeTextBtn').addEventListener('click',function(){
   _pendingShapeText=document.getElementById('shapeTextInput').value.trim();
   if(shapes.length){shapes[shapes.length-1].text=_pendingShapeText;window._st.rd();}
 });
 document.getElementById('shapeTextInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('setShapeTextBtn').click();});
-document.getElementById('btnAddShape').addEventListener('click',function(){
-  let W=window._st.w(),H=window._st.h();
-  let pos=getShapePos(W,H);
-  let col=COMP_PALETTES.default[Math.floor(Math.random()*COMP_PALETTES.default.length)];
-  let la=[2,3,4,5][Math.floor(Math.random()*4)],lb=[1,2,3][Math.floor(Math.random()*3)];
-  shapes.push({type:S.selectedShape,cx:pos.x,cy:pos.y,baseCx:pos.x,baseCy:pos.y,
-    r:55+Math.random()*(Math.min(W,H)*.2),col:col,sides:S.shapeSides,
-    la:la,lb:lb,spinAngle:0,orbitAngle:Math.atan2(pos.y-H/2,pos.x-W/2),
-    textOffset:0,text:_pendingShapeText||''});
-  S.shapesEnabled=true;
-  document.getElementById('btnShapes').textContent='On';
+
+document.getElementById('btnAddShape').addEventListener('click', function() {
+  let W = window._st.w(), H = window._st.h();
+  let pos = getShapePos(W, H);
+  let col = COMP_PALETTES.default[Math.floor(Math.random() * COMP_PALETTES.default.length)];
+  let la = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+  let lb = [1, 2, 3][Math.floor(Math.random() * 3)];
+  
+  let r = 55 + Math.random() * (Math.min(W, H) * 0.2);
+  let pts = null;
+  let irregularity = 0.3 + Math.random() * 0.5;
+  
+  if (S.selectedShape === 'polygon') {
+    pts = irregularPolygon(pos.x, pos.y, r, S.shapeSides, irregularity, 0);
+  } else if (S.selectedShape === 'equilateral') {
+    pts = irregularPolygon(pos.x, pos.y, r, 3, irregularity * 0.8, 0);
+  } else if (S.selectedShape === 'hexagon') {
+    pts = irregularPolygon(pos.x, pos.y, r, 6, irregularity * 0.7, 0);
+  } else if (S.selectedShape === 'star5') {
+    pts = irregularPolygon(pos.x, pos.y, r, 10, irregularity * 0.5, 0.5 + Math.random() * 0.3);
+  } else if (S.selectedShape === 'star6') {
+    pts = irregularPolygon(pos.x, pos.y, r, 12, irregularity * 0.5, 0.5 + Math.random() * 0.3);
+  }
+
+  shapes.push({
+    type: S.selectedShape,
+    cx: pos.x, cy: pos.y,
+    baseCx: pos.x, baseCy: pos.y,
+    size: r,
+    pts: pts,
+    col: col,
+    borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
+    borderEnabled: true,
+    opacity: 0.8,
+    jitter: 0,
+    sides: S.shapeSides,
+    la: la, lb: lb,
+    spinAngle: 0,
+    orbitAngle: Math.atan2(pos.y - H / 2, pos.x - W / 2),
+    textOffset: 0,
+    text: _pendingShapeText || '',
+    driftEnabled: false,
+    driftSpeed: 0.5,
+    driftAmpX: 8,
+    driftAmpY: 6,
+    driftPhase: Math.random() * Math.PI * 2,
+    textEnabled: true,
+    textColor: '#ffffff',
+    solidFill: false,
+    fillColor: '#c4bcb0',
+    fillOpacity: 0.5
+  });
+  S.shapesEnabled = true;
+  document.getElementById('btnShapes').textContent = 'On';
   document.getElementById('btnShapes').classList.add('on');
-  renderShapeList();window._st.rd();
+  renderShapeList();
+  window._st.rd();
 });
-document.getElementById('btnClearShapes').addEventListener('click',function(){shapes=[];renderShapeList();window._st.rd();});
-function renderShapeList(){
-  let el=document.getElementById('shapeList');el.innerHTML='';
-  shapes.forEach(function(sh,i){
-    let row=document.createElement('div');row.className='sh-item';
-    let dot=document.createElement('div');dot.className='sh-item-dot';dot.style.background=sh.col;
-    let lbl=document.createElement('div');lbl.className='sh-item-lbl';
-    lbl.textContent=sh.type+(sh.text?' "'+sh.text.substring(0,8)+'"':'')+' ('+Math.round(sh.cx)+','+Math.round(sh.cy)+')';
-    let rm=document.createElement('button');rm.className='ca';rm.textContent='✕';rm.style.padding='0 .45rem';
-    rm.addEventListener('click',function(){shapes.splice(i,1);renderShapeList();window._st.rd();});
-    row.appendChild(dot);row.appendChild(lbl);row.appendChild(rm);el.appendChild(row);
+
+  
+function renderShapeList() {
+  let W = window._st.w();
+  let H = window._st.h();
+  let el = document.getElementById('shapeList');
+  el.innerHTML = '';
+  shapes.forEach(function(sh, i) {
+    // Initialize missing properties
+    if (sh.size === undefined) sh.size = 55;
+    if (sh.driftEnabled === undefined) sh.driftEnabled = false;
+    if (sh.driftSpeed === undefined) sh.driftSpeed = 0.5;
+    if (sh.driftAmpX === undefined) sh.driftAmpX = 8;
+    if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
+    if (sh.textEnabled === undefined) sh.textEnabled = true;
+    if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
+    if (sh.textColor === undefined) sh.textColor = '#ffffff';
+    
+    let row = document.createElement('div');
+    row.className = 'sh-item';
+    row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px;padding:4px;border-bottom:1px solid var(--stone);';
+
+    // Fill colour swatch
+    let dot = document.createElement('div');
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.borderRadius = '50%';
+    dot.style.background = sh.col;
+    dot.style.cursor = 'pointer';
+    dot.title = 'Main shape fill color (click to randomize)';
+    dot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.col = S.palette[Math.floor(Math.random() * S.palette.length)];
+      dot.style.background = sh.col;
+      window._st.rd();
+    });
+    row.appendChild(dot);
+
+    // Solid fill toggle
+    let fillToggle = document.createElement('button');
+    fillToggle.className = 'tb';
+    fillToggle.textContent = (sh.solidFill === true) ? 'Solid Fill On' : 'Solid Fill Off';
+    fillToggle.style.padding = '0.1rem 0.4rem';
+    fillToggle.style.fontSize = '0.45rem';
+    fillToggle.title = 'Fill the entire shape with a solid color (behind characters)';
+    fillToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.solidFill = !(sh.solidFill === true);
+      fillToggle.textContent = sh.solidFill ? 'Solid Fill On' : 'Solid Fill Off';
+      window._st.rd();
+    });
+    row.appendChild(fillToggle);
+
+    // Border colour swatch
+    let borderDot = document.createElement('div');
+    borderDot.style.width = '16px';
+    borderDot.style.height = '16px';
+    borderDot.style.borderRadius = '50%';
+    borderDot.style.background = sh.borderCol || '#ffffff';
+    borderDot.style.border = '1px solid var(--stone)';
+    borderDot.style.cursor = 'pointer';
+    borderDot.title = 'Border color (click to randomize)';
+    borderDot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.borderCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+      borderDot.style.background = sh.borderCol;
+      window._st.rd();
+    });
+    row.appendChild(borderDot);
+
+    // Border on/off toggle
+    let borderToggle = document.createElement('button');
+    borderToggle.className = 'tb';
+    borderToggle.textContent = (sh.borderEnabled === false) ? 'Border Off' : 'Border On';
+    borderToggle.style.padding = '0.1rem 0.4rem';
+    borderToggle.style.fontSize = '0.45rem';
+    borderToggle.title = 'Show/hide shape outline';
+    borderToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sh.borderEnabled = !(sh.borderEnabled === false);
+      borderToggle.textContent = (sh.borderEnabled === false) ? 'Border Off' : 'Border On';
+      window._st.rd();
+    });
+    row.appendChild(borderToggle);
+
+    // Opacity slider
+    let opacitySlider = document.createElement('input');
+    opacitySlider.type = 'range';
+    opacitySlider.min = 0.2;
+    opacitySlider.max = 1;
+    opacitySlider.step = 0.05;
+    opacitySlider.value = (sh.opacity !== undefined) ? sh.opacity : 0.8;
+    opacitySlider.style.width = '50px';
+    opacitySlider.title = 'Character opacity inside shape';
+    opacitySlider.addEventListener('input', function(e) {
+      sh.opacity = parseFloat(e.target.value);
+      opacityLabel.textContent = Math.round(sh.opacity * 100) + '%';
+      window._st.rd();
+    });
+    row.appendChild(opacitySlider);
+    let opacityLabel = document.createElement('span');
+    opacityLabel.textContent = Math.round(opacitySlider.value * 100) + '%';
+    opacityLabel.style.fontSize = '0.45rem';
+    row.appendChild(opacityLabel);
+    
+    // Fill color picker
+    let fillColorPicker = document.createElement('input');
+    fillColorPicker.type = 'color';
+    fillColorPicker.value = sh.fillColor || '#c4bcb0';
+    fillColorPicker.style.width = '24px';
+    fillColorPicker.style.height = '24px';
+    fillColorPicker.style.border = 'none';
+    fillColorPicker.style.cursor = 'pointer';
+    fillColorPicker.title = 'Solid fill background color';
+    fillColorPicker.addEventListener('input', function(e) {
+      sh.fillColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(fillColorPicker);
+
+    // Fill opacity slider
+    let fillOpacitySlider = document.createElement('input');
+    fillOpacitySlider.type = 'range';
+    fillOpacitySlider.min = 0;
+    fillOpacitySlider.max = 1;
+    fillOpacitySlider.step = 0.05;
+    fillOpacitySlider.value = sh.fillOpacity !== undefined ? sh.fillOpacity : 0.5;
+    fillOpacitySlider.style.width = '50px';
+    fillOpacitySlider.title = 'Solid fill opacity';
+    fillOpacitySlider.addEventListener('input', function(e) {
+      sh.fillOpacity = parseFloat(e.target.value);
+      let label = e.target.nextSibling;
+      if (label) label.textContent = Math.round(sh.fillOpacity*100)+'%';
+      window._st.rd();
+    });
+    row.appendChild(fillOpacitySlider);
+    let fillOpacityLabel = document.createElement('span');
+    fillOpacityLabel.textContent = Math.round(fillOpacitySlider.value*100)+'%';
+    fillOpacityLabel.style.fontSize = '0.45rem';
+    row.appendChild(fillOpacityLabel);
+
+    // Size slider
+    let sizeSlider = document.createElement('input');
+    sizeSlider.type = 'range';
+    sizeSlider.min = 20;
+    sizeSlider.max = Math.min(W, H) * 0.4;
+    sizeSlider.step = 2;
+    sizeSlider.value = sh.size || 55;
+    sizeSlider.style.width = '70px';
+    sizeSlider.title = 'Shape size (radius or dimensions)';
+    sizeSlider.addEventListener('input', function(e) {
+      sh.size = parseFloat(e.target.value);
+      sizeLabel.textContent = Math.round(sh.size);
+      window._st.rd();
+    });
+    row.appendChild(sizeSlider);
+    let sizeLabel = document.createElement('span');
+    sizeLabel.textContent = Math.round(sizeSlider.value);
+    sizeLabel.style.fontSize = '0.45rem';
+    row.appendChild(sizeLabel);
+
+    // Character fill color picker (overrides color mode)
+    let charFillPicker = document.createElement('input');
+    charFillPicker.type = 'color';
+    charFillPicker.value = sh.charFillColor || '#c4bcb0';
+    charFillPicker.style.width = '24px';
+    charFillPicker.style.height = '24px';
+    charFillPicker.style.border = 'none';
+    charFillPicker.style.cursor = 'pointer';
+    charFillPicker.title = 'Character fill color (overrides color mode)';
+    charFillPicker.addEventListener('input', function(e) {
+      sh.charFillColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(charFillPicker);
+  
+    // Drift enable/off
+    let driftBtn = document.createElement('button');
+    driftBtn.className = 'tb';
+    driftBtn.textContent = (sh.driftEnabled === true) ? 'Drift On' : 'Drift Off';
+    driftBtn.style.padding = '0.1rem 0.4rem';
+    driftBtn.title = 'Enable/disable Lissajous drift movement';
+    driftBtn.addEventListener('click', function() {
+      sh.driftEnabled = !(sh.driftEnabled === true);
+      driftBtn.textContent = sh.driftEnabled ? 'Drift On' : 'Drift Off';
+      window._st.rd();
+    });
+    row.appendChild(driftBtn);
+
+    // Drift speed
+    let driftSpeedSlider = document.createElement('input');
+    driftSpeedSlider.type = 'range';
+    driftSpeedSlider.min = 0;
+    driftSpeedSlider.max = 2;
+    driftSpeedSlider.step = 0.05;
+    driftSpeedSlider.value = sh.driftSpeed || 0.5;
+    driftSpeedSlider.style.width = '50px';
+    driftSpeedSlider.title = 'Drift speed';
+    driftSpeedSlider.addEventListener('input', function(e) {
+      sh.driftSpeed = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftSpeedSlider);
+
+    // Drift amplitude X
+    let driftAmpX = document.createElement('input');
+    driftAmpX.type = 'range';
+    driftAmpX.min = 0;
+    driftAmpX.max = 30;
+    driftAmpX.step = 1;
+    driftAmpX.value = sh.driftAmpX || 8;
+    driftAmpX.style.width = '40px';
+    driftAmpX.title = 'Horizontal drift amplitude (pixels)';
+    driftAmpX.addEventListener('input', function(e) {
+      sh.driftAmpX = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftAmpX);
+    
+    // Drift amplitude Y
+    let driftAmpY = document.createElement('input');
+    driftAmpY.type = 'range';
+    driftAmpY.min = 0;
+    driftAmpY.max = 30;
+    driftAmpY.step = 1;
+    driftAmpY.value = sh.driftAmpY || 6;
+    driftAmpY.style.width = '40px';
+    driftAmpY.title = 'Vertical drift amplitude (pixels)';
+    driftAmpY.addEventListener('input', function(e) {
+      sh.driftAmpY = parseFloat(e.target.value);
+      window._st.rd();
+    });
+    row.appendChild(driftAmpY);
+    
+    // Jitter slider
+    let jitterSlider = document.createElement('input');
+    jitterSlider.type = 'range';
+    jitterSlider.min = 0;
+    jitterSlider.max = 20;
+    jitterSlider.step = 1;
+    jitterSlider.value = sh.jitter || 0;
+    jitterSlider.style.width = '50px';
+    jitterSlider.title = 'Random position jitter for characters (pixels)';
+    jitterSlider.addEventListener('input', function(e) {
+      sh.jitter = parseFloat(e.target.value);
+      jitterLabel.textContent = sh.jitter + 'px';
+      window._st.rd();
+    });
+    row.appendChild(jitterSlider);
+    let jitterLabel = document.createElement('span');
+    jitterLabel.textContent = (sh.jitter || 0) + 'px';
+    jitterLabel.style.fontSize = '0.45rem';
+    row.appendChild(jitterLabel);
+
+    // Inner Text Toggle
+    let textToggle = document.createElement('button');
+    textToggle.className = 'tb';
+    textToggle.textContent = (sh.textEnabled === false) ? 'Text Off' : 'Text On';
+    textToggle.style.padding = '0.1rem 0.4rem';
+    textToggle.title = 'Show/hide custom text inside shape';
+    textToggle.addEventListener('click', function() {
+      sh.textEnabled = !(sh.textEnabled === false);
+      if (sh.textEnabled && (!sh.text || sh.text.length === 0)) {
+        sh.text = "TEXT";
+      }
+      textToggle.textContent = sh.textEnabled ? 'Text On' : 'Text Off';
+      window._st.rd();
+    });
+    row.appendChild(textToggle);
+
+    // Text color picker
+    let textColorPicker = document.createElement('input');
+    textColorPicker.type = 'color';
+    textColorPicker.value = sh.textColor || '#ffffff';
+    textColorPicker.style.width = '24px';
+    textColorPicker.style.height = '24px';
+    textColorPicker.style.border = 'none';
+    textColorPicker.style.cursor = 'pointer';
+    textColorPicker.title = 'Color of the custom text';
+    textColorPicker.addEventListener('input', function(e) {
+      sh.textColor = e.target.value;
+      window._st.rd();
+    });
+    row.appendChild(textColorPicker);
+    
+    // Shape label
+    let lbl = document.createElement('div');
+    lbl.className = 'sh-item-lbl';
+    lbl.textContent = sh.type + (sh.text ? ' "' + sh.text.substring(0, 8) + '"' : '') + ' (' + Math.round(sh.cx) + ',' + Math.round(sh.cy) + ')';
+    row.appendChild(lbl);
+
+    // Remove button
+    let rm = document.createElement('button');
+    rm.className = 'ca';
+    rm.textContent = '✕';
+    rm.style.padding = '0 .45rem';
+    rm.title = 'Remove this shape';
+    rm.addEventListener('click', function(e) {
+      e.stopPropagation();
+      shapes.splice(i, 1);
+      renderShapeList();
+      window._st.rd();
+    });
+    row.appendChild(rm);
+
+    el.appendChild(row);
   });
 }
-
+  
 // ── IMAGE ─────────────────────────────────────────────────────────────────────
 document.getElementById('imgFile').addEventListener('change',function(e){
   let file=e.target.files[0];if(!file) return;
@@ -2633,29 +4165,93 @@ document.getElementById('ovColorRow').addEventListener('click',function(e){
   document.querySelectorAll('#ovColorRow [data-ovcol]').forEach(function(x){x.classList.remove('active');});
   s.classList.add('active');S.overlayColor=s.dataset.ovcol;
 });
-function renderStreamList(){
-  let el=document.getElementById('ovStreamList');el.innerHTML='';
-  S.overlayStreams.forEach(function(stream,i){
-    let row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:3px';
-    let dot=document.createElement('div');dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(stream.color==='palette'?'var(--gold)':stream.color)+';flex-shrink:0';
-    let lbl=document.createElement('span');lbl.style.cssText='flex:1;font-size:.58rem;color:var(--pale);font-family:EB Garamond,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    lbl.textContent=stream.text;
-    let rm=document.createElement('button');rm.className='ca';rm.textContent='✕';rm.style.padding='0 .4rem';
-    rm.addEventListener('click',function(){S.overlayStreams.splice(i,1);renderStreamList();window._st.rd();});
-    row.appendChild(dot);row.appendChild(lbl);row.appendChild(rm);el.appendChild(row);
+document.getElementById('ovAddStream').addEventListener('click', function() {
+  let v = document.getElementById('ovTextInput').value.trim();
+  if (!v) return;
+  if (S.overlayStreams.length >= 6) S.overlayStreams.shift();
+  S.overlayStreams.push({
+    text: v,
+    color: S.overlayColor,
+    offset: Math.random() * 1000,
+    kernOffset: 0,       // new
+    speedMult: 1.0,      // new
+    lineSpacingMult: 1.0 // new (optional)
+  });
+  document.getElementById('ovTextInput').value = '';
+  renderStreamList();
+  S.overlayEnabled = true;
+  document.getElementById('btnOverlay').textContent = 'On';
+  document.getElementById('btnOverlay').classList.add('on');
+  window._st.rd();
+}); 
+function renderStreamList() {
+  let el = document.getElementById('ovStreamList');
+  el.innerHTML = '';
+  S.overlayStreams.forEach(function(stream, i) {
+    let row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:5px;margin-bottom:3px; cursor:pointer';
+    // Click on row to edit this stream
+    row.addEventListener('click', function() {
+      document.getElementById('editStreamText').value = stream.text;
+      document.getElementById('sEditKern').value = stream.kernOffset || 0;
+      document.getElementById('vEditKern').textContent = stream.kernOffset || 0;
+      document.getElementById('sEditSpeed').value = stream.speedMult || 1.0;
+      document.getElementById('vEditSpeed').textContent = stream.speedMult || 1.0;
+      document.getElementById('streamEditPanel').style.display = 'block';
+      window._selectedStreamIndex = i;
+    });
+    let dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (stream.color === 'palette' ? 'var(--gold)' : stream.color) + ';flex-shrink:0';
+    let lbl = document.createElement('span');
+    lbl.style.cssText = 'flex:1;font-size:.58rem;color:var(--pale);font-family:EB Garamond,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    lbl.textContent = stream.text;
+    let rm = document.createElement('button');
+    rm.className = 'ca';
+    rm.textContent = '✕';
+    rm.style.padding = '0 .4rem';
+    rm.addEventListener('click', function(e) {
+      e.stopPropagation();  // prevent row click from firing
+      S.overlayStreams.splice(i, 1);
+      renderStreamList();
+      window._st.rd();
+    });
+    row.appendChild(dot);
+    row.appendChild(lbl);
+    row.appendChild(rm);
+    el.appendChild(row);
   });
 }
-document.getElementById('ovAddStream').addEventListener('click',function(){
-  let v=document.getElementById('ovTextInput').value.trim();if(!v) return;
-  if(S.overlayStreams.length>=6) S.overlayStreams.shift();
-  S.overlayStreams.push({text:v,color:S.overlayColor,offset:Math.random()*1000});
-  document.getElementById('ovTextInput').value='';
-  renderStreamList();S.overlayEnabled=true;
-  document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
-  window._st.rd();
-});
-document.getElementById('ovTextInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('ovAddStream').click();});
 
+  //mini panel wiring
+// Edit panel sliders (these update the stream in real time)
+wireSlider('sEditKern', 'vEditKern', null, null, function() {
+  if (window._selectedStreamIndex !== undefined && S.overlayStreams[window._selectedStreamIndex]) {
+    S.overlayStreams[window._selectedStreamIndex].kernOffset = parseFloat(document.getElementById('sEditKern').value);
+    window._st.rd();
+  }
+});
+wireSlider('sEditSpeed', 'vEditSpeed', null, null, function() {
+  if (window._selectedStreamIndex !== undefined && S.overlayStreams[window._selectedStreamIndex]) {
+    S.overlayStreams[window._selectedStreamIndex].speedMult = parseFloat(document.getElementById('sEditSpeed').value);
+    window._st.rd();
+  }
+});
+
+document.getElementById('btnUpdateStream').addEventListener('click', function() {
+  let idx = window._selectedStreamIndex;
+  if (idx !== undefined && S.overlayStreams[idx]) {
+    let newText = document.getElementById('editStreamText').value.trim();
+    if (newText) S.overlayStreams[idx].text = newText;
+    S.overlayStreams[idx].kernOffset = parseFloat(document.getElementById('sEditKern').value);
+    S.overlayStreams[idx].speedMult = parseFloat(document.getElementById('sEditSpeed').value);
+    renderStreamList();
+    document.getElementById('streamEditPanel').style.display = 'none';
+    window._st.rd();
+  }
+});
+
+
+  
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
 const DEFAULT_STATE={
   mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
@@ -2761,8 +4357,8 @@ function resetAllToDefaults(){
   document.querySelectorAll('[data-scm]').forEach(function(b){b.classList.toggle('active',b.dataset.scm==='inherit');});
   invalidateFontCache();
   window._st.ri();window._st.rd();
-  showToast('Reset to defaults');
-}
+showToast('Reset to defaults');
+} // <--- This closes the resetAllToDefaults function
 
 // ── CHAOS MONKEY ─────────────────────────────────────────────────────────────────
 let _chaosInterval=null;
@@ -2824,6 +4420,48 @@ document.getElementById('btnRegen').addEventListener('click',function(){window._
 document.getElementById('btnSave').addEventListener('click',function(){window._st.save();});
 document.getElementById('btnReset').addEventListener('click',function(){resetAllToDefaults();});
 
+let mediaRecorder;
+let recordedChunks = [];
+let recordingTimeout;
+
+// ── RECORDER ─────────────────────────────────────────────────────────────────
+document.getElementById('btnRecordGif').addEventListener('click', function() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    // Stop recording
+    mediaRecorder.stop();
+    this.textContent = '📹 Record GIF';
+    clearTimeout(recordingTimeout);
+    return;
+  }
+  // Start recording the canvas stream
+  let canvas = document.getElementById('gc');
+  let stream = canvas.captureStream(30); // 30 fps
+  mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+  recordedChunks = [];
+  mediaRecorder.ondataavailable = function(e) {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+  mediaRecorder.onstop = function() {
+    let blob = new Blob(recordedChunks, { type: 'video/webm' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'studio-recording-' + Date.now() + '.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Recording saved as WebM');
+  };
+  mediaRecorder.start();
+  this.textContent = '⏹ Stop Recording';
+  // Auto-stop after 5 seconds
+  recordingTimeout = setTimeout(() => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      document.getElementById('btnRecordGif').textContent = '📹 Record GIF';
+      showToast('5 seconds recorded');
+    }
+  }, 5000);
+});  
 // ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────────
 document.addEventListener('keydown',function(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
@@ -2896,30 +4534,15 @@ const PRESETS={
   deepsea:function(){ap({mode:'topolines',font:'courier',entropy:0,speed:.002,wave:45,bg:'#020d18',spacing:6,maxSize:14,noiseScale:.006,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'DEPTH',color:'#20B2AA',offset:0},{text:'∞~≈',color:'#4682B4',offset:200}],overlayWave:18,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   paperink:function(){ap({mode:'halftone',font:'times',entropy:0,speed:.001,wave:8,bg:'#f5efe0',spacing:11,maxSize:20,noiseScale:.012,palette:'paper',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'dada machine poetry',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:16,overlayAlpha:55,overlayDir:'alt'});},
   machinepoetry:function(){ap({mode:'webster',font:'courier',entropy:.12,speed:.004,wave:12,bg:'#0d0c0a',spacing:9,maxSize:18,palette:'mono',flipChance:.5,compEnabled:true,compPreset:2,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#c4bcb0',offset:0},{text:'MACHINE POETRY',color:'#b8955a',offset:300},{text:'░▒▓█',color:'#5c5550',offset:600}],overlayWave:0,overlaySpeed:3,overlaySize:12,overlayAlpha:40,overlayDir:'alt',signalCollapse:false});},
-  sacredgeo:function(){
-    ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});
-    shapes=[];
-    let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
-    let cx=W/2,cy=H/2;
-    let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];
-    ['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){
-      let a=(i/5)*6.28;
-      shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
-    });
-    S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;
-    document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');
-    renderShapeList();
-    S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];
-    S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;
-    document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
+  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
+    let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
+    });S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');renderShapeList();S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
     renderStreamList();window._st.rd();
   },
   urbannight:function(){ap({mode:'scan',font:'vt323',entropy:.04,speed:.006,wave:35,bg:'#0a0c14',spacing:10,maxSize:22,noiseScale:.01,palette:'navy',compEnabled:true,compPreset:0,compCols:COMP_PALETTES.navy2,overlayStreams:[{text:'CITY',color:'#4a7fb5',offset:0},{text:'███▒░',color:'#1a3050',offset:400}],overlayWave:5,overlaySpeed:4,overlaySize:18,overlayAlpha:35,signalCollapse:false});},
   entropy:function(){ap({mode:'glitch',font:'vt323',entropy:.45,speed:.01,wave:80,bg:'#000',spacing:8,maxSize:24,noiseScale:.015,palette:'fire',compEnabled:false,flipChance:.6,overlayStreams:[{text:'ENTROPY',color:'#e63946',offset:0},{text:'SYSTEM FAILURE',color:'#f4a261',offset:200},{text:'████░░__',color:'#888',offset:500}],overlayWave:25,overlaySpeed:8,overlaySize:20,overlayAlpha:60,overlayDir:'alt',overlayEntropy:60,overlayDistort:20,signalCollapse:true});},
   aurora:function(){ap({mode:'contour',font:'georgia',entropy:0,speed:.003,wave:55,bg:'#020810',spacing:9,maxSize:20,noiseScale:.007,palette:'aurora',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'aurora borealis',color:'#00c9a7',offset:0},{text:'∞∆◊',color:'#845ec2',offset:400}],overlayWave:40,overlaySpeed:2,overlaySize:14,overlayAlpha:30,overlayDir:'alt'});},
-  // New presets
   midnighttokyo:function(){ap({mode:'matrix',font:'vt323',entropy:.08,speed:.006,wave:20,bg:'#0a0010',spacing:10,maxSize:20,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'東京 MIDNIGHT',color:'#f72585',offset:0},{text:'アイウエオ',color:'#4cc9f0',offset:300}],overlayWave:8,overlaySpeed:5,overlaySize:18,overlayAlpha:45,chars:CHARSETS.katakana});},
-  inkwash:function(){ap({mode:'calligraphy',font:'playfair',entropy:.02,speed:.002,wave:40,bg:'#f5efe0',spacing:8,maxSize:28,noiseScale:.008,palette:'paper',compEnabled:false,signalCollapse:false,trailPersist:30,overlayStreams:[{text:'ink wash',color:'#2e2820',offset:0}],overlayWave:5,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   neonjungle:function(){ap({mode:'mycelium',font:'courier',entropy:.05,speed:.005,wave:30,bg:'#001a0a',spacing:10,maxSize:22,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:60,overlayStreams:[{text:'NEON JUNGLE',color:'#00ff88',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:15,overlaySpeed:3,overlaySize:16,overlayAlpha:40,chars:CHARSETS.symbols});},
   desertstorm:function(){ap({mode:'sand',font:'typewriter',entropy:.04,speed:.004,wave:25,bg:'#1a1008',spacing:8,maxSize:18,noiseScale:.012,palette:'copper',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'desert storm',color:'#b87333',offset:0}],overlayWave:10,overlaySpeed:2,overlaySize:14,overlayAlpha:35,chars:CHARSETS.dots});},
   arcticbloom:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.003,wave:15,bg:'#020810',spacing:8,maxSize:16,noiseScale:.008,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'arctic bloom',color:'#8aaccc',offset:0},{text:'∞∆◊',color:'#c8d8ec',offset:400}],overlayWave:8,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
@@ -2928,7 +4551,25 @@ const PRESETS={
   sakurarain:function(){ap({mode:'rain1',font:'playfair',entropy:.02,speed:.005,wave:20,bg:'#2d1b2d',spacing:12,maxSize:22,noiseScale:.01,palette:'sakura',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'桜 sakura',color:'#ffb7c5',offset:0},{text:'花びら',color:'#ceb1be',offset:400}],overlayWave:15,overlaySpeed:3,overlaySize:18,overlayAlpha:40,chars:CHARSETS.kanji});},
   turing:function(){ap({mode:'reaction',font:'courier',entropy:0,speed:.004,wave:10,bg:'#0d0c0a',spacing:6,maxSize:14,noiseScale:.006,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'TURING MORPHOGENESIS',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   mycelium:function(){ap({mode:'mycelium',font:'courier',entropy:.03,speed:.004,wave:20,bg:'#0a0a08',spacing:10,maxSize:18,noiseScale:.01,palette:'moss',compEnabled:false,signalCollapse:false,trailPersist:80,overlayStreams:[{text:'mycelium network',color:'#52b788',offset:0}],overlayWave:8,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
+  truchet_tiles:function(){ap({mode:'truchet',font:'courier',entropy:0,speed:.002,wave:30,bg:'#0d0c0a',spacing:18,maxSize:14,noiseScale:.008,palette:'site',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'PATTERN',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:22});},
+  seisma_print:function(){ap({mode:'seisma',font:'courier',entropy:.03,speed:.001,wave:38,bg:'#020810',spacing:8,maxSize:12,noiseScale:.02,palette:'navy',compEnabled:false,signalCollapse:false,trailPersist:2,overlayStreams:[{text:'unknown_pleasures_',color:'#f4a261',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:30});},
+  liquid_crystal:function(){ap({mode:'warpgrid',font:'courier',entropy:0,speed:.004,wave:55,bg:'#0a0c14',spacing:14,maxSize:12,noiseScale:.006,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'LATTICE',color:'#8aaccc',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:28});},
+  topographic:function(){ap({mode:'isocontour',font:'courier',entropy:0,speed:.002,wave:40,bg:'#0a1628',spacing:6,maxSize:10,noiseScale:.007,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'elevation · depth · form',color:'#4db6ac',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:11,overlayAlpha:25});},
+  tesseract4d:function(){ap({mode:'tesseract',font:'courier',entropy:.04,speed:.005,wave:20,bg:'#060410',spacing:12,maxSize:18,noiseScale:.01,palette:'velvet',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'4D ROTATION',color:'#c77dff',offset:0},{text:'w → z → y → x',color:'#7a5a8a',offset:300}],overlayWave:0,overlaySpeed:2,overlaySize:13,overlayAlpha:35});},
+  hypersphere4d:function(){ap({mode:'hypersphere',font:'courier',entropy:.02,speed:.004,wave:25,bg:'#020810',spacing:10,maxSize:16,noiseScale:.009,palette:'deepnebula',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'S³ SURFACE',color:'#ffaad4',offset:0}],overlayWave:5,overlaySpeed:1,overlaySize:12,overlayAlpha:28});},
+  flock:function(){ap({mode:'boids',font:'courier',entropy:.04,speed:.006,wave:30,bg:'#0a0c14',spacing:14,maxSize:20,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,trailPersist:15,overlayStreams:[{text:'FLOCK',color:'#f72585',offset:0}],overlayWave:8,overlaySpeed:3,overlaySize:14,overlayAlpha:30,chars:CHARSETS.symbols});},
+  dipole:function(){ap({mode:'magnetic',font:'courier',entropy:.02,speed:.003,wave:25,bg:'#0d0c0a',spacing:10,maxSize:18,noiseScale:.01,palette:'abyss',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'FIELD LINES',color:'#ffd60a',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:13,overlayAlpha:30});},
+  volcanic_flow:function(){ap({mode:'warpgrid',font:'vt323',entropy:.08,speed:.005,wave:80,bg:'#100500',spacing:12,maxSize:14,noiseScale:.005,palette:'volcanic',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'MAGMA',color:'#FF4500',offset:0},{text:'░▒▓',color:'#8B0000',offset:200}],overlayWave:15,overlaySpeed:4,overlaySize:16,overlayAlpha:45});},
+  neon_grid:function(){ap({mode:'truchet',font:'courier',entropy:.02,speed:.004,wave:60,bg:'#0a0010',spacing:22,maxSize:12,noiseScale:.009,palette:'retro80s',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'OUTRUN',color:'#FF0055',offset:0},{text:'▊▋▌▍▎▏',color:'#9900FF',offset:400}],overlayWave:0,overlaySpeed:5,overlaySize:14,overlayAlpha:40});},
+  fingerprint:function(){ap({mode:'isocontour',font:'courier',entropy:0,speed:.001,wave:18,bg:'#f9f5d7',spacing:4,maxSize:8,noiseScale:.014,palette:'burnedpaper',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'identity',color:'#4a3320',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:11,overlayAlpha:25});},
+  kintsugi_breaks:function(){ap({mode:'shatter',font:'playfair',entropy:0,speed:.002,wave:40,bg:'#1a0a05',spacing:12,maxSize:22,noiseScale:.009,palette:'kintsugi',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'金継ぎ KINTSUGI',color:'#e8b87a',offset:0}],overlayWave:3,overlaySpeed:1,overlaySize:14,overlayAlpha:35,chars:CHARSETS.kanji});},
+  bioluminescent:function(){ap({mode:'mycelium',font:'courier',entropy:.01,speed:.003,wave:15,bg:'#001a0a',spacing:8,maxSize:18,noiseScale:.008,palette:'biolum',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'bioluminescence',color:'#00FFAA',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
+  screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
+  worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
+  hatch: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
+  wfc_tiles: function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
 };
+
 
 // Wire preset bar
 document.getElementById('presetBar').addEventListener('click',function(e){
@@ -2937,6 +4578,13 @@ document.getElementById('presetBar').addEventListener('click',function(e){
   if(fn){fn();showToast(b.textContent);}
 });
 
+// Collapse all sections on initial load
+['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets'].forEach(function(id){
+  let body=document.getElementById('body-'+id);
+  let arrow=document.getElementById('arr-'+id);
+  if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
+});  
+  
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
 let _panelHidden=false;
 function togglePanel(){
