@@ -449,6 +449,10 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="microbe" title="Microscopic wiggly tails and dots">Microbes</button>
         <button class="cb" data-cs="husks" title="Curved seed-like crescents">Seed Husks</button>
         <button class="cb" data-cs="filaments" title="Bent, organic fiber segments">Filaments</button>
+        <button class="cb" data-cs="neural" title="Branching neural axons and dendrites">Neural</button>
+        <button class="cb" data-cs="astro" title="Binary star systems and constellations">Astro</button>
+        <button class="cb" data-cs="slate" title="Geological strata and parallel cracks">Slate</button>
+        <button class="cb" data-cs="petals" title="Nested scales or floral petals">Petals</button>  
         </div>
         </div>
     <div class="sl2" onclick="toggleSec('chars-custom')">
@@ -1438,7 +1442,41 @@ function dc(x, y, sz, rot, col, ch) {
     CTX.fillText(ch,x,y);
   }
 }
+    // 7. Neural (Axons)
+  else if (cs === 'neural') {
+    CTX.beginPath(); CTX.arc(x, y, sz*0.1, 0, 6.28); CTX.fill();
+    for(let i=0; i<3; i++) {
+      CTX.beginPath(); CTX.moveTo(x, y);
+      let ang = rot + i * 2.1; 
+      CTX.lineTo(x + Math.cos(ang)*sz*0.6, y + Math.sin(ang)*sz*0.6);
+      CTX.stroke();
+    }
+  }
+  // 8. Astro (Binary Stars)
+  else if (cs === 'astro') {
+    CTX.beginPath(); CTX.arc(x-sz*0.3, y-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
+    CTX.beginPath(); CTX.arc(x+sz*0.2, y+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
+    CTX.globalAlpha = 0.3;
+    CTX.beginPath(); CTX.moveTo(x-sz*0.3, y-sz*0.1); CTX.lineTo(x+sz*0.2, y+sz*0.2); CTX.stroke();
+    CTX.globalAlpha = 1.0;
+  }
+  // 9. Slate (Strata)
+  else if (cs === 'slate') {
+    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+    CTX.fillRect(-sz*0.4, -sz*0.2, sz*0.8, sz*0.05);
+    CTX.fillRect(-sz*0.3, 0, sz*0.6, sz*0.05);
+    CTX.fillRect(-sz*0.5, sz*0.2, sz*0.9, sz*0.05);
+    CTX.restore();
+  }
+  // 10. Petals (Scales)
+  else if (cs === 'petals') {
+    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+    CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, Math.PI, true); CTX.stroke();
+    CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
+    CTX.restore();
+  }
 
+  
 function pickChar(p,x,y,t){
   let ch;
   // Random Unicode modes bypass the normal charset array
@@ -5176,7 +5214,7 @@ if (characterUI) {
         RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; 
     }
     // 4. Handle Particles mode
-    const particleTypes = ['particles', 'arch', 'glitch_p', 'microbe', 'husks', 'filaments'];
+    const particleTypes = ['particles','arch','glitch_p','microbe','husks','filaments','neural','astro','slate','petals'];
     
       if (particleTypes.includes(cs)) {
         S.useParticleMode = true;
