@@ -1425,16 +1425,19 @@ function initRain(W,H){
   let c=Math.floor(W/S.spacing);
   for(let i=0;i<c;i++) rainDrops.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:1+Math.random()*3,tl:4+Math.floor(Math.random()*14)});
 }
+  
 function initTess(W,H){
   tessGrid=[];
   let sp=S.spacing*2,c=Math.floor(W/sp),r=Math.floor(H/sp);
   for(let i=0;i<r;i++) for(let j=0;j<c;j++) tessGrid.push({x:j*sp+sp/2,y:i*sp+sp/2,phase:Math.random()*Math.PI*2});
 }
+  
 function initMatrix(W,H){
   matrixCols=[];
   let c=Math.floor(W/S.spacing);
   for(let i=0;i<c;i++) matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:5+Math.floor(Math.random()*16),glitch:Math.random()<.2});
 }
+  
 function initShatter(W,H){
   shatterParts=[];
   let sp=S.spacing,cx=W/2,cy=H/2;
@@ -1443,15 +1446,18 @@ function initShatter(W,H){
     shatterParts.push({ox:x,oy:y,dist:Math.sqrt(dx*dx+dy*dy),angle:Math.atan2(dy,dx)});
   }
 }
+  
 function initLoops(W,H){
   loopParticles=[];
   let n=Math.floor(W*H/(S.spacing*S.spacing*4));
   for(let i=0;i<n;i++) loopParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*200)});
 }
+  
 function initRecursive(W,H){
   recRects=[];
   subdivide(0,0,W,H,Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
 }
+  
 function subdivide(x,y,w,h,depth,cols){
   if(depth===0||w<S.spacing*3||h<S.spacing*3){
     recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;
@@ -1462,8 +1468,7 @@ function subdivide(x,y,w,h,depth,cols){
   if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}
   else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}
 }
-
-// ── NEW MODE INITS ────────────────────────────────────────────────────────────
+  
 function initReactionDiffusion(W,H){
   let res=Math.max(4,Math.floor(S.spacing*.8));
   rdW=Math.floor(W/res)+1; rdH=Math.floor(H/res)+1;
@@ -1479,7 +1484,7 @@ function initReactionDiffusion(W,H){
     }
   }
 }
-
+  
 function initVoronoi(W,H){
   voronoiSites=[];
   let n=Math.max(6,Math.floor((W*H)/(S.spacing*S.spacing*80)));
@@ -1657,6 +1662,7 @@ function drawWave(p,t){
     dc(x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,r.col,r.ch);
   }
 }
+  
 function drawRain1(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*250+1);
@@ -1678,6 +1684,7 @@ function drawRain1(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 function drawRain2(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*500+2);
@@ -1688,6 +1695,7 @@ function drawRain2(p,t){
     dc(d.x,d.y,S.maxSize,0,r.col,r.ch);
   });
 }
+  
 function drawVortex(p,t){
   let cx=p.width/2,cy=p.height/2,maxR=Math.max(p.width,p.height)*.6;
   for(let r=S.spacing;r<maxR;r+=S.spacing){
@@ -1702,6 +1710,7 @@ function drawVortex(p,t){
     }
   }
 }
+  
 function drawRipple(p,t){
   let cx=p.width/2,cy=p.height/2;
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
@@ -1713,6 +1722,7 @@ function drawRipple(p,t){
     dc(x,y+ripple,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawDrift(p,t){
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
@@ -1722,6 +1732,7 @@ function drawDrift(p,t){
     dc(x+ox,y+oy,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawTess(p,t){
   tessGrid.forEach(function(cell){
     let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);
@@ -1731,6 +1742,7 @@ function drawTess(p,t){
     dc(cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,res.col,res.ch);
   });
 }
+  
 function drawWarp(p,t){
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
@@ -1740,6 +1752,7 @@ function drawWarp(p,t){
     dc(x+warp,y+warp,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawGlitch(p,t){
   let sp=S.spacing,nS=Math.floor(p.height/(sp*1.4));
   for(let si=0;si<nS;si++){
@@ -1761,6 +1774,7 @@ function drawGlitch(p,t){
   }
   CTX.globalAlpha=1;
 }
+  
 function drawWebster(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
@@ -1779,6 +1793,7 @@ function drawWebster(p,t){
     }
   });
 }
+  
 function drawMatrix(p,t){
   if(S.playing) matrixCols.forEach(function(c){
     c.y+=c.speed*(S.speed*280+1);
@@ -1801,6 +1816,7 @@ function drawMatrix(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 function drawOrbit(p,t){
   let nC=2+Math.floor(S.density*.6),maxR=Math.max(p.width,p.height)*.58,sp=S.spacing;
   let centers=[];
@@ -1818,6 +1834,7 @@ function drawOrbit(p,t){
     }
   });
 }
+  
 function drawSpiral(p,t){
   let cx=p.width/2,cy=p.height/2,maxR=Math.min(p.width,p.height)*.52,a=S.spacing/6.28;
   for(let th=0;th<6.28*22;th+=.25){
@@ -1829,6 +1846,7 @@ function drawSpiral(p,t){
     dc(x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,res.col,res.ch);
   }
 }
+  
 function drawScan(p,t){
   let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=70+S.wave*.8,sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1840,6 +1858,7 @@ function drawScan(p,t){
     dc(x+disp,y,p.map(br,0,1,2,S.maxSize),0,res.col,res.ch);
   }
 }
+  
 function drawHalftone(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1849,6 +1868,7 @@ function drawHalftone(p,t){
     dc(x,y,p.map(b,0,1,.5,S.maxSize),0,res.col,res.ch);
   }
 }
+  
 function drawShatter(p,t){
   if(!shatterParts.length) initShatter(p.width,p.height);
   let prog=(Math.sin(t*.6)+1)/2,ex=prog*S.wave*2.5;
@@ -1860,6 +1880,7 @@ function drawShatter(p,t){
     dc(x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,res.col,res.ch);
   });
 }
+  
 function drawWeave(p,t){
   let sp=S.spacing;
   for(let y=sp;y<p.height;y+=sp*2){
@@ -1870,6 +1891,7 @@ function drawWeave(p,t){
       dc(x,y+Math.sin(x*S.turb*2+rt*2)*S.wave*.38,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);
     }
   }
+  
   for(let x=sp*1.5;x<p.width;x+=sp*2){
     let ct=t+x*.002;
     for(let y=sp;y<p.height;y+=sp){
@@ -1879,6 +1901,7 @@ function drawWeave(p,t){
     }
   }
 }
+  
 function drawTopo(p,t){
   let sp=S.spacing*.8,nLevels=6+Math.floor(S.density*3),bw=0.06+S.wave*.0012,ns=S.noiseScale;
   for(let x=sp*.5;x<p.width;x+=sp) for(let y=sp*.5;y<p.height;y+=sp){
@@ -1895,6 +1918,7 @@ function drawTopo(p,t){
     dc(x,y,sz,angle,col,pickChar(p,x,y,t));
   }
 }
+  
 function drawRecursive(p,t){
   if(!recRects.length) initRecursive(p.width,p.height);
   let sp=S.spacing,wobT=t*.5;
@@ -1912,6 +1936,7 @@ function drawRecursive(p,t){
     }
   });
 }
+  
 function drawContour(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1931,6 +1956,7 @@ function drawContour(p,t){
     }
   }
 }
+  
 function drawFabric(p,t){
   let sp=S.spacing;
   for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
@@ -1944,6 +1970,7 @@ function drawFabric(p,t){
     dc(x+a1+a3+nw,y+a2,4+Math.random()*(S.maxSize*.7-4),rot,res.col,res.ch);
   }
 }
+  
 function drawLoops(p,t){
   if(!loopParticles.length) initLoops(p.width,p.height);
   let ns=S.noiseScale;
@@ -1959,6 +1986,7 @@ function drawLoops(p,t){
         pt.vx=0;pt.vy=0;pt.age=0;
       }
     }
+    
     let n=p.noise(pt.x*ns,pt.y*ns,t);
     if(n<S.density*.6) return;
     let sz=p.map(n,S.density*.6,1,2,S.maxSize*.7);
@@ -1969,6 +1997,8 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
+// ── DRAW IMG TEXT - Image to text functions ──────────────────────────────────────────────────  
 function drawImgText(p, t) {
   if (!imgPix || !imgW || !imgH) {
     CTX.fillStyle = S.palette[0];
@@ -2001,7 +2031,6 @@ function drawImgText(p, t) {
       let imgX = Math.floor((x - offsetX) * scaleX);
       let imgY = Math.floor((y - offsetY) * scaleY);
       if (imgX < 0 || imgX >= imgW || imgY < 0 || imgY >= imgH) continue;
-
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
@@ -2012,7 +2041,6 @@ function drawImgText(p, t) {
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
-
       let col;
       if (S.imgColorMode === 'tonal') {
         let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
@@ -2020,28 +2048,24 @@ function drawImgText(p, t) {
       } else {
         col = palette[Math.floor(p.random() * palette.length)];
       }
-
       // Edge strength (only needed for edge mode)
       let edgeVal = 0;
       if (S.imgMode === 'edge' && imgEdgeStrength) {
         edgeVal = imgEdgeStrength[imgY * imgW + imgX] || 0;
       }
-
       p.push();
       p.translate(x, y);
-
       if (S.imgMode === 'chars') renderImgChars(p, br, col);
       else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
       else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
       else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
       else if (S.imgMode === 'stipple') renderImgStipple(p, br, col);
       else if (S.imgMode === 'edge') renderImgEdge(p, br, col, t, edgeVal);
-
       p.pop();
     }
   }
 }
-  //drawImgText Helpers
+// ── DRAW IMG TEXT HELPERS ──────────────────────────────────────────────────
 function renderImgChars(p, br, col) {
   // Set to 1000 for testing to ensure pixels are drawing
   if (br > 1000) return; 
@@ -2109,7 +2133,7 @@ function getPaletteColors() {
     return activePalette;
 }
   
-  
+// ── TOPO LINES ──────────────────────────────────────────────────  
 function drawTopoLines(p,t){
   let W=p.width,H=p.height;
   let res=Math.max(6,S.spacing*.9);
@@ -2145,6 +2169,8 @@ function drawTopoLines(p,t){
   }
   CTX.globalAlpha=1;CTX.restore();
 }
+
+// ── Pipes ──────────────────────────────────────────────────  
 function drawPipes(p,t){
   let pipeChars=['─','│','┼','╬','╋','┤','├','┴','┬','┘','└','┐','┌','╔','╗','╚','╝','╠','╣','╦','╩','═','║','|','—'];
   let sp=S.spacing;
@@ -2164,7 +2190,7 @@ function drawPipes(p,t){
   }
 }
 
-// ── NEW MODE: REACTION-DIFFUSION (Gray-Scott) ─────────────────────────────────
+// ── REACTION-DIFFUSION (Gray-Scott) ─────────────────────────────────
 // Simulates Turing morphogenesis — spots/stripes emerge from chemical reactions
 function drawReaction(p,t){
   if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
@@ -2233,19 +2259,16 @@ function buildMaze(cols, rows) {
   }
   return cells;
 }
-
 function drawMaze(p, t) {
   let cw = Math.max(12, S.spacing * 2);
   let ch = Math.max(12, S.spacing * 2);
   let cols = Math.floor(p.width  / cw) + 1;
   let rows = Math.floor(p.height / ch) + 1;
-
   // Rebuild when size changes or on regen
   if (!mazeGrid || mazeCols !== cols || mazeRows !== rows) {
     mazeCols = cols; mazeRows = rows;
     mazeGrid = buildMaze(cols, rows);
   }
-
   // Shift: randomly remove a wall and carve a new passage every N frames
   if (S.playing) {
     mazeShiftTimer++;
@@ -2271,14 +2294,12 @@ function drawMaze(p, t) {
       }
     }
   }
-
   // Draw walls
   let wallCol = S.palette[0];
   CTX.save();
   CTX.strokeStyle = wallCol;
   CTX.lineWidth   = Math.max(1, S.maxSize * 0.06);
   CTX.lineCap     = 'square';
-
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       let cell = mazeGrid[r * cols + c];
@@ -2291,7 +2312,6 @@ function drawMaze(p, t) {
       if (c === cols-1 && cell.E) { CTX.beginPath(); CTX.moveTo(x+cw, y); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
     }
   }
-
   // Fill corridors (open passages) with characters
   if (S.chars && S.chars.length) {
     for (let r = 0; r < rows; r++) {
@@ -2324,16 +2344,12 @@ function drawUnknownPleasures(p, t) {
   let peakHeight  = p.height * 0.25 + S.wave * 1.8;
   let pts         = 120;
   let ns          = S.noiseScale * 2;
-
   CTX.save();
-
   // Draw from back (top) to front (bottom) so lower lines occlude upper ones
   for (let li = lineCount - 1; li >= 0; li--) {
     let baseY = p.height - lineSpacing * (li + 1);
-
     // Gaussian envelope — peaks are tallest at vertical center of stack
     let env = Math.exp(-Math.pow((li / lineCount) - 0.5, 2) / 0.06);
-
     // Build points once, reuse for fill + stroke
     let points = [];
     for (let pi = 0; pi <= pts; pi++) {
@@ -2348,7 +2364,6 @@ function drawUnknownPleasures(p, t) {
       }
       points.push({ x, y: baseY + dy });
     }
-
     // Fill from curve all the way down to canvas bottom — occludes everything behind
     CTX.beginPath();
     CTX.moveTo(points[0].x, points[0].y);
@@ -2360,7 +2375,6 @@ function drawUnknownPleasures(p, t) {
     CTX.closePath();
     CTX.fillStyle = S.bg;
     CTX.fill();
-
     // Stroke the profile line
     let lineCol = S.palette[li % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
@@ -2376,7 +2390,6 @@ function drawUnknownPleasures(p, t) {
     CTX.strokeStyle = lineCol;
     CTX.stroke();
   }
-
   CTX.restore();
 }
 
@@ -2409,7 +2422,6 @@ function buildMondrian(x, y, w, h, depth) {
     buildMondrian(x, y + split, w, h - split, depth - 1);
   }
 }
-
 function drawMondrian(p, t) {
   if (!mondrianRects.length) {
     buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
@@ -2566,7 +2578,7 @@ function drawMycelium(p, t) {
   CTX.globalAlpha = 1;
 }
 
-// ── NEW MODE: SAND DRIFT ──────────────────────────────────────────────────────
+// ── SAND DRIFT ──────────────────────────────────────────────────────
 // Simulated sand/stipple diffusion — inspired by Inconvergent's sand technique
 function drawSand(p,t){
   if(!sandParticles.length) initSand(p.width,p.height);
@@ -2598,7 +2610,7 @@ function drawSand(p,t){
   CTX.globalAlpha=1;
 }
 
-// ── NEW MODE: CELLULAR AUTOMATA ───────────────────────────────────────────────
+// ── CELLULAR AUTOMATA ───────────────────────────────────────────────
 // Conway-style rules rendered as characters — life, death, emergence
 function drawCellular(p,t){
   if(!caGrid) initCellular(p.width,p.height);
@@ -2637,7 +2649,7 @@ function drawCellular(p,t){
   }
 }
 
-// ── NEW MODE: INTERFERENCE ────────────────────────────────────────────────────
+// ── INTERFERENCE ────────────────────────────────────────────────────
 // Moiré / wave interference patterns — superimposed wave fields
 function drawInterference(p,t){
   let sp=S.spacing;
@@ -2667,7 +2679,7 @@ function drawInterference(p,t){
   }
 }
 
-// ── NEW MODE: CALLIGRAPHY ─────────────────────────────────────────────────────
+// ── CALLIGRAPHY ─────────────────────────────────────────────────────
 // Brush-stroke simulation — pressure-sensitive sizing, ink pooling at stroke ends
 function drawCalligraphy(p,t){
   let sp=S.spacing;
@@ -2705,7 +2717,7 @@ function drawCalligraphy(p,t){
   CTX.globalAlpha=1;
 }
 
-// ── NEW MODE: LISSAJOUS ───────────────────────────────────────────────────────
+// ── LISSAJOUS ───────────────────────────────────────────────────────
 // Parametric Lissajous figures — characters trace harmonic curves
 function drawLissajous(p,t){
   if(!lissParticles.length) initLissajous(p.width,p.height);
@@ -2726,7 +2738,7 @@ function drawLissajous(p,t){
   });
 }
 
-// ── NEW MODE: WIREFRAME TERRAIN ─────────────────────────────────────────────────────────────────
+// ── WIREFRAME TERRAIN ─────────────────────────────────────────────────────────────────
 // Generates a Perlin-noise heightmap and projects it as a 3D wireframe grid
 // Camera orbit is driven by speed slider; mountain roughness by wave slider.
 function drawWireTerrain(p,t){
@@ -2735,12 +2747,10 @@ function drawWireTerrain(p,t){
   let res=Math.max(8,Math.floor(S.spacing*1.5));
   // Rebuild heightmap if resolution changed
   if(wtW!==Math.floor(W/res)+1||wtH!==Math.floor(H/res)+1) initWireTerrain(p,W,H);
-
   // Camera orbit angle driven by speed
   let camAngle=t*S.speed*40;
   let camAlt=0.35+Math.sin(t*S.speed*15)*.12; // 0..1 altitude
   let camDist=1.8;
-
   // 3D projection helper: isometric-style with camera orbit
   let cosA=Math.cos(camAngle),sinA=Math.sin(camAngle);
   let cosE=Math.cos(camAlt*Math.PI*.5),sinE=Math.sin(camAlt*Math.PI*.5);
@@ -2756,7 +2766,6 @@ function drawWireTerrain(p,t){
     let scale=W*.55/pz2;
     return {sx:W/2+px2*scale,sy:H*.55-py2*scale*.7};
   }
-
   // Animate heightmap by shifting noise over time
   let ns=S.noiseScale*.5;
   let roughness=0.5+S.wave*.008;
@@ -2767,12 +2776,10 @@ function drawWireTerrain(p,t){
     n/=1.5;
     wtHeightmap[row*wtW+col]=n;
   }
-
   // Draw wireframe grid
   CTX.save();
   CTX.lineWidth=.8;
   CTX.lineCap='round';
-
   // Draw quads as two triangles
   for(let row=0;row<wtH-1;row++) for(let col=0;col<wtW-1;col++){
     let h00=wtHeightmap[row*wtW+col];
@@ -2812,7 +2819,7 @@ function drawWireTerrain(p,t){
   _lastFont='';_lastFill='';
 }
 
-// ── NEW MODE: RECURSIVE SUBDIVISION (FRACTAL POLYGONS) ─────────────────────────────────────────────────────────────────
+// ── RECURSIVE SUBDIVISION (FRACTAL POLYGONS) ─────────────────────────────────────────────────────────────────
 // Recursively subdivides a base polygon by splitting edges at midpoints
 // and displacing by noise-driven distances. Result: Koch-like fractals,
 // crystalline structures, organic coastlines.
@@ -2838,7 +2845,6 @@ function drawFractalSubdiv(p,t){
     let alpha=0.15+depth*.08;
     let col=poly.col;
     if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.3) col=S.accent;
-
     // Animate vertices with slight wave distortion
     CTX.beginPath();
     poly.pts.forEach(function(pt,i){
@@ -2848,13 +2854,11 @@ function drawFractalSubdiv(p,t){
       if(i===0) CTX.moveTo(px2,py2); else CTX.lineTo(px2,py2);
     });
     CTX.closePath();
-
     // Stroke the polygon
     CTX.globalAlpha=alpha+.1;
     CTX.strokeStyle=col;
     CTX.lineWidth=strokeW;
     CTX.stroke();
-
     // Scatter characters along the polygon edges
     if(depth>=2&&Math.random()<S.density*.12){
       let pts=poly.pts;
@@ -2892,7 +2896,6 @@ function drawTruchet(p,t){
   CTX.save();
   CTX.lineCap='round';
   CTX.lineWidth=Math.max(0.5,S.maxSize*.04);
-
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
       let tx=c*sz, ty=r*sz;
@@ -2905,7 +2908,6 @@ function drawTruchet(p,t){
       if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.25) col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.55+n*.45;
-
       CTX.beginPath();
       if(flip){
         // Arc from bottom-left corner to top-right corner
@@ -3035,7 +3037,6 @@ function drawWarpGrid(p,t){
       if(S.accent!=='none'&&S.accentAmt>0&&(r+c)%Math.ceil(1/S.accentAmt+1)===0) col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.5+p.noise(c*ns*.5,r*ns*.5,t*.15)*.4;
-
       // Draw quad as two line segments (grid lines)
       CTX.beginPath();
       CTX.moveTo(p00.x,p00.y);CTX.lineTo(p10.x,p10.y); // top edge
@@ -3118,36 +3119,29 @@ function drawWFC(p, t) {
   let tileSize = Math.max(16, S.spacing * 2);
   let cols = Math.ceil(p.width / tileSize);
   let rows = Math.ceil(p.height / tileSize);
-
   // Tile glyphs – you can expand this list
   const tileGlyphs = [
     '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶', '╱', '╲', '◢', '◣', '◤', '◥'
   ];
-
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       let x = col * tileSize;
       let y = row * tileSize;
-
       // Multi‑octave noise to create larger coherent regions
       let n1 = p.noise(col * 0.15, row * 0.15, t * 0.08);
       let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
       let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length) % tileGlyphs.length;
-
       let ch = tileGlyphs[idx];
       let colPal = S.palette[(col + row) % S.palette.length];
       if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
         colPal = S.accent;
       }
-
       let sz = tileSize * 0.7;
       let cx = x + tileSize / 2;
       let cy = y + tileSize / 2;
-
       // Optional small wave displacement
       let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * 0.15;
       let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * 0.15;
-
       dc(cx + wx, cy + wy, sz, 0, colPal, ch);
     }
   }
@@ -3423,11 +3417,9 @@ function drawBrushContour(p, t) {
   let levels  = 6 + Math.floor(S.density * 14);
   let step    = Math.max(2, S.spacing * 0.55);
   let bandW   = 0.055 + S.wave * 0.0008;
-
   // Animated noise offset — the contours actually MOVE
   let tOff    = t * 0.9;
   let tOff2   = t * 0.55;                          // secondary slower layer
-
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
       // Primary noise
@@ -3436,23 +3428,19 @@ function drawBrushContour(p, t) {
       let wx = p.noise(x * ns * 2.1,    y * ns * 2.1,    tOff2 + 30) * S.wave * 0.022;
       let wy = p.noise(x * ns * 2.1 + 5, y * ns * 2.1 + 5, tOff2 + 60) * S.wave * 0.022;
       let n  = p.noise((x + wx) * ns,   (y + wy) * ns,   tOff);
-
       let level = n * levels;
       let frac  = level - Math.floor(level);
       if (frac > bandW && frac < 1 - bandW) continue;
-
       // Gradient direction for contour tangent
       let gx = p.noise((x + 1) * ns, y * ns,       tOff)
              - p.noise((x - 1) * ns, y * ns,       tOff);
       let gy = p.noise(x * ns,       (y + 1) * ns, tOff)
              - p.noise(x * ns,       (y - 1) * ns, tOff);
       let angle = Math.atan2(gy, gx) + Math.PI * 0.5 + S.charRotRad;
-
       // Pulsing stroke dimensions
       let pulse   = Math.sin(t * 2.5 + x * 0.04 + y * 0.03) * 0.35 + 0.65;
       let dashLen = step * 2.2 * pulse * (0.5 + Math.random() * 1.1);
       let dashH   = Math.max(0.5, S.maxSize * 0.12 * pulse * (0.4 + Math.random() * 1.4));
-
       // Gap flickering — some strokes vanish briefly
       if (S.playing && Math.random() < 0.06) return;
 
@@ -3461,7 +3449,6 @@ function drawBrushContour(p, t) {
       if (S.accent  !== 'none' && S.accentAmt  > 0 && n > (1 - S.accentAmt))  col = S.accent;
       if (S.accent2 !== 'none' && S.accentAmt2 > 0 && n < S.accentAmt2)        col = S.accent2;
       if (S.entropy > 0 && Math.random() < S.entropy * 0.5) angle += (Math.random() - 0.5) * 1.8;
-
       CTX.save();
       CTX.translate(x, y);
       CTX.rotate(angle);
@@ -3502,39 +3489,30 @@ function initGeode(W, H) {
 
 function drawGeode(p, t) {
   if (!geodeTiles.length) initGeode(p.width, p.height);
-
   let drift  = (S.geodeDrift  !== undefined ? S.geodeDrift  : 8);
   let freq   = (S.geoVibFreq  !== undefined ? S.geoVibFreq  : 1.0) * 0.25;
   let scale  = S.maxSize / 20;
-
   geodeTiles.forEach(function(tile) {
     // Each tile has independent slow noise-driven drift
     let nx = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase);
     let ny = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase + 77);
-
     // Fast vibration layer — frequency controlled by slider
     let vib = drift * 0.18;
     let vx  = Math.sin(t * freq * 4.5 + tile.phaseX) * vib;
     let vy  = Math.cos(t * freq * 3.8 + tile.phaseY) * vib;
-
     let x = tile.bx + (nx - 0.5) * drift * 2 + vx;
     let y = tile.by + (ny - 0.5) * drift * 2 + vy;
-
     // Entropy: random teleport
     if (S.entropy > 0 && Math.random() < S.entropy * 0.03) {
       x += (Math.random() - 0.5) * S.entropy * 60;
       y += (Math.random() - 0.5) * S.entropy * 60;
     }
-
     if (S.playing) tile.rot += tile.spinV * S.speed * 40;
-
     let tw = tile.tw * scale;
     let th = tile.th * scale;
-
     let col = S.palette[tile.palIdx % S.palette.length];
     if (S.accent  !== 'none' && tile.rand < S.accentAmt  * 0.5) col = S.accent;
     if (S.accent2 !== 'none' && tile.rand > 1 - S.accentAmt2 * 0.5) col = S.accent2;
-
     CTX.save();
     CTX.translate(x, y);
     CTX.rotate(tile.rot);
@@ -3572,12 +3550,10 @@ function drawCascadeRects(p, t) {
   let tokens = S.chars && S.chars.length ? S.chars : ['·'];
   let sz     = Math.max(3, S.spacing * 0.7);
   let charW  = sz * 0.62;
-
   cascadeRects.forEach(function(cascade, ci) {
     // Slow drift
     let driftX = S.wave > 0 ? Math.sin(t * 0.6 + cascade.phase) * S.wave * 0.12 : 0;
     let driftY = S.wave > 0 ? Math.cos(t * 0.5 + cascade.phase) * S.wave * 0.08 : 0;
-
     for (let ni = 0; ni < cascade.nestCount; ni++) {
       let shrink = ni / cascade.nestCount;
       // Each nested level shifts diagonally and shrinks
@@ -3586,13 +3562,10 @@ function drawCascadeRects(p, t) {
       let rw = cascade.startW * (1 - shrink * 0.65);
       let rh = cascade.startH * (1 - shrink * 0.65);
       if (rw < sz * 2 || rh < sz * 2) break;
-
       let col = S.palette[(cascade.palIdx + ni) % S.palette.length];
       if (S.accent !== 'none' && S.accentAmt > 0 && ni === 0) col = S.accent;
-
       // Entropy: randomly skip a level
       if (S.entropy > 0 && Math.random() < S.entropy * 0.3) continue;
-
       // Draw the rectangle outline using characters
       // Top and bottom edges
       let tokBase = Math.floor(S.fc * S.speed * 0.3 + ci * 13 + ni * 7);
@@ -3666,12 +3639,10 @@ function drawClyffordStill(p, t) {
   }
 
   CTX.save();
-
   stillForms.forEach(function(form, fi) {
     let col = S.palette[form.palIdx % S.palette.length];
     if (S.accent !== 'none' && fi === 0) col = S.accent;
     if (S.accent2 !== 'none' && fi === 1) col = S.accent2;
-
     // Fill the form
     CTX.beginPath();
     CTX.moveTo(form.leftEdge[0].x, form.leftEdge[0].y);
@@ -3683,7 +3654,6 @@ function drawClyffordStill(p, t) {
     CTX.closePath();
     CTX.fillStyle = col;
     CTX.fill();
-
     // Impasto texture: dense short strokes over the fill
     CTX.save();
     CTX.clip();  // clip to form shape
@@ -3761,13 +3731,11 @@ function drawScatterDots(p, t) {
   // Dot charset — prefer circles and dots
   let dotChars = ['○','◌','·','•','°','˚','◦','⊙','◎','o','O','0'];
   let userChars = S.chars && S.chars.length ? S.chars : dotChars;
-
   scatterClouds.forEach(function(cloud) {
     let wobX = S.wave > 0 ? Math.sin(t * 0.7 + cloud.phase) * S.wave * 0.05 : 0;
     let wobY = S.wave > 0 ? Math.cos(t * 0.6 + cloud.phase) * S.wave * 0.04 : 0;
     let cx = cloud.cx + wobX;
     let cy = cloud.cy + wobY;
-
     // Scatter dots within the cloud radius
     let dotCount = Math.floor(cloud.r * cloud.r * 0.018 * (1 + S.density));
     for (let di = 0; di < dotCount; di++) {
@@ -3790,7 +3758,6 @@ function drawScatterDots(p, t) {
       let ch   = userChars[Math.floor(n * userChars.length) % userChars.length];
       dc(x, y, sz, 0, col, ch);
     }
-
     // Rectangular outline accent (like the corner elements in the reference)
     if (cloud.hasRect) {
       let col = S.palette[(cloud.palIdx + 1) % S.palette.length];
@@ -3814,7 +3781,6 @@ function drawDiagonalField(p, t) {
   let sz   = Math.max(3, S.maxSize * 0.55);
   // Diagonal angle — 45° base, turbulence modifies locally
   let baseAngle = Math.PI * 0.25 + S.charRotRad;
-
   for (let x = -p.height; x < p.width + p.height; x += sp) {
     for (let y = 0; y < p.height; y += sz * 1.02) {
       // Diagonal coordinate
@@ -3823,20 +3789,15 @@ function drawDiagonalField(p, t) {
       let n1 = p.noise(diagX * S.noiseScale * 0.6, y * S.noiseScale * 0.3, t * 0.5);
       let n2 = p.noise(diagX * S.noiseScale * 2.2 + 50, y * S.noiseScale * 1.8, t * 0.8) * 0.4;
       let nv = (n1 + n2) / 1.4;
-
       if (nv < S.density * 0.85) continue;
-
       // Screen coordinates from diagonal space
       let sx = x + Math.cos(baseAngle) * y;
       let sy =     Math.sin(baseAngle) * y;
       // Additional wave distortion
       let wx = S.wave > 0 ? Math.sin(y * S.turb * 6 + t * 2) * S.wave * 0.12 : 0;
-
       if (sx + wx < -sz || sx + wx > p.width + sz) continue;
-
       // Local angle variation — creates the "shifting lane" look
       let localAngle = baseAngle + p.noise(sx * S.noiseScale * 1.5, sy * S.noiseScale * 1.5, t * 0.3) * 0.6 - 0.3;
-
       let col = pickColor(p, sx, sy, t);
       let ch  = pickChar(p, sx + t * 30, sy, t);
       dc(sx + wx, sy, p.map(nv, S.density * 0.85, 1, sz * 0.3, sz), localAngle, col, ch);
@@ -3861,7 +3822,6 @@ function drawTypescale(p, t) {
   let maxSz   = S.maxSize * 4.2;
   let minSz   = 1.4;
   let arcCount = Math.floor(22 + S.density * 50);
-
   origins.forEach(function(orig, oi) {
     for (let ai = 0; ai < arcCount; ai++) {
       let progress = ai / arcCount;
@@ -3869,11 +3829,9 @@ function drawTypescale(p, t) {
       let eased  = Math.pow(progress, 1.6);
       let radius = p.map(eased, 0, 1, maxSz * 0.2, p.height * 1.05);
       let sz     = p.map(eased, 0, 1, maxSz, minSz);
-
       // Pulse — each origin pulses slightly out of phase
       sz *= 1 + Math.sin(t * 1.4 + ai * 0.35 + oi * 1.8) * 0.09 * (S.wave / 30);
       if (sz < 1) continue;
-
       // Arc spans from ~180° (straight left) to 360° (straight right)
       // shifted by origin spread so the three fans overlap naturally
       let arcStart = Math.PI * (0.5 + orig.spread * 0.2);
@@ -3881,7 +3839,6 @@ function drawTypescale(p, t) {
       let arcLen   = (arcEnd - arcStart) * radius;
       let charW    = sz * 0.7;
       let numChars = Math.max(1, Math.floor(arcLen / charW));
-
       for (let ci = 0; ci < numChars; ci++) {
         let frac  = ci / numChars;
         let angle = arcStart + frac * (arcEnd - arcStart);
@@ -3893,12 +3850,9 @@ function drawTypescale(p, t) {
         // Rows move upward when playing
         let yOff = S.playing ? Math.sin(t * 0.8 + ai * 0.2 + oi) * sz * 0.3 : 0;
         let y    = orig.y + Math.sin(angle) * r + yOff;
-
         if (x < -sz*2 || x > p.width + sz*2 || y > p.height + sz || y < -sz * 3) continue;
-
         let charRot = S.charRotRad + (S.wave > 0 ? Math.sin(t * 1.8 + ci * 0.25 + ai * 0.1) * 0.3 : 0);
         if (S.entropy > 0 && Math.random() < S.entropy * 0.07) charRot += (Math.random() - 0.5) * 2;
-
         // Overlap: render at slightly reduced alpha when fans intersect
         let col = pickColor(p, x, y, t);
         dc(x, y, sz, charRot, col, pickChar(p, x + oi * 31 + ai * 17, y, t));
@@ -4009,12 +3963,10 @@ function drawBoids(p,t){
   let maxSpd=S.speed*600+1.5;
   let sep=S.wave*.015+0.8; // separation force
   let aln=0.06, coh=0.004;
-
   if(S.playing){
     for(let i=0;i<n;i++){
       let b=boidAgents[i];
       let sx=0,sy=0,ax=0,ay=0,cohx=0,cohy=0,count=0;
-
       for(let j=0;j<n;j++){
         if(i===j) continue;
         let o=boidAgents[j];
@@ -4045,7 +3997,6 @@ function drawBoids(p,t){
       if(b.y<0)b.y=H;if(b.y>H)b.y=0;
     }
   }
-
   // Draw
   boidAgents.forEach(function(b,i){
     let col=S.palette[(b.ci+Math.floor(i/n*S.palette.length))%S.palette.length];
@@ -4058,6 +4009,7 @@ function drawBoids(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 // ── STRIPED RECTS (Webster) ───────────────────────────────────────────────
 // Solid and barcode-striped rectangles on a light ground.
 // Works best with a pale background (paper, cream, f5f0ea).
@@ -4096,33 +4048,27 @@ function drawStripedRects(p, t) {
   if (!stripedRects.length) initStripedRects(p.width, p.height);
   CTX.save();
   stripedRects.forEach(function(r) {
-
     // ── DENSITY (live) ────────────────────────────────────────────────────
     // S.density runs 0 (dense) → 0.9 (sparse). Skip rect if rand < density.
     if (r.rand < S.density) return;
-
     if (S.playing) {
       r.y += r.vy * S.speed * 120;
       if (r.y > p.height + r.h) r.y = -r.h * 2;
       if (r.y < -r.h * 2)       r.y =  p.height + r.h;
     }
-
     // ── SIZE (live via maxSize) ───────────────────────────────────────────
     // Scale base dimensions proportionally to maxSize (default = 20)
     let scale = S.maxSize / 20;
     let rw = r.bw * scale;
     let rh = r.bh * scale;
-
     // ── PALETTE (live) ────────────────────────────────────────────────────
     let rCol = r.useAccent && S.accent !== 'none'
       ? S.accent
       : S.palette[r.palIdx % S.palette.length];
-
     // ── WAVE wobble ───────────────────────────────────────────────────────
     let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
     let rx = r.x + wx;
     let ry = r.y;
-
     // ── ENTROPY / GLITCH (live) ───────────────────────────────────────────
     if (S.entropy > 0) {
       // Randomly drop some rects entirely
@@ -4141,7 +4087,6 @@ function drawStripedRects(p, t) {
         r.type = r.type === 'solid' ? 'striped' : 'solid';
       }
     }
-
     if (r.type === 'solid') {
       CTX.fillStyle = rCol;
       CTX.fillRect(rx, ry, rw, rh);
@@ -4166,6 +4111,7 @@ function drawStripedRects(p, t) {
   CTX.restore();
   _lastFill = '';
 }
+  
 // ── TONAL DENSITY ──────────────────────────────────────────────────────────
 // A repeating phrase/charset fills the canvas. Noise drives both font size
 // and letter spacing — high noise = large tight text (dark), low noise =
@@ -4217,9 +4163,7 @@ function initBauhaus(W, H) {
   ];
   // Use studio palette if it's not the default site palette
   let usePal = S.palette;
-
   let types = ['circle', 'rect', 'triangle', 'halfcircle', 'ring', 'bar'];
-
   for (let i = 0; i < count; i++) {
     let r = Math.min(W, H) * (0.04 + Math.random() * 0.32);
     bauhausShapes.push({
@@ -4245,10 +4189,8 @@ function initBauhaus(W, H) {
 
 function drawBauhaus(p, t) {
   if (!bauhausShapes.length) initBauhaus(p.width, p.height);
-
   // Sort by radius so large shapes draw first (back-to-front)
   bauhausShapes.sort(function(a, b){ return b.r - a.r; });
-
   CTX.save();
   bauhausShapes.forEach(function(sh) {
     if (S.playing) {
@@ -4309,7 +4251,6 @@ function drawBauhaus(p, t) {
     }
     CTX.restore();
   });
-
   // Overlay a subtle character grid at low opacity for texture
   if (S.chars && S.chars.length && S.maxSize > 6) {
     CTX.globalAlpha = 0.06 + S.entropy * 0.12;
@@ -4413,7 +4354,6 @@ function drawMagnetic(p,t){
       CTX.stroke();
     }
   });
-
   // Draw poles as glowing dots
   magneticPoles.forEach(function(pole2){
     CTX.globalAlpha=0.8;
@@ -4427,6 +4367,8 @@ function drawMagnetic(p,t){
   _lastFont='';_lastFill='';
 }
 
+
+  
 // ── SHAPE HELPERS ─────────────────────────────────────────────────────────────────
 function pointInPoly(px,py,pts){
   let inside=false;
@@ -4587,7 +4529,6 @@ if (type === 'lissajous') {
   }
   return; // skip the rest of the shape drawing for lissajous
 }
-
     // Draw main field characters inside shape
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
@@ -4729,6 +4670,8 @@ if (type === 'lissajous') {
   });
 }
 
+
+  
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
 
 function drawOverlay(p, t) {
@@ -5012,7 +4955,7 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
   
-// Define the master list once
+const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom'];
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
 const preSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech'];
 const ALL_SECTIONS = [
@@ -5138,41 +5081,55 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   }
 });
 
-// ── CHARSET ───────────────────────────────────────────────────────────────────
-document.getElementById('charsetGrid').addEventListener('click', function(e) {
-  let b = e.target.closest('.cb');
-  if (!b || !b.dataset.cs) return;
-  document.querySelectorAll('#charsetGrid .cb').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  let cs = b.dataset.cs;
-  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
-
-  // Handle Random Unicode modes
-  if (cs === 'randuni') { RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_weighted') { RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_pos') { RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_drift') { RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; }
-
-  // Handle Particles mode
-  if (cs === 'particles') {
-    S.useParticleMode = true;
-    RAND_UNICODE_MODE = null;
-    window._st.rd();
-    return;
-  }
-  S.useParticleMode = false;
-
-  // Normal charset (non‑custom)
-  RAND_UNICODE_MODE = null;
-  if (cs !== 'custom') {
-    S.chars = CHARSETS[cs];
-    // Show a warning for rare charsets – no automatic font switch
-    if (RARE_CHARSETS.includes(cs)) {
-      showToast('⚠️ For best results, select “Universal Unicode” font manually');
+  
+// ── CHARACTER UI WIRING ───────────────────────────────────────────────────────
+// We target 'body-chars' to catch clicks from all character sub-sections
+const characterUI = document.getElementById('body-chars');
+if (characterUI) {
+  characterUI.addEventListener('click', function(e) {
+    let b = e.target.closest('.cb');
+    if (!b || !b.dataset.cs) return;
+    // 1. Clear active state for all buttons in this section
+    characterUI.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    let cs = b.dataset.cs;
+    S.charSet = cs; // Update state tracker
+    // 2. Handle the Custom Input Row visibility
+    let row = document.getElementById('customRow');
+    if (row) row.style.display = (cs === 'custom') ? 'flex' : 'none';
+    // 3. Handle Random Unicode modes
+    if (cs === 'randuni') { 
+        RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; 
     }
-    window._st.rd();
-  }
-});
+    if (cs === 'randuni_weighted') { 
+        RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    if (cs === 'randuni_pos') { 
+        RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    if (cs === 'randuni_drift') { 
+        RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    // 4. Handle Particles mode
+    if (cs === 'particles') {
+      S.useParticleMode = true;
+      RAND_UNICODE_MODE = null;
+      window._st.rd();
+      return;
+    }
+    S.useParticleMode = false;
+    // 5. Handle Normal charsets (non-custom, non-random)
+    RAND_UNICODE_MODE = null;
+    if (cs !== 'custom') {
+      S.chars = CHARSETS[cs];
+      // Show warning for rare charsets
+      if (typeof RARE_CHARSETS !== 'undefined' && RARE_CHARSETS.includes(cs)) {
+        showToast('⚠️ For best results, select “Universal Unicode” font manually');
+      }
+      if (window._st) window._st.rd();
+    }
+  });
+}
 
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change', function() {
@@ -6234,11 +6191,17 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
 });
 
 // Collapse all sections on initial load
-['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets'].forEach(function(id){
-  let body=document.getElementById('body-'+id);
-  let arrow=document.getElementById('arr-'+id);
-  if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
-});  
+['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets', 
+ 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
+ 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom'
+].forEach(function(id){
+  let body = document.getElementById('body-' + id);
+  let arrow = document.getElementById('arr-' + id);
+  if(body) {
+    body.classList.add('collapsed');
+    if(arrow) arrow.classList.remove('open');
+  }
+});
   
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
 let _panelHidden = false;
