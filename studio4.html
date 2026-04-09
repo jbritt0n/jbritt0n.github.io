@@ -4973,23 +4973,17 @@ new p5(function(p){
   // ── Function Rd - redraw ─────────────────────────────────────────────────────────────────
   function rd() {
     if (!p || !p.width) return;
+    // Fallback values to prevent NaN crashes
+    let bgColor = S.bg || '#0d0c0a';
+    let currentFC = S.fc || 0;
+    let currentSpd = S.speed || 0.004;
     CTX.globalCompositeOperation = 'source-over';
-    CTX.fillStyle = S.bg || '#000000';
+    CTX.fillStyle = bgColor;
     CTX.fillRect(0, 0, W, H);
-    
-    // Ensure t is a valid number
-    let t = (S.fc || 0) * (S.speed || 0.004);
+    let t = currentFC * currentSpd;
     drawScene(p, t);
-    
     if (S.shapesEnabled) drawShapes(p, t);
     if (S.overlayEnabled) drawOverlay(p, t);
-  }
-  
-  function rc(preset){
-    S.compPreset=preset;
-    buildComp(preset,W,H);
-    recRects=[];
-    rd();
   }
   // ── WINDOW._ST - STATE & CONTROL BRIDGE ────────────────────────────────────────────────── 
   window._st = {
@@ -5093,22 +5087,21 @@ new p5(function(p){
     }
   }
 // ── P.Setup ────────────────────────────────────────────────── 
-  p.setup = function() {
+p.setup = function() {
     let wrap = document.getElementById('canvas-wrap');
-    // Important: assign to the variables in the outer scope
     W = wrap.offsetWidth; 
     H = wrap.offsetHeight;
-    
     let cnv = p.createCanvas(W, H);
     cnv.parent('canvas-wrap');
     CTX = p.drawingContext;
     CTX.textBaseline = 'middle';
+    // FORCE STATE INITIALIZATION FIRST
     if (typeof S === 'undefined') window.S = {};
     Object.assign(S, DEFAULT_STATE); 
-    S.fc = 0; // Initialize frame counter
+    S.fc = 0; // Initialize frame counter to 0
     p.noLoop();
     p.pixelDensity(1);
-    
+    // 2. NOW INITIALIZE DATA
     ri(); 
     
     window.addEventListener('resize', function() {
