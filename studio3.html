@@ -212,6 +212,10 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="geode_bloom">Geode</button>
         <button class="pbar-btn" data-preset="maeda_mori">Maeda</button>
         <button class="pbar-btn" data-preset="monogrid_dada">Monogrid</button>
+        <button class="pbar-btn" data-preset="bauhaus_primary">Bauhaus</button>
+        <button class="pbar-btn" data-preset="bauhaus_dark">Bauhaus Dark</button>
+        <button class="pbar-btn" data-preset="maeda_eyechart">Eye Chart</button>
+        <button class="pbar-btn" data-preset="geode_vibrate">Geode</button>
     </div>
   </div>
 </div>
@@ -267,6 +271,7 @@ select option{background:var(--ink)}
           <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
+          <button class="mb new-mode" data-mode="bauhaus" title="Bauhaus — geometric primary shapes with orbital and rotational animation">Bauhaus</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
           <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
           <button class="mb" data-mode="topolines">Topo Lines</button>
@@ -1144,6 +1149,7 @@ let S={
   mgTextSpd: 30,
   mgAnim: true,
   mgStack: false,
+  
 
 };
   
@@ -1159,6 +1165,7 @@ let loopParticles=[];
 let geodeTiles = [];
 let monogridBlocks = [];  
 let topoSegs=[];
+let bauhausShapes = [];  
 // Maze
 let mazeGrid = null, mazeCols = 0, mazeRows = 0;
 let mazeShiftTimer = 0;
@@ -3777,6 +3784,134 @@ function drawTonalDensity(p, t) {
     y += Math.max(3, rowMaxSz * (0.75 + S.wave * 0.003));
   }
 }
+
+// ── Bauhaus Shapes ──────────────────────────────────────────────────────
+  
+let bauhausShapes = [];
+
+function initBauhaus(W, H) {
+  bauhausShapes = [];
+  let count = 8 + Math.floor(S.density * 18);
+  let pal   = [
+    '#D40920', '#F5C800', '#1B4299',
+    '#0D0C0A', '#F2EEE4',
+  ];
+  // Use studio palette if it's not the default site palette
+  let usePal = S.palette;
+
+  let types = ['circle', 'rect', 'triangle', 'halfcircle', 'ring', 'bar'];
+
+  for (let i = 0; i < count; i++) {
+    let r = Math.min(W, H) * (0.04 + Math.random() * 0.32);
+    bauhausShapes.push({
+      x:        W * (0.08 + Math.random() * 0.84),
+      y:        H * (0.08 + Math.random() * 0.84),
+      r,
+      type:     types[Math.floor(Math.random() * types.length)],
+      col:      usePal[Math.floor(Math.random() * usePal.length)],
+      rot:      Math.random() * Math.PI * 2,
+      rotV:     (Math.random() - 0.5) * 0.012,
+      scaleV:   Math.sin(Math.random() * Math.PI),
+      phase:    Math.random() * Math.PI * 2,
+      orbitR:   Math.random() < 0.3 ? 30 + Math.random() * 80 : 0,
+      orbitA:   Math.random() * Math.PI * 2,
+      orbitV:   (Math.random() - 0.5) * 0.018,
+      bx:       0, by: 0,   // base position (set below)
+      palIdx:   Math.floor(Math.random() * usePal.length),
+    });
+    bauhausShapes[bauhausShapes.length - 1].bx = bauhausShapes[bauhausShapes.length - 1].x;
+    bauhausShapes[bauhausShapes.length - 1].by = bauhausShapes[bauhausShapes.length - 1].y;
+  }
+}
+
+function drawBauhaus(p, t) {
+  if (!bauhausShapes.length) initBauhaus(p.width, p.height);
+
+  // Sort by radius so large shapes draw first (back-to-front)
+  bauhausShapes.sort(function(a, b){ return b.r - a.r; });
+
+  CTX.save();
+  bauhausShapes.forEach(function(sh) {
+    if (S.playing) {
+      sh.rot += sh.rotV * S.speed * 60;
+      if (sh.orbitR > 0) {
+        sh.orbitA += sh.orbitV * S.speed * 60;
+        sh.x = sh.bx + Math.cos(sh.orbitA) * sh.orbitR;
+        sh.y = sh.by + Math.sin(sh.orbitA) * sh.orbitR * 0.6;
+      }
+    }
+
+    // Pulse radius with wave
+    let pulsed = sh.r * (1 + Math.sin(t * 1.8 + sh.phase) * S.wave * 0.008);
+    // Entropy: random size spikes
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.04) pulsed *= 0.3 + Math.random() * 2;
+
+    let col = S.palette[sh.palIdx % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0 &&
+        Math.sin(sh.phase + t) > (1 - S.accentAmt * 2)) col = S.accent;
+
+    CTX.save();
+    CTX.translate(sh.x, sh.y);
+    CTX.rotate(sh.rot);
+    CTX.fillStyle   = col;
+    CTX.strokeStyle = S.bg;
+    CTX.lineWidth   = Math.max(1, pulsed * 0.04);
+
+    switch (sh.type) {
+      case 'circle':
+        CTX.beginPath();
+        CTX.arc(0, 0, pulsed, 0, Math.PI * 2);
+        CTX.fill();
+        break;
+      case 'ring':
+        CTX.beginPath();
+        CTX.arc(0, 0, pulsed, 0, Math.PI * 2);
+        CTX.arc(0, 0, pulsed * 0.55, 0, Math.PI * 2, true);
+        CTX.fill();
+        break;
+      case 'halfcircle':
+        CTX.beginPath();
+        CTX.arc(0, 0, pulsed, 0, Math.PI);
+        CTX.closePath();
+        CTX.fill();
+        break;
+      case 'rect':
+        CTX.fillRect(-pulsed, -pulsed * (0.5 + sh.phase % 0.8), pulsed * 2, pulsed * (1 + sh.phase % 1.2));
+        break;
+      case 'bar':
+        // Thin wide bar — classic Bauhaus compositional element
+        CTX.fillRect(-pulsed * 1.8, -pulsed * 0.15, pulsed * 3.6, pulsed * 0.3);
+        break;
+      case 'triangle':
+        CTX.beginPath();
+        CTX.moveTo(0, -pulsed);
+        CTX.lineTo( pulsed * 0.866,  pulsed * 0.5);
+        CTX.lineTo(-pulsed * 0.866,  pulsed * 0.5);
+        CTX.closePath();
+        CTX.fill();
+        break;
+    }
+    CTX.restore();
+  });
+
+  // Overlay a subtle character grid at low opacity for texture
+  if (S.chars && S.chars.length && S.maxSize > 6) {
+    CTX.globalAlpha = 0.06 + S.entropy * 0.12;
+    let sp = S.spacing * 1.2;
+    for (let x = sp; x < p.width; x += sp) {
+      for (let y = sp; y < p.height; y += sp) {
+        let col = S.palette[Math.floor(p.noise(x * S.noiseScale, y * S.noiseScale, t) * S.palette.length) % S.palette.length];
+        dc(x, y, S.maxSize * 0.65, 0, col, pickChar(p, x, y, t));
+      }
+    }
+    CTX.globalAlpha = 1;
+  }
+
+  CTX.restore();
+  _lastFill = '';
+}
+  
+  
 // ── MAGNETIC FIELD LINES ──────────────────────────────────────────────────────
 // Dipole (and multipole) magnetic field: trace field lines from seed angles,
 // render as smooth curves with characters placed along them.
@@ -4257,7 +4392,7 @@ new p5(function(p){
   function ri(){
     initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
     recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
-    sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];
+    sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];bauhausShapes=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
     boidAgents=[];magneticPoles=[];
     if(S.compEnabled) buildComp(S.compPreset,W,H);
@@ -4413,7 +4548,8 @@ CTX.fillRect(0, 0, W, H);
     case 'brushcontour': drawBrushContour(p, t); break;
     case 'geode':        drawGeode(p, t);        break;
     case 'typescale':    drawTypescale(p, t);    break;
-    case 'monogrid':     drawMonogrid(p, t);     break;  
+    case 'monogrid':     drawMonogrid(p, t);     break;
+    case 'bauhaus': drawBauhaus(p, t); break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
@@ -5618,9 +5754,11 @@ const PRESETS={
   painted_puppy: function(){ap({mode:'brushcontour',font:'courier',entropy:0, speed:.002,wave:20,bg:'#0d0c0a',spacing:5,maxSize:14,noiseScale:.009, palette:'mono',compEnabled:false});},
   geode_bloom: function(){ap({mode:'geode',font:'courier',entropy:0,speed:.003,wave:35,bg:'#f5f0ea',spacing:9,maxSize:16,noiseScale:.008,palette:'neonpastel',compEnabled:false});},
   maeda_mori: function(){ap({mode:'typescale',font:'courier',entropy:0,speed:.001,wave:0,bg:'#f5f0ea',spacing:8,maxSize:28,noiseScale:.01,palette:'mono',compEnabled:false,chars:CHARSETS.katakana});},
-  monogrid_dada: function(){ap({mode:'monogrid',font:'courier',entropy:0,speed:.002,wave:10,bg:'#f5f0ea',spacing:10,maxSize:20,noiseScale:.01,palette:'moss',compEnabled:false,chars:'dada machine poetry'.split('')});
-},
-
+  monogrid_dada: function(){ap({mode:'monogrid',font:'courier',entropy:0,speed:.002,wave:10,bg:'#f5f0ea',spacing:10,maxSize:20,noiseScale:.01,palette:'moss',compEnabled:false,chars:'dada machine poetry'.split('')});},
+  bauhaus_primary: function(){ap({ mode:'bauhaus', font:'bebas', entropy:0, speed:.004,wave:30, bg:'#F2EEE4', spacing:18, maxSize:20,noiseScale:.01, palette:'fire', compEnabled:false });bauhausShapes = [];},
+  bauhaus_dark: function() {ap({ mode:'bauhaus', font:'impact', entropy:.04, speed:.006,wave:50, bg:'#0d0c0a', spacing:16, maxSize:22,noiseScale:.01, palette:'abyss', compEnabled:false });bauhausShapes = [];},
+  maeda_eyechart: function() {ap({ mode:'typescale', font:'impact', entropy:0, speed:.003,wave:25, bg:'#f5f0ea', spacing:10, maxSize:32,noiseScale:.01, palette:'mono', compEnabled:false,chars: CHARSETS.katakana });},
+  geode_vibrate: function() {ap({ mode:'geode', font:'courier', entropy:0, speed:.004,wave:55, bg:'#f5f0ea', spacing:8, maxSize:18,noiseScale:.008, palette:'neonpastel', compEnabled:false });geodeTiles = [];},
   
 };
 
