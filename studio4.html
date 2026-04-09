@@ -1381,12 +1381,11 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
 
 // --- COLOR MAPPING & NOISE TYPE
-function getColorIndex(x, y, t) {
+function getColorIndex(p, x, y, t) {
   let nx = x * S.noiseScale;
   let ny = y * S.noiseScale;
   let W = window.innerWidth, H = window.innerHeight;
   let val = 0;
-  // Handle Mapping Strategy
   switch(S.colorMapMode) {
     case 'radial':
       val = (Math.sqrt((x - W/2)**2 + (y - H/2)**2) * 0.002) % 1.0;
@@ -1401,13 +1400,14 @@ function getColorIndex(x, y, t) {
       val = (Math.abs(W/2 - x) / (W/2) + Math.abs(H/2 - y) / (H/2)) % 1.0;
       break;
     case 'stepped':
-      let r = noise(nx, ny, t * 0.01); 
+      // Use p.noise here
+      let r = p.noise(nx, ny, t * 0.01); 
       val = Math.floor(r * 5) / 5;
       break;
-    default: // 'noise'
-      val = noise(nx, ny, t * 0.01);
+    default: 
+      // Use p.noise here (This was line 1408)
+      val = p.noise(nx, ny, t * 0.01);
   }
-  // Apply Noise Texture modification (only if in a noise-based mode)
   if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
     if (S.noiseType === 'ridged') {
       val = 1.0 - Math.abs(val * 2 - 1);
@@ -1839,7 +1839,7 @@ function drawBloom(p, t) {
   for (let x = 0; x <= p.width; x += step) {
     for (let y = 0; y <= p.height; y += step) {
       // 1. Get Color based on our new Mapping Logic
-      let ci = getColorIndex(x, y, t);
+      let ci = getColorIndex(p, x, y, t);
       let col = S.palette[Math.floor(ci * S.palette.length)];
       // Calculate dynamic size based on entropy and motion
       let sizeBase = p.map(S.size, 0, 1, 5, 100);
