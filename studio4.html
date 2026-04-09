@@ -1833,26 +1833,25 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
-// ── ORIGINAL ANIMATION MODES ──────────────────────────────────────────────────
+// ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
-  // Set the global blend mode for the entire frame
-  if (CTX) CTX.globalCompositeOperation = S.blendMode;
-  let density = p.map(S.density, 0, 1, 10, 50);
-  let step = p.width / density;
+  if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
+  // If S.density is 0.45, this creates a reasonable grid
+  let step = (S.spacing || 12) * p.map(S.density, 0, 1, 2, 0.5);
   for (let x = 0; x <= p.width; x += step) {
     for (let y = 0; y <= p.height; y += step) {
-      // 1. Get Color based on our new Mapping Logic
       let ci = getColorIndex(p, x, y, t);
-      let col = S.palette[Math.floor(ci * S.palette.length)];
-      // Calculate dynamic size based on entropy and motion
-      let sizeBase = p.map(S.size, 0, 1, 5, 100);
-      let pulse = Math.sin(t * 0.02 + (x + y) * 0.01) * (S.motion * 20);
-      let sz = sizeBase + pulse;
-      // Calculate dynamic rotation
-      let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * S.entropy;
-      // Select character (handles Particle Mode or Text)
-      let ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
-      // Render using the global dc function
+      let col = S.palette[Math.floor(ci * S.palette.length)] || S.palette[0];
+      let sizeBase = p.map(S.maxSize || 20, 0, 100, 5, 100); 
+      let motionVal = S.motion || 0;
+      let pulse = Math.sin(t * 0.02 + (x + y) * 0.01) * (motionVal * 20);
+      let sz = Math.max(1, sizeBase + pulse);
+      let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * (S.entropy || 0);
+      // Ensure ch is valid
+      let ch = '';
+      if (S.chars && S.chars.length > 0) {
+        ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
+      }
       dc(x, y, sz, angle, col, ch);
     }
   }
