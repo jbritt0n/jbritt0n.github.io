@@ -1383,10 +1383,10 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 // --- COLOR MAPPING & NOISE TYPE
 function getColorIndex(p, x, y, t) {
   // Use the S.noiseScale from your DEFAULT_STATE
-  let nx = x * S.noiseScale; 
+  let nx = x * S.noiseScale; // Using S.noiseScale from DEFAULT_STATE
   let ny = y * S.noiseScale;
   let W = p.width, H = p.height; 
-  let val = 0;
+  let val = p.noise(nx, ny, t * 0.01);
   switch(S.colorMapMode) {
     case 'radial':
       val = (Math.sqrt((x - W/2)**2 + (y - H/2)**2) * 0.002) % 1.0;
@@ -5002,21 +5002,28 @@ new p5(function(p){
     rsz:resize,w:function(){return W;},h:function(){return H;},p:p
   };
 
-  p.setup=function(){
-    let wrap=document.getElementById('canvas-wrap');
-    W=wrap.offsetWidth;H=wrap.offsetHeight;
-    let cnv=p.createCanvas(W,H);
-    cnv.parent('canvas-wrap');
-    CTX=p.drawingContext;
-    CTX.textBaseline='middle';
-    p.noLoop();
-    p.pixelDensity(1);
-    p.noiseDetail(4,.5);
-    ri();rd();
-    window.addEventListener('resize',function(){
-      if(_currentSizeMode==='fill') resize('fill');
-    });
-  };
+p.setup = function() {
+  let wrap = document.getElementById('canvas-wrap');
+  W = wrap.offsetWidth; 
+  H = wrap.offsetHeight;
+  let cnv = p.createCanvas(W, H);
+  cnv.parent('canvas-wrap');
+  // Use p.drawingContext to set CTX
+  CTX = p.drawingContext;
+  CTX.textBaseline = 'middle';
+  p.noLoop();
+  p.pixelDensity(1);
+  p.noiseDetail(4, .5);
+  
+  resetAllToDefaults(); // 1. Ensure state S is populated with valid defaults
+  ri();                 // 2. Initialize the current mode (Bloom)
+  rd();                 // 3. Draw the first frame
+  // --------------------------
+
+  window.addEventListener('resize', function() {
+    if (_currentSizeMode === 'fill') resize('fill');
+  });
+};
   
 p.draw = function() {
   S.fc++;
