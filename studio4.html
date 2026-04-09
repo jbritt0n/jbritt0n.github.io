@@ -5113,22 +5113,9 @@ p.setup = function() {
 };
   
 // ── P.Draw ────────────────────────────────────────────────── 
-  p.draw = function() {
-    if (!S.playing) return;
-    S.fc++;
-
+p.draw = function() {
     if (!CTX) CTX = p.drawingContext;
     let t = S.fc * (S.speed || 0.01);
-    // FPS display
-    let now = performance.now();
-    _frameCount++;
-    if (now - _fpsTimer > 1000) {
-      _fps = _frameCount;
-      _frameCount = 0;
-      _fpsTimer = now;
-      let fpsLabel = document.getElementById('fpsLabel');
-      if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
-    }
     // Clear canvas
     CTX.globalCompositeOperation = 'source-over';
     CTX.globalAlpha = 1;
@@ -5146,6 +5133,18 @@ p.setup = function() {
     drawScene(p, t);
     if (S.shapesEnabled) drawShapes(p, t);
     if (S.overlayEnabled) drawOverlay(p, t);
+    // Only advance time and track FPS when actually playing
+    if (!S.playing) return;
+    S.fc++;
+    let now = performance.now();
+    _frameCount++;
+    if (now - _fpsTimer > 1000) {
+      _fps = _frameCount;
+      _frameCount = 0;
+      _fpsTimer = now;
+      let fpsLabel = document.getElementById('fpsLabel');
+      if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
+    }
   };
   // Event Listeners
 ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
