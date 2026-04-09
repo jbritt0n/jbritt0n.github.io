@@ -186,7 +186,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="scatter_bloom" title="Scattered character points">Scatter</button>
       </div>
     </div>
-
     <div class="sl2" onclick="toggleSec('pre-topo')">
       Topographic <span class="sec-arrow" id="arr-pre-topo">›</span>
     </div>
@@ -204,7 +203,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="hatch" title="Parallel plotter hatching">Hatches</button>
       </div>
     </div>
-
     <div class="sl2" onclick="toggleSec('pre-geo')">
       Geometric <span class="sec-arrow" id="arr-pre-geo">›</span>
     </div>
@@ -221,7 +219,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="kintsugi_breaks" title="Repaired pottery patterns">Kintsugi</button>
       </div>
     </div>
-
     <div class="sl2" onclick="toggleSec('pre-atmos')">
       Atmospheric <span class="sec-arrow" id="arr-pre-atmos">›</span>
     </div>
@@ -241,7 +238,6 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="mondrian_shift" title="Primary color subdivisions">Mondrian</button>
       </div>
     </div>
-
     <div class="sl2" onclick="toggleSec('pre-tech')">
       Organic & Tech <span class="sec-arrow" id="arr-pre-tech">›</span>
     </div>
@@ -268,78 +264,114 @@ select option{background:var(--ink)}
 
 
     
-  <!-- Mode Section -->    
-    <div id="ctl">
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
-      <div class="sec-body collapsed" id="body-mode">
-        <div class="mg" id="modeGrid">
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.18rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px">✦ Character</div>
-          <button class="mb active" data-mode="bloom">Bloom</button>
-          <button class="mb" data-mode="wave">Wave</button>
-          <button class="mb" data-mode="rain1">Rain</button>
-          <button class="mb" data-mode="rain2">Rain 2</button>
-          <button class="mb" data-mode="vortex">Vortex</button>
-          <button class="mb" data-mode="ripple">Ripple</button>
-          <button class="mb" data-mode="drift">Drift</button>
-          <button class="mb" data-mode="tess">Tessellation</button>
-          <button class="mb" data-mode="warp">Warp</button>
-          <button class="mb" data-mode="glitch">Glitch</button>
-          <button class="mb" data-mode="webster">Blocks</button>
-          <button class="mb" data-mode="matrix">Matrix</button>
-          <button class="mb" data-mode="orbit">Orbit</button>
-          <button class="mb" data-mode="spiral">Spiral</button>
-          <button class="mb" data-mode="scan">Scan</button>
-          <button class="mb" data-mode="halftone">Halftone</button>
-          <button class="mb" data-mode="shatter">Shatter</button>
-          <button class="mb" data-mode="weave">Weave</button>
-          <button class="mb" data-mode="topo">Topo</button>
-          <button class="mb" data-mode="recursive">Recursive</button>
-          <button class="mb" data-mode="contour">Contour</button>
-          <button class="mb" data-mode="fabric">Fabric</button>
-          <button class="mb" data-mode="loops">Loops</button>
-          <button class="mb" data-mode="imgtext">Img→Text</button>
-          <button class="mb" data-mode="pipes">Pipes</button>
-          <button class="mb" data-mode="calligraphy">Calligr.</button>
-          <button class="mb" data-mode="lissajous">Lissajous</button>
-          <button class="mb new-mode" data-mode="reaction">Reaction</button>
-          <button class="mb" data-mode="cellular">Cellular</button>
-          <button class="mb" data-mode="worms">Worms</button>
-          <button class="mb" data-mode="interference">Interfere</button>
-          <button class="mb new-mode" data-mode="stripedrects" title="Striped Rects — solid and barcode rectangles on a light ground">Stripe Rects</button>
-          <button class="mb new-mode" data-mode="tonaldensity"  title="Tonal Density — phrase repeats at noise-driven size and spacing, creating ink-wash tones">Tonal Density</button>
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
-          <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
-          <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
-          <button class="mb new-mode" data-mode="maze"             title="Recursive-backtracker maze, walls shift over time">Maze</button>
-          <button class="mb new-mode" data-mode="unknownpleasures" title="Joy Division Unknown Pleasures — stacked noise peaks">Unknown Pleasures</button>
-          <button class="mb new-mode" data-mode="mondrian"         title="Mondrian — recursive subdivision with primary color fills">Mondrian</button>
-          <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
-          <button class="mb new-mode" data-mode="brushcontour" title="Rotsztain — contour levels drawn as rotated brushstroke rectangles">Brush Contour</button>
-          <button class="mb new-mode" data-mode="geode"        title="Lars Wander — rotated tiles scatter into an organic blob">Geode</button>
-          <button class="mb new-mode" data-mode="typescale"    title="Maeda — characters grade from enormous at top to microscopic below">Typescale</button>
-          <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
-          <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
-          <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
-          <button class="mb new-mode" data-mode="cascaderects"  title="Nested character-outlined rectangles cascading diagonally">Cascade Rects</button>
-          <button class="mb new-mode" data-mode="diagonalfield" title="Dense diagonal character lanes with shifting density bands">Diagonal Field</button>
-          <button class="mb new-mode" data-mode="scatterdots"   title="Dot characters scattered into organic cloud forms">Scatter Dots</button>
-          <button class="mb new-mode" data-mode="clyffordstill" title="Clyfford Still — jagged vertical tear-forms with impasto texture">Still</button>
-          <button class="mb new-mode" data-mode="bauhaus" title="Bauhaus — geometric primary shapes with orbital and rotational animation">Bauhaus</button>
-          <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
-          <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
-          <button class="mb" data-mode="topolines">Topo Lines</button>
-          <button class="mb" data-mode="wireterrain">Terrain</button>
-          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
-          <button class="mb" data-mode="fractalsubdiv">Fractal</button>
-          <button class="mb" data-mode="voronoi">Voronoi</button>
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
-          <button class="mb" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
-          <button class="mb" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
-          <button class="mb" data-mode="sand">Sand</button>
-          <button class="mb" data-mode="mycelium">Mycelium</button>
-          <button class="mb new-mode" data-mode="flowerspin">Flower Spin</button>
-        </div>
-      </div></div>
+ <div class="sec">
+  <div class="sec-hd" onclick="toggleSec('mode')">
+    <span class="sl">Mode</span>
+    <span class="sec-arrow open" id="arr-mode">›</span>
+  </div>
+  <div class="sec-body" id="body-mode">
+    
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-fluid')">
+      Fluid & Motion <span class="sec-arrow" id="arr-mode-fluid">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
+      <div class="mg">
+        <button class="mb active" data-mode="bloom" title="Radiating character growth from the center">Bloom</button>
+        <button class="mb" data-mode="wave" title="Sinuous horizontal character oscillations">Wave</button>
+        <button class="mb" data-mode="rain1" title="Vertical falling character streams">Rain</button>
+        <button class="mb" data-mode="rain2" title="Dense, heavy precipitation patterns">Rain 2</button>
+        <button class="mb" data-mode="vortex" title="Spiral suction and rotational pull">Vortex</button>
+        <button class="mb" data-mode="ripple" title="Concentric circular displacement waves">Ripple</button>
+        <button class="mb" data-mode="drift" title="Slow, directional wind-driven movement">Drift</button>
+        <button class="mb" data-mode="warp" title="Local space distortion and stretching">Warp</button>
+        <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
+        <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
+        <button class="mb" data-mode="interference" title="Overlapping wave patterns creating moiré">Interfere</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-struct')">
+      Structural <span class="sec-arrow" id="arr-mode-struct">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="webster" title="Classic terminal-style block character layout">Blocks</button>
+        <button class="mb" data-mode="matrix" title="Digital rain code-stream aesthetic">Matrix</button>
+        <button class="mb" data-mode="scan" title="Horizontal CRT-style raster scanning">Scan</button>
+        <button class="mb" data-mode="halftone" title="Newsprint-style dot density rendering">Halftone</button>
+        <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
+        <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
+        <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
+        <button class="mb" data-mode="tonaldensity" title="Tonal Density — phrase repeats creating ink-wash tones">Tonal Density</button>
+        <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
+        <button class="mb" data-mode="diagonalfield" title="Dense diagonal character lanes with density bands">Diagonal Field</button>
+        <button class="mb" data-mode="cascaderects" title="Nested character-outlined rectangles cascading">Cascade Rects</button>
+        <button class="mb" data-mode="calligraphy" title="Pressure-sensitive stroke simulations">Calligr.</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-geo')">
+      Geometric <span class="sec-arrow" id="arr-mode-geo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="tess" title="Repeating geometric tile symmetries">Tessellation</button>
+        <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
+        <button class="mb" data-mode="maze" title="Recursive-backtracker maze with shifting walls">Maze</button>
+        <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
+        <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
+        <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
+        <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
+        <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
+        <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
+        <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
+        <button class="mb" data-mode="weave" title="Interlocking over-under line logic">Weave</button>
+        <button class="mb" data-mode="shatter" title="Fragmented plane and polygon explosion">Shatter</button>
+        <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-topo')">
+      Topographic <span class="sec-arrow" id="arr-mode-topo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-topo" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="topo" title="Simplified noise-driven contour mapping">Topo</button>
+        <button class="mb" data-mode="contour" title="Multi-level character-based isolines">Contour</button>
+        <button class="mb" data-mode="topolines" title="Pure vector-style elevation lines">Topo Lines</button>
+        <button class="mb" data-mode="isocontour" title="Pure isolines using marching squares">Iso Lines</button>
+        <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
+        <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
+        <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
+        <button class="mb" data-mode="geode" title="Rotated tiles scattered into organic blobs">Geode</button>
+        <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
+        <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
+        <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-bio')">
+      Bio & Systems <span class="sec-arrow" id="arr-mode-bio">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-bio" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="boids" title="Flocking agents following collective rules">Boids</button>
+        <button class="mb" data-mode="mycelium" title="Fungal growth and branching network simulation">Mycelium</button>
+        <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
+        <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
+        <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
+        <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
+        <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
+        <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
+        <button class="mb" data-mode="fabric" title="Woven thread physics and soft connections">Fabric</button>
+        <button class="mb" data-mode="loops" title="Recursive agent paths closing on themselves">Loops</button>
+        <button class="mb" data-mode="glitch" title="Intentional pixel sorting and data corruption">Glitch</button>
+        <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 
 
@@ -4948,9 +4980,9 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
 
-const presetSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech'];
+const allSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech','mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
 document.getElementById('btnCollapseAll').addEventListener('click', function() {
-  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...presetSubSecs].forEach(function(id) {
+  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...allSubSecs].forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
@@ -4960,7 +4992,7 @@ document.getElementById('btnCollapseAll').addEventListener('click', function() {
   });
 });
 document.getElementById('btnExpandAll').addEventListener('click', function() {
-  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...presetSubSecs].forEach(function(id) {
+  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...allSubSecs].forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
