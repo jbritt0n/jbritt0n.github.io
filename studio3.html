@@ -3507,6 +3507,234 @@ function drawCascadeRects(p, t) {
   });
 }
 
+
+// ── Still Forms (Clyfford Still) ─────────────────────────────────────────────────────
+
+function initStillForms(W, H) {
+  stillForms = [];
+  let count = 3 + Math.floor(S.density * 6);
+  for (let i = 0; i < count; i++) {
+    // Each form is a vertical tear — a polyline of jagged edges
+    let cx = W * (0.05 + Math.random() * 0.9);
+    let formW = W * (0.08 + Math.random() * 0.38);
+    let yTop  = H * (Math.random() * 0.4);
+    let yBot  = H * (0.6 + Math.random() * 0.4);
+    let palIdx = Math.floor(Math.random() * 6);
+    // Pre-generate jagged edge profile points
+    let edgePts = Math.floor(8 + Math.random() * 20);
+    let leftEdge  = [];
+    let rightEdge = [];
+    for (let ei = 0; ei <= edgePts; ei++) {
+      let ey = yTop + (ei / edgePts) * (yBot - yTop);
+      leftEdge.push({
+        y: ey,
+        x: cx - formW * 0.5 + (Math.random() - 0.5) * formW * 0.55
+      });
+      rightEdge.push({
+        y: ey,
+        x: cx + formW * 0.5 + (Math.random() - 0.5) * formW * 0.55
+      });
+    }
+    stillForms.push({ cx, formW, yTop, yBot, palIdx, leftEdge, rightEdge,
+      phase: Math.random() * Math.PI * 2,
+      animV: (Math.random() - 0.5) * 0.002 });
+  }
+}
+
+function drawClyffordStill(p, t) {
+  if (!stillForms.length) initStillForms(p.width, p.height);
+
+  // Slow morph of edges
+  if (S.playing) {
+    stillForms.forEach(function(form) {
+      form.leftEdge.forEach(function(pt, i) {
+        pt.x += Math.sin(t * 0.8 + form.phase + i * 0.5) * S.wave * 0.004;
+      });
+      form.rightEdge.forEach(function(pt, i) {
+        pt.x += Math.cos(t * 0.7 + form.phase + i * 0.4) * S.wave * 0.004;
+      });
+    });
+  }
+
+  CTX.save();
+
+  stillForms.forEach(function(form, fi) {
+    let col = S.palette[form.palIdx % S.palette.length];
+    if (S.accent !== 'none' && fi === 0) col = S.accent;
+    if (S.accent2 !== 'none' && fi === 1) col = S.accent2;
+
+    // Fill the form
+    CTX.beginPath();
+    CTX.moveTo(form.leftEdge[0].x, form.leftEdge[0].y);
+    form.leftEdge.forEach(function(pt) { CTX.lineTo(pt.x, pt.y); });
+    // Reverse along right edge
+    for (let i = form.rightEdge.length - 1; i >= 0; i--) {
+      CTX.lineTo(form.rightEdge[i].x, form.rightEdge[i].y);
+    }
+    CTX.closePath();
+    CTX.fillStyle = col;
+    CTX.fill();
+
+    // Impasto texture: dense short strokes over the fill
+    CTX.save();
+    CTX.clip();  // clip to form shape
+    let step = Math.max(2, S.spacing * 0.5);
+    for (let x = form.cx - form.formW; x < form.cx + form.formW; x += step) {
+      for (let y = form.yTop; y < form.yBot; y += step * 0.9) {
+        if (Math.random() > 0.45) continue;
+        let n   = p.noise(x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.3);
+        let lx1 = x + (Math.random() - 0.5) * step * 2;
+        let lx2 = lx1 + (Math.random() - 0.5) * S.maxSize * 0.8;
+        // Vary stroke darkness for impasto depth
+        let brightness = Math.floor(n * 60);
+        let r = parseInt(col.slice(1,3), 16);
+        let g = parseInt(col.slice(3,5), 16);
+        let b2 = parseInt(col.slice(5,7), 16);
+        let strokeCol = `rgb(${Math.min(255,r+brightness)},${Math.min(255,g+brightness)},${Math.min(255,b2+brightness)})`;
+        CTX.strokeStyle = strokeCol;
+        CTX.lineWidth   = Math.max(0.5, S.maxSize * 0.06 * n);
+        CTX.beginPath();
+        CTX.moveTo(lx1, y);
+        CTX.lineTo(lx2, y + (Math.random()-0.5) * step);
+        CTX.stroke();
+      }
+    }
+    CTX.restore();
+  });
+
+  // Raw edge marks — short character dashes along the tear edges
+  if (S.chars && S.chars.length) {
+    stillForms.forEach(function(form) {
+      let col = S.palette[(form.palIdx + 2) % S.palette.length];
+      let sz  = S.maxSize * 0.55;
+      form.leftEdge.forEach(function(pt, i) {
+        if (i % 2 !== 0) return;
+        let ch = pickChar(p, pt.x, pt.y, t);
+        dc(pt.x, pt.y, sz, (Math.random()-0.5)*0.8, col, ch);
+      });
+      form.rightEdge.forEach(function(pt, i) {
+        if (i % 2 !== 0) return;
+        let ch = pickChar(p, pt.x, pt.y, t);
+        dc(pt.x, pt.y, sz, (Math.random()-0.5)*0.8, col, ch);
+      });
+    });
+  }
+
+  CTX.restore();
+  _lastFill = '';
+}
+
+
+  
+// ── Scatter Clouds ─────────────────────────────────────────────────────
+
+function initScatterClouds(W, H) {
+  scatterClouds = [];
+  let count = 3 + Math.floor(S.density * 7);
+  for (let i = 0; i < count; i++) {
+    scatterClouds.push({
+      cx:     W * (0.1 + Math.random() * 0.8),
+      cy:     H * (0.1 + Math.random() * 0.8),
+      r:      Math.min(W, H) * (0.1 + Math.random() * 0.3),
+      dense:  0.3 + Math.random() * 0.6,
+      palIdx: Math.floor(Math.random() * 6),
+      phase:  Math.random() * Math.PI * 2,
+      hasRect: Math.random() < 0.4,
+      rw:     W * (0.08 + Math.random() * 0.2),
+      rh:     H * (0.06 + Math.random() * 0.15),
+    });
+  }
+}
+
+function drawScatterDots(p, t) {
+  if (!scatterClouds.length) initScatterClouds(p.width, p.height);
+
+  // Dot charset — prefer circles and dots
+  let dotChars = ['○','◌','·','•','°','˚','◦','⊙','◎','o','O','0'];
+  let userChars = S.chars && S.chars.length ? S.chars : dotChars;
+
+  scatterClouds.forEach(function(cloud) {
+    let wobX = S.wave > 0 ? Math.sin(t * 0.7 + cloud.phase) * S.wave * 0.05 : 0;
+    let wobY = S.wave > 0 ? Math.cos(t * 0.6 + cloud.phase) * S.wave * 0.04 : 0;
+    let cx = cloud.cx + wobX;
+    let cy = cloud.cy + wobY;
+
+    // Scatter dots within the cloud radius
+    let dotCount = Math.floor(cloud.r * cloud.r * 0.018 * (1 + S.density));
+    for (let di = 0; di < dotCount; di++) {
+      // Gaussian distribution around cloud center
+      let angle = Math.random() * Math.PI * 2;
+      let dist  = Math.abs(p.randomGaussian ? p.randomGaussian() * cloud.r * 0.4 : (Math.random() + Math.random() - 1) * cloud.r);
+      dist = Math.min(dist, cloud.r);
+
+      let x = cx + Math.cos(angle) * dist;
+      let y = cy + Math.sin(angle) * dist;
+
+      if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+      // Entropy: drop some dots
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.4) continue;
+
+      let n    = p.noise(x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.5);
+      let sz   = p.map(n, 0, 1, S.maxSize * 0.15, S.maxSize * 0.85);
+      let col  = S.palette[cloud.palIdx % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && n > (1 - S.accentAmt)) col = S.accent;
+      let ch   = userChars[Math.floor(n * userChars.length) % userChars.length];
+      dc(x, y, sz, 0, col, ch);
+    }
+
+    // Rectangular outline accent (like the corner elements in the reference)
+    if (cloud.hasRect) {
+      let col = S.palette[(cloud.palIdx + 1) % S.palette.length];
+      CTX.save();
+      CTX.strokeStyle = col;
+      CTX.lineWidth   = Math.max(0.5, S.maxSize * 0.04);
+      CTX.setLineDash([S.spacing * 0.8, S.spacing * 0.4]);
+      CTX.strokeRect(cx - cloud.rw * 0.5, cy - cloud.rh * 0.5, cloud.rw, cloud.rh);
+      CTX.setLineDash([]);
+      CTX.restore();
+    }
+  });
+  _lastFill = '';
+}
+
+
+  
+// ── Diagonal Fields ─────────────────────────────────────────────────────
+function drawDiagonalField(p, t) {
+  let sp   = Math.max(2, S.spacing * 0.6);
+  let sz   = Math.max(3, S.maxSize * 0.55);
+  // Diagonal angle — 45° base, turbulence modifies locally
+  let baseAngle = Math.PI * 0.25 + S.charRotRad;
+
+  for (let x = -p.height; x < p.width + p.height; x += sp) {
+    for (let y = 0; y < p.height; y += sz * 1.02) {
+      // Diagonal coordinate
+      let diagX = x + y;
+      // Multi-frequency noise for the banding pattern
+      let n1 = p.noise(diagX * S.noiseScale * 0.6, y * S.noiseScale * 0.3, t * 0.5);
+      let n2 = p.noise(diagX * S.noiseScale * 2.2 + 50, y * S.noiseScale * 1.8, t * 0.8) * 0.4;
+      let nv = (n1 + n2) / 1.4;
+
+      if (nv < S.density * 0.85) continue;
+
+      // Screen coordinates from diagonal space
+      let sx = x + Math.cos(baseAngle) * y;
+      let sy =     Math.sin(baseAngle) * y;
+      // Additional wave distortion
+      let wx = S.wave > 0 ? Math.sin(y * S.turb * 6 + t * 2) * S.wave * 0.12 : 0;
+
+      if (sx + wx < -sz || sx + wx > p.width + sz) continue;
+
+      // Local angle variation — creates the "shifting lane" look
+      let localAngle = baseAngle + p.noise(sx * S.noiseScale * 1.5, sy * S.noiseScale * 1.5, t * 0.3) * 0.6 - 0.3;
+
+      let col = pickColor(p, sx, sy, t);
+      let ch  = pickChar(p, sx + t * 30, sy, t);
+      dc(sx + wx, sy, p.map(nv, S.density * 0.85, 1, sz * 0.3, sz), localAngle, col, ch);
+    }
+  }
+}
+  
   
 // ── TYPESCALE (Maeda) ─────────────────────────────────────────────────────
 // Characters grade from enormous at top to microscopic dense texture below.
