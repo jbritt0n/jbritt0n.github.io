@@ -4999,28 +4999,26 @@ new p5(function(p){
     rsz:resize,w:function(){return W;},h:function(){return H;},p:p
   };
 
-p.setup = function() {
-  let wrap = document.getElementById('canvas-wrap');
-  W = wrap.offsetWidth; 
-  H = wrap.offsetHeight;
-  let cnv = p.createCanvas(W, H);
-  cnv.parent('canvas-wrap');
-  // Use p.drawingContext to set CTX
-  CTX = p.drawingContext;
-  CTX.textBaseline = 'middle';
-  p.noLoop();
-  p.pixelDensity(1);
-  p.noiseDetail(4, .5);
-  
-  resetAllToDefaults(); // 1. Ensure state S is populated with valid defaults
-  ri();                 // 2. Initialize the current mode (Bloom)
-  rd();                 // 3. Draw the first frame
-  // --------------------------
-
-  window.addEventListener('resize', function() {
-    if (_currentSizeMode === 'fill') resize('fill');
-  });
-};
+p.setup=function(){
+    let wrap=document.getElementById('canvas-wrap');
+    W=wrap.offsetWidth;H=wrap.offsetHeight;
+    let cnv=p.createCanvas(W,H);
+    cnv.parent('canvas-wrap');
+    CTX=p.drawingContext;
+    CTX.textBaseline='middle';
+    
+    // Manually trigger the reset to fill S with DEFAULT_STATE
+    Object.keys(DEFAULT_STATE).forEach(k => { S[k] = DEFAULT_STATE[k]; });
+    p.noLoop();
+    p.pixelDensity(1);
+    p.noiseDetail(4,.5);
+    ri(); // Init mode
+    rd(); // Draw mode
+    // -------------------
+    window.addEventListener('resize',function(){
+      if(_currentSizeMode==='fill') resize('fill');
+    });
+  };
   
 p.draw = function() {
   S.fc++;
