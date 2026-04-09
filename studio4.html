@@ -157,29 +157,63 @@ select option{background:var(--ink)}
       <button class="ab" id="btnRecordGif" title="Record a 5 second gif">Record GIF</button>    
       <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
     </div>
-    
+
+
+    <!-- Presets Section with collapsible subsections -->  
 <div class="sec" id="presetSec">
   <div class="sec-hd" onclick="toggleSec('presets')">
     <span class="sl">Presets</span>
     <span class="sec-arrow" id="arr-presets">›</span>
   </div>
   <div class="sec-body collapsed" id="body-presets">
-    
-    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('pre-char')">
-      Typographic <span class="sec-arrow" id="arr-pre-char">›</span>
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('pre-typo')">
+      Typographic <span class="sec-arrow" id="arr-pre-typo">›</span>
     </div>
-    <div class="sec-body collapsed" id="body-pre-char" style="padding:0">
+    <div class="sec-body collapsed" id="body-pre-typo" style="padding:0">
       <div class="pbar-grid">
-        <button class="pbar-btn" data-preset="machinepoetry" title="Algorithmic text output as a form of visual poetry">Machine Poetry</button>
-        <button class="pbar-btn" data-preset="monogrid_dada" title="Uniform grid of characters inspired by Dadaism">Monogrid</button>
-        <button class="pbar-btn" data-preset="maeda_mori" title="Structural text layout inspired by John Maeda">Maeda</button>
-        <button class="pbar-btn" data-preset="maeda_eyechart" title="Variable sizing resembling an optical eye chart">Eye Chart</button>
-        <button class="pbar-btn" data-preset="diagonal_dense" title="Dense, high-speed diagonal character lanes">Diagonal</button>
-        <button class="pbar-btn" data-preset="webster" title="Classic terminal-style block character layout">Webster</button>
-        <button class="pbar-btn" data-preset="stripe_rects" title="Rhythmic barcode-like rectangle and character strips">Stripe Rects</button>
+        <button class="pbar-btn" data-preset="sacred" title="Initial sacred geometry foundation">Sacred</button>
+        <button class="pbar-btn" data-preset="sacredgeo" title="Sacred geometry patterns and mandalas">Sacred Geo</button>
+        <button class="pbar-btn" data-preset="machinepoetry" title="Algorithmic text output as art">Machine Poetry</button>
+        <button class="pbar-btn" data-preset="paperink" title="Traditional ink on textured paper">Paper Ink</button>
+        <button class="pbar-btn" data-preset="ink_wash_density" title="Tonal density simulating wash techniques">Ink Wash</button>
+        <button class="pbar-btn" data-preset="monogrid_dada" title="Dadaist uniform text grid">Monogrid</button>
+        <button class="pbar-btn" data-preset="maeda_mori" title="Inspired by John Maeda — structural text">Maeda</button>
+        <button class="pbar-btn" data-preset="maeda_eyechart" title="Variable text sizing inspired by eye charts">Eye Chart</button>
+        <button class="pbar-btn" data-preset="webster" title="Blocky, structured layout">Webster</button>
+        <button class="pbar-btn" data-preset="does_not_compute" title="Terminal error and data corruption feel">Does Not Compute</button>
       </div>
     </div>
-
+    <div class="sl2" onclick="toggleSec('pre-topo')">
+      Topographic <span class="sec-arrow" id="arr-pre-topo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-topo" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="topographic" title="Complex noise-driven elevation contours">Topographic</button>
+        <button class="pbar-btn" data-preset="topo" title="Simplified topographic line map">Contour</button>
+        <button class="pbar-btn" data-preset="fingerprint" title="Bio-metric swirl patterns">Fingerprint</button>
+        <button class="pbar-btn" data-preset="liquid_crystal" title="Oily, prismatic liquid structures">Liquid Crystal</button>
+        <button class="pbar-btn" data-preset="copperetch" title="Metallic etching and fine-line hatching">Copper Etch</button>
+        <button class="pbar-btn" data-preset="volcanic_flow" title="Magmatic flow and heat patterns">Volcanic</button>
+        <button class="pbar-btn" data-preset="seisma_print" title="Seismographic data visualization">Seisma Print</button>
+        <button class="pbar-btn" data-preset="unknown_pleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
+      </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('pre-geo')">
+      Geometric <span class="sec-arrow" id="arr-pre-geo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-geo" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="tesseract4d" title="Rotating 4D hypercube projections">Tesseract 4D</button>
+        <button class="pbar-btn" data-preset="hypersphere4d" title="Projected 4D hypersphere lattice">Hypersphere</button>
+        <button class="pbar-btn" data-preset="truchet_tiles" title="Recursive quarter-circle tiling">Truchet</button>
+        <button class="pbar-btn" data-preset="stripe_rects" title="Solid and barcode rectangle patterns">Stripe Rects</button>
+        <button class="pbar-btn" data-preset="neon_grid" title="Retro-future digital grid">Neon Grid</button>
+        <button class="pbar-btn" data-preset="maze_shift" title="Shifting recursive-backtracker maze">Maze</button>
+        <button class="pbar-btn" data-preset="turing" title="Turing reaction-diffusion spots">Turing Spots</button>
+        <button class="pbar-btn" data-preset="wfc_tiles" title="Wave Function Collapse inspired tile patterns">River</button>
+        <button class="pbar-btn" data-preset="hatch" title="Plotter-style parallel line hatching">Hatches</button>
+      </div>
+    </div>
     <div class="sl2" onclick="toggleSec('pre-atmos')">
       Atmospheric <span class="sec-arrow" id="arr-pre-atmos">›</span>
     </div>
@@ -190,92 +224,33 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="midnighttokyo" title="Neon blues and magentas against dark cityscapes">Midnight Tokyo</button>
         <button class="pbar-btn" data-preset="urbannight" title="Gritty, high-contrast urban light play">Urban Night</button>
         <button class="pbar-btn" data-preset="neonjungle" title="Vibrant tropical palette with glowing edges">Neon Jungle</button>
-        <button class="pbar-btn" data-preset="bioluminescent" title="Glow-in-the-dark organic patterns">Biolum</button>
-        <button class="pbar-btn" data-preset="deepsea" title="Dark oceanic blues with bioluminescent hints">Deep Sea</button>
-        <button class="pbar-btn" data-preset="arcticbloom" title="Frosty whites and icy blues">Arctic Bloom</button>
-        <button class="pbar-btn" data-preset="desertstorm" title="Dusty oranges and browns with heavy entropy">Desert Storm</button>
+        <button class="pbar-btn" data-preset="still_red" title="Inspired by Clyfford Still — vertical color forms">Still</button>
+        <button class="pbar-btn" data-preset="bauhaus_primary" title="Classic Bauhaus shapes and colors">Bauhaus</button>
+        <button class="pbar-btn" data-preset="mondrian_shift" title="Recursive primary color subdivisions">Mondrian</button>
       </div>
     </div>
-
-    <div class="sl2" onclick="toggleSec('pre-geo')">
-      Geometric <span class="sec-arrow" id="arr-pre-geo">›</span>
+    <div class="sl2" onclick="toggleSec('pre-tech')">
+      Organic & Tech <span class="sec-arrow" id="arr-pre-tech">›</span>
     </div>
-    <div class="sec-body collapsed" id="body-pre-geo" style="padding:0">
-      <div class="pbar-grid">
-        <button class="pbar-btn" data-preset="sacred" title="Initial sacred geometry foundation">Sacred</button>
-        <button class="pbar-btn" data-preset="sacredgeo" title="Sacred geometry patterns and mandalas">Sacred Geo</button>
-        <button class="pbar-btn" data-preset="tesseract4d" title="Rotating 4D hypercube projections">Tesseract 4D</button>
-        <button class="pbar-btn" data-preset="hypersphere4d" title="Projected 4D hypersphere lattice">Hypersphere</button>
-        <button class="pbar-btn" data-preset="truchet_tiles" title="Recursive quarter-circle tiling">Truchet</button>
-        <button class="pbar-btn" data-preset="neon_grid" title="Retro-future digital grid">Neon Grid</button>
-        <button class="pbar-btn" data-preset="maze_shift" title="Shifting recursive-backtracker maze">Maze</button>
-        <button class="pbar-btn" data-preset="turing" title="Turing reaction-diffusion spots">Turing Spots</button>
-        <button class="pbar-btn" data-preset="wfc_tiles" title="Wave Function Collapse inspired tile patterns">River</button>
-        <button class="pbar-btn" data-preset="topographic" title="Complex noise-driven elevation contours">Topographic</button>
-      </div>
-    </div>
-
-    <div class="sl2" onclick="toggleSec('pre-organic')">
-      Organic <span class="sec-arrow" id="arr-pre-organic">›</span>
-    </div>
-    <div class="sec-body collapsed" id="body-pre-organic" style="padding:0">
+    <div class="sec-body collapsed" id="body-pre-tech" style="padding:0">
       <div class="pbar-grid">
         <button class="pbar-btn" data-preset="mycelium" title="Fungal growth and root-like networks">Mycelium</button>
         <button class="pbar-btn" data-preset="flock" title="Boids simulation of collective movement">Flock</button>
         <button class="pbar-btn" data-preset="worms" title="Giant desert worm-like trails">Shai Hulud</button>
-        <button class="pbar-btn" data-preset="volcanic_flow" title="Magmatic flow and heat patterns">Volcanic</button>
-        <button class="pbar-btn" data-preset="liquid_crystal" title="Oily, prismatic liquid structures">Liquid Crystal</button>
         <button class="pbar-btn" data-preset="geode_bloom" title="Organic mineral growth forms">Geode</button>
-        <button class="pbar-btn" data-preset="geode_vibrate" title="Energetic, vibrating crystal structures">Geode Vib</button>
-        <button class="pbar-btn" data-preset="fingerprint" title="Bio-metric swirl patterns">Fingerprint</button>
-        <button class="pbar-btn" data-preset="sakurarain" title="Gentle falling blossom movement">Sakura Rain</button>
-        <button class="pbar-btn" data-preset="scatter_bloom" title="Organic scattering of character points">Scatter</button>
-      </div>
-    </div>
-
-    <div class="sl2" onclick="toggleSec('pre-struct')">
-      Structural <span class="sec-arrow" id="arr-pre-struct">›</span>
-    </div>
-    <div class="sec-body collapsed" id="body-pre-struct" style="padding:0">
-      <div class="pbar-grid">
-        <button class="pbar-btn" data-preset="still_red" title="Inspired by Clyfford Still — vertical color forms">Still</button>
-        <button class="pbar-btn" data-preset="paperink" title="Traditional ink on textured paper">Paper Ink</button>
-        <button class="pbar-btn" data-preset="ink_wash_density" title="Tonal density simulating wash techniques">Ink Wash</button>
-        <button class="pbar-btn" data-preset="copperetch" title="Metallic etching and fine-line hatching">Copper Etch</button>
-        <button class="pbar-btn" data-preset="hatch" title="Plotter-style parallel line hatching">Hatches</button>
-        <button class="pbar-btn" data-preset="bauhaus_primary" title="Classic Bauhaus shapes and colors">Bauhaus</button>
-        <button class="pbar-btn" data-preset="bauhaus_dark" title="Bauhaus aesthetic on dark grounds">Bauhaus Dark</button>
-        <button class="pbar-btn" data-preset="mondrian_shift" title="Recursive primary color subdivisions">Mondrian</button>
-        <button class="pbar-btn" data-preset="unknown_pleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
-        <button class="pbar-btn" data-preset="kintsugi_breaks" title="Patterns of repaired gold pottery">Kintsugi</button>
-      </div>
-    </div>
-
-    <div class="sl2" onclick="toggleSec('pre-tech')">
-      Technical <span class="sec-arrow" id="arr-pre-tech">›</span>
-    </div>
-    <div class="sec-body collapsed" id="body-pre-tech" style="padding:0">
-      <div class="pbar-grid">
         <button class="pbar-btn" data-preset="signal" title="Raw digital signal data visualization">Signal</button>
         <button class="pbar-btn" data-preset="voidsignal" title="Empty space and sparse digital noise">Void Signal</button>
         <button class="pbar-btn" data-preset="entropy" title="High-chaos random parameter shifts">Entropy</button>
-        <button class="pbar-btn" data-preset="seisma_print" title="Seismographic data visualization">Seisma Print</button>
-        <button class="pbar-btn" data-preset="dipole" title="Magnetic field lines rendering">Dipole Field</button>
         <button class="pbar-btn" data-preset="cascade_glitch" title="Cascading rectangle glitch aesthetic">Cascade</button>
-        <button class="pbar-btn" data-preset="does_not_compute" title="Terminal error and data corruption feel">Does Not Compute</button>
-        <button class="pbar-btn" data-preset="screen_blend" title="Testing screen blending modes">Screen Blend</button>
-        <button class="pbar-btn" data-preset="painted_puppy" title="Abstract colorful character splashes">Painted Puppy</button>
-        <button class="pbar-btn" data-preset="topo" title="Simplified topographic line map">Topo</button>
       </div>
     </div>
-
   </div>
 </div>
 
 
 
     
-    
+  <!-- Mode Section -->    
     <div id="ctl">
       <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
       <div class="sec-body collapsed" id="body-mode">
