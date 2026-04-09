@@ -4987,7 +4987,8 @@ function rd() {
     function rc(preset){
     S.compPreset=preset;
     buildComp(preset,W,H);
-    recRects=[];rd();
+    recRects=[];
+    rd(); // Refresh and redraw  
   }
   
   // ── WINDOW._ST - STATE & CONTROL BRIDGE ────────────────────────────────────────────────── 
@@ -5099,16 +5100,14 @@ p.setup = function() {
   let cnv = p.createCanvas(W, H);
   cnv.parent('canvas-wrap');
   CTX = p.drawingContext;
-  CTX.textBaseline = 'middle';
-  // STEP 1: Sync the state immediately
+  // CRITICAL: Load defaults into S BEFORE doing anything else
   if (typeof S === 'undefined') window.S = {};
   Object.assign(S, DEFAULT_STATE); 
-  // STEP 2: Initialize variables that prevent black screens
-  S.fc = 0; 
-  S.playing = false; // Keep it static until user hits play
+  S.fc = 0; // Initialize frame count
+  S.playing = false; // Start static
   p.noLoop();
   p.pixelDensity(1);
-  // STEP 3: Kick off the initial draw
+  
   ri(); 
 };
   
@@ -5148,21 +5147,24 @@ p.setup = function() {
     if (S.overlayEnabled) drawOverlay(p, t);
   };
   // Event Listeners
-  ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
+['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
     let el = document.getElementById(id);
     if (el) {
       el.addEventListener('click', function(e) {
         let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
         if (!b) return;
+        
         el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
+        
         if (b.dataset.imode) S.imgMode = b.dataset.imode;
         if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
         if (b.dataset.idither) S.imgDither = b.dataset.idither;
+        
         if (window._st && window._st.rd) window._st.rd(); 
-});
-    }
-  });
+      }); // End addEventListener
+    } // End if(el)
+  }); // End forEach
 
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
