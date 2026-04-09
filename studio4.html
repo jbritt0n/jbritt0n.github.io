@@ -5094,27 +5094,26 @@ new p5(function(p){
   }
 // ── P.Setup ────────────────────────────────────────────────── 
 p.setup = function() {
-    let wrap = document.getElementById('canvas-wrap');
-    W = wrap.offsetWidth; 
-    H = wrap.offsetHeight;
-    let cnv = p.createCanvas(W, H);
-    cnv.parent('canvas-wrap');
-    CTX = p.drawingContext;
-    CTX.textBaseline = 'middle';
-    // FORCE STATE INITIALIZATION FIRST
-    if (typeof S === 'undefined') window.S = {};
-    Object.assign(S, DEFAULT_STATE); 
-    S.fc = 0; // Initialize frame counter to 0
-    p.noLoop();
-    p.pixelDensity(1);
-    // 2. NOW INITIALIZE DATA
-    ri(); 
-    
-    window.addEventListener('resize', function() {
-      if (_currentSizeMode === 'fill') resize('fill');
-    });
-  };
-
+  let wrap = document.getElementById('canvas-wrap');
+  W = wrap.offsetWidth; 
+  H = wrap.offsetHeight;
+  let cnv = p.createCanvas(W, H);
+  cnv.parent('canvas-wrap');
+  CTX = p.drawingContext;
+  CTX.textBaseline = 'middle';
+  // STEP 1: Sync the state immediately
+  if (typeof S === 'undefined') window.S = {};
+  Object.assign(S, DEFAULT_STATE); 
+  // STEP 2: Initialize variables that prevent black screens
+  S.fc = 0; 
+  S.playing = false; // Keep it static until user hits play
+  p.noLoop();
+  p.pixelDensity(1);
+  // STEP 3: Kick off the initial draw
+  ri(); 
+};
+  
+// ── P.Draw ────────────────────────────────────────────────── 
   p.draw = function() {
     if (!S.playing) return;
     S.fc++;
