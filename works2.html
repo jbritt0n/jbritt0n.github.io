@@ -29,22 +29,38 @@
     -o-user-drag: none;
   }
 
-  /* Watermark Overlay for Lightbox */
-  .lb-image {
+  /* Watermark Overlay for Lightbox Image ONLY */
+  .lb-inner img {
+    max-height: 70vh;
+    width: auto;
+    max-width: 100%;
+    display: block;
     position: relative;
-    display: inline-block;
+    z-index: 1; /* Ensure image is below the watermark */
   }
-  .lb-image::after {
+
+  /* Target a wrapper specific to the real image */
+  .lb-image-wrapper {
+    position: relative;
+    display: inline-block; /* Crucial: Makes wrapper exact size of image */
+    line-height: 0; /* Prevents slight gaps below image */
+  }
+
+  .lb-image-wrapper::after {
     content: "© Jonathan Britton";
     position: absolute;
-    bottom: 20px;
-    right: 20px;
+    bottom: 12px;
+    right: 12px;
     font-family: 'Jost', sans-serif;
     font-size: 0.7rem;
     letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.4);
-    pointer-events: none; /* Allows clicks to pass through to the image */
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none; /* Allows clicks to pass through */
     text-transform: uppercase;
+    z-index: 2; /* Ensure watermark is on top */
+    background: rgba(8, 7, 6, 0.4); /* Subtly darker background for contrast */
+    padding: 3px 6px;
+    border-radius: 2px;
   }
 
   /* Empty section */
@@ -135,9 +151,8 @@
 </footer>
 
 <script>
-// Logic remains unchanged as requested
+  
 const WORKS = {
-  // ... [WORKS DATA AS PROVIDED] ...
   painting: {
     label: 'Oil & Acrylic',
     note: 'Works principally executed with oil or acrylic paint',
@@ -375,8 +390,10 @@ function openLb(idx) {
   if (!item) return;
   var w = item.work, g = item.group, def = WORKS[g];
   var isStudies = !!def.isStudies;
+
+  // Modified: Real images get wrapped in a div that CSS targets for the watermark
   var visual = w.img
-    ? `<img src="${w.img}" alt="${w.title}" style="max-height:70vh;width:auto;max-width:100%;display:block;">`
+    ? `<div class="lb-image-wrapper"><img src="${w.img}" alt="${w.title}"></div>`
     : mkSvg(g, isStudies?'':(w.aspect||''), idx);
 
   var inquireHref = w.available ? 'contact.html?painting='+encodeURIComponent(w.title) : null;
