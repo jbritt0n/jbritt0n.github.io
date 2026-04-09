@@ -4948,7 +4948,7 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
 
-const presetSubSecs = ['pre-atmos', 'pre-geo', 'pre-organic', 'pre-struct', 'pre-tech', 'pre-misc'];
+const presetSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech'];
 document.getElementById('btnCollapseAll').addEventListener('click', function() {
   ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...presetSubSecs].forEach(function(id) {
     let body = document.getElementById('body-' + id);
