@@ -1823,23 +1823,22 @@ function buildComp(preset,W,H){
 
 // ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
-  // Apply the global blend mode
-  if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
+  function drawBloom(p, t) {
   let sp = S.spacing || 12;
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
-      // 1. Get noise value using your new mapping logic
+      // Get value from your new Color Mapping logic
       let n = getColorIndex(p, x, y, t);
-      // 2. The Original Density Filter (restored)
+      // ORIGINAL LOOK: The Density filter
       if (n < S.density) continue;
-      // 3. Original Rotation logic, now influenced by Entropy
+      // ORIGINAL LOOK: Rotation influenced by Entropy slider
       let a = p.noise(x * S.noiseScale * 0.5, y * S.noiseScale * 0.5, t * 0.5) * 6.28 * 4;
-      if (S.entropy > 0) a *= S.entropy;
-      // 4. New Color Mapping: Get color from palette based on the noise value
+      if (S.entropy > 0) a *= (1 + S.entropy);
+      // COLOR MAPPING: Pick color based on noise value 'n'
       let col = S.palette[Math.floor(n * S.palette.length)] || S.palette[0];
-      // 5. Original Dynamic Sizing logic
+      // SIZE: Map noise to size range
       let sz = p.map(n, S.density, 1, 2, S.maxSize);
-      // 6. Character Selection from your current set
+      // CHARACTER: Selection from your current set
       let ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
       dc(x, y, sz, a, col, ch);
     }
@@ -4942,114 +4941,94 @@ new p5(function(p){
     CTX=p.drawingContext;
     ri();rd();
   }
-  function ri(){
-    initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
-    recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
-    sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];bauhausShapes=[];
-    cascadeRects=[];scatterClouds=[];stillForms=[];
-    wtHeightmap=null;fsPolygons=[];_driftMap.clear();
-    boidAgents=[];magneticPoles=[];
+  
+ function ri() {
+    if (!p) return;
+    // Seeds ensure noise is different every time you click "Regen" or a Preset
+    p.noiseSeed(Math.random() * 99999);
+    p.randomSeed(Math.random() * 99999);
+    // existing initializers
+    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
+    initLoops(W,H); initStripedRects(W,H);
+    // Clear all particle/grid arrays
+    recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
+    mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
+    lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[];
+    cascadeRects=[]; scatterClouds=[]; stillForms=[];
+    wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
+    boidAgents=[]; magneticPoles=[];
+    // New specific mode initializers if they exist
+    if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
+    rd(); // Always call rd after resetting
   }
-  function rd(){p.redraw();}
+  
+  function rd() {
+    if (!p || !p.width) return;
+    // Clear canvas
+    CTX.globalCompositeOperation = 'source-over';
+    CTX.fillStyle = S.bg;
+    CTX.fillRect(0, 0, W, H);
+    let t = p.frameCount * (S.speed || 0.004);
+    // Call the master router
+    drawScene(p, t);
+    // Draw additive layers (Shapes / Overlays)
+    if (S.shapesEnabled) drawShapes(p, t);
+    if (S.overlayEnabled) drawOverlay(p, t);
+  }
+  
   function rc(preset){
     S.compPreset=preset;
     buildComp(preset,W,H);
     recRects=[];rd();
   }
-  window._st={
-    rd:rd,ri:ri,rc:rc,
-    play:function() {
-  S.playing = !S.playing;
-  if (S.playing) {
-    p.loop();
-    p.redraw();   // forces an immediate frame
-  } else {
-    p.noLoop();
-  }
-  return S.playing;
-},
-    regen:function(){ri();rd();},
-    save:function(){
+  
+ // ── STATE & CONTROL BRIDGE ──────────────────────────────────────────────────
+  window._st = {
+    rd: rd, // Points to the robust redraw function above
+    ri: ri, // Points to the robust init function above
+    rc: rc, // Preserves your existing rc function
+    
+    play: function() {
+      S.playing = !S.playing;
+      if (S.playing) {
+        p.loop();
+        p.redraw(); // Force immediate frame on resume
+      } else {
+        p.noLoop();
+      }
+      return S.playing;
+    },
+    regen: function() {
+      ri(); // Calls our new init
+      rd(); // Calls our new redraw
+    },
+    
+    save: function() {
       // ── WATERMARK ─────────────────────────────────────────────────────────────
-      // To remove the watermark, delete or comment out the block between the
-      // START WATERMARK and END WATERMARK comments below.
-      // ── START WATERMARK ───────────────────────────────────────────────────────
       CTX.save();
-      CTX.font='bold 11px Jost,sans-serif';
-      CTX.fillStyle='rgba(200,188,176,0.55)';
-      CTX.textBaseline='bottom';
-      let wm='jonathanbrittonart.com/studio';
-      let wmW=CTX.measureText(wm).width;
-      CTX.fillText(wm,W-wmW-10,H-8);
+      CTX.font = 'bold 11px Jost,sans-serif';
+      CTX.fillStyle = 'rgba(200,188,176,0.55)';
+      CTX.textBaseline = 'bottom';
+      let wm = 'jonathanbrittonart.com/studio';
+      let wmW = CTX.measureText(wm).width;
+      CTX.fillText(wm, W - wmW - 10, H - 8);
       CTX.restore();
       // ── END WATERMARK ─────────────────────────────────────────────────────────
-      p.saveCanvas('studio-'+Date.now(),'png');
+
+      p.saveCanvas('studio-' + Date.now(), 'png');
       showToast('Saved PNG');
     },
-    rsz:resize,w:function(){return W;},h:function(){return H;},p:p
+    rsz: resize,
+    w: function() { return W; },
+    h: function() { return H; },
+    p: p
   };
 
-p.setup = function() {
-  let wrap = document.getElementById('canvas-wrap');
-  W = wrap.offsetWidth; 
-  H = wrap.offsetHeight;
-  let cnv = p.createCanvas(W, H);
-  cnv.parent('canvas-wrap');
-  CTX = p.drawingContext;
-  CTX.textBaseline = 'middle';
-  Object.assign(S, DEFAULT_STATE); 
-  p.noLoop();
-  p.pixelDensity(1);
-  p.noiseDetail(4, .5);
-  ri(); // Now S has data, so ri() can initialize correctly
-  rd(); // Now rd() can draw without NaN errors
-  window.addEventListener('resize', function() {
-    if (_currentSizeMode === 'fill') resize('fill');
-  });
-};
-
-  
-p.draw = function() {
-  S.fc++;
-
-  // Ensure CTX is defined (fallback to p5 drawingContext)
-  if (!CTX) CTX = p.drawingContext;
-  if (!CTX) return;  // safety: exit if still null
-  let t = S.fc * (S.speed || 0.01);
-
-  // FPS display
-  let now = performance.now();
-  _frameCount++;
-  if (now - _fpsTimer > 1000) {
-    _fps = _frameCount;
-    _frameCount = 0;
-    _fpsTimer = now;
-    let fpsLabel = document.getElementById('fpsLabel');
-    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
-  }
-
-// Clear canvas with solid color (no save/restore needed)
-CTX.globalCompositeOperation = 'source-over';
-CTX.globalAlpha = 1;
-CTX.fillStyle = S.bg;
-CTX.fillRect(0, 0, W, H);
-  
-  CTX.textBaseline = 'middle';
-  CTX.globalCompositeOperation = S.blendMode || 'source-over';
-
-  // Signal collapse effect
-  if (S.signalCollapse) {
-    let elapsed = S.fc - S.signalStart;
-    if (elapsed < 80) {
-      let scanY = p.map(elapsed, 0, 80, 0, H);
-      CTX.fillStyle = 'rgba(230,57,70,.12)';
-      CTX.fillRect(0, scanY - 2, W, 4);
-    }
-  }
-
-  // Draw current mode
-  switch (S.mode) {
+// ── drawScene master switch case ──────────────────────────────────────────────────
+  function drawScene(p, t) {
+    if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
+    switch (S.mode) {
     case 'bloom': drawBloom(p, t); break;
     case 'wave': drawWave(p, t); break;
     case 'rain1': drawRain1(p, t); break;
@@ -5112,7 +5091,70 @@ CTX.fillRect(0, 0, W, H);
     case 'diagonalfield':  drawDiagonalField(p, t);   break;
     case 'scatterdots':    drawScatterDots(p, t);     break;
     case 'clyffordstill':  drawClyffordStill(p, t);   break;  
+    }
   }
+
+ // ── P.Setup ────────────────────────────────────────────────── 
+
+p.setup = function() {
+  let wrap = document.getElementById('canvas-wrap');
+  W = wrap.offsetWidth; 
+  H = wrap.offsetHeight;
+  let cnv = p.createCanvas(W, H);
+  cnv.parent('canvas-wrap');
+  CTX = p.drawingContext;
+  CTX.textBaseline = 'middle';
+  Object.assign(S, DEFAULT_STATE); 
+  p.noLoop();
+  p.pixelDensity(1);
+  p.noiseDetail(4, .5);
+  ri(); // Now S has data, so ri() can initialize correctly
+  rd(); // Now rd() can draw without NaN errors
+  window.addEventListener('resize', function() {
+    if (_currentSizeMode === 'fill') resize('fill');
+  });
+};
+
+  
+p.draw = function() {
+  S.fc++;
+
+  // Ensure CTX is defined (fallback to p5 drawingContext)
+  if (!CTX) CTX = p.drawingContext;
+  if (!CTX) return;  // safety: exit if still null
+  let t = S.fc * (S.speed || 0.01);
+
+  // FPS display
+  let now = performance.now();
+  _frameCount++;
+  if (now - _fpsTimer > 1000) {
+    _fps = _frameCount;
+    _frameCount = 0;
+    _fpsTimer = now;
+    let fpsLabel = document.getElementById('fpsLabel');
+    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
+  }
+
+// Clear canvas with solid color (no save/restore needed)
+CTX.globalCompositeOperation = 'source-over';
+CTX.globalAlpha = 1;
+CTX.fillStyle = S.bg;
+CTX.fillRect(0, 0, W, H);
+  
+  CTX.textBaseline = 'middle';
+  CTX.globalCompositeOperation = S.blendMode || 'source-over';
+
+  // Signal collapse effect
+  if (S.signalCollapse) {
+    let elapsed = S.fc - S.signalStart;
+    if (elapsed < 80) {
+      let scanY = p.map(elapsed, 0, 80, 0, H);
+      CTX.fillStyle = 'rgba(230,57,70,.12)';
+      CTX.fillRect(0, scanY - 2, W, 4);
+    }
+  }
+
+
 
   CTX.globalCompositeOperation = 'source-over';
   drawShapes(p, t);
@@ -6202,29 +6244,20 @@ const CHAOS_PARAMS=[
   function(){let sl=document.getElementById('sMaxSize');let v=4+Math.floor(Math.random()*39)*2;sl.value=v;S.maxSize=v;document.getElementById('vMaxSize').textContent=v;},
   function(){let sl=document.getElementById('sEntropy');let v=Math.floor(Math.random()*50/2)*2;sl.value=v;S.entropy=v/100;document.getElementById('vEntropy').textContent=v;},
   function(){let sl=document.getElementById('sNoise');let v=1+Math.floor(Math.random()*20);sl.value=v;S.noiseScale=v*.002;document.getElementById('vNoise').textContent=v;},
+  // Chaos: Color Mapping Strategy
+  function(){const maps = ['noise','radial','axial','stepped','diamond','scan'];const m = maps[Math.floor(Math.random()*maps.length)];S.colorMapMode = m;document.querySelectorAll('#mapGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.map === m);});},
+  // Chaos: Noise Texture Type
+  function(){const types = ['perlin','ridged','billow'];const t = types[Math.floor(Math.random()*types.length)];S.noiseType = t;document.querySelectorAll('#noiseTypeGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.ntype === t);});},
+  // Chaos: Blending Mode
+  function(){const sel = document.getElementById('blendSelect');if(!sel) return;const opts = sel.options;const idx = Math.floor(Math.random() * opts.length);sel.selectedIndex = idx;S.blendMode = opts[idx].value;},
   function(){let sl=document.getElementById('sTrail');let v=Math.floor(Math.random()*20)*5;sl.value=v;S.trailPersist=v;document.getElementById('vTrail').textContent=v;},
-  function(){
-    let pkeys=Object.keys(PALETTES);
-    let pk=pkeys[Math.floor(Math.random()*pkeys.length)];
-    S.palette=PALETTES[pk];
-    document.querySelectorAll('.pb').forEach(function(b){b.classList.toggle('active',b.dataset.pal===pk);});
-  },
-  function(){
-    let modes=['bloom','wave','vortex','ripple','drift','tess','warp','glitch','matrix','orbit','spiral','scan','halftone','shatter','weave','topo','contour','fabric','loops','topolines','pipes','reaction','voronoi','mycelium','sand','cellular','interference','calligraphy','lissajous','wireterrain','fractalsubdiv'];
-    let m=modes[Math.floor(Math.random()*modes.length)];
-    S.mode=m;
-    document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
-    let mb=document.querySelector('[data-mode="'+m+'"]');
-    if(mb){mb.classList.add('active');document.getElementById('modeLabel').textContent=mb.textContent.replace('❆','').trim();}
-    window._st.ri();
-  },
-  function(){
-    let ckeys=Object.keys(CHARSETS);
-    let ck=ckeys[Math.floor(Math.random()*ckeys.length)];
-    S.chars=CHARSETS[ck];RAND_UNICODE_MODE=null;
-    document.querySelectorAll('#charsetGrid .cb').forEach(function(b){b.classList.toggle('active',b.dataset.cs===ck);});
-  },
+  function(){let pkeys=Object.keys(PALETTES);let pk=pkeys[Math.floor(Math.random()*pkeys.length)];S.palette=PALETTES[pk];document.querySelectorAll('.pb').forEach(function(b){b.classList.toggle('active',b.dataset.pal===pk);});},
+  function(){let modes=['bloom','wave','vortex','ripple','drift','tess','warp','glitch','matrix','orbit','spiral','scan','halftone','shatter','weave','topo','contour','fabric','loops','topolines','pipes','reaction','voronoi','mycelium','sand','cellular','interference','calligraphy','lissajous','wireterrain','fractalsubdiv'];
+    let m=modes[Math.floor(Math.random()*modes.length)];S.mode=m;document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});let mb=document.querySelector('[data-mode="'+m+'"]');if(mb){mb.classList.add('active');document.getElementById('modeLabel').textContent=mb.textContent.replace('❆','').trim();}
+    window._st.ri();},
+  function(){let ckeys=Object.keys(CHARSETS);let ck=ckeys[Math.floor(Math.random()*ckeys.length)];S.chars=CHARSETS[ck];RAND_UNICODE_MODE=null;document.querySelectorAll('#charsetGrid .cb').forEach(function(b){b.classList.toggle('active',b.dataset.cs===ck);});},
 ];
+  
 function chaosStep(){
   let fn=CHAOS_PARAMS[Math.floor(Math.random()*CHAOS_PARAMS.length)];
   fn();
