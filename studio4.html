@@ -4927,6 +4927,35 @@ function drawOverlay(p, t) {
   CTX.globalAlpha = 1;
 }
 
+// ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
+const DEFAULT_STATE={
+  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
+  accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
+  bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
+  spacing:12,maxSize:20,
+  colorMapMode:'noise',
+  noiseType:'perlin',
+  blendMode:'source-over',
+  noiseScale:0.01,
+  charRotation:0,
+  entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
+  fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
+  trailPersist:0,
+  compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
+  imgStretch:false,imgInvert:false,
+  overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
+  overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
+  overlayEntropy:0,overlayDistort:0,
+  shapesEnabled:false,shapeDens:6,selectedShape:'circle',
+  shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
+  shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
+  shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
+  shapePosition:'center',shapeSides:7,shapeText:'',
+  signalCollapse:false,signalStart:0,
+  playing:false,fc:0,
+};
+
+  
 // ── P5 SKETCH ─────────────────────────────────────────────────────────────────
 let _currentSizeMode='fill';
 let _customW=800,_customH=800;
@@ -4971,7 +5000,7 @@ new p5(function(p){
   }
   // ── Function Rd - redraw ─────────────────────────────────────────────────────────────────
 function rd() {
-  if (!p || !p.width) return;
+  if (!p) return;
   CTX.globalCompositeOperation = 'source-over';
   CTX.fillStyle = S.bg || '#0d0c0a';
   CTX.fillRect(0, 0, W, H);
@@ -6109,34 +6138,8 @@ document.getElementById('btnUpdateStream').addEventListener('click', function() 
 
 
   
-// ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
-const DEFAULT_STATE={
-  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
-  accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
-  bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
-  spacing:12,maxSize:20,
-  colorMapMode:'noise',
-  noiseType:'perlin',
-  blendMode:'source-over',
-  noiseScale:0.01,
-  charRotation:0,
-  entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
-  fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
-  trailPersist:0,
-  compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
-  imgStretch:false,imgInvert:false,
-  overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
-  overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
-  overlayEntropy:0,overlayDistort:0,
-  shapesEnabled:false,shapeDens:6,selectedShape:'circle',
-  shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
-  shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
-  shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
-  shapePosition:'center',shapeSides:7,shapeText:'',
-  signalCollapse:false,signalStart:0,
-  playing:false,fc:0,
-};
 
+// ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
 function resetAllToDefaults(){
   // Copy default values into S
   Object.keys(DEFAULT_STATE).forEach(function(k){S[k]=DEFAULT_STATE[k];});
