@@ -21,7 +21,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 #app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
 #canvas-wrap{position: relative;width: 100%;height: 100%;position:relative;overflow:hidden;background:var(--ink)}
 #canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
-#panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+#panel {background: var(--dark);border-left: 1px solid var(--stone);display: flex;flex-direction: column;height: 100vh;overflow: hidden;}
 .ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
 .pt{font-family:'EB Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--cream);margin-bottom:.12rem}
 .ps{font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
@@ -37,7 +37,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .pbar-grid{display:flex;flex-wrap:wrap;gap:3px}
 .pbar-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .45rem;cursor:pointer;transition:all .18s;white-space:nowrap}
 .pbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
-#ctl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;max-height: 100%;}
+#ctl {flex: 1;min-height: 0;overflow-y: auto;-webkit-overflow-scrolling: touch;padding: 0;}
 #ctl::-webkit-scrollbar{width:3px}
 #ctl::-webkit-scrollbar-thumb{background:var(--stone)}
 .sec{border-bottom:1px solid var(--stone)}
@@ -118,7 +118,7 @@ select option{background:var(--ink)}
 @media(max-width:1024px){:root{--panel-w:268px}}
 @media(max-width:768px){
   html,body{height:100%;overflow:hidden}
-  #app{display:flex;flex-direction:column;height:100%;height:100dvh;height:100vh;max-height:100dvh;overflow:hidden;}
+  #app {display: grid;grid-template-columns: 1fr var(--panel-w);height: 100vh;max-height: 100vh;overflow: hidden;}
   #canvas-wrap{flex:0 0 42vh;min-height:150px}
   #panel{flex:1;min-height:0;height:100%;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
   #panelBtn{display:block}
