@@ -6283,15 +6283,16 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
 });
 
 // Collapse all sections on initial load
-['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets', 
- 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
- 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'
+[
+  'mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets',
+  'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
+  'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'
 ].forEach(function(id){
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
-  if(body) {
+  if (body) {
     body.classList.add('collapsed');
-    if(arrow) arrow.classList.remove('open');
+    if (arrow) arrow.classList.remove('open');
   }
 });
   
