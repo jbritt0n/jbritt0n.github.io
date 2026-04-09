@@ -6282,7 +6282,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   }
 });
 
-// Collapse all sections (Main and Sub-sections) on initial load
+// Collapse all sections on initial load
 [
   'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
@@ -6293,9 +6293,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   let arrow = document.getElementById('arr-' + id);
   if (body) {
     body.classList.add('collapsed');
-  }
-  if (arrow) {
-    arrow.classList.remove('open');
+    if (arrow) arrow.classList.remove('open');
   }
 });
   
