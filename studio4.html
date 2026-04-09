@@ -1289,8 +1289,10 @@ let S={
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
+  blendMode: 'source-over',
   colorMapMode: 'noise', // Default mode
   noiseScale: 0.005,      // Controls the "mottled" cloud size
+  noiseType: 'perlin',
   trailPersist:0,
   compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
   imgStretch:false,imgInvert:false,
@@ -1306,7 +1308,6 @@ let S={
   shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
   shapePosition:'center',shapeSides:7,shapeText:'',
   signalCollapse:false,signalStart:0,
-  blendMode:'source-over',
   imgMode: 'chars',
   imgColorMode: 'tonal',
   imgDither: 'none',
@@ -1830,16 +1831,30 @@ function buildComp(preset,W,H){
 }
 
 // ── ORIGINAL ANIMATION MODES ──────────────────────────────────────────────────
-function drawBloom(p,t){
-  let sp=S.spacing;
-  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let a=p.noise(x*S.noiseScale*.5,y*S.noiseScale*.5,t*.5)*6.28*4;
-    let r=pcc(p,x,y,t);
-    dc(x,y,p.map(n,S.density,1,2,S.maxSize),a,r.col,r.ch);
+function drawBloom(p, t) {
+  // Set the global blend mode for the entire frame
+  if (CTX) CTX.globalCompositeOperation = S.blendMode;
+  let density = p.map(S.density, 0, 1, 10, 50);
+  let step = p.width / density;
+  for (let x = 0; x <= p.width; x += step) {
+    for (let y = 0; y <= p.height; y += step) {
+      // 1. Get Color based on our new Mapping Logic
+      let ci = getColorIndex(x, y, t);
+      let col = S.palette[Math.floor(ci * S.palette.length)];
+      // Calculate dynamic size based on entropy and motion
+      let sizeBase = p.map(S.size, 0, 1, 5, 100);
+      let pulse = Math.sin(t * 0.02 + (x + y) * 0.01) * (S.motion * 20);
+      let sz = sizeBase + pulse;
+      // Calculate dynamic rotation
+      let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * S.entropy;
+      // Select character (handles Particle Mode or Text)
+      let ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
+      // Render using the global dc function
+      dc(x, y, sz, angle, col, ch);
+    }
   }
 }
+  
 function drawWave(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
@@ -6073,7 +6088,12 @@ const DEFAULT_STATE={
   mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
   accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
-  spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
+  spacing:12,maxSize:20,
+  colorMapMode:'noise',
+  noiseType:'perlin',
+  blendMode:'source-over',
+  noiseScale:0.01,
+  charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
   trailPersist:0,
