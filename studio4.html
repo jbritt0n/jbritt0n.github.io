@@ -1381,10 +1381,12 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
 
 // --- COLOR MAPPING & NOISE TYPE
+// Corrected getColorIndex function
 function getColorIndex(p, x, y, t) {
-  let nx = x * S.noiseScale;
+  // Fix: Use S.noiseScale instead of 'ns'
+  let nx = x * S.noiseScale; 
   let ny = y * S.noiseScale;
-  let W = window.innerWidth, H = window.innerHeight;
+  let W = p.width, H = p.height; // Use p.width/height for accuracy
   let val = 0;
   switch(S.colorMapMode) {
     case 'radial':
@@ -1400,14 +1402,15 @@ function getColorIndex(p, x, y, t) {
       val = (Math.abs(W/2 - x) / (W/2) + Math.abs(H/2 - y) / (H/2)) % 1.0;
       break;
     case 'stepped':
-      // Use p.noise here
+      // Fix: Ensure p.noise is used and referenced correctly
       let r = p.noise(nx, ny, t * 0.01); 
       val = Math.floor(r * 5) / 5;
       break;
     default: 
-      // Use p.noise here (This was line 1408)
+      // Fix: Use S.noiseScale here as well (via nx, ny)
       val = p.noise(nx, ny, t * 0.01);
   }
+  // Handle Noise Types (Ridged / Billow)
   if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
     if (S.noiseType === 'ridged') {
       val = 1.0 - Math.abs(val * 2 - 1);
