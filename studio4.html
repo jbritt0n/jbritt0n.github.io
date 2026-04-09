@@ -1844,7 +1844,7 @@ function drawBloom(p, t) {
       let ci = getColorIndex(p, x, y, t);
       let col = S.palette[Math.floor(ci * S.palette.length)] || S.palette[0];
       // FIX: Use S.maxSize (from DEFAULT_STATE) instead of S.size
-      let sizeBase = p.map(S.maxSize || 20, 0, 100, 5, 100); 
+      let sizeBase = p.map(S.maxSize || 20, 0, 100, 5, 100);
       // Calculate dynamic rotation using p.noise
       let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * (S.entropy || 0);
       // Select character using p.noise
