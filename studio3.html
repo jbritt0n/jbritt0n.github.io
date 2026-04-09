@@ -208,6 +208,10 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="maze_shift">Maze</button>
         <button class="pbar-btn" data-preset="unknown_pleasures">Unknown Pleasures</button>
         <button class="pbar-btn" data-preset="mondrian_shift">Mondrian</button>
+        <button class="pbar-btn" data-preset="painted_puppy">Painted Puppy</button>
+        <button class="pbar-btn" data-preset="geode_bloom">Geode</button>
+        <button class="pbar-btn" data-preset="maeda_mori">Maeda</button>
+        <button class="pbar-btn" data-preset="monogrid_dada">Monogrid</button>
     </div>
   </div>
 </div>
@@ -257,6 +261,10 @@ select option{background:var(--ink)}
           <button class="mb new-mode" data-mode="unknownpleasures" title="Joy Division Unknown Pleasures — stacked noise peaks">Unknown Pleasures</button>
           <button class="mb new-mode" data-mode="mondrian"         title="Mondrian — recursive subdivision with primary color fills">Mondrian</button>
           <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
+          <button class="mb new-mode" data-mode="brushcontour" title="Rotsztain — contour levels drawn as rotated brushstroke rectangles">Brush Contour</button>
+          <button class="mb new-mode" data-mode="geode"        title="Lars Wander — rotated tiles scatter into an organic blob">Geode</button>
+          <button class="mb new-mode" data-mode="typescale"    title="Maeda — characters grade from enormous at top to microscopic below">Typescale</button>
+          <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
@@ -1117,6 +1125,8 @@ let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[];
 let shapes=[];
 let recRects=[];
 let loopParticles=[];
+let geodeTiles = [];
+let monogridBlocks = [];  
 let topoSegs=[];
 // Maze
 let mazeGrid = null, mazeCols = 0, mazeRows = 0;
@@ -3231,6 +3241,197 @@ function drawHypersphere(p,t){
   _lastFont='';_lastFill='';
 }
 
+// ── BRUSH CONTOUR (Rotsztain) ─────────────────────────────────────────────
+// Noise iso-contours drawn as small rotated rectangular brushstrokes.
+// Each contour level gets a palette color. Density controls band width,
+// Spacing controls stroke resolution, Max Size controls stroke thickness.
+
+function drawBrushContour(p, t) {
+  let ns      = S.noiseScale;
+  let levels  = 6 + Math.floor(S.density * 14);
+  let step    = Math.max(2, S.spacing * 0.55);
+  let bandW   = 0.06 + S.wave * 0.0012;   // contour band width
+  let dashLen = step * 2.2;
+  let dashH   = Math.max(1, S.maxSize * 0.13);
+
+  for (let x = 0; x < p.width; x += step) {
+    for (let y = 0; y < p.height; y += step) {
+      let n     = p.noise(x * ns, y * ns, t * 0.12);
+      let level = n * levels;
+      let frac  = level - Math.floor(level);
+      // Skip points not near a contour threshold
+      if (frac > bandW && frac < 1 - bandW) continue;
+      // Contour direction = perpendicular to noise gradient
+      let gx    = p.noise((x + 1) * ns, y * ns,       t * 0.12)
+                - p.noise((x - 1) * ns, y * ns,       t * 0.12);
+      let gy    = p.noise(x * ns,       (y + 1) * ns, t * 0.12)
+                - p.noise(x * ns,       (y - 1) * ns, t * 0.12);
+      let angle = Math.atan2(gy, gx) + Math.PI * 0.5 + S.charRotRad;
+      // Color by contour level
+      let li  = Math.floor(n * levels);
+      let col = S.palette[li % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && n > (1 - S.accentAmt)) col = S.accent;
+      if (S.accent2 !== 'none' && S.accentAmt2 > 0 && n < S.accentAmt2)    col = S.accent2;
+      // Entropy: scatter angle and size
+      let dLen = dashLen * (0.5 + Math.random() * 1.1);
+      let dH   = dashH   * (0.4 + Math.random() * 1.3);
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.5) angle += (Math.random() - 0.5) * 1.5;
+
+      CTX.save();
+      CTX.translate(x, y);
+      CTX.rotate(angle);
+      CTX.fillStyle = col;
+      CTX.fillRect(-dLen * 0.5, -dH * 0.5, dLen, dH);
+      CTX.restore();
+    }
+  }
+  _lastFill = '';
+}
+
+
+// ── GEODE (Lars Wander) ───────────────────────────────────────────────────
+// Small rotated tiles scatter into a noise-defined organic blob.
+// Each tile's color comes from palette; blob boundary breathes with time.
+// Spacing = tile size, Density = blob fill threshold, Wave = blob animation.
+
+function initGeode(W, H) {
+  geodeTiles = [];
+  let step = Math.max(4, S.spacing);
+  let cx = W * 0.5, cy = H * 0.5;
+  for (let x = step * 0.5; x < W; x += step) {
+    for (let y = step * 0.5; y < H; y += step) {
+      let dx = (x - cx) / (W * 0.42);
+      let dy = (y - cy) / (H * 0.42);
+      geodeTiles.push({
+        x, y,
+        dist: Math.sqrt(dx * dx + dy * dy),
+        rot:  (Math.random() - 0.5) * 0.7,
+        rotV: (Math.random() - 0.5) * 0.002,   // slow spin velocity
+        tw:   step * (0.45 + Math.random() * 0.65),
+        th:   step * (0.45 + Math.random() * 0.9),
+        palIdx: Math.floor(Math.random() * 6),
+        rand:   Math.random(),
+        nx:   x * 0.004,   // noise coords cached
+        ny:   y * 0.004,
+      });
+    }
+  }
+}
+function drawGeode(p, t) {
+  if (!geodeTiles.length) initGeode(p.width, p.height);
+  geodeTiles.forEach(function(tile) {
+    // Blob boundary: base radius + noise perturbation + wave breathing
+    let blobN  = p.noise(tile.nx, tile.ny, t * 0.25);
+    let radius = 0.5 + blobN * 0.4 + S.wave * 0.003;
+    if (tile.dist > radius) return;
+    // Soft alpha falloff at edge
+    let alpha = Math.min(1, (radius - tile.dist) * 9) * 0.88;
+    if (alpha < 0.04) return;
+    // Slow tile rotation when playing
+    if (S.playing) tile.rot += tile.rotV * S.speed * 60;
+    let col = S.palette[tile.palIdx % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0 && tile.rand < S.accentAmt * 0.4) col = S.accent;
+    CTX.save();
+    CTX.globalAlpha = alpha;
+    CTX.translate(tile.x, tile.y);
+    CTX.rotate(tile.rot);
+    CTX.fillStyle = col;
+    CTX.fillRect(-tile.tw * 0.5, -tile.th * 0.5, tile.tw, tile.th);
+    CTX.restore();
+  });
+  CTX.globalAlpha = 1;
+  _lastFill = '';
+}
+
+
+// ── TYPESCALE (Maeda) ─────────────────────────────────────────────────────
+// Characters grade from enormous at top to microscopic dense texture below.
+// Max Size = largest character, Spacing = compression of the gradient,
+// Wave = adds horizontal ripple to the size gradient.
+
+function drawTypescale(p, t) {
+  let y       = 0;
+  let rowIdx  = 0;
+  let maxSz   = S.maxSize * 3.5;
+  let minSz   = 1.5;
+  while (y < p.height + maxSz) {
+    let progress = Math.min(1, y / (p.height * (0.55 + S.spacing * 0.012)));
+    // Ease-in curve so big chars fill top, compression accelerates downward
+    let eased = progress * progress;
+    let rowSz = p.map(eased, 0, 1, maxSz, minSz);
+    // Wave creates left-right size ripple per row
+    let waveOff = S.wave > 0 ? Math.sin(rowIdx * 0.18 + t * 1.2) * S.wave * 0.015 : 0;
+    rowSz = Math.max(minSz, rowSz * (1 + waveOff));
+    let x      = 0;
+    let colIdx = 0;
+    while (x < p.width + rowSz) {
+      let col = pickColor(p, x, y, t);
+      let ch  = pickChar(p, x + rowIdx * 7, y, t);
+      // Entropy: random size spikes
+      let sz = S.entropy > 0 && Math.random() < S.entropy * 0.06
+        ? rowSz * (1 + Math.random() * 2)
+        : rowSz;
+
+      dc(x, y, sz, 0, col, ch);
+      x += Math.max(1, sz * 0.62 + S.spacing * 0.05 * (1 - progress));
+      colIdx++;
+    }
+
+    y      += Math.max(1, rowSz * 0.88);
+    rowIdx ++;
+  }
+}
+
+// ── MONOGRID (Asendorf) ───────────────────────────────────────────────────
+// Uniform repeating-text grid fills the canvas, then opaque palette-colored
+// rectangles are overlaid at various positions and scales.
+// Spacing = text cell size, Max Size = rect scale, Wave = rect drift speed.
+function initMonogrid(W, H) {
+  monogridBlocks = [];
+  let count = 3 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    monogridBlocks.push({
+      x:      Math.random() * W * 0.55,
+      y:      Math.random() * H * 0.55,
+      w:      W * (0.15 + Math.random() * 0.55),
+      h:      H * (0.12 + Math.random() * 0.45),
+      palIdx: Math.floor(Math.random() * 6),
+      alpha:  0.28 + Math.random() * 0.52,
+      phase:  Math.random() * Math.PI * 2,
+    });
+  }
+}
+function drawMonogrid(p, t) {
+  if (!monogridBlocks.length) initMonogrid(p.width, p.height);
+
+  let tokens  = S.chars && S.chars.length ? S.chars : ['·'];
+  let sz      = Math.max(2, S.spacing * 0.85);
+  let charW   = sz * 0.63;
+  let charH   = sz * 1.05;
+  let tokIdx  = Math.floor(S.fc * S.speed * 0.3) % tokens.length; // slow cycle
+  // Uniform text field
+  for (let y = sz; y < p.height + sz; y += charH) {
+    for (let x = 0; x < p.width + charW; x += charW) {
+      let col = pickColor(p, x, y, t);
+      let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      dc(x, y, sz, 0, col, ch);
+    }
+  }
+  // Opaque palette blocks on top
+  CTX.save();
+  monogridBlocks.forEach(function(b) {
+    let bx  = b.x + (S.wave > 0 ? Math.sin(t + b.phase) * S.wave * 0.08 : 0);
+    let by  = b.y + (S.wave > 0 ? Math.cos(t * 0.7 + b.phase) * S.wave * 0.06 : 0);
+    let col = S.palette[b.palIdx % S.palette.length];
+    CTX.globalAlpha = b.alpha;
+    CTX.fillStyle   = col;
+    CTX.fillRect(bx, by, b.w, b.h);
+  });
+  CTX.restore();
+  CTX.globalAlpha = 1;
+  _lastFill = '';
+}
+  
 // ── BOIDS ─────────────────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
 // Characters ride on each agent, rotate toward velocity. Completely emergent.
@@ -3931,7 +4132,7 @@ new p5(function(p){
   function ri(){
     initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
     recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
-    sandParticles=[];caGrid=null;lissParticles=[];
+    sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
     boidAgents=[];magneticPoles=[];
     if(S.compEnabled) buildComp(S.compPreset,W,H);
@@ -4083,7 +4284,11 @@ CTX.fillRect(0, 0, W, H);
     case 'tonaldensity':  drawTonalDensity(p, t);  break;
     case 'maze':        drawMaze(p, t);               break;
     case 'unknownpleasures': drawUnknownPleasures(p, t); break;
-    case 'mondrian':    drawMondrian(p, t);            break;  
+    case 'mondrian':    drawMondrian(p, t);            break;
+    case 'brushcontour': drawBrushContour(p, t); break;
+    case 'geode':        drawGeode(p, t);        break;
+    case 'typescale':    drawTypescale(p, t);    break;
+    case 'monogrid':     drawMonogrid(p, t);     break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
@@ -5277,7 +5482,13 @@ const PRESETS={
   maze_shift: function(){ap({mode:'maze',font:'courier',entropy:0,speed:.003,wave:0, bg:'#0d0c0a',spacing: 10,maxSize:12,noiseScale: .01,palette:'site',compEnabled: false,signalCollapse: false,});},
   unknown_pleasures: function(){ap({mode:'unknownpleasures',font:'courier',entropy:0,speed:.002,wave:55,bg:'#000000',spacing:8,maxSize:14,noiseScale:.008, palette:'ghost',compEnabled: false,signalCollapse: false,});},
   mondrian_shift: function(){ap({mode:'mondrian',font:'courier',entropy:0,speed:.001,wave:0,palette:'mondrian',bg:'#FAFAFA',accent:'#000000',spacing:22,maxSize:22,noiseScale:.01,compEnabled:false,signalCollapse: false,});},
+  painted_puppy: function(){ap({mode:'brushcontour',font:'courier',entropy:0, speed:.002,wave:20,bg:'#0d0c0a',spacing:5,maxSize:14,noiseScale:.009, palette:'mono',compEnabled:false});},
+  geode_bloom: function(){ap({mode:'geode',font:'courier',entropy:0,speed:.003,wave:35,bg:'#f5f0ea',spacing:9,maxSize:16,noiseScale:.008,palette:'neonpastel',compEnabled:false});},
+  maeda_mori: function(){ap({mode:'typescale',font:'courier',entropy:0,speed:.001,wave:0,bg:'#f5f0ea',spacing:8,maxSize:28,noiseScale:.01,palette:'mono',compEnabled:false,chars:CHARSETS.katakana});},
+  monogrid_dada: function(){ap({mode:'monogrid',font:'courier',entropy:0,speed:.002,wave:10,bg:'#f5f0ea',spacing:10,maxSize:20,noiseScale:.01,palette:'moss',compEnabled:false,chars:'dada machine poetry'.split('')});
+},
 
+  
 };
 
 
