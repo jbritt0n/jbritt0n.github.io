@@ -4971,14 +4971,14 @@ new p5(function(p){
   }
   // ── Function Rd - redraw ─────────────────────────────────────────────────────────────────
   function rd() {
-    if (!p || !p.width) return;
-    // Fallback values to prevent NaN crashes
+function rd() {
+  if (!p || !p.width) return;
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.fillStyle = S.bg || '#0d0c0a';
+  CTX.fillRect(0, 0, W, H);
     let bgColor = S.bg || '#0d0c0a';
     let currentFC = S.fc || 0;
     let currentSpd = S.speed || 0.004;
-    CTX.globalCompositeOperation = 'source-over';
-    CTX.fillStyle = bgColor;
-    CTX.fillRect(0, 0, W, H);
     let t = currentFC * currentSpd;
     drawScene(p, t);
     if (S.shapesEnabled) drawShapes(p, t);
