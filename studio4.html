@@ -4984,28 +4984,41 @@ new p5(function(p){
   }
   
  // ── STATE & CONTROL BRIDGE ──────────────────────────────────────────────────
-  window._st = {
-    rd: rd, // Points to the robust redraw function above
-    ri: ri, // Points to the robust init function above
-    rc: rc, // Preserves your existing rc function
-    
+
+
+    S.playing = !S.playing;
+    S.playing ? p.loop() : p.noLoop();
+    return S.playing;
+  },
+  regen: function() { ri(); },
+  save: function() {
+    p.saveCanvas('studio-' + Date.now(), 'png');
+    showToast('Saved PNG');
+  },
+  rsz: resize,
+  w: function() { return W; },
+  h: function() { return H; },
+  p: p
+};
+  
+  
+ window._st = {
+    rd: rd,
+    ri: ri,
+    rc: rc,
     play: function() {
       S.playing = !S.playing;
       if (S.playing) {
         p.loop();
-        p.redraw(); // Force immediate frame on resume
+        p.redraw(); 
       } else {
         p.noLoop();
       }
       return S.playing;
     },
-    regen: function() {
-      ri(); // Calls our new init
-      rd(); // Calls our new redraw
-    },
-    
+    regen: function() { ri(); rd(); },
     save: function() {
-      // ──* WATERMARK *────────────────────────────────────────────────────────────
+      // ── WATERMARK ────────────────────────────────────────────────
       CTX.save();
       CTX.font = 'bold 11px Jost,sans-serif';
       CTX.fillStyle = 'rgba(200,188,176,0.55)';
@@ -5014,8 +5027,7 @@ new p5(function(p){
       let wmW = CTX.measureText(wm).width;
       CTX.fillText(wm, W - wmW - 10, H - 8);
       CTX.restore();
-      // ─* END WATERMARK *────────────────────────────────────────────────────────
-
+      // ── END WATERMARK ────────────────────────────────────────────────────────
       p.saveCanvas('studio-' + Date.now(), 'png');
       showToast('Saved PNG');
     },
@@ -5104,12 +5116,12 @@ p.setup = function() {
   cnv.parent('canvas-wrap');
   CTX = p.drawingContext;
   CTX.textBaseline = 'middle';
+  // CRITICAL: Ensure state exists before first draw
+  if (typeof S === 'undefined') window.S = {};
   Object.assign(S, DEFAULT_STATE); 
   p.noLoop();
   p.pixelDensity(1);
-  p.noiseDetail(4, .5);
-  ri(); // Now S has data, so ri() can initialize correctly
-  rd(); // Now rd() can draw without NaN errors
+  ri(); // This calls rd() which now uses drawScene
   window.addEventListener('resize', function() {
     if (_currentSizeMode === 'fill') resize('fill');
   });
@@ -5197,15 +5209,17 @@ const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom
 const ALL_SECS = ['presets', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
-document.getElementById('btnCollapseAll').addEventListener('click', function() {
-  ALL_SECS.forEach(function(id) {
-    let body = document.getElementById('body-' + id);
-    let arrow = document.getElementById('arr-' + id);
-    if (body) {
-      body.classList.add('collapsed');
-      if (arrow) arrow.classList.remove('open');
-    }
-  });
+[  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
+  'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
+  'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
+].forEach(function(id) {
+  let body = document.getElementById('body-' + id);
+  let arrow = document.getElementById('arr-' + id);
+  if (body) {
+    body.classList.add('collapsed');
+    if (arrow) arrow.classList.remove('open');
+  }
 });
 
 // Expand All
