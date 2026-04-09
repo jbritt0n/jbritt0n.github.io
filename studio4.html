@@ -1381,12 +1381,11 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
 
 // --- COLOR MAPPING & NOISE TYPE
-// Corrected getColorIndex function
 function getColorIndex(p, x, y, t) {
-  // Fix: Use S.noiseScale instead of 'ns'
+  // Use the S.noiseScale from your DEFAULT_STATE
   let nx = x * S.noiseScale; 
   let ny = y * S.noiseScale;
-  let W = p.width, H = p.height; // Use p.width/height for accuracy
+  let W = p.width, H = p.height; 
   let val = 0;
   switch(S.colorMapMode) {
     case 'radial':
@@ -1402,15 +1401,15 @@ function getColorIndex(p, x, y, t) {
       val = (Math.abs(W/2 - x) / (W/2) + Math.abs(H/2 - y) / (H/2)) % 1.0;
       break;
     case 'stepped':
-      // Fix: Ensure p.noise is used and referenced correctly
+      // CRITICAL: use p.noise
       let r = p.noise(nx, ny, t * 0.01); 
       val = Math.floor(r * 5) / 5;
       break;
     default: 
-      // Fix: Use S.noiseScale here as well (via nx, ny)
+      // CRITICAL: use p.noise
       val = p.noise(nx, ny, t * 0.01);
   }
-  // Handle Noise Types (Ridged / Billow)
+  // Handle Noise Types
   if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
     if (S.noiseType === 'ridged') {
       val = 1.0 - Math.abs(val * 2 - 1);
@@ -1835,24 +1834,26 @@ function buildComp(preset,W,H){
 
 // ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
+  // 1. Setup Canvas Context
   if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  // If S.density is 0.45, this creates a reasonable grid
+  // 2. Use S.spacing to determine grid density
   let step = (S.spacing || 12) * p.map(S.density, 0, 1, 2, 0.5);
   for (let x = 0; x <= p.width; x += step) {
     for (let y = 0; y <= p.height; y += step) {
+      // Pass 'p' to the color helper
       let ci = getColorIndex(p, x, y, t);
       let col = S.palette[Math.floor(ci * S.palette.length)] || S.palette[0];
+      // FIX: Use S.maxSize (from DEFAULT_STATE) instead of S.size
       let sizeBase = p.map(S.maxSize || 20, 0, 100, 5, 100); 
-      let motionVal = S.motion || 0;
-      let pulse = Math.sin(t * 0.02 + (x + y) * 0.01) * (motionVal * 20);
-      let sz = Math.max(1, sizeBase + pulse);
+      // Calculate dynamic rotation using p.noise
       let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * (S.entropy || 0);
-      // Ensure ch is valid
+      // Select character using p.noise
       let ch = '';
       if (S.chars && S.chars.length > 0) {
         ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
       }
-      dc(x, y, sz, angle, col, ch);
+      // Render
+      dc(x, y, sizeBase, angle, col, ch);
     }
   }
 }
