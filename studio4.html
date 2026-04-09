@@ -4979,10 +4979,21 @@ function toggleSec(id){
   let collapsed=body.classList.toggle('collapsed');
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
+  
+// Define the master list once
+const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
+const preSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech'];
+const ALL_SECTIONS = [
+  'presets', 'mode', 'chars', 'font', 'motion', 'field', 
+  'entropy', 'palette', 'blend', 'comp', 'shapes', 
+  'overlay', 'img', 'size', 
+  ...modeSubSecs, 
+  ...preSubSecs
+];
 
-const allSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech','mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
+// Collapse All
 document.getElementById('btnCollapseAll').addEventListener('click', function() {
-  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...allSubSecs].forEach(function(id) {
+  ALL_SECTIONS.forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
@@ -4991,8 +5002,10 @@ document.getElementById('btnCollapseAll').addEventListener('click', function() {
     }
   });
 });
+
+// Expand All
 document.getElementById('btnExpandAll').addEventListener('click', function() {
-  ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...allSubSecs].forEach(function(id) {
+  ALL_SECTIONS.forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
@@ -5002,6 +5015,8 @@ document.getElementById('btnExpandAll').addEventListener('click', function() {
   });
 });
 
+
+  
 // ── SLIDER WIRING ─────────────────────────────────────────────────────────────
 function wireSlider(slId,vId,key,mapFn,extra){
   let sl=document.getElementById(slId),vl=document.getElementById(vId);
