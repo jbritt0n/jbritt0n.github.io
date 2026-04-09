@@ -3838,7 +3838,6 @@ function drawBauhaus(p, t) {
         sh.y = sh.by + Math.sin(sh.orbitA) * sh.orbitR * 0.6;
       }
     }
-
     // Pulse radius with wave
     let pulsed = sh.r * (1 + Math.sin(t * 1.8 + sh.phase) * S.wave * 0.008);
     // Entropy: random size spikes
@@ -3847,14 +3846,12 @@ function drawBauhaus(p, t) {
     let col = S.palette[sh.palIdx % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
         Math.sin(sh.phase + t) > (1 - S.accentAmt * 2)) col = S.accent;
-
     CTX.save();
     CTX.translate(sh.x, sh.y);
     CTX.rotate(sh.rot);
     CTX.fillStyle   = col;
     CTX.strokeStyle = S.bg;
     CTX.lineWidth   = Math.max(1, pulsed * 0.04);
-
     switch (sh.type) {
       case 'circle':
         CTX.beginPath();
@@ -3904,7 +3901,6 @@ function drawBauhaus(p, t) {
     }
     CTX.globalAlpha = 1;
   }
-
   CTX.restore();
   _lastFill = '';
 }
