@@ -5062,24 +5062,34 @@ document.getElementById('btnRepeatFill').addEventListener('click', function() {
   window._st.rd();
 });  
 
-// ── MODE ──────────────────────────────────────────────────────────────────────
-document.getElementById('modeGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.mb');if(!b) return;
-  document.querySelectorAll('.mb').forEach(function(x){x.classList.remove('active');});
-  b.classList.add('active');S.mode=b.dataset.mode;
-  document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
-  
-  // Hide all mode-specific control panels
+
+// ── MODE EVENT LISTENERS ────────────────────────────────────────────────────────────────────── 
+// Updated to listen to 'body-mode' which contains all the new sub-sections
+document.getElementById('body-mode').addEventListener('click', function(e) {
+  // Look for the mode button (.mb)
+  let b = e.target.closest('.mb');
+  if (!b || !b.dataset.mode) return;
+  // 1. Remove active class from ALL mode buttons
+  document.querySelectorAll('#body-mode .mb').forEach(function(x) {
+    x.classList.remove('active');
+  });
+  // 2. Add active class to the clicked button
+  b.classList.add('active');
+  // 3. Update the state and labels
+  S.mode = b.dataset.mode;
+  document.getElementById('modeLabel').textContent = b.textContent.trim();
+  // 4. Handle mode-specific control panels (if you have them)
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
   });
-  // Show the panel for the current mode (if any)
   let activeCtrl = document.getElementById('ctrl-' + S.mode);
   if (activeCtrl) activeCtrl.classList.add('active');
-  
-  window._st.ri(); window._st.rd();
+  // 5. Re-initialize and redraw
+  if (window._st) {
+    window._st.ri();
+    window._st.rd();
+  }
 });
-
 
 // ── CHARSET ───────────────────────────────────────────────────────────────────
 document.getElementById('charsetGrid').addEventListener('click', function(e) {
