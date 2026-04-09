@@ -21,7 +21,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 #app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
 #canvas-wrap{position: relative;width: 100%;height: 100%;position:relative;overflow:hidden;background:var(--ink)}
 #canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
-#panel{background:var(--dark);border-left:1px solid var(--stone);display:flex;flex-direction:column;overflow:hidden}
+#panel {background: var(--dark);border-left: 1px solid var(--stone);display: flex;flex-direction: column;height: 100vh;overflow: hidden;}
 .ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
 .pt{font-family:'EB Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--cream);margin-bottom:.12rem}
 .ps{font-size:.49rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
@@ -37,7 +37,7 @@ html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);fo
 .pbar-grid{display:flex;flex-wrap:wrap;gap:3px}
 .pbar-btn{background:none;border:1px solid var(--stone);color:var(--dim);font-family:'Jost',sans-serif;font-size:.44rem;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .45rem;cursor:pointer;transition:all .18s;white-space:nowrap}
 .pbar-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,149,90,.07)}
-#ctl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;max-height: 100%;}
+#ctl {flex: 1;min-height: 0;overflow-y: auto;-webkit-overflow-scrolling: touch;padding: 0;}
 #ctl::-webkit-scrollbar{width:3px}
 #ctl::-webkit-scrollbar-thumb{background:var(--stone)}
 .sec{border-bottom:1px solid var(--stone)}
@@ -118,7 +118,7 @@ select option{background:var(--ink)}
 @media(max-width:1024px){:root{--panel-w:268px}}
 @media(max-width:768px){
   html,body{height:100%;overflow:hidden}
-  #app{display:flex;flex-direction:column;height:100%;height:100dvh;height:100vh;max-height:100dvh;overflow:hidden;}
+  #app {display: grid;grid-template-columns: 1fr var(--panel-w);height: 100vh;max-height: 100vh;overflow: hidden;}
   #canvas-wrap{flex:0 0 42vh;min-height:150px}
   #panel{flex:1;min-height:0;height:100%;border-left:none;border-top:1px solid var(--stone);display:flex;flex-direction:column}
   #panelBtn{display:block}
@@ -158,311 +158,340 @@ select option{background:var(--ink)}
       <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
     </div>
 
+    <div id="ctl">  <!-- Control Panel Start -->  
 
+    <!-- Presets Section with collapsible subsections -->  
 <div class="sec" id="presetSec">
   <div class="sec-hd" onclick="toggleSec('presets')">
     <span class="sl">Presets</span>
     <span class="sec-arrow" id="arr-presets">›</span>
   </div>
   <div class="sec-body collapsed" id="body-presets">
-    <!-- Sub‑category styles (add to your <style> block) -->
-    <style>
-      .preset-category {margin-bottom: 0.75rem;border-bottom: 1px solid var(--stone);padding-bottom: 0.5rem;}
-      .preset-category:last-child {border-bottom: none;margin-bottom: 0;}.sub-hd {padding: 0.45rem 1.3rem 0.45rem 1.8rem !important;font-size: 0.58rem !important;letter-spacing: 0.2em !important;color: var(--mid) !important;background: rgba(255,255,255,0.01);}
-      .sub-hd .sec-arrow {font-size: 0.7rem !important;margin-left: 8px !important;}.pbar-grid {padding: 0.2rem 1.3rem 0.2rem 2rem;}
-      /* Tooltip style (browser default is fine, we just enhance readability) */
-      .pbar-btn[title] {cursor: help;}
-    </style>
-
-    <!-- ====== ORGANIC & NATURE ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-organic')">
-        <span>🌿 Organic & Nature</span>
-        <span class="sec-arrow" id="arr-preset-cat-organic">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-organic">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="mycelium" title="Branching fungal networks that grow and spread">Mycelium</button>
-          <button class="pbar-btn" data-preset="bioluminescent" title="Glowing organic threads in dark depths">Biolum</button>
-          <button class="pbar-btn" data-preset="neonjungle" title="Vibrant mycelium with neon overgrowth">Neon Jungle</button>
-          <button class="pbar-btn" data-preset="desertstorm" title="Sand particles drifting like desert winds">Desert Storm</button>
-          <button class="pbar-btn" data-preset="arcticbloom" title="Reaction‑diffusion frost patterns">Arctic Bloom</button>
-          <button class="pbar-btn" data-preset="aurora" title="Flowing contour lines like northern lights">Aurora</button>
-          <button class="pbar-btn" data-preset="deepsea" title="Oceanic depth contours">Deep Sea</button>
-          <button class="pbar-btn" data-preset="volcanic_flow" title="Magma‑like warped grid">Volcanic</button>
-          <button class="pbar-btn" data-preset="worms" title="Wandering worm trails (Shai Hulud)">Shai Hulud</button>
-          <button class="pbar-btn" data-preset="flock" title="Boid flocking simulation with characters">Flock</button>
-          <button class="pbar-btn" data-preset="turing" title="Turing pattern spots (reaction‑diffusion)">Turing Spots</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== GEOMETRIC & STRUCTURAL ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-geometric')">
-        <span>📐 Geometric & Structural</span>
-        <span class="sec-arrow" id="arr-preset-cat-geometric">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-geometric">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="sacredgeo" title="Orbiting geometric shapes with sacred proportions">Sacred Geo</button>
-          <button class="pbar-btn" data-preset="truchet_tiles" title="Truchet quarter‑circle tiles forming patterns">Truchet</button>
-          <button class="pbar-btn" data-preset="hatch" title="Plotter‑style hatching lines">Hatches</button>
-          <button class="pbar-btn" data-preset="seisma_print" title="Seismograph‑like parallel line plots">Seisma Print</button>
-          <button class="pbar-btn" data-preset="liquid_crystal" title="Warped lattice / liquid crystal grid">Liquid Crystal</button>
-          <button class="pbar-btn" data-preset="topographic" title="Isoline contours (topographic map)">Topographic</button>
-          <button class="pbar-btn" data-preset="topo" title="Topographic bands with character fills">Topo</button>
-          <button class="pbar-btn" data-preset="copperetch" title="Etched copper plate texture">Copper Etch</button>
-          <button class="pbar-btn" data-preset="kintsugi_breaks" title="Shattered fragments with gold seams">Kintsugi</button>
-          <button class="pbar-btn" data-preset="fingerprint" title="Dense isolines resembling fingerprints">Fingerprint</button>
-          <button class="pbar-btn" data-preset="maze_shift" title="Recursive backtracker maze that shifts over time">Maze</button>
-          <button class="pbar-btn" data-preset="wfc_tiles" title="Wave Function Collapse tile river">River</button>
-          <button class="pbar-btn" data-preset="stripe_rects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
-          <button class="pbar-btn" data-preset="cascade_glitch" title="Nested character rectangles cascading diagonally">Cascade</button>
-          <button class="pbar-btn" data-preset="diagonal_dense" title="Dense diagonal character lanes with shifting bands">Diagonal</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== TYPOGRAPHY & LAYOUT ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-typo')">
-        <span>🔤 Typography & Layout</span>
-        <span class="sec-arrow" id="arr-preset-cat-typo">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-typo">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="webster" title="Recursive blocks with typewriter texture">Webster</button>
-          <button class="pbar-btn" data-preset="machinepoetry" title="Dense text blocks with glitchy overlay">Machine Poetry</button>
-          <button class="pbar-btn" data-preset="paperink" title="Halftone text on paper background">Paper Ink</button>
-          <button class="pbar-btn" data-preset="ink_wash_density" title="Tonal density from repeated characters (ink wash)">Ink Wash</button>
-          <button class="pbar-btn" data-preset="does_not_compute" title="Phrase 'does not compute' repeated at varying size">Does Not Compute</button>
-          <button class="pbar-btn" data-preset="maeda_mori" title="Maeda‑style typescale: huge to tiny characters">Maeda</button>
-          <button class="pbar-btn" data-preset="maeda_eyechart" title="Eye‑chart variation with katakana">Eye Chart</button>
-          <button class="pbar-btn" data-preset="monogrid_dada" title="Uniform text grid with opaque palette blocks">Monogrid</button>
-          <button class="pbar-btn" data-preset="bauhaus_primary" title="Bauhaus geometric shapes with orbital motion">Bauhaus</button>
-          <button class="pbar-btn" data-preset="bauhaus_dark" title="Dark Bauhaus variant">Bauhaus Dark</button>
-          <button class="pbar-btn" data-preset="mondrian_shift" title="Recursive subdivision with primary colors">Mondrian</button>
-          <button class="pbar-btn" data-preset="still_red" title="Clyfford Still – jagged vertical tears with impasto">Still</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== GLITCH & ENTROPY ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-glitch')">
-        <span>⚠️ Glitch & Entropy</span>
-        <span class="sec-arrow" id="arr-preset-cat-glitch">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-glitch">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="entropy" title="High entropy glitch with signal collapse">Entropy</button>
-          <button class="pbar-btn" data-preset="signal" title="Glitch mode with 'SIGNAL LOST' overlay">Signal</button>
-          <button class="pbar-btn" data-preset="voidsignal" title="Interference patterns with stark contrast">Void Signal</button>
-          <button class="pbar-btn" data-preset="screen_blend" title="Neon bloom with screen blend mode">Screen Blend</button>
-          <button class="pbar-btn" data-preset="dream" title="Loops mode with blended character sets">Dream</button>
-          <button class="pbar-btn" data-preset="unknown_pleasures" title="Joy Division stacked noise peaks">Unknown Pleasures</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== 4D & MATH ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-4d')">
-        <span>🧮 4D & Math</span>
-        <span class="sec-arrow" id="arr-preset-cat-4d">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-4d">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="tesseract4d" title="Rotating 4D hypercube projection">Tesseract 4D</button>
-          <button class="pbar-btn" data-preset="hypersphere4d" title="4D hypersphere lattice projected to 2D">Hypersphere</button>
-          <button class="pbar-btn" data-preset="dipole" title="Magnetic dipole field lines">Dipole Field</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== URBAN & NEON ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-urban')">
-        <span>🌃 Urban & Neon</span>
-        <span class="sec-arrow" id="arr-preset-cat-urban">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-urban">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="urbannight" title="Scan mode with navy blocks">Urban Night</button>
-          <button class="pbar-btn" data-preset="midnighttokyo" title="Matrix rain with katakana">Midnight Tokyo</button>
-          <button class="pbar-btn" data-preset="neon_grid" title="Outrun‑style neon grid with retro palette">Neon Grid</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== SACRED & SPIRITUAL ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-sacred')">
-        <span>✨ Sacred & Spiritual</span>
-        <span class="sec-arrow" id="arr-preset-cat-sacred">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-sacred">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="sacred" title="Bloom mode with sacred text overlay">Sacred</button>
-          <button class="pbar-btn" data-preset="sakurarain" title="Rain characters with sakura palette">Sakura Rain</button>
-        </div>
-      </div>
-    </div>
-    <!-- ====== PAINTERLY & ARTISTIC ====== -->
-    <div class="preset-category">
-      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-painterly')">
-        <span>🎨 Painterly & Artistic</span>
-        <span class="sec-arrow" id="arr-preset-cat-painterly">›</span>
-      </div>
-      <div class="sec-body collapsed" id="body-preset-cat-painterly">
-        <div class="pbar-grid">
-          <button class="pbar-btn" data-preset="painted_puppy" title="Brush contour (Rotsztain style)">Painted Puppy</button>
-          <button class="pbar-btn" data-preset="geode_bloom" title="Lars Wander – rotated tiles in organic blob">Geode</button>
-          <button class="pbar-btn" data-preset="geode_vibrate" title="Geode with increased vibration">Geode</button>
-          <button class="pbar-btn" data-preset="scatter_bloom" title="Dot characters in cloud formations">Scatter</button>
-        </div>
-      </div>
-    </div>
-  </div><!-- end #body-presets -->
-</div>
     
-    <div id="ctl">
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('mode')"><span class="sl">Mode</span><span class="sec-arrow open" id="arr-mode">›</span></div>
-      <div class="sec-body collapsed" id="body-mode">
-        <div class="mg" id="modeGrid">
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.18rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px">✦ Character</div>
-          <button class="mb active" data-mode="bloom">Bloom</button>
-          <button class="mb" data-mode="wave">Wave</button>
-          <button class="mb" data-mode="rain1">Rain</button>
-          <button class="mb" data-mode="rain2">Rain 2</button>
-          <button class="mb" data-mode="vortex">Vortex</button>
-          <button class="mb" data-mode="ripple">Ripple</button>
-          <button class="mb" data-mode="drift">Drift</button>
-          <button class="mb" data-mode="tess">Tessellation</button>
-          <button class="mb" data-mode="warp">Warp</button>
-          <button class="mb" data-mode="glitch">Glitch</button>
-          <button class="mb" data-mode="webster">Blocks</button>
-          <button class="mb" data-mode="matrix">Matrix</button>
-          <button class="mb" data-mode="orbit">Orbit</button>
-          <button class="mb" data-mode="spiral">Spiral</button>
-          <button class="mb" data-mode="scan">Scan</button>
-          <button class="mb" data-mode="halftone">Halftone</button>
-          <button class="mb" data-mode="shatter">Shatter</button>
-          <button class="mb" data-mode="weave">Weave</button>
-          <button class="mb" data-mode="topo">Topo</button>
-          <button class="mb" data-mode="recursive">Recursive</button>
-          <button class="mb" data-mode="contour">Contour</button>
-          <button class="mb" data-mode="fabric">Fabric</button>
-          <button class="mb" data-mode="loops">Loops</button>
-          <button class="mb" data-mode="imgtext">Img→Text</button>
-          <button class="mb" data-mode="pipes">Pipes</button>
-          <button class="mb" data-mode="calligraphy">Calligr.</button>
-          <button class="mb" data-mode="lissajous">Lissajous</button>
-          <button class="mb new-mode" data-mode="reaction">Reaction</button>
-          <button class="mb" data-mode="cellular">Cellular</button>
-          <button class="mb" data-mode="worms">Worms</button>
-          <button class="mb" data-mode="interference">Interfere</button>
-          <button class="mb new-mode" data-mode="stripedrects" title="Striped Rects — solid and barcode rectangles on a light ground">Stripe Rects</button>
-          <button class="mb new-mode" data-mode="tonaldensity"  title="Tonal Density — phrase repeats at noise-driven size and spacing, creating ink-wash tones">Tonal Density</button>
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
-          <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
-          <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
-          <button class="mb new-mode" data-mode="maze"             title="Recursive-backtracker maze, walls shift over time">Maze</button>
-          <button class="mb new-mode" data-mode="unknownpleasures" title="Joy Division Unknown Pleasures — stacked noise peaks">Unknown Pleasures</button>
-          <button class="mb new-mode" data-mode="mondrian"         title="Mondrian — recursive subdivision with primary color fills">Mondrian</button>
-          <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
-          <button class="mb new-mode" data-mode="brushcontour" title="Rotsztain — contour levels drawn as rotated brushstroke rectangles">Brush Contour</button>
-          <button class="mb new-mode" data-mode="geode"        title="Lars Wander — rotated tiles scatter into an organic blob">Geode</button>
-          <button class="mb new-mode" data-mode="typescale"    title="Maeda — characters grade from enormous at top to microscopic below">Typescale</button>
-          <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
-          <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
-          <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
-          <button class="mb new-mode" data-mode="cascaderects"  title="Nested character-outlined rectangles cascading diagonally">Cascade Rects</button>
-          <button class="mb new-mode" data-mode="diagonalfield" title="Dense diagonal character lanes with shifting density bands">Diagonal Field</button>
-          <button class="mb new-mode" data-mode="scatterdots"   title="Dot characters scattered into organic cloud forms">Scatter Dots</button>
-          <button class="mb new-mode" data-mode="clyffordstill" title="Clyfford Still — jagged vertical tear-forms with impasto texture">Still</button>
-          <button class="mb new-mode" data-mode="bauhaus" title="Bauhaus — geometric primary shapes with orbital and rotational animation">Bauhaus</button>
-          <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
-          <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
-          <button class="mb" data-mode="topolines">Topo Lines</button>
-          <button class="mb" data-mode="wireterrain">Terrain</button>
-          <button class="mb new-mode" data-mode="hatch" title="Plotter hatching — parallel lines varying by noise, like etchings">Hatch</button>
-          <button class="mb" data-mode="fractalsubdiv">Fractal</button>
-          <button class="mb" data-mode="voronoi">Voronoi</button>
-          <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◉ Particle &amp; System</div>
-          <button class="mb" data-mode="boids" title="Flocking simulation — agents follow separation, alignment, cohesion rules; characters on each boid">Boids</button>
-          <button class="mb" data-mode="magnetic" title="Magnetic field lines — dipole field rendered as smooth curves with characters along them">Magnetic</button>
-          <button class="mb" data-mode="sand">Sand</button>
-          <button class="mb" data-mode="mycelium">Mycelium</button>
-          <button class="mb new-mode" data-mode="flowerspin">Flower Spin</button>
-        </div>
-      </div></div>
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('pre-typo')">
+      Typographic <span class="sec-arrow" id="arr-pre-typo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-typo" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="sacred" title="Initial foundation">Sacred</button>
+        <button class="pbar-btn" data-preset="sacredgeo" title="Geometry & Mandalas">Sacred Geo</button>
+        <button class="pbar-btn" data-preset="machinepoetry" title="Algorithmic text">Machine Poetry</button>
+        <button class="pbar-btn" data-preset="paperink" title="Ink on textured paper">Paper Ink</button>
+        <button class="pbar-btn" data-preset="ink_wash_density" title="Tonal ink wash density">Ink Wash</button>
+        <button class="pbar-btn" data-preset="monogrid_dada" title="Dadaist text grid">Monogrid</button>
+        <button class="pbar-btn" data-preset="maeda_mori" title="Structural text layout">Maeda</button>
+        <button class="pbar-btn" data-preset="maeda_eyechart" title="Variable text sizing">Eye Chart</button>
+        <button class="pbar-btn" data-preset="webster" title="Terminal block layout">Webster</button>
+        <button class="pbar-btn" data-preset="does_not_compute" title="Terminal error feel">Does Not Compute</button>
+        <button class="pbar-btn" data-preset="diagonal_dense" title="Dense character lanes">Diagonal</button>
+        <button class="pbar-btn" data-preset="scatter_bloom" title="Scattered character points">Scatter</button>
+        <button class="pbar-btn" data-preset="kintsugi_breaks" title="Repaired pottery patterns">Kintsugi</button>
+      </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('pre-topo')">
+      Topographic <span class="sec-arrow" id="arr-pre-topo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-topo" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="topographic" title="Noise elevation contours">Topographic</button>
+        <button class="pbar-btn" data-preset="topo" title="Simplified line map">Contour</button>
+        <button class="pbar-btn" data-preset="fingerprint" title="Bio-metric swirls">Fingerprint</button>
+        <button class="pbar-btn" data-preset="liquid_crystal" title="Prismatic liquid forms">Liquid Crystal</button>
+        <button class="pbar-btn" data-preset="copperetch" title="Metallic line hatching">Copper Etch</button>
+        <button class="pbar-btn" data-preset="volcanic_flow" title="Magmatic flow patterns">Volcanic</button>
+        <button class="pbar-btn" data-preset="seisma_print" title="Seismographic visualization">Seisma Print</button>
+        <button class="pbar-btn" data-preset="unknown_pleasures" title="Stacked noise peaks">Unknown Pleasures</button>
+        <button class="pbar-btn" data-preset="dipole" title="Magnetic field lines">Dipole Field</button>
+        <button class="pbar-btn" data-preset="hatch" title="Parallel plotter hatching">Hatches</button>
+        <button class="pbar-btn" data-preset="painted_puppy" title="Character splashes">Painted Puppy</button>
+      </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('pre-geo')">
+      Geometric <span class="sec-arrow" id="arr-pre-geo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-geo" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="tesseract4d" title="4D hypercube projections">Tesseract 4D</button>
+        <button class="pbar-btn" data-preset="hypersphere4d" title="4D hypersphere lattice">Hypersphere</button>
+        <button class="pbar-btn" data-preset="truchet_tiles" title="Recursive circle tiling">Truchet</button>
+        <button class="pbar-btn" data-preset="stripe_rects" title="Barcode & Solid rectangles">Stripe Rects</button>
+        <button class="pbar-btn" data-preset="neon_grid" title="Retro digital grid">Neon Grid</button>
+        <button class="pbar-btn" data-preset="maze_shift" title="Shifting maze logic">Maze</button>
+        <button class="pbar-btn" data-preset="turing" title="Reaction-diffusion spots">Turing Spots</button>
+        <button class="pbar-btn" data-preset="wfc_tiles" title="Wave Function Collapse">River</button>
+        <button class="pbar-btn" data-preset="still_red" title="Clyfford Still vertical forms">Still</button>
+        <button class="pbar-btn" data-preset="bauhaus_primary" title="Classic Bauhaus shapes">Bauhaus</button>
+        <button class="pbar-btn" data-preset="bauhaus_dark" title="Bauhaus on dark ground">Bauhaus Dark</button>
+        <button class="pbar-btn" data-preset="mondrian_shift" title="Primary color subdivisions">Mondrian</button>
+      </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('pre-atmos')">
+      Atmospheric <span class="sec-arrow" id="arr-pre-atmos">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-atmos" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="aurora" title="Shifting light curtains">Aurora</button>
+        <button class="pbar-btn" data-preset="dream" title="Soft ethereal haze">Dream</button>
+        <button class="pbar-btn" data-preset="midnighttokyo" title="Neon city palette">Midnight Tokyo</button>
+        <button class="pbar-btn" data-preset="urbannight" title="High-contrast urban play">Urban Night</button>
+        <button class="pbar-btn" data-preset="neonjungle" title="Tropical glow edges">Neon Jungle</button>
+        <button class="pbar-btn" data-preset="deepsea" title="Dark oceanic blues">Deep Sea</button>
+        <button class="pbar-btn" data-preset="arcticbloom" title="Frosty icy blues">Arctic Bloom</button>
+        <button class="pbar-btn" data-preset="desertstorm" title="Dusty orange entropy">Desert Storm</button>
+      </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('pre-tech')">
+      Organic & Tech <span class="sec-arrow" id="arr-pre-tech">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-pre-tech" style="padding:0">
+      <div class="pbar-grid">
+        <button class="pbar-btn" data-preset="mycelium" title="Fungal networks">Mycelium</button>
+        <button class="pbar-btn" data-preset="flock" title="Boids simulation">Flock</button>
+        <button class="pbar-btn" data-preset="worms" title="Desert worm trails">Shai Hulud</button>
+        <button class="pbar-btn" data-preset="geode_bloom" title="Organic mineral growth">Geode</button>
+        <button class="pbar-btn" data-preset="geode_vibrate" title="Vibrating crystals">Geode Vib</button>
+        <button class="pbar-btn" data-preset="sakurarain" title="Falling blossom movement">Sakura Rain</button>
+        <button class="pbar-btn" data-preset="bioluminescent" title="Glowing biological forms">Biolum</button>
+        <button class="pbar-btn" data-preset="signal" title="Raw digital signal">Signal</button>
+        <button class="pbar-btn" data-preset="voidsignal" title="Sparse digital noise">Void Signal</button>
+        <button class="pbar-btn" data-preset="entropy" title="High-chaos shifts">Entropy</button>
+        <button class="pbar-btn" data-preset="cascade_glitch" title="Cascading glitches">Cascade</button>
+        <button class="pbar-btn" data-preset="screen_blend" title="Blending mode test">Screen Blend</button>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+
+    
+ <div class="sec">
+  <div class="sec-hd" onclick="toggleSec('mode')">
+    <span class="sl">Mode</span>
+    <span class="sec-arrow open" id="arr-mode">›</span>
+  </div>
+  <div class="sec-body" id="body-mode">
+    
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-fluid')">
+      Fluid & Motion <span class="sec-arrow" id="arr-mode-fluid">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
+      <div class="mg">
+        <button class="mb active" data-mode="bloom" title="Radiating character growth from the center">Bloom</button>
+        <button class="mb" data-mode="wave" title="Sinuous horizontal character oscillations">Wave</button>
+        <button class="mb" data-mode="rain1" title="Vertical falling character streams">Rain</button>
+        <button class="mb" data-mode="rain2" title="Dense, heavy precipitation patterns">Rain 2</button>
+        <button class="mb" data-mode="vortex" title="Spiral suction and rotational pull">Vortex</button>
+        <button class="mb" data-mode="ripple" title="Concentric circular displacement waves">Ripple</button>
+        <button class="mb" data-mode="drift" title="Slow, directional wind-driven movement">Drift</button>
+        <button class="mb" data-mode="warp" title="Local space distortion and stretching">Warp</button>
+        <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
+        <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
+        <button class="mb" data-mode="interference" title="Overlapping wave patterns creating moiré">Interfere</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-struct')">
+      Structural <span class="sec-arrow" id="arr-mode-struct">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="webster" title="Classic terminal-style block character layout">Blocks</button>
+        <button class="mb" data-mode="matrix" title="Digital rain code-stream aesthetic">Matrix</button>
+        <button class="mb" data-mode="scan" title="Horizontal CRT-style raster scanning">Scan</button>
+        <button class="mb" data-mode="halftone" title="Newsprint-style dot density rendering">Halftone</button>
+        <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
+        <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
+        <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
+        <button class="mb" data-mode="tonaldensity" title="Tonal Density — phrase repeats creating ink-wash tones">Tonal Density</button>
+        <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
+        <button class="mb" data-mode="diagonalfield" title="Dense diagonal character lanes with density bands">Diagonal Field</button>
+        <button class="mb" data-mode="cascaderects" title="Nested character-outlined rectangles cascading">Cascade Rects</button>
+        <button class="mb" data-mode="calligraphy" title="Pressure-sensitive stroke simulations">Calligr.</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-geo')">
+      Geometric <span class="sec-arrow" id="arr-mode-geo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="tess" title="Repeating geometric tile symmetries">Tessellation</button>
+        <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
+        <button class="mb" data-mode="maze" title="Recursive-backtracker maze with shifting walls">Maze</button>
+        <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
+        <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
+        <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
+        <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
+        <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
+        <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
+        <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
+        <button class="mb" data-mode="weave" title="Interlocking over-under line logic">Weave</button>
+        <button class="mb" data-mode="shatter" title="Fragmented plane and polygon explosion">Shatter</button>
+        <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-topo')">
+      Topographic <span class="sec-arrow" id="arr-mode-topo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-topo" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="topo" title="Simplified noise-driven contour mapping">Topo</button>
+        <button class="mb" data-mode="contour" title="Multi-level character-based isolines">Contour</button>
+        <button class="mb" data-mode="topolines" title="Pure vector-style elevation lines">Topo Lines</button>
+        <button class="mb" data-mode="isocontour" title="Pure isolines using marching squares">Iso Lines</button>
+        <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
+        <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
+        <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
+        <button class="mb" data-mode="geode" title="Rotated tiles scattered into organic blobs">Geode</button>
+        <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
+        <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
+        <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
+      </div>
+    </div>
+
+    <div class="sl2" onclick="toggleSec('mode-bio')">
+      Bio & Systems <span class="sec-arrow" id="arr-mode-bio">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-bio" style="padding:0">
+      <div class="mg">
+        <button class="mb" data-mode="boids" title="Flocking agents following collective rules">Boids</button>
+        <button class="mb" data-mode="mycelium" title="Fungal growth and branching network simulation">Mycelium</button>
+        <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
+        <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
+        <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
+        <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
+        <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
+        <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
+        <button class="mb" data-mode="fabric" title="Woven thread physics and soft connections">Fabric</button>
+        <button class="mb" data-mode="loops" title="Recursive agent paths closing on themselves">Loops</button>
+        <button class="mb" data-mode="glitch" title="Intentional pixel sorting and data corruption">Glitch</button>
+        <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 
 
       
  <!-- Character Controls -->     
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('chars')"><span class="sl">Characters & Font</span><span class="sec-arrow open" id="arr-chars">›</span></div>
-      <div class="sec-body collapsed" id="body-chars">
-        <div class="cg" id="charsetGrid">
-          <button class="cb" data-cs="hex">Hex</button>
-          <button class="cb" data-cs="gothic">Gothic</button>
-          <button class="cb" data-cs="cursive">Cursive</button>
-          <button class="cb active" data-cs="chinese">Chinese</button>
-          <button class="cb" data-cs="hiragana">Hiragana</button>
-          <button class="cb" data-cs="katakana">Katakana</button>
-          <button class="cb" data-cs="kanji">Kanji</button>
-          <button class="cb" data-cs="korean">Korean</button>
-          <button class="cb" data-cs="thai">Thai</button>
-          <button class="cb" data-cs="greek">Greek</button>
-          <button class="cb" data-cs="georgian">Georgian</button>
-          <button class="cb" data-cs="cyrillic">Cyrillic</button>
-          <button class="cb" data-cs="sanskrit">Sanskrit</button>
-          <button class="cb" data-cs="arcane">Arcane</button>
-          <button class="cb" data-cs="runes">Runes</button>
-          <button class="cb" data-cs="alchemy">Alchemy</button>
-          <button class="cb" data-cs="celtic">Celtic</button>
-          <button class="cb" data-cs="hieroglyphs">Hieroglyphs</button>
-          <button class="cb" data-cs="sacred">Sacred</button>
-          <button class="cb" data-cs="music">Music</button>
-          <button class="cb" data-cs="math">Math</button>
-          <button class="cb" data-cs="ascii">ASCII</button>
-          <button class="cb" data-cs="symbols">Symbols</button>
-          <button class="cb" data-cs="barcode">Barcode</button>
-          <button class="cb" data-cs="gradients">Blocks ░▓</button>
-          <button class="cb" data-cs="squares">Squares</button>
-          <button class="cb" data-cs="crossstitch">Cross-stitch</button>
-          <button class="cb" data-cs="circles">Circles</button>
-          <button class="cb" data-cs="daggers">Daggers</button>
-          <button class="cb" data-cs="lines">Lines</button>
-          <button class="cb" data-cs="dots">Dots</button>
-          <button class="cb" data-cs="braille">Braille</button>
-          <button class="cb" data-cs="void">Void</button>
-          <button class="cb" data-cs="particles">Particles</button>
-          <button class="cb" data-cs="custom">Custom ↓</button>
-          <button class="cb" data-cs="randuni" title="Randomly chosen Unicode character each frame — full spectrum">Rand Unicode</button>
-          <button class="cb" data-cs="randuni_weighted" title="Random Unicode with weighted ranges: more Latin, fewer rare scripts">Rand Weighted</button>
-          <button class="cb" data-cs="randuni_pos" title="Position-based deterministic Unicode — stable textures that evolve slowly">Rand Positional</button>
-          <button class="cb" data-cs="randuni_drift" title="Unicode Drift — characters slowly morph by shifting code points">Rand Drift</button>
-        </div>
-        <div class="cr" id="customRow" style="display:none">
-          <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
-          <button class="ca" id="customApply">Set</button>
-        </div>
-   <!-- Font selector now directly inside body-chars -->
-    <div class="sl2" style="margin-top:0.8rem;">Font</div>
-    <select id="fontSelect">
-          <option value="courier">Courier New</option>
-          <option value="vt323">VT323 — terminal</option>       
-          <option value="typewriter">Special Elite — typewriter</option>
-          <option value="georgia">Georgia</option>
-          <option value="times">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="bebas">Bebas Neue</option>
-          <option value="playfair">Playfair Display</option>
-          <option value="impact">Impact</option>
-          <option value="mono">Monospace</option>
-          <option value="unicode_lite">Unicode Lite (faster)</option>
-          <option value="unicode">Universal Unicode</option>
-        </select>
+      <div class="sec">
+  <div class="sec-hd" onclick="toggleSec('chars')">
+    <span class="sl">Characters & Font</span>
+    <span class="sec-arrow open" id="arr-chars">›</span>
+  </div>
+  <div class="sec-body" id="body-chars">
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('chars-scripts')">
+      Scripts & Languages <span class="sec-arrow" id="arr-chars-scripts">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-chars-scripts" style="padding:0">
+      <div class="cg">
+        <button class="cb active" data-cs="chinese" title="Hanzi — Traditional and Simplified Chinese glyphs">Chinese</button>
+        <button class="cb" data-cs="kanji" title="Japanese Kanji characters">Kanji</button>
+        <button class="cb" data-cs="hiragana" title="Japanese Hiragana syllabary">Hiragana</button>
+        <button class="cb" data-cs="katakana" title="Japanese Katakana syllabary">Katakana</button>
+        <button class="cb" data-cs="korean" title="Hangul — Korean phonetic alphabet">Korean</button>
+        <button class="cb" data-cs="thai" title="Thai script with distinctive loops and curves">Thai</button>
+        <button class="cb" data-cs="sanskrit" title="Devanagari script used for Sanskrit and Hindi">Sanskrit</button>
+        <button class="cb" data-cs="greek" title="Classical Greek alphabet">Greek</button>
+        <button class="cb" data-cs="cyrillic" title="Slavic and Central Asian scripts">Cyrillic</button>
+        <button class="cb" data-cs="georgian" title="Mkhedruli — the elegant Georgian script">Georgian</button>
+        <button class="cb" data-cs="hieroglyphs" title="Ancient Egyptian pictorial writing">Hieroglyphs</button>
+        <button class="cb" data-cs="gothic" title="Blackletter-style medieval Latin script">Gothic</button>
+        <button class="cb" data-cs="cursive" title="Flowing script-style Latin characters">Cursive</button>
       </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('chars-arcane')">
+      Arcane & Symbolic <span class="sec-arrow" id="arr-chars-arcane">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-chars-arcane" style="padding:0">
+      <div class="cg">
+        <button class="cb" data-cs="arcane" title="Mystical and obscure glyph combinations">Arcane</button>
+        <button class="cb" data-cs="runes" title="Elder Futhark and Germanic runic alphabets">Runes</button>
+        <button class="cb" data-cs="alchemy" title="Hermetic and Alchemical symbols">Alchemy</button>
+        <button class="cb" data-cs="celtic" title="Ogham and insular-inspired patterns">Celtic</button>
+        <button class="cb" data-cs="sacred" title="Sacred geometry and spiritual icons">Sacred</button>
+        <button class="cb" data-cs="music" title="Musical notation: notes, rests, and clefs">Music</button>
+        <button class="cb" data-cs="math" title="Mathematical operators and Greek variables">Math</button>
+        <button class="cb" data-cs="hex" title="Hexadecimal digits (0-9, A-F)">Hex</button>
+        <button class="cb" data-cs="ascii" title="Standard printable ASCII character set">ASCII</button>
+        <button class="cb" data-cs="symbols" title="Miscellaneous UI and typographic symbols">Symbols</button>
       </div>
+    </div>
+    <div class="sl2" onclick="toggleSec('chars-geo')">
+      Abstract & Geometric <span class="sec-arrow" id="arr-chars-geo">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-chars-geo" style="padding:0">
+      <div class="cg">
+        <button class="cb" data-cs="gradients" title="Block elements (░▒▓█) for shading and density">Blocks</button>
+        <button class="cb" data-cs="braille" title="Braille patterns for fine-grained dot textures">Braille</button>
+        <button class="cb" data-cs="dots" title="Standard dot and bullet variations">Dots</button>
+        <button class="cb" data-cs="lines" title="Box-drawing and directional line glyphs">Lines</button>
+        <button class="cb" data-cs="squares" title="Solid and hollow square geometric forms">Squares</button>
+        <button class="cb" data-cs="circles" title="Circular forms and ring symbols">Circles</button>
+        <button class="cb" data-cs="crossstitch" title="X-shaped markers and stitches">Cross-stitch</button>
+        <button class="cb" data-cs="daggers" title="Daggers, crosses, and pointed symbols">Daggers</button>
+        <button class="cb" data-cs="barcode" title="Vertical bars of varying widths">Barcode</button>
+        <button class="cb" data-cs="void" title="Zero-width or invisible spacing characters">Void</button>
+      </div>
+    </div>
+        <div class="sl2" onclick="toggleSec('chars-organic')">
+        Organic & Generative <span class="sec-arrow" id="arr-chars-organic">›</span>
+        </div>
+        <div class="sec-body collapsed" id="body-chars-organic" style="padding:0">
+        <div class="cg">
+        <button class="cb" data-cs="particles" title="Geometric: Circles, Squares, Triangles">Geo Particles</button>
+        <button class="cb" data-cs="arch" title="Architectural drafting marks and crosshairs">Architect</button>
+        <button class="cb" data-cs="glitch_p" title="Digital slivers and data noise">Glitch Bits</button>
+        <button class="cb" data-cs="microbe" title="Microscopic wiggly tails and dots">Microbes</button>
+        <button class="cb" data-cs="husks" title="Curved seed-like crescents">Seed Husks</button>
+        <button class="cb" data-cs="filaments" title="Bent, organic fiber segments">Filaments</button>
+        <button class="cb" data-cs="neural" title="Branching neural axons and dendrites">Neural</button>
+        <button class="cb" data-cs="astro" title="Binary star systems and constellations">Astro</button>
+        <button class="cb" data-cs="slate" title="Geological strata and parallel cracks">Slate</button>
+        <button class="cb" data-cs="petals" title="Nested scales or floral petals">Petals</button>
+        <button class="cb" data-cs="tendril" title="Long, wispy overlapping fibers like hair or grass">Tendrils</button>  
+        </div>
+        </div>
+    <div class="sl2" onclick="toggleSec('chars-custom')">
+      Custom & Algorithmic <span class="sec-arrow" id="arr-chars-custom">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-chars-custom" style="padding:0">
+      <div class="cg">
+        <button class="cb" data-cs="custom" title="Input your own string or space-separated words below">Custom Input</button>
+        <button class="cb" data-cs="randuni" title="Randomly chosen Unicode each frame — full spectrum">Rand Unicode</button>
+        <button class="cb" data-cs="randuni_weighted" title="Random Unicode with weighted ranges (Latin-heavy)">Rand Weighted</button>
+        <button class="cb" data-cs="randuni_pos" title="Position-based deterministic Unicode — stable textures">Rand Positional</button>
+        <button class="cb" data-cs="randuni_drift" title="Unicode Drift — characters slowly morph via code points">Rand Drift</button>
+      </div>
+      <div class="cr" id="customRow" style="display:none; margin: 0.5rem 0.8rem 0.8rem;">
+        <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
+        <button class="ca" id="customApply">Set</button>
+      </div>
+    </div>
 
+    <div class="sl2" style="margin-top:0.8rem;">Font Family</div>
+    <select id="fontSelect" style="width:calc(100% - 1.6rem); margin: 0.3rem 0.8rem 0.8rem;">
+      <option value="courier">Courier New</option>
+      <option value="vt323">VT323 — terminal</option>       
+      <option value="typewriter">Special Elite — typewriter</option>
+      <option value="georgia">Georgia</option>
+      <option value="times">Times New Roman</option>
+      <option value="arial">Arial</option>
+      <option value="bebas">Bebas Neue</option>
+      <option value="playfair">Playfair Display</option>
+      <option value="impact">Impact</option>
+      <option value="mono">Monospace</option>
+      <option value="unicode_lite">Unicode Lite (faster)</option>
+      <option value="unicode">Universal Unicode</option>
+    </select>
+  </div>
+</div>
+      
+ <!-- Palette and Color Selection -->  
       <div class="sec"><div class="sec-hd" onclick="toggleSec('palette')"><span class="sl">Palette</span><span class="sec-arrow open" id="arr-palette">›</span></div>
       <div class="sec-body collapsed" id="body-palette">
         <div class="pg" id="palGrid">
@@ -1324,44 +1353,147 @@ function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 
 function dc(x, y, sz, rot, col, ch) {
   if (!CTX) return;
+
+  
+  // --- PARTICLE MODES ---
   if (S.useParticleMode) {
     CTX.fillStyle = col;
-    CTX.beginPath();
-    let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
-    if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
-    else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
-    else {
-      CTX.moveTo(x, y - sz * 0.4);
-      CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
-      CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
-      CTX.closePath();
+    CTX.strokeStyle = col;
+    CTX.lineWidth = Math.max(1, sz * 0.05);
+    let cs = S.charSet;
+
+    if (cs === 'particles') {
+      CTX.beginPath();
+      let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
+      if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
+      else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+      else {
+        CTX.moveTo(x, y - sz * 0.4);
+        CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
+        CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
+        CTX.closePath();
+      }
+      CTX.fill();
+    } 
+    else if (cs === 'arch') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
+      if (t === 0) { // Crosshair
+        CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
+      } else if (t === 1) { // L-Bracket
+        CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
+      } else { // Dot Circle
+        CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
+        CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
+      }
+      CTX.restore();
     }
-    CTX.fill();
-    return;
+    else if (cs === 'microbe') {
+      CTX.beginPath(); CTX.arc(x, y, sz*0.15, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.moveTo(x, y);
+      CTX.bezierCurveTo(x+sz*0.5, y-sz*0.5, x-sz*0.5, y+sz*0.5, x+Math.cos(rot)*sz, y+Math.sin(rot)*sz);
+      CTX.stroke();
+    }
+    else if (cs === 'husks') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.beginPath(); CTX.moveTo(-sz/2, 0);
+      CTX.quadraticCurveTo(0, -sz, sz/2, 0);
+      CTX.quadraticCurveTo(0, -sz/4, -sz/2, 0);
+      CTX.fill();
+      CTX.restore();
+    }
+    else if (cs === 'filaments') {
+      CTX.beginPath(); CTX.moveTo(x-sz/2, y-sz/2);
+      CTX.lineTo(x, y);
+      CTX.lineTo(x+sz/2, y+Math.sin(x)*sz/2);
+      CTX.stroke();
+    }
+    else if (cs === 'glitch_p') {
+      let w = sz * (0.5 + Math.random());
+      let h = sz * 0.1;
+      CTX.fillRect(x - w/2, y - h/2, w, h);
+      if (Math.random() > 0.8) CTX.fillRect(x - w/2, y + h*2, w*0.4, h);
+    }
+    else if (cs === 'neural') {
+      CTX.beginPath(); CTX.arc(x, y, sz*0.1, 0, 6.28); CTX.fill();
+      for(let i=0; i<3; i++) {
+        CTX.beginPath(); CTX.moveTo(x, y);
+        let ang = rot + i * 2.1; 
+        CTX.lineTo(x + Math.cos(ang)*sz*0.6, y + Math.sin(ang)*sz*0.6);
+        CTX.stroke();
+      }
+    }
+    else if (cs === 'astro') {
+      CTX.beginPath(); CTX.arc(x-sz*0.3, y-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(x+sz*0.2, y+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
+      CTX.globalAlpha = 0.3;
+      CTX.beginPath(); CTX.moveTo(x-sz*0.3, y-sz*0.1); CTX.lineTo(x+sz*0.2, y+sz*0.2); CTX.stroke();
+      CTX.globalAlpha = 1.0;
+    }
+    else if (cs === 'slate') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.fillRect(-sz*0.4, -sz*0.2, sz*0.8, sz*0.05);
+      CTX.fillRect(-sz*0.3, 0, sz*0.6, sz*0.05);
+      CTX.fillRect(-sz*0.5, sz*0.2, sz*0.9, sz*0.05);
+      CTX.restore();
+    }
+    else if (cs === 'petals') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, Math.PI, true); CTX.stroke();
+      CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
+      CTX.restore();
+    }
+  else if (cs === 'tendril') {
+    CTX.save();
+    CTX.translate(x, y);
+    CTX.rotate(rot);
+    CTX.beginPath();
+    CTX.moveTo(0, 0);
+    // Control points create the "bend"
+    // We use a bit of Math.sin(x) to make the bend organic
+    let cp1x = sz * 0.5;
+    let cp1y = sz * Math.sin(x * 0.01) * 0.5;
+    let cp2x = sz * 1.5;
+    let cp2y = sz * Math.cos(y * 0.01) * 0.8;
+    let destX = sz * 2.5; // Extends past the normal "block" size
+    let destY = sz * 0.2;
+    CTX.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, destX, destY);
+    // Set a very thin line for that "whispy" look
+    CTX.globalAlpha = 0.6; // Slightly transparent to help overlapping
+    CTX.stroke();
+    CTX.restore();
   }
-  if(!CTX||!ch) return;
-  if(!ch.trim()&&S.entropy<.1) return;
-  let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
-  let fstr=(sz|0)+'px '+S.fontStack;
-  if(needTransform){
-    CTX.save();CTX.translate(x,y);
-    let r=(rot||0)+S.charRotRad;
-    if(r) CTX.rotate(r);
-    let fx=1,fy=1;
-    if(S.flipHMirror&&Math.random()<S.flipChance*.6) fx=-1;
-    if(S.flipVMirror&&Math.random()<S.flipChance*.35) fy=-1;
-    if(fx!==1||fy!==1) CTX.scale(fx,fy);
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-    CTX.fillText(ch,0,0);CTX.restore();
-    _lastFont='';_lastFill='';
+    
+    return; // Important: exits after drawing particle
+  }
+  // --- TEXT MODE ---
+  if(!ch || (!ch.trim() && S.entropy < 0.1)) return;
+  let needTransform = rot !== 0 || S.charRotRad !== 0 || S.flipChance > 0 || S.flipHMirror || S.flipVMirror;
+  let fstr = (sz|0) + 'px ' + S.fontStack;
+
+  if (needTransform) {
+    CTX.save(); CTX.translate(x, y);
+    let r = (rot || 0) + S.charRotRad;
+    if (r) CTX.rotate(r);
+    let fx = 1, fy = 1;
+    if (S.flipHMirror && Math.random() < S.flipChance * 0.6) fx = -1;
+    if (S.flipVMirror && Math.random() < S.flipChance * 0.35) fy = -1;
+    if (fx !== 1 || fy !== 1) CTX.scale(fx, fy);
+    if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+    if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
+    CTX.fillText(ch, 0, 0); 
+    CTX.restore();
+    _lastFont = ''; _lastFill = '';
   } else {
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-    CTX.fillText(ch,x,y);
+    if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+    if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
+    CTX.fillText(ch, x, y);
   }
 }
 
+
+  
+  
 function pickChar(p,x,y,t){
   let ch;
   // Random Unicode modes bypass the normal charset array
@@ -1413,16 +1545,19 @@ function initRain(W,H){
   let c=Math.floor(W/S.spacing);
   for(let i=0;i<c;i++) rainDrops.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:1+Math.random()*3,tl:4+Math.floor(Math.random()*14)});
 }
+  
 function initTess(W,H){
   tessGrid=[];
   let sp=S.spacing*2,c=Math.floor(W/sp),r=Math.floor(H/sp);
   for(let i=0;i<r;i++) for(let j=0;j<c;j++) tessGrid.push({x:j*sp+sp/2,y:i*sp+sp/2,phase:Math.random()*Math.PI*2});
 }
+  
 function initMatrix(W,H){
   matrixCols=[];
   let c=Math.floor(W/S.spacing);
   for(let i=0;i<c;i++) matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:5+Math.floor(Math.random()*16),glitch:Math.random()<.2});
 }
+  
 function initShatter(W,H){
   shatterParts=[];
   let sp=S.spacing,cx=W/2,cy=H/2;
@@ -1431,15 +1566,18 @@ function initShatter(W,H){
     shatterParts.push({ox:x,oy:y,dist:Math.sqrt(dx*dx+dy*dy),angle:Math.atan2(dy,dx)});
   }
 }
+  
 function initLoops(W,H){
   loopParticles=[];
   let n=Math.floor(W*H/(S.spacing*S.spacing*4));
   for(let i=0;i<n;i++) loopParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*200)});
 }
+  
 function initRecursive(W,H){
   recRects=[];
   subdivide(0,0,W,H,Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
 }
+  
 function subdivide(x,y,w,h,depth,cols){
   if(depth===0||w<S.spacing*3||h<S.spacing*3){
     recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;
@@ -1450,8 +1588,7 @@ function subdivide(x,y,w,h,depth,cols){
   if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}
   else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}
 }
-
-// ── NEW MODE INITS ────────────────────────────────────────────────────────────
+  
 function initReactionDiffusion(W,H){
   let res=Math.max(4,Math.floor(S.spacing*.8));
   rdW=Math.floor(W/res)+1; rdH=Math.floor(H/res)+1;
@@ -1467,7 +1604,7 @@ function initReactionDiffusion(W,H){
     }
   }
 }
-
+  
 function initVoronoi(W,H){
   voronoiSites=[];
   let n=Math.max(6,Math.floor((W*H)/(S.spacing*S.spacing*80)));
@@ -1645,6 +1782,7 @@ function drawWave(p,t){
     dc(x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,r.col,r.ch);
   }
 }
+  
 function drawRain1(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*250+1);
@@ -1666,6 +1804,7 @@ function drawRain1(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 function drawRain2(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*500+2);
@@ -1676,6 +1815,7 @@ function drawRain2(p,t){
     dc(d.x,d.y,S.maxSize,0,r.col,r.ch);
   });
 }
+  
 function drawVortex(p,t){
   let cx=p.width/2,cy=p.height/2,maxR=Math.max(p.width,p.height)*.6;
   for(let r=S.spacing;r<maxR;r+=S.spacing){
@@ -1690,6 +1830,7 @@ function drawVortex(p,t){
     }
   }
 }
+  
 function drawRipple(p,t){
   let cx=p.width/2,cy=p.height/2;
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
@@ -1701,6 +1842,7 @@ function drawRipple(p,t){
     dc(x,y+ripple,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawDrift(p,t){
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
@@ -1710,6 +1852,7 @@ function drawDrift(p,t){
     dc(x+ox,y+oy,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawTess(p,t){
   tessGrid.forEach(function(cell){
     let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);
@@ -1719,6 +1862,7 @@ function drawTess(p,t){
     dc(cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,res.col,res.ch);
   });
 }
+  
 function drawWarp(p,t){
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
@@ -1728,6 +1872,7 @@ function drawWarp(p,t){
     dc(x+warp,y+warp,S.maxSize,0,res.col,res.ch);
   }
 }
+  
 function drawGlitch(p,t){
   let sp=S.spacing,nS=Math.floor(p.height/(sp*1.4));
   for(let si=0;si<nS;si++){
@@ -1749,6 +1894,7 @@ function drawGlitch(p,t){
   }
   CTX.globalAlpha=1;
 }
+  
 function drawWebster(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
@@ -1767,6 +1913,7 @@ function drawWebster(p,t){
     }
   });
 }
+  
 function drawMatrix(p,t){
   if(S.playing) matrixCols.forEach(function(c){
     c.y+=c.speed*(S.speed*280+1);
@@ -1789,6 +1936,7 @@ function drawMatrix(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 function drawOrbit(p,t){
   let nC=2+Math.floor(S.density*.6),maxR=Math.max(p.width,p.height)*.58,sp=S.spacing;
   let centers=[];
@@ -1806,6 +1954,7 @@ function drawOrbit(p,t){
     }
   });
 }
+  
 function drawSpiral(p,t){
   let cx=p.width/2,cy=p.height/2,maxR=Math.min(p.width,p.height)*.52,a=S.spacing/6.28;
   for(let th=0;th<6.28*22;th+=.25){
@@ -1817,6 +1966,7 @@ function drawSpiral(p,t){
     dc(x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,res.col,res.ch);
   }
 }
+  
 function drawScan(p,t){
   let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=70+S.wave*.8,sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1828,6 +1978,7 @@ function drawScan(p,t){
     dc(x+disp,y,p.map(br,0,1,2,S.maxSize),0,res.col,res.ch);
   }
 }
+  
 function drawHalftone(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1837,6 +1988,7 @@ function drawHalftone(p,t){
     dc(x,y,p.map(b,0,1,.5,S.maxSize),0,res.col,res.ch);
   }
 }
+  
 function drawShatter(p,t){
   if(!shatterParts.length) initShatter(p.width,p.height);
   let prog=(Math.sin(t*.6)+1)/2,ex=prog*S.wave*2.5;
@@ -1848,6 +2000,7 @@ function drawShatter(p,t){
     dc(x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,res.col,res.ch);
   });
 }
+  
 function drawWeave(p,t){
   let sp=S.spacing;
   for(let y=sp;y<p.height;y+=sp*2){
@@ -1858,6 +2011,7 @@ function drawWeave(p,t){
       dc(x,y+Math.sin(x*S.turb*2+rt*2)*S.wave*.38,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);
     }
   }
+  
   for(let x=sp*1.5;x<p.width;x+=sp*2){
     let ct=t+x*.002;
     for(let y=sp;y<p.height;y+=sp){
@@ -1867,6 +2021,7 @@ function drawWeave(p,t){
     }
   }
 }
+  
 function drawTopo(p,t){
   let sp=S.spacing*.8,nLevels=6+Math.floor(S.density*3),bw=0.06+S.wave*.0012,ns=S.noiseScale;
   for(let x=sp*.5;x<p.width;x+=sp) for(let y=sp*.5;y<p.height;y+=sp){
@@ -1883,6 +2038,7 @@ function drawTopo(p,t){
     dc(x,y,sz,angle,col,pickChar(p,x,y,t));
   }
 }
+  
 function drawRecursive(p,t){
   if(!recRects.length) initRecursive(p.width,p.height);
   let sp=S.spacing,wobT=t*.5;
@@ -1900,6 +2056,7 @@ function drawRecursive(p,t){
     }
   });
 }
+  
 function drawContour(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -1919,6 +2076,7 @@ function drawContour(p,t){
     }
   }
 }
+  
 function drawFabric(p,t){
   let sp=S.spacing;
   for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
@@ -1932,6 +2090,7 @@ function drawFabric(p,t){
     dc(x+a1+a3+nw,y+a2,4+Math.random()*(S.maxSize*.7-4),rot,res.col,res.ch);
   }
 }
+  
 function drawLoops(p,t){
   if(!loopParticles.length) initLoops(p.width,p.height);
   let ns=S.noiseScale;
@@ -1947,6 +2106,7 @@ function drawLoops(p,t){
         pt.vx=0;pt.vy=0;pt.age=0;
       }
     }
+    
     let n=p.noise(pt.x*ns,pt.y*ns,t);
     if(n<S.density*.6) return;
     let sz=p.map(n,S.density*.6,1,2,S.maxSize*.7);
@@ -1957,6 +2117,8 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
+// ── DRAW IMG TEXT - Image to text functions ──────────────────────────────────────────────────  
 function drawImgText(p, t) {
   if (!imgPix || !imgW || !imgH) {
     CTX.fillStyle = S.palette[0];
@@ -1989,7 +2151,6 @@ function drawImgText(p, t) {
       let imgX = Math.floor((x - offsetX) * scaleX);
       let imgY = Math.floor((y - offsetY) * scaleY);
       if (imgX < 0 || imgX >= imgW || imgY < 0 || imgY >= imgH) continue;
-
       let idx = (imgY * imgW + imgX) * 4;
       let r = imgPix.data[idx];
       let g = imgPix.data[idx + 1];
@@ -2000,7 +2161,6 @@ function drawImgText(p, t) {
       if (S.imgDither === 'atkinson') {
         br = br < 128 ? 0 : 255;
       }
-
       let col;
       if (S.imgColorMode === 'tonal') {
         let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
@@ -2008,28 +2168,24 @@ function drawImgText(p, t) {
       } else {
         col = palette[Math.floor(p.random() * palette.length)];
       }
-
       // Edge strength (only needed for edge mode)
       let edgeVal = 0;
       if (S.imgMode === 'edge' && imgEdgeStrength) {
         edgeVal = imgEdgeStrength[imgY * imgW + imgX] || 0;
       }
-
       p.push();
       p.translate(x, y);
-
       if (S.imgMode === 'chars') renderImgChars(p, br, col);
       else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
       else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
       else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
       else if (S.imgMode === 'stipple') renderImgStipple(p, br, col);
       else if (S.imgMode === 'edge') renderImgEdge(p, br, col, t, edgeVal);
-
       p.pop();
     }
   }
 }
-  //drawImgText Helpers
+// ── DRAW IMG TEXT HELPERS ──────────────────────────────────────────────────
 function renderImgChars(p, br, col) {
   // Set to 1000 for testing to ensure pixels are drawing
   if (br > 1000) return; 
@@ -2097,7 +2253,7 @@ function getPaletteColors() {
     return activePalette;
 }
   
-  
+// ── TOPO LINES ──────────────────────────────────────────────────  
 function drawTopoLines(p,t){
   let W=p.width,H=p.height;
   let res=Math.max(6,S.spacing*.9);
@@ -2133,6 +2289,8 @@ function drawTopoLines(p,t){
   }
   CTX.globalAlpha=1;CTX.restore();
 }
+
+// ── Pipes ──────────────────────────────────────────────────  
 function drawPipes(p,t){
   let pipeChars=['─','│','┼','╬','╋','┤','├','┴','┬','┘','└','┐','┌','╔','╗','╚','╝','╠','╣','╦','╩','═','║','|','—'];
   let sp=S.spacing;
@@ -2152,7 +2310,7 @@ function drawPipes(p,t){
   }
 }
 
-// ── NEW MODE: REACTION-DIFFUSION (Gray-Scott) ─────────────────────────────────
+// ── REACTION-DIFFUSION (Gray-Scott) ─────────────────────────────────
 // Simulates Turing morphogenesis — spots/stripes emerge from chemical reactions
 function drawReaction(p,t){
   if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
@@ -2221,19 +2379,16 @@ function buildMaze(cols, rows) {
   }
   return cells;
 }
-
 function drawMaze(p, t) {
   let cw = Math.max(12, S.spacing * 2);
   let ch = Math.max(12, S.spacing * 2);
   let cols = Math.floor(p.width  / cw) + 1;
   let rows = Math.floor(p.height / ch) + 1;
-
   // Rebuild when size changes or on regen
   if (!mazeGrid || mazeCols !== cols || mazeRows !== rows) {
     mazeCols = cols; mazeRows = rows;
     mazeGrid = buildMaze(cols, rows);
   }
-
   // Shift: randomly remove a wall and carve a new passage every N frames
   if (S.playing) {
     mazeShiftTimer++;
@@ -2259,14 +2414,12 @@ function drawMaze(p, t) {
       }
     }
   }
-
   // Draw walls
   let wallCol = S.palette[0];
   CTX.save();
   CTX.strokeStyle = wallCol;
   CTX.lineWidth   = Math.max(1, S.maxSize * 0.06);
   CTX.lineCap     = 'square';
-
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       let cell = mazeGrid[r * cols + c];
@@ -2279,7 +2432,6 @@ function drawMaze(p, t) {
       if (c === cols-1 && cell.E) { CTX.beginPath(); CTX.moveTo(x+cw, y); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
     }
   }
-
   // Fill corridors (open passages) with characters
   if (S.chars && S.chars.length) {
     for (let r = 0; r < rows; r++) {
@@ -2312,16 +2464,12 @@ function drawUnknownPleasures(p, t) {
   let peakHeight  = p.height * 0.25 + S.wave * 1.8;
   let pts         = 120;
   let ns          = S.noiseScale * 2;
-
   CTX.save();
-
   // Draw from back (top) to front (bottom) so lower lines occlude upper ones
   for (let li = lineCount - 1; li >= 0; li--) {
     let baseY = p.height - lineSpacing * (li + 1);
-
     // Gaussian envelope — peaks are tallest at vertical center of stack
     let env = Math.exp(-Math.pow((li / lineCount) - 0.5, 2) / 0.06);
-
     // Build points once, reuse for fill + stroke
     let points = [];
     for (let pi = 0; pi <= pts; pi++) {
@@ -2336,7 +2484,6 @@ function drawUnknownPleasures(p, t) {
       }
       points.push({ x, y: baseY + dy });
     }
-
     // Fill from curve all the way down to canvas bottom — occludes everything behind
     CTX.beginPath();
     CTX.moveTo(points[0].x, points[0].y);
@@ -2348,7 +2495,6 @@ function drawUnknownPleasures(p, t) {
     CTX.closePath();
     CTX.fillStyle = S.bg;
     CTX.fill();
-
     // Stroke the profile line
     let lineCol = S.palette[li % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
@@ -2364,7 +2510,6 @@ function drawUnknownPleasures(p, t) {
     CTX.strokeStyle = lineCol;
     CTX.stroke();
   }
-
   CTX.restore();
 }
 
@@ -2397,7 +2542,6 @@ function buildMondrian(x, y, w, h, depth) {
     buildMondrian(x, y + split, w, h - split, depth - 1);
   }
 }
-
 function drawMondrian(p, t) {
   if (!mondrianRects.length) {
     buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
@@ -2554,7 +2698,7 @@ function drawMycelium(p, t) {
   CTX.globalAlpha = 1;
 }
 
-// ── NEW MODE: SAND DRIFT ──────────────────────────────────────────────────────
+// ── SAND DRIFT ──────────────────────────────────────────────────────
 // Simulated sand/stipple diffusion — inspired by Inconvergent's sand technique
 function drawSand(p,t){
   if(!sandParticles.length) initSand(p.width,p.height);
@@ -2586,7 +2730,7 @@ function drawSand(p,t){
   CTX.globalAlpha=1;
 }
 
-// ── NEW MODE: CELLULAR AUTOMATA ───────────────────────────────────────────────
+// ── CELLULAR AUTOMATA ───────────────────────────────────────────────
 // Conway-style rules rendered as characters — life, death, emergence
 function drawCellular(p,t){
   if(!caGrid) initCellular(p.width,p.height);
@@ -2625,7 +2769,7 @@ function drawCellular(p,t){
   }
 }
 
-// ── NEW MODE: INTERFERENCE ────────────────────────────────────────────────────
+// ── INTERFERENCE ────────────────────────────────────────────────────
 // Moiré / wave interference patterns — superimposed wave fields
 function drawInterference(p,t){
   let sp=S.spacing;
@@ -2655,7 +2799,7 @@ function drawInterference(p,t){
   }
 }
 
-// ── NEW MODE: CALLIGRAPHY ─────────────────────────────────────────────────────
+// ── CALLIGRAPHY ─────────────────────────────────────────────────────
 // Brush-stroke simulation — pressure-sensitive sizing, ink pooling at stroke ends
 function drawCalligraphy(p,t){
   let sp=S.spacing;
@@ -2693,7 +2837,7 @@ function drawCalligraphy(p,t){
   CTX.globalAlpha=1;
 }
 
-// ── NEW MODE: LISSAJOUS ───────────────────────────────────────────────────────
+// ── LISSAJOUS ───────────────────────────────────────────────────────
 // Parametric Lissajous figures — characters trace harmonic curves
 function drawLissajous(p,t){
   if(!lissParticles.length) initLissajous(p.width,p.height);
@@ -2714,7 +2858,7 @@ function drawLissajous(p,t){
   });
 }
 
-// ── NEW MODE: WIREFRAME TERRAIN ─────────────────────────────────────────────────────────────────
+// ── WIREFRAME TERRAIN ─────────────────────────────────────────────────────────────────
 // Generates a Perlin-noise heightmap and projects it as a 3D wireframe grid
 // Camera orbit is driven by speed slider; mountain roughness by wave slider.
 function drawWireTerrain(p,t){
@@ -2723,12 +2867,10 @@ function drawWireTerrain(p,t){
   let res=Math.max(8,Math.floor(S.spacing*1.5));
   // Rebuild heightmap if resolution changed
   if(wtW!==Math.floor(W/res)+1||wtH!==Math.floor(H/res)+1) initWireTerrain(p,W,H);
-
   // Camera orbit angle driven by speed
   let camAngle=t*S.speed*40;
   let camAlt=0.35+Math.sin(t*S.speed*15)*.12; // 0..1 altitude
   let camDist=1.8;
-
   // 3D projection helper: isometric-style with camera orbit
   let cosA=Math.cos(camAngle),sinA=Math.sin(camAngle);
   let cosE=Math.cos(camAlt*Math.PI*.5),sinE=Math.sin(camAlt*Math.PI*.5);
@@ -2744,7 +2886,6 @@ function drawWireTerrain(p,t){
     let scale=W*.55/pz2;
     return {sx:W/2+px2*scale,sy:H*.55-py2*scale*.7};
   }
-
   // Animate heightmap by shifting noise over time
   let ns=S.noiseScale*.5;
   let roughness=0.5+S.wave*.008;
@@ -2755,12 +2896,10 @@ function drawWireTerrain(p,t){
     n/=1.5;
     wtHeightmap[row*wtW+col]=n;
   }
-
   // Draw wireframe grid
   CTX.save();
   CTX.lineWidth=.8;
   CTX.lineCap='round';
-
   // Draw quads as two triangles
   for(let row=0;row<wtH-1;row++) for(let col=0;col<wtW-1;col++){
     let h00=wtHeightmap[row*wtW+col];
@@ -2800,7 +2939,7 @@ function drawWireTerrain(p,t){
   _lastFont='';_lastFill='';
 }
 
-// ── NEW MODE: RECURSIVE SUBDIVISION (FRACTAL POLYGONS) ─────────────────────────────────────────────────────────────────
+// ── RECURSIVE SUBDIVISION (FRACTAL POLYGONS) ─────────────────────────────────────────────────────────────────
 // Recursively subdivides a base polygon by splitting edges at midpoints
 // and displacing by noise-driven distances. Result: Koch-like fractals,
 // crystalline structures, organic coastlines.
@@ -2826,7 +2965,6 @@ function drawFractalSubdiv(p,t){
     let alpha=0.15+depth*.08;
     let col=poly.col;
     if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.3) col=S.accent;
-
     // Animate vertices with slight wave distortion
     CTX.beginPath();
     poly.pts.forEach(function(pt,i){
@@ -2836,13 +2974,11 @@ function drawFractalSubdiv(p,t){
       if(i===0) CTX.moveTo(px2,py2); else CTX.lineTo(px2,py2);
     });
     CTX.closePath();
-
     // Stroke the polygon
     CTX.globalAlpha=alpha+.1;
     CTX.strokeStyle=col;
     CTX.lineWidth=strokeW;
     CTX.stroke();
-
     // Scatter characters along the polygon edges
     if(depth>=2&&Math.random()<S.density*.12){
       let pts=poly.pts;
@@ -2880,7 +3016,6 @@ function drawTruchet(p,t){
   CTX.save();
   CTX.lineCap='round';
   CTX.lineWidth=Math.max(0.5,S.maxSize*.04);
-
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
       let tx=c*sz, ty=r*sz;
@@ -2893,7 +3028,6 @@ function drawTruchet(p,t){
       if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.25) col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.55+n*.45;
-
       CTX.beginPath();
       if(flip){
         // Arc from bottom-left corner to top-right corner
@@ -3023,7 +3157,6 @@ function drawWarpGrid(p,t){
       if(S.accent!=='none'&&S.accentAmt>0&&(r+c)%Math.ceil(1/S.accentAmt+1)===0) col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.5+p.noise(c*ns*.5,r*ns*.5,t*.15)*.4;
-
       // Draw quad as two line segments (grid lines)
       CTX.beginPath();
       CTX.moveTo(p00.x,p00.y);CTX.lineTo(p10.x,p10.y); // top edge
@@ -3106,36 +3239,29 @@ function drawWFC(p, t) {
   let tileSize = Math.max(16, S.spacing * 2);
   let cols = Math.ceil(p.width / tileSize);
   let rows = Math.ceil(p.height / tileSize);
-
   // Tile glyphs – you can expand this list
   const tileGlyphs = [
     '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶', '╱', '╲', '◢', '◣', '◤', '◥'
   ];
-
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       let x = col * tileSize;
       let y = row * tileSize;
-
       // Multi‑octave noise to create larger coherent regions
       let n1 = p.noise(col * 0.15, row * 0.15, t * 0.08);
       let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
       let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length) % tileGlyphs.length;
-
       let ch = tileGlyphs[idx];
       let colPal = S.palette[(col + row) % S.palette.length];
       if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
         colPal = S.accent;
       }
-
       let sz = tileSize * 0.7;
       let cx = x + tileSize / 2;
       let cy = y + tileSize / 2;
-
       // Optional small wave displacement
       let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * 0.15;
       let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * 0.15;
-
       dc(cx + wx, cy + wy, sz, 0, colPal, ch);
     }
   }
@@ -3411,11 +3537,9 @@ function drawBrushContour(p, t) {
   let levels  = 6 + Math.floor(S.density * 14);
   let step    = Math.max(2, S.spacing * 0.55);
   let bandW   = 0.055 + S.wave * 0.0008;
-
   // Animated noise offset — the contours actually MOVE
   let tOff    = t * 0.9;
   let tOff2   = t * 0.55;                          // secondary slower layer
-
   for (let x = 0; x < p.width; x += step) {
     for (let y = 0; y < p.height; y += step) {
       // Primary noise
@@ -3424,23 +3548,19 @@ function drawBrushContour(p, t) {
       let wx = p.noise(x * ns * 2.1,    y * ns * 2.1,    tOff2 + 30) * S.wave * 0.022;
       let wy = p.noise(x * ns * 2.1 + 5, y * ns * 2.1 + 5, tOff2 + 60) * S.wave * 0.022;
       let n  = p.noise((x + wx) * ns,   (y + wy) * ns,   tOff);
-
       let level = n * levels;
       let frac  = level - Math.floor(level);
       if (frac > bandW && frac < 1 - bandW) continue;
-
       // Gradient direction for contour tangent
       let gx = p.noise((x + 1) * ns, y * ns,       tOff)
              - p.noise((x - 1) * ns, y * ns,       tOff);
       let gy = p.noise(x * ns,       (y + 1) * ns, tOff)
              - p.noise(x * ns,       (y - 1) * ns, tOff);
       let angle = Math.atan2(gy, gx) + Math.PI * 0.5 + S.charRotRad;
-
       // Pulsing stroke dimensions
       let pulse   = Math.sin(t * 2.5 + x * 0.04 + y * 0.03) * 0.35 + 0.65;
       let dashLen = step * 2.2 * pulse * (0.5 + Math.random() * 1.1);
       let dashH   = Math.max(0.5, S.maxSize * 0.12 * pulse * (0.4 + Math.random() * 1.4));
-
       // Gap flickering — some strokes vanish briefly
       if (S.playing && Math.random() < 0.06) return;
 
@@ -3449,7 +3569,6 @@ function drawBrushContour(p, t) {
       if (S.accent  !== 'none' && S.accentAmt  > 0 && n > (1 - S.accentAmt))  col = S.accent;
       if (S.accent2 !== 'none' && S.accentAmt2 > 0 && n < S.accentAmt2)        col = S.accent2;
       if (S.entropy > 0 && Math.random() < S.entropy * 0.5) angle += (Math.random() - 0.5) * 1.8;
-
       CTX.save();
       CTX.translate(x, y);
       CTX.rotate(angle);
@@ -3490,39 +3609,30 @@ function initGeode(W, H) {
 
 function drawGeode(p, t) {
   if (!geodeTiles.length) initGeode(p.width, p.height);
-
   let drift  = (S.geodeDrift  !== undefined ? S.geodeDrift  : 8);
   let freq   = (S.geoVibFreq  !== undefined ? S.geoVibFreq  : 1.0) * 0.25;
   let scale  = S.maxSize / 20;
-
   geodeTiles.forEach(function(tile) {
     // Each tile has independent slow noise-driven drift
     let nx = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase);
     let ny = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase + 77);
-
     // Fast vibration layer — frequency controlled by slider
     let vib = drift * 0.18;
     let vx  = Math.sin(t * freq * 4.5 + tile.phaseX) * vib;
     let vy  = Math.cos(t * freq * 3.8 + tile.phaseY) * vib;
-
     let x = tile.bx + (nx - 0.5) * drift * 2 + vx;
     let y = tile.by + (ny - 0.5) * drift * 2 + vy;
-
     // Entropy: random teleport
     if (S.entropy > 0 && Math.random() < S.entropy * 0.03) {
       x += (Math.random() - 0.5) * S.entropy * 60;
       y += (Math.random() - 0.5) * S.entropy * 60;
     }
-
     if (S.playing) tile.rot += tile.spinV * S.speed * 40;
-
     let tw = tile.tw * scale;
     let th = tile.th * scale;
-
     let col = S.palette[tile.palIdx % S.palette.length];
     if (S.accent  !== 'none' && tile.rand < S.accentAmt  * 0.5) col = S.accent;
     if (S.accent2 !== 'none' && tile.rand > 1 - S.accentAmt2 * 0.5) col = S.accent2;
-
     CTX.save();
     CTX.translate(x, y);
     CTX.rotate(tile.rot);
@@ -3560,12 +3670,10 @@ function drawCascadeRects(p, t) {
   let tokens = S.chars && S.chars.length ? S.chars : ['·'];
   let sz     = Math.max(3, S.spacing * 0.7);
   let charW  = sz * 0.62;
-
   cascadeRects.forEach(function(cascade, ci) {
     // Slow drift
     let driftX = S.wave > 0 ? Math.sin(t * 0.6 + cascade.phase) * S.wave * 0.12 : 0;
     let driftY = S.wave > 0 ? Math.cos(t * 0.5 + cascade.phase) * S.wave * 0.08 : 0;
-
     for (let ni = 0; ni < cascade.nestCount; ni++) {
       let shrink = ni / cascade.nestCount;
       // Each nested level shifts diagonally and shrinks
@@ -3574,13 +3682,10 @@ function drawCascadeRects(p, t) {
       let rw = cascade.startW * (1 - shrink * 0.65);
       let rh = cascade.startH * (1 - shrink * 0.65);
       if (rw < sz * 2 || rh < sz * 2) break;
-
       let col = S.palette[(cascade.palIdx + ni) % S.palette.length];
       if (S.accent !== 'none' && S.accentAmt > 0 && ni === 0) col = S.accent;
-
       // Entropy: randomly skip a level
       if (S.entropy > 0 && Math.random() < S.entropy * 0.3) continue;
-
       // Draw the rectangle outline using characters
       // Top and bottom edges
       let tokBase = Math.floor(S.fc * S.speed * 0.3 + ci * 13 + ni * 7);
@@ -3654,12 +3759,10 @@ function drawClyffordStill(p, t) {
   }
 
   CTX.save();
-
   stillForms.forEach(function(form, fi) {
     let col = S.palette[form.palIdx % S.palette.length];
     if (S.accent !== 'none' && fi === 0) col = S.accent;
     if (S.accent2 !== 'none' && fi === 1) col = S.accent2;
-
     // Fill the form
     CTX.beginPath();
     CTX.moveTo(form.leftEdge[0].x, form.leftEdge[0].y);
@@ -3671,7 +3774,6 @@ function drawClyffordStill(p, t) {
     CTX.closePath();
     CTX.fillStyle = col;
     CTX.fill();
-
     // Impasto texture: dense short strokes over the fill
     CTX.save();
     CTX.clip();  // clip to form shape
@@ -3749,13 +3851,11 @@ function drawScatterDots(p, t) {
   // Dot charset — prefer circles and dots
   let dotChars = ['○','◌','·','•','°','˚','◦','⊙','◎','o','O','0'];
   let userChars = S.chars && S.chars.length ? S.chars : dotChars;
-
   scatterClouds.forEach(function(cloud) {
     let wobX = S.wave > 0 ? Math.sin(t * 0.7 + cloud.phase) * S.wave * 0.05 : 0;
     let wobY = S.wave > 0 ? Math.cos(t * 0.6 + cloud.phase) * S.wave * 0.04 : 0;
     let cx = cloud.cx + wobX;
     let cy = cloud.cy + wobY;
-
     // Scatter dots within the cloud radius
     let dotCount = Math.floor(cloud.r * cloud.r * 0.018 * (1 + S.density));
     for (let di = 0; di < dotCount; di++) {
@@ -3778,7 +3878,6 @@ function drawScatterDots(p, t) {
       let ch   = userChars[Math.floor(n * userChars.length) % userChars.length];
       dc(x, y, sz, 0, col, ch);
     }
-
     // Rectangular outline accent (like the corner elements in the reference)
     if (cloud.hasRect) {
       let col = S.palette[(cloud.palIdx + 1) % S.palette.length];
@@ -3802,7 +3901,6 @@ function drawDiagonalField(p, t) {
   let sz   = Math.max(3, S.maxSize * 0.55);
   // Diagonal angle — 45° base, turbulence modifies locally
   let baseAngle = Math.PI * 0.25 + S.charRotRad;
-
   for (let x = -p.height; x < p.width + p.height; x += sp) {
     for (let y = 0; y < p.height; y += sz * 1.02) {
       // Diagonal coordinate
@@ -3811,20 +3909,15 @@ function drawDiagonalField(p, t) {
       let n1 = p.noise(diagX * S.noiseScale * 0.6, y * S.noiseScale * 0.3, t * 0.5);
       let n2 = p.noise(diagX * S.noiseScale * 2.2 + 50, y * S.noiseScale * 1.8, t * 0.8) * 0.4;
       let nv = (n1 + n2) / 1.4;
-
       if (nv < S.density * 0.85) continue;
-
       // Screen coordinates from diagonal space
       let sx = x + Math.cos(baseAngle) * y;
       let sy =     Math.sin(baseAngle) * y;
       // Additional wave distortion
       let wx = S.wave > 0 ? Math.sin(y * S.turb * 6 + t * 2) * S.wave * 0.12 : 0;
-
       if (sx + wx < -sz || sx + wx > p.width + sz) continue;
-
       // Local angle variation — creates the "shifting lane" look
       let localAngle = baseAngle + p.noise(sx * S.noiseScale * 1.5, sy * S.noiseScale * 1.5, t * 0.3) * 0.6 - 0.3;
-
       let col = pickColor(p, sx, sy, t);
       let ch  = pickChar(p, sx + t * 30, sy, t);
       dc(sx + wx, sy, p.map(nv, S.density * 0.85, 1, sz * 0.3, sz), localAngle, col, ch);
@@ -3849,7 +3942,6 @@ function drawTypescale(p, t) {
   let maxSz   = S.maxSize * 4.2;
   let minSz   = 1.4;
   let arcCount = Math.floor(22 + S.density * 50);
-
   origins.forEach(function(orig, oi) {
     for (let ai = 0; ai < arcCount; ai++) {
       let progress = ai / arcCount;
@@ -3857,11 +3949,9 @@ function drawTypescale(p, t) {
       let eased  = Math.pow(progress, 1.6);
       let radius = p.map(eased, 0, 1, maxSz * 0.2, p.height * 1.05);
       let sz     = p.map(eased, 0, 1, maxSz, minSz);
-
       // Pulse — each origin pulses slightly out of phase
       sz *= 1 + Math.sin(t * 1.4 + ai * 0.35 + oi * 1.8) * 0.09 * (S.wave / 30);
       if (sz < 1) continue;
-
       // Arc spans from ~180° (straight left) to 360° (straight right)
       // shifted by origin spread so the three fans overlap naturally
       let arcStart = Math.PI * (0.5 + orig.spread * 0.2);
@@ -3869,7 +3959,6 @@ function drawTypescale(p, t) {
       let arcLen   = (arcEnd - arcStart) * radius;
       let charW    = sz * 0.7;
       let numChars = Math.max(1, Math.floor(arcLen / charW));
-
       for (let ci = 0; ci < numChars; ci++) {
         let frac  = ci / numChars;
         let angle = arcStart + frac * (arcEnd - arcStart);
@@ -3881,12 +3970,9 @@ function drawTypescale(p, t) {
         // Rows move upward when playing
         let yOff = S.playing ? Math.sin(t * 0.8 + ai * 0.2 + oi) * sz * 0.3 : 0;
         let y    = orig.y + Math.sin(angle) * r + yOff;
-
         if (x < -sz*2 || x > p.width + sz*2 || y > p.height + sz || y < -sz * 3) continue;
-
         let charRot = S.charRotRad + (S.wave > 0 ? Math.sin(t * 1.8 + ci * 0.25 + ai * 0.1) * 0.3 : 0);
         if (S.entropy > 0 && Math.random() < S.entropy * 0.07) charRot += (Math.random() - 0.5) * 2;
-
         // Overlap: render at slightly reduced alpha when fans intersect
         let col = pickColor(p, x, y, t);
         dc(x, y, sz, charRot, col, pickChar(p, x + oi * 31 + ai * 17, y, t));
@@ -3997,12 +4083,10 @@ function drawBoids(p,t){
   let maxSpd=S.speed*600+1.5;
   let sep=S.wave*.015+0.8; // separation force
   let aln=0.06, coh=0.004;
-
   if(S.playing){
     for(let i=0;i<n;i++){
       let b=boidAgents[i];
       let sx=0,sy=0,ax=0,ay=0,cohx=0,cohy=0,count=0;
-
       for(let j=0;j<n;j++){
         if(i===j) continue;
         let o=boidAgents[j];
@@ -4033,7 +4117,6 @@ function drawBoids(p,t){
       if(b.y<0)b.y=H;if(b.y>H)b.y=0;
     }
   }
-
   // Draw
   boidAgents.forEach(function(b,i){
     let col=S.palette[(b.ci+Math.floor(i/n*S.palette.length))%S.palette.length];
@@ -4046,6 +4129,7 @@ function drawBoids(p,t){
   });
   CTX.globalAlpha=1;
 }
+  
 // ── STRIPED RECTS (Webster) ───────────────────────────────────────────────
 // Solid and barcode-striped rectangles on a light ground.
 // Works best with a pale background (paper, cream, f5f0ea).
@@ -4084,33 +4168,27 @@ function drawStripedRects(p, t) {
   if (!stripedRects.length) initStripedRects(p.width, p.height);
   CTX.save();
   stripedRects.forEach(function(r) {
-
     // ── DENSITY (live) ────────────────────────────────────────────────────
     // S.density runs 0 (dense) → 0.9 (sparse). Skip rect if rand < density.
     if (r.rand < S.density) return;
-
     if (S.playing) {
       r.y += r.vy * S.speed * 120;
       if (r.y > p.height + r.h) r.y = -r.h * 2;
       if (r.y < -r.h * 2)       r.y =  p.height + r.h;
     }
-
     // ── SIZE (live via maxSize) ───────────────────────────────────────────
     // Scale base dimensions proportionally to maxSize (default = 20)
     let scale = S.maxSize / 20;
     let rw = r.bw * scale;
     let rh = r.bh * scale;
-
     // ── PALETTE (live) ────────────────────────────────────────────────────
     let rCol = r.useAccent && S.accent !== 'none'
       ? S.accent
       : S.palette[r.palIdx % S.palette.length];
-
     // ── WAVE wobble ───────────────────────────────────────────────────────
     let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
     let rx = r.x + wx;
     let ry = r.y;
-
     // ── ENTROPY / GLITCH (live) ───────────────────────────────────────────
     if (S.entropy > 0) {
       // Randomly drop some rects entirely
@@ -4129,7 +4207,6 @@ function drawStripedRects(p, t) {
         r.type = r.type === 'solid' ? 'striped' : 'solid';
       }
     }
-
     if (r.type === 'solid') {
       CTX.fillStyle = rCol;
       CTX.fillRect(rx, ry, rw, rh);
@@ -4154,6 +4231,7 @@ function drawStripedRects(p, t) {
   CTX.restore();
   _lastFill = '';
 }
+  
 // ── TONAL DENSITY ──────────────────────────────────────────────────────────
 // A repeating phrase/charset fills the canvas. Noise drives both font size
 // and letter spacing — high noise = large tight text (dark), low noise =
@@ -4205,9 +4283,7 @@ function initBauhaus(W, H) {
   ];
   // Use studio palette if it's not the default site palette
   let usePal = S.palette;
-
   let types = ['circle', 'rect', 'triangle', 'halfcircle', 'ring', 'bar'];
-
   for (let i = 0; i < count; i++) {
     let r = Math.min(W, H) * (0.04 + Math.random() * 0.32);
     bauhausShapes.push({
@@ -4233,10 +4309,8 @@ function initBauhaus(W, H) {
 
 function drawBauhaus(p, t) {
   if (!bauhausShapes.length) initBauhaus(p.width, p.height);
-
   // Sort by radius so large shapes draw first (back-to-front)
   bauhausShapes.sort(function(a, b){ return b.r - a.r; });
-
   CTX.save();
   bauhausShapes.forEach(function(sh) {
     if (S.playing) {
@@ -4297,7 +4371,6 @@ function drawBauhaus(p, t) {
     }
     CTX.restore();
   });
-
   // Overlay a subtle character grid at low opacity for texture
   if (S.chars && S.chars.length && S.maxSize > 6) {
     CTX.globalAlpha = 0.06 + S.entropy * 0.12;
@@ -4401,7 +4474,6 @@ function drawMagnetic(p,t){
       CTX.stroke();
     }
   });
-
   // Draw poles as glowing dots
   magneticPoles.forEach(function(pole2){
     CTX.globalAlpha=0.8;
@@ -4415,6 +4487,8 @@ function drawMagnetic(p,t){
   _lastFont='';_lastFill='';
 }
 
+
+  
 // ── SHAPE HELPERS ─────────────────────────────────────────────────────────────────
 function pointInPoly(px,py,pts){
   let inside=false;
@@ -4575,7 +4649,6 @@ if (type === 'lissajous') {
   }
   return; // skip the rest of the shape drawing for lissajous
 }
-
     // Draw main field characters inside shape
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
@@ -4717,6 +4790,8 @@ if (type === 'lissajous') {
   });
 }
 
+
+  
 // ── OVERLAY TEXT STREAMS ──────────────────────────────────────────────────────
 
 function drawOverlay(p, t) {
@@ -4999,25 +5074,37 @@ function toggleSec(id){
   let collapsed=body.classList.toggle('collapsed');
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
-document.getElementById('btnCollapseAll').addEventListener('click',function(){
-  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size',
-   'preset-cat-organic','preset-cat-geometric','preset-cat-typo','preset-cat-glitch',
-   'preset-cat-4d','preset-cat-urban','preset-cat-sacred','preset-cat-painterly'].forEach(function(id){
-    let body=document.getElementById('body-'+id);
-    let arrow=document.getElementById('arr-'+id);
-    if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
-  });
-});
-document.getElementById('btnExpandAll').addEventListener('click',function(){
-  ['presets','mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size',
-   'preset-cat-organic','preset-cat-geometric','preset-cat-typo','preset-cat-glitch',
-   'preset-cat-4d','preset-cat-urban','preset-cat-sacred','preset-cat-painterly'].forEach(function(id){
-    let body=document.getElementById('body-'+id);
-    let arrow=document.getElementById('arr-'+id);
-    if(body){body.classList.remove('collapsed');if(arrow) arrow.classList.add('open');}
+  
+const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
+const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'];
+const ALL_SECS = ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
+
+// Collapse All
+document.getElementById('btnCollapseAll').addEventListener('click', function() {
+  ALL_SECS.forEach(function(id) {
+    let body = document.getElementById('body-' + id);
+    let arrow = document.getElementById('arr-' + id);
+    if (body) {
+      body.classList.add('collapsed');
+      if (arrow) arrow.classList.remove('open');
+    }
   });
 });
 
+// Expand All
+document.getElementById('btnExpandAll').addEventListener('click', function() {
+  ALL_SECS.forEach(function(id) {
+    let body = document.getElementById('body-' + id);
+    let arrow = document.getElementById('arr-' + id);
+    if (body) {
+      body.classList.remove('collapsed');
+      if (arrow) arrow.classList.add('open');
+    }
+  });
+});
+
+
+  
 // ── SLIDER WIRING ─────────────────────────────────────────────────────────────
 function wireSlider(slId,vId,key,mapFn,extra){
   let sl=document.getElementById(slId),vl=document.getElementById(vId);
@@ -5078,60 +5165,86 @@ document.getElementById('btnRepeatFill').addEventListener('click', function() {
   window._st.rd();
 });  
 
-// ── MODE ──────────────────────────────────────────────────────────────────────
-document.getElementById('modeGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.mb');if(!b) return;
-  document.querySelectorAll('.mb').forEach(function(x){x.classList.remove('active');});
-  b.classList.add('active');S.mode=b.dataset.mode;
-  document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
-  
-  // Hide all mode-specific control panels
+
+// ── MODE EVENT LISTENERS ────────────────────────────────────────────────────────────────────── 
+// Updated to listen to 'body-mode' which contains all the new sub-sections
+document.getElementById('body-mode').addEventListener('click', function(e) {
+  // Look for the mode button (.mb)
+  let b = e.target.closest('.mb');
+  if (!b || !b.dataset.mode) return;
+  // 1. Remove active class from ALL mode buttons
+  document.querySelectorAll('#body-mode .mb').forEach(function(x) {
+    x.classList.remove('active');
+  });
+  // 2. Add active class to the clicked button
+  b.classList.add('active');
+  // 3. Update the state and labels
+  S.mode = b.dataset.mode;
+  document.getElementById('modeLabel').textContent = b.textContent.trim();
+  // 4. Handle mode-specific control panels (if you have them)
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
   });
-  // Show the panel for the current mode (if any)
   let activeCtrl = document.getElementById('ctrl-' + S.mode);
   if (activeCtrl) activeCtrl.classList.add('active');
+  // 5. Re-initialize and redraw
+  if (window._st) {
+    window._st.ri();
+    window._st.rd();
+  }
+});
+
   
-  window._st.ri(); window._st.rd();
-});
-
-
-// ── CHARSET ───────────────────────────────────────────────────────────────────
-document.getElementById('charsetGrid').addEventListener('click', function(e) {
-  let b = e.target.closest('.cb');
-  if (!b || !b.dataset.cs) return;
-  document.querySelectorAll('#charsetGrid .cb').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  let cs = b.dataset.cs;
-  document.getElementById('customRow').style.display = cs === 'custom' ? 'flex' : 'none';
-
-  // Handle Random Unicode modes
-  if (cs === 'randuni') { RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_weighted') { RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_pos') { RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; }
-  if (cs === 'randuni_drift') { RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; }
-
-  // Handle Particles mode
-  if (cs === 'particles') {
-    S.useParticleMode = true;
-    RAND_UNICODE_MODE = null;
-    window._st.rd();
-    return;
-  }
-  S.useParticleMode = false;
-
-  // Normal charset (non‑custom)
-  RAND_UNICODE_MODE = null;
-  if (cs !== 'custom') {
-    S.chars = CHARSETS[cs];
-    // Show a warning for rare charsets – no automatic font switch
-    if (RARE_CHARSETS.includes(cs)) {
-      showToast('⚠️ For best results, select “Universal Unicode” font manually');
+// ── CHARACTER UI WIRING ───────────────────────────────────────────────────────
+// We target 'body-chars' to catch clicks from all character sub-sections
+const characterUI = document.getElementById('body-chars');
+if (characterUI) {
+  characterUI.addEventListener('click', function(e) {
+    let b = e.target.closest('.cb');
+    if (!b || !b.dataset.cs) return;
+    // 1. Clear active state for all buttons in this section
+    characterUI.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    let cs = b.dataset.cs;
+    S.charSet = cs; // Update state tracker
+    // 2. Handle the Custom Input Row visibility
+    let row = document.getElementById('customRow');
+    if (row) row.style.display = (cs === 'custom') ? 'flex' : 'none';
+    // 3. Handle Random Unicode modes
+    if (cs === 'randuni') { 
+        RAND_UNICODE_MODE = 'full'; _driftMap.clear(); window._st.rd(); return; 
     }
-    window._st.rd();
-  }
-});
+    if (cs === 'randuni_weighted') { 
+        RAND_UNICODE_MODE = 'weighted'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    if (cs === 'randuni_pos') { 
+        RAND_UNICODE_MODE = 'pos'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    if (cs === 'randuni_drift') { 
+        RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; 
+    }
+    // 4. Handle Particles mode
+    const particleTypes = ['particles','arch','glitch_p','microbe','husks','filaments','neural','astro','slate','petals','tendril'];
+    
+      if (particleTypes.includes(cs)) {
+        S.useParticleMode = true;
+        RAND_UNICODE_MODE = null;
+        if (window._st) window._st.rd();
+        return; // Exit early so it doesn't try to load a text charset
+      }
+    S.useParticleMode = false;
+    // 5. Handle Normal charsets (non-custom, non-random)
+    RAND_UNICODE_MODE = null;
+    if (cs !== 'custom') {
+      S.chars = CHARSETS[cs];
+      // Show warning for rare charsets
+      if (typeof RARE_CHARSETS !== 'undefined' && RARE_CHARSETS.includes(cs)) {
+        showToast('⚠️ For best results, select “Universal Unicode” font manually');
+      }
+      if (window._st) window._st.rd();
+    }
+  });
+}
 
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change', function() {
@@ -6116,20 +6229,14 @@ const PRESETS={
   sacred:function(){ap({mode:'bloom',font:'times',entropy:0,speed:.002,wave:15,bg:'#0d0c0a',spacing:14,maxSize:22,palette:'site',overlayStreams:[{text:'SACRED TEXT',color:'#b8955a',offset:0},{text:'永遠',color:'#c4bcb0',offset:500}],overlayWave:12,overlaySpeed:1,overlaySize:20,overlayAlpha:35,compEnabled:false,signalCollapse:false});},
   signal:function(){ap({mode:'glitch',font:'vt323',entropy:.05,speed:.008,wave:50,bg:'#0a0c14',spacing:10,maxSize:18,compEnabled:false,overlayStreams:[{text:'SIGNAL LOST',color:'#e63946',offset:0},{text:'████░░░░',color:'#444',offset:300}],overlayWave:5,overlaySpeed:6,overlaySize:14,overlayAlpha:50,signalCollapse:true});},
   webster:function(){ap({mode:'recursive',font:'courier',entropy:.06,speed:.003,wave:8,bg:'#0d0c0a',spacing:10,maxSize:22,flipChance:.4,compEnabled:true,compPreset:1,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:14,overlayAlpha:40,signalCollapse:false});},
-  dream:function(){
-    let blended=[];['ascii','cyrillic','symbols'].forEach(function(cs){CHARSETS[cs].forEach(function(c){blended.push(c);});});
-    blended.sort(function(){return Math.random()-.5;}).splice(80);
-    ap({mode:'loops',font:'mono',entropy:.18,speed:.005,wave:38,bg:'#14101e',spacing:10,maxSize:24,chars:blended,palette:'neon',compEnabled:false,overlayStreams:[{text:'MACHINE DREAM',color:'#4cc9f0',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:28,overlaySpeed:4,overlaySize:22,overlayAlpha:48,signalCollapse:false});
-  },
+  dream:function(){let blended=[];['ascii','cyrillic','symbols'].forEach(function(cs){CHARSETS[cs].forEach(function(c){blended.push(c);});});blended.sort(function(){return Math.random()-.5;}).splice(80);ap({mode:'loops',font:'mono',entropy:.18,speed:.005,wave:38,bg:'#14101e',spacing:10,maxSize:24,chars:blended,palette:'neon',compEnabled:false,overlayStreams:[{text:'MACHINE DREAM',color:'#4cc9f0',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:28,overlaySpeed:4,overlaySize:22,overlayAlpha:48,signalCollapse:false});},
   topo:function(){ap({mode:'topo',font:'typewriter',entropy:0,speed:.003,wave:60,bg:'#0a0c14',spacing:8,maxSize:18,noiseScale:.008,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'elevation',color:'#8aaccc',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   deepsea:function(){ap({mode:'topolines',font:'courier',entropy:0,speed:.002,wave:45,bg:'#020d18',spacing:6,maxSize:14,noiseScale:.006,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'DEPTH',color:'#20B2AA',offset:0},{text:'∞~≈',color:'#4682B4',offset:200}],overlayWave:18,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   paperink:function(){ap({mode:'halftone',font:'times',entropy:0,speed:.001,wave:8,bg:'#f5efe0',spacing:11,maxSize:20,noiseScale:.012,palette:'paper',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'dada machine poetry',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:16,overlayAlpha:55,overlayDir:'alt'});},
   machinepoetry:function(){ap({mode:'webster',font:'courier',entropy:.12,speed:.004,wave:12,bg:'#0d0c0a',spacing:9,maxSize:18,palette:'mono',flipChance:.5,compEnabled:true,compPreset:2,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#c4bcb0',offset:0},{text:'MACHINE POETRY',color:'#b8955a',offset:300},{text:'░▒▓█',color:'#5c5550',offset:600}],overlayWave:0,overlaySpeed:3,overlaySize:12,overlayAlpha:40,overlayDir:'alt',signalCollapse:false});},
-  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
-    let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
+  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
     });S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');renderShapeList();S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
-    renderStreamList();window._st.rd();
-  },
+    renderStreamList();window._st.rd();},
   urbannight:function(){ap({mode:'scan',font:'vt323',entropy:.04,speed:.006,wave:35,bg:'#0a0c14',spacing:10,maxSize:22,noiseScale:.01,palette:'navy',compEnabled:true,compPreset:0,compCols:COMP_PALETTES.navy2,overlayStreams:[{text:'CITY',color:'#4a7fb5',offset:0},{text:'███▒░',color:'#1a3050',offset:400}],overlayWave:5,overlaySpeed:4,overlaySize:18,overlayAlpha:35,signalCollapse:false});},
   entropy:function(){ap({mode:'glitch',font:'vt323',entropy:.45,speed:.01,wave:80,bg:'#000',spacing:8,maxSize:24,noiseScale:.015,palette:'fire',compEnabled:false,flipChance:.6,overlayStreams:[{text:'ENTROPY',color:'#e63946',offset:0},{text:'SYSTEM FAILURE',color:'#f4a261',offset:200},{text:'████░░__',color:'#888',offset:500}],overlayWave:25,overlaySpeed:8,overlaySize:20,overlayAlpha:60,overlayDir:'alt',overlayEntropy:60,overlayDistort:20,signalCollapse:true});},
   aurora:function(){ap({mode:'contour',font:'georgia',entropy:0,speed:.003,wave:55,bg:'#020810',spacing:9,maxSize:20,noiseScale:.007,palette:'aurora',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'aurora borealis',color:'#00c9a7',offset:0},{text:'∞∆◊',color:'#845ec2',offset:400}],overlayWave:40,overlaySpeed:2,overlaySize:14,overlayAlpha:30,overlayDir:'alt'});},
@@ -6181,9 +6288,7 @@ const PRESETS={
 };
 
 
-
-// ── PRESET APPLY (EVENT LISTENER) ───────────────────────────────────────────
-// Use event delegation on the presets body container
+// Wire preset bar (updated for sub-sections)
 document.getElementById('body-presets').addEventListener('click', function(e) {
   let b = e.target.closest('[data-preset]');
   if (!b) return;
@@ -6195,11 +6300,19 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
 });
 
 // Collapse all sections on initial load
-['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets'].forEach(function(id){
-  let body=document.getElementById('body-'+id);
-  let arrow=document.getElementById('arr-'+id);
-  if(body){body.classList.add('collapsed');if(arrow) arrow.classList.remove('open');}
-});  
+[
+  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
+  'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
+  'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
+].forEach(function(id) {
+  let body = document.getElementById('body-' + id);
+  let arrow = document.getElementById('arr-' + id);
+  if (body) {
+    body.classList.add('collapsed');
+    if (arrow) arrow.classList.remove('open');
+  }
+});
   
 // ── MOBILE PANEL TOGGLE ───────────────────────────────────────────────────────
 let _panelHidden = false;
