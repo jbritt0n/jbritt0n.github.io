@@ -216,6 +216,10 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="bauhaus_dark">Bauhaus Dark</button>
         <button class="pbar-btn" data-preset="maeda_eyechart">Eye Chart</button>
         <button class="pbar-btn" data-preset="geode_vibrate">Geode</button>
+        <button class="pbar-btn" data-preset="cascade_glitch">Cascade</button>
+        <button class="pbar-btn" data-preset="diagonal_dense">Diagonal</button>
+        <button class="pbar-btn" data-preset="scatter_bloom">Scatter</button>
+        <button class="pbar-btn" data-preset="still_red">Still</button>
     </div>
   </div>
 </div>
@@ -271,6 +275,10 @@ select option{background:var(--ink)}
           <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
+          <button class="mb new-mode" data-mode="cascaderects"  title="Nested character-outlined rectangles cascading diagonally">Cascade Rects</button>
+          <button class="mb new-mode" data-mode="diagonalfield" title="Dense diagonal character lanes with shifting density bands">Diagonal Field</button>
+          <button class="mb new-mode" data-mode="scatterdots"   title="Dot characters scattered into organic cloud forms">Scatter Dots</button>
+          <button class="mb new-mode" data-mode="clyffordstill" title="Clyfford Still — jagged vertical tear-forms with impasto texture">Still</button>
           <button class="mb new-mode" data-mode="bauhaus" title="Bauhaus — geometric primary shapes with orbital and rotational animation">Bauhaus</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
           <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice projected to 2D">Hypersphere</button>
@@ -584,6 +592,19 @@ select option{background:var(--ink)}
   <div class="tr">
     <span class="tl">Stack overlapping</span>
     <button class="tb" id="btnMgStack">Off</button>
+  </div>
+</div>
+
+      <!-- Geode Controls -->
+<div id="ctrl-geode" class="mode-ctrl">
+  <div class="sl2">Geode</div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Drift amount</span><span class="rv" id="vGeoDrift">8</span></div>
+    <input type="range" id="sGeoDrift" min="0" max="80" value="8" step="2">
+  </div>
+  <div class="rw">
+    <div class="rl"><span class="rn">Vibration frequency</span><span class="rv" id="vGeoFreq">10</span></div>
+    <input type="range" id="sGeoFreq" min="1" max="40" value="10" step="1">
   </div>
 </div>
       
@@ -1120,9 +1141,9 @@ let S={
   overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
   overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
   overlayEntropy:0,overlayDistort:0,
-  overlayKern: 0,           // global kerning (pixels)
+  overlayKern: 5,           // global kerning (pixels)
   overlayLineSpacing: 0,    // additional vertical spacing (pixels)
-  overlayRepeatFill: false, // if true, each stream repeats to cover whole screen
+  overlayRepeatFill: true, // if true, each stream repeats to cover whole screen
   shapesEnabled:false,shapeDens:6,selectedShape:'circle',
   shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
   shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
@@ -1149,6 +1170,7 @@ let S={
   mgTextSpd: 30,
   mgAnim: true,
   mgStack: false,
+  geodeDrift:8,geoVibFreq:1.0,
   
 
 };
@@ -1165,7 +1187,10 @@ let loopParticles=[];
 let geodeTiles = [];
 let monogridBlocks = [];  
 let topoSegs=[];
-let bauhausShapes = [];  
+let cascadeRects = [];
+let scatterClouds = [];  
+let bauhausShapes = []; 
+let stillForms = [];  
 // Maze
 let mazeGrid = null, mazeCols = 0, mazeRows = 0;
 let mazeShiftTimer = 0;
@@ -3347,32 +3372,20 @@ function drawBrushContour(p, t) {
 function initGeode(W, H) {
   geodeTiles = [];
   let step = Math.max(4, S.spacing);
-  let cx = W * 0.5, cy = H * 0.5;
   for (let x = step * 0.5; x < W; x += step) {
     for (let y = step * 0.5; y < H; y += step) {
-      let dx = (x - cx) / (W * 0.40);
-      let dy = (y - cy) / (H * 0.40);
-      let dist = Math.sqrt(dx * dx + dy * dy);
-      // Blob boundary with static noise perturbation
-      let blobNoise = Math.sin(x * 0.018) * Math.cos(y * 0.015) * 0.22
-                    + Math.cos(x * 0.008 + y * 0.011) * 0.18;
-      let inside = dist < (0.72 + blobNoise);
-      if (!inside) continue;                       // only store tiles inside blob
       geodeTiles.push({
-        bx:     x,                                 // base position (fixed)
+        bx:     x,
         by:     y,
-        dist,
-        rot:    (Math.random() - 0.5) * 0.8,
-        vx:     (Math.random() - 0.5) * 0.4,      // vibration velocity
-        vy:     (Math.random() - 0.5) * 0.4,
-        ox:     0,                                 // current offset
-        oy:     0,
-        tw:     step * (0.45 + Math.random() * 0.65),
-        th:     step * (0.45 + Math.random() * 0.9),
+        rot:    (Math.random() - 0.5) * 0.9,
+        spinV:  (Math.random() - 0.5) * 0.022,
+        tw:     step * (0.42 + Math.random() * 0.7),
+        th:     step * (0.42 + Math.random() * 0.95),
         palIdx: Math.floor(Math.random() * 6),
         phase:  Math.random() * Math.PI * 2,
+        phaseX: Math.random() * Math.PI * 2,
+        phaseY: Math.random() * Math.PI * 2 + 1.3,
         rand:   Math.random(),
-        spinV:  (Math.random() - 0.5) * 0.025,
       });
     }
   }
@@ -3381,112 +3394,180 @@ function initGeode(W, H) {
 function drawGeode(p, t) {
   if (!geodeTiles.length) initGeode(p.width, p.height);
 
-  let vibAmt = S.wave * 0.045 + 0.3;              // wave controls shake intensity
+  let drift  = (S.geodeDrift  !== undefined ? S.geodeDrift  : 8);
+  let freq   = (S.geoVibFreq  !== undefined ? S.geoVibFreq  : 1.0) * 0.25;
+  let scale  = S.maxSize / 20;
 
   geodeTiles.forEach(function(tile) {
-    // Bumbling: each tile has independent noise-driven offset
-    let nx  = p.noise(tile.bx * 0.008, tile.by * 0.008, t * 0.8 + tile.phase);
-    let ny  = p.noise(tile.bx * 0.008, tile.by * 0.008, t * 0.8 + tile.phase + 100);
-    tile.ox = (nx - 0.5) * 2 * vibAmt * 8;
-    tile.oy = (ny - 0.5) * 2 * vibAmt * 8;
+    // Each tile has independent slow noise-driven drift
+    let nx = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase);
+    let ny = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase + 77);
 
-    // Entropy adds erratic jumping
-    if (S.entropy > 0 && Math.random() < S.entropy * 0.06) {
-      tile.ox += (Math.random() - 0.5) * S.entropy * 30;
-      tile.oy += (Math.random() - 0.5) * S.entropy * 30;
+    // Fast vibration layer — frequency controlled by slider
+    let vib = drift * 0.18;
+    let vx  = Math.sin(t * freq * 4.5 + tile.phaseX) * vib;
+    let vy  = Math.cos(t * freq * 3.8 + tile.phaseY) * vib;
+
+    let x = tile.bx + (nx - 0.5) * drift * 2 + vx;
+    let y = tile.by + (ny - 0.5) * drift * 2 + vy;
+
+    // Entropy: random teleport
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.03) {
+      x += (Math.random() - 0.5) * S.entropy * 60;
+      y += (Math.random() - 0.5) * S.entropy * 60;
     }
 
-    // Tiles near center vibrate more; outer tiles vibrate less
-    let distFactor = Math.max(0.1, 1 - tile.dist * 0.6);
-
-    // Slow spin driven by speed
     if (S.playing) tile.rot += tile.spinV * S.speed * 40;
 
-    let x = tile.bx + tile.ox * distFactor;
-    let y = tile.by + tile.oy * distFactor;
+    let tw = tile.tw * scale;
+    let th = tile.th * scale;
 
-    // Scale tile size with maxSize
-    let scale = S.maxSize / 20;
-    let tw    = tile.tw * scale;
-    let th    = tile.th * scale;
-
-    // Color: palette with accent override
     let col = S.palette[tile.palIdx % S.palette.length];
-    if (S.accent !== 'none' && tile.rand < S.accentAmt * 0.45) col = S.accent;
-    if (S.accent2 !== 'none' && tile.rand > 1 - S.accentAmt2 * 0.45) col = S.accent2;
-
-    // Soft alpha at blob edge
-    let alpha = Math.min(1, (0.72 - tile.dist * 0.65) * 12 + 0.3);
-    alpha = Math.max(0, Math.min(1, alpha));
+    if (S.accent  !== 'none' && tile.rand < S.accentAmt  * 0.5) col = S.accent;
+    if (S.accent2 !== 'none' && tile.rand > 1 - S.accentAmt2 * 0.5) col = S.accent2;
 
     CTX.save();
-    CTX.globalAlpha = alpha;
     CTX.translate(x, y);
     CTX.rotate(tile.rot);
     CTX.fillStyle = col;
     CTX.fillRect(-tw * 0.5, -th * 0.5, tw, th);
     CTX.restore();
   });
-  CTX.globalAlpha = 1;
   _lastFill = '';
 }
 
+// ── Cascade Rects ─────────────────────────────────────────────────────
+
+
+function initCascadeRects(W, H) {
+  cascadeRects = [];
+  let count = 4 + Math.floor(S.density * 8);
+  for (let i = 0; i < count; i++) {
+    // Each cascade starts at a random position and nests inward
+    let startX = Math.random() * W * 0.6;
+    let startY = Math.random() * H * 0.4;
+    let startW = W * (0.2 + Math.random() * 0.5);
+    let startH = H * (0.15 + Math.random() * 0.4);
+    let nestCount = 3 + Math.floor(Math.random() * 8);
+    let palIdx = Math.floor(Math.random() * 6);
+    cascadeRects.push({ startX, startY, startW, startH, nestCount, palIdx,
+      phase: Math.random() * Math.PI * 2,
+      driftX: (Math.random() - 0.5) * 0.3,
+      driftY: (Math.random() - 0.5) * 0.2 });
+  }
+}
+
+function drawCascadeRects(p, t) {
+  if (!cascadeRects.length) initCascadeRects(p.width, p.height);
+
+  let tokens = S.chars && S.chars.length ? S.chars : ['·'];
+  let sz     = Math.max(3, S.spacing * 0.7);
+  let charW  = sz * 0.62;
+
+  cascadeRects.forEach(function(cascade, ci) {
+    // Slow drift
+    let driftX = S.wave > 0 ? Math.sin(t * 0.6 + cascade.phase) * S.wave * 0.12 : 0;
+    let driftY = S.wave > 0 ? Math.cos(t * 0.5 + cascade.phase) * S.wave * 0.08 : 0;
+
+    for (let ni = 0; ni < cascade.nestCount; ni++) {
+      let shrink = ni / cascade.nestCount;
+      // Each nested level shifts diagonally and shrinks
+      let rx = cascade.startX + shrink * cascade.startW * 0.35 + driftX;
+      let ry = cascade.startY + shrink * cascade.startH * 0.35 + driftY;
+      let rw = cascade.startW * (1 - shrink * 0.65);
+      let rh = cascade.startH * (1 - shrink * 0.65);
+      if (rw < sz * 2 || rh < sz * 2) break;
+
+      let col = S.palette[(cascade.palIdx + ni) % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && ni === 0) col = S.accent;
+
+      // Entropy: randomly skip a level
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.3) continue;
+
+      // Draw the rectangle outline using characters
+      // Top and bottom edges
+      let tokBase = Math.floor(S.fc * S.speed * 0.3 + ci * 13 + ni * 7);
+      for (let x = rx; x < rx + rw; x += charW) {
+        let ch = tokens[(tokBase + Math.floor(x / charW)) % tokens.length];
+        // Entropy jitter
+        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
+        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
+        dc(x + jx, ry + jy,        sz, 0, col, ch);
+        dc(x + jx, ry + rh + jy,   sz, 0, col, ch);
+      }
+      // Left and right edges
+      for (let y = ry + sz; y < ry + rh; y += sz * 1.05) {
+        let ch = tokens[(tokBase + Math.floor(y / sz)) % tokens.length];
+        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
+        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
+        dc(rx + jx,        y + jy, sz, 0, col, ch);
+        dc(rx + rw + jx,   y + jy, sz, 0, col, ch);
+      }
+    }
+  });
+}
+
+  
 // ── TYPESCALE (Maeda) ─────────────────────────────────────────────────────
 // Characters grade from enormous at top to microscopic dense texture below.
 // Max Size = largest character, Spacing = compression of the gradient,
 // Wave = adds horizontal ripple to the size gradient.
 
 function drawTypescale(p, t) {
-  let cx     = p.width * 0.5;
-  let cy     = p.height;          // anchor at bottom center
-  let maxSz  = S.maxSize * 4.5;
-  let minSz  = 1.2;
-  let maxR   = Math.sqrt(cx * cx + cy * cy) * 1.1;
+  // Three anchor points along the bottom
+  let origins = [
+    { x: p.width * 0.15, y: p.height, spread: 0.28 },
+    { x: p.width * 0.50, y: p.height, spread: 0.38 },
+    { x: p.width * 0.85, y: p.height, spread: 0.28 },
+  ];
 
-  // Number of concentric arcs
-  let arcCount = Math.floor(18 + S.density * 40);
+  let maxSz   = S.maxSize * 4.2;
+  let minSz   = 1.4;
+  let arcCount = Math.floor(22 + S.density * 50);
 
-  for (let ai = 0; ai < arcCount; ai++) {
-    let progress = ai / arcCount;                        // 0=innermost, 1=outermost
-    let eased    = progress * progress;
-    let radius   = p.map(eased, 0, 1, maxSz * 0.3, maxR);
+  origins.forEach(function(orig, oi) {
+    for (let ai = 0; ai < arcCount; ai++) {
+      let progress = ai / arcCount;
+      // Ease out — gradual growth
+      let eased  = Math.pow(progress, 1.6);
+      let radius = p.map(eased, 0, 1, maxSz * 0.2, p.height * 1.05);
+      let sz     = p.map(eased, 0, 1, maxSz, minSz);
 
-    // Size shrinks as radius grows (small near edge, huge near center)
-    let sz = p.map(eased, 0, 1, maxSz, minSz);
-    sz *= 1 + Math.sin(t * 1.8 + ai * 0.4) * 0.12 * (S.wave / 30); // pulse
+      // Pulse — each origin pulses slightly out of phase
+      sz *= 1 + Math.sin(t * 1.4 + ai * 0.35 + oi * 1.8) * 0.09 * (S.wave / 30);
+      if (sz < 1) continue;
 
-    if (sz < 1) continue;
+      // Arc spans from ~180° (straight left) to 360° (straight right)
+      // shifted by origin spread so the three fans overlap naturally
+      let arcStart = Math.PI * (0.5 + orig.spread * 0.2);
+      let arcEnd   = Math.PI * (1.5 - orig.spread * 0.2);
+      let arcLen   = (arcEnd - arcStart) * radius;
+      let charW    = sz * 0.7;
+      let numChars = Math.max(1, Math.floor(arcLen / charW));
 
-    // Characters placed along a bottom-center arc
-    // Only render the top ~180° so it fans upward from the anchor
-    let arcLen   = radius * Math.PI;                     // half circumference
-    let charW    = sz * 0.68;
-    let numChars = Math.max(1, Math.floor(arcLen / charW));
+      for (let ci = 0; ci < numChars; ci++) {
+        let frac  = ci / numChars;
+        let angle = arcStart + frac * (arcEnd - arcStart);
+        let wobble = S.wave > 0
+          ? Math.sin(angle * 4 + t * 2 + ai * 0.4 + oi * 2.2) * S.wave * 0.016
+          : 0;
+        let r = radius + wobble * radius * 0.5;
+        let x = orig.x + Math.cos(angle) * r;
+        // Rows move upward when playing
+        let yOff = S.playing ? Math.sin(t * 0.8 + ai * 0.2 + oi) * sz * 0.3 : 0;
+        let y    = orig.y + Math.sin(angle) * r + yOff;
 
-    for (let ci = 0; ci < numChars; ci++) {
-      let frac  = ci / numChars;                         // 0 to 1 along arc
-      let angle = Math.PI + frac * Math.PI;              // π to 2π = bottom semicircle
+        if (x < -sz*2 || x > p.width + sz*2 || y > p.height + sz || y < -sz * 3) continue;
 
-      // Wave distortion on radius
-      let wobble = S.wave > 0
-        ? Math.sin(angle * 3 + t * 2 + ai * 0.3) * S.wave * 0.018
-        : 0;
-      let r = radius + wobble * radius;
+        let charRot = S.charRotRad + (S.wave > 0 ? Math.sin(t * 1.8 + ci * 0.25 + ai * 0.1) * 0.3 : 0);
+        if (S.entropy > 0 && Math.random() < S.entropy * 0.07) charRot += (Math.random() - 0.5) * 2;
 
-      let x = cx + Math.cos(angle) * r;
-      let y = cy + Math.sin(angle) * r;
-
-      if (x < -sz || x > p.width + sz || y < -sz * 2 || y > p.height + sz) continue;
-
-      // Characters tumble/rotate as they animate
-      let charRot = S.charRotRad + (S.wave > 0 ? Math.sin(t * 1.5 + ci * 0.2) * 0.35 : 0);
-      if (S.entropy > 0 && Math.random() < S.entropy * 0.08) charRot += (Math.random() - 0.5) * 2;
-
-      let col = pickColor(p, x, y, t);
-      let ch  = pickChar(p, x + ai * 13, y, t);
-      dc(x, y, sz, charRot, col, ch);
+        // Overlap: render at slightly reduced alpha when fans intersect
+        let col = pickColor(p, x, y, t);
+        dc(x, y, sz, charRot, col, pickChar(p, x + oi * 31 + ai * 17, y, t));
+      }
     }
-  }
+  });
 }
 
 // ── MONOGRID (Asendorf) ───────────────────────────────────────────────────
@@ -3516,54 +3597,57 @@ function drawMonogrid(p, t) {
   let sz      = Math.max(2, S.spacing * 0.85);
   let charW   = sz * 0.63;
   let charH   = sz * 1.05;
-  // Text cycle speed — 0 = static, 100 = fast
   let tokIdx  = Math.floor(S.fc * S.speed * (S.mgTextSpd / 30) * 0.4) % tokens.length;
-
-  // Uniform text field
+  // ── Background text field with noise-driven diagonal pattern lines ─────────
   for (let y = sz; y < p.height + sz; y += charH) {
     for (let x = 0; x < p.width + charW; x += charW) {
+      // Noise drives diagonal banding — creates the Webster line-pattern feel
+      let n  = p.noise(x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.4);
+      let n2 = p.noise(x * S.noiseScale * 3.5 + 20, y * S.noiseScale * 3.5, t * 0.7);
+      // Diagonal band: skip chars in dark bands to create stripe pattern
+      let diagVal = ((x * 0.4 + y * 0.4) * S.noiseScale * 12 + t * 0.3) % 1.0;
+      if (n2 > 0.7 && diagVal < 0.5) continue;
       let col = pickColor(p, x, y, t);
       let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
       dc(x, y, sz, 0, col, ch);
     }
   }
-
-  // Blocks
-  CTX.save();
-  if (!S.mgStack) {
-    // Default: normal composite
-    CTX.globalCompositeOperation = 'source-over';
-  } else {
-    // Stack mode: multiply blend for layered depth
-    CTX.globalCompositeOperation = 'multiply';
-  }
-
+  // ── Overlaid blocks made of block characters ───────────────────────────────
+  let blockChars = ['█','▓','▒','░','▉','▊','▋','▌','▍','▎','▏'];
   monogridBlocks.forEach(function(b) {
-    // Animate block drift
     if (S.playing && S.mgAnim) {
       b.x += b.vx * S.speed * 60;
       b.y += b.vy * S.speed * 60;
-      if (b.x + b.w < 0)        b.x = p.width;
-      if (b.x > p.width)        b.x = -b.w;
-      if (b.y + b.h < 0)        b.y = p.height;
-      if (b.y > p.height)       b.y = -b.h;
+      if (b.x + b.w < 0)  b.x = p.width;
+      if (b.x > p.width)  b.x = -b.w;
+      if (b.y + b.h < 0)  b.y = p.height;
+      if (b.y > p.height) b.y = -b.h;
     }
-
     let waveOff = S.wave > 0 ? Math.sin(t + b.phase) * S.wave * 0.06 : 0;
+    let bx = b.x + waveOff;
     let col = S.palette[b.palIdx % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
         p.noise(b.x * 0.01, b.y * 0.01, t) > (1 - S.accentAmt)) col = S.accent;
-
-    CTX.globalAlpha = S.mgAlpha !== undefined ? S.mgAlpha : 0.4;
-    CTX.fillStyle   = col;
-    CTX.fillRect(b.x + waveOff, b.y, b.w, b.h);
+    // Draw the block using block characters cell by cell
+    let bSz  = sz * 1.1;
+    let bChW = bSz * 0.63;
+    let bChH = bSz * 1.05;
+    for (let cy = bx > 0 ? b.y : b.y; cy < b.y + b.h; cy += bChH) {
+      for (let cx = bx; cx < bx + b.w; cx += bChW) {
+        // Entropy: randomly skip cells to create "removed block" look
+        if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
+        // Pick block char — denser near center of block
+        let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
+        let bIdx = distFromEdge < bChW * 1.5
+          ? Math.floor(Math.random() * blockChars.length)          // edge: varied
+          : Math.floor(p.noise(cx * 0.05, cy * 0.05, t) * 3);     // interior: dense
+        let ch = blockChars[bIdx % blockChars.length];
+        dc(cx, cy, bSz, 0, col, ch);
+      }
+    }
   });
-
-  CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
-  _lastFill = '';
-  CTX.restore();
 }
+  
 // ── BOIDS ─────────────────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
 // Characters ride on each agent, rotate toward velocity. Completely emergent.
@@ -4387,6 +4471,7 @@ new p5(function(p){
     initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
     recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
     sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];bauhausShapes=[];
+    cascadeRects=[];scatterClouds=[];stillForms=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
     boidAgents=[];magneticPoles=[];
     if(S.compEnabled) buildComp(S.compPreset,W,H);
@@ -4543,7 +4628,11 @@ CTX.fillRect(0, 0, W, H);
     case 'geode':        drawGeode(p, t);        break;
     case 'typescale':    drawTypescale(p, t);    break;
     case 'monogrid':     drawMonogrid(p, t);     break;
-    case 'bauhaus': drawBauhaus(p, t); break;  
+    case 'bauhaus': drawBauhaus(p, t); break;
+    case 'cascaderects':   drawCascadeRects(p, t);   break;
+    case 'diagonalfield':  drawDiagonalField(p, t);   break;
+    case 'scatterdots':    drawScatterDots(p, t);     break;
+    case 'clyffordstill':  drawClyffordStill(p, t);   break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
@@ -4642,6 +4731,8 @@ wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
 wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
 wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
 wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
+wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
+wireSlider('sGeoFreq',  'vGeoFreq',  'geoVibFreq');  
 wireSlider('sMgBlocks', 'vMgBlocks', 'mgBlockCount', null,function(){ monogridBlocks = []; });
 wireSlider('sMgAlpha',  'vMgAlpha',  'mgAlpha', function(v){ return v / 100; });
 wireSlider('sMgTextSpd','vMgTextSpd','mgTextSpd');document.getElementById('btnMgAnim').addEventListener('click', function(){S.mgAnim = !S.mgAnim;this.textContent = S.mgAnim ? 'On' : 'Off';this.classList.toggle('on', S.mgAnim);});
@@ -5753,6 +5844,10 @@ const PRESETS={
   bauhaus_dark: function() {ap({ mode:'bauhaus', font:'impact', entropy:.04, speed:.006,wave:50, bg:'#0d0c0a', spacing:16, maxSize:22,noiseScale:.01, palette:'abyss', compEnabled:false });bauhausShapes = [];},
   maeda_eyechart: function() {ap({ mode:'typescale', font:'impact', entropy:0, speed:.003,wave:25, bg:'#f5f0ea', spacing:10, maxSize:32,noiseScale:.01, palette:'mono', compEnabled:false,chars: CHARSETS.katakana });},
   geode_vibrate: function() {ap({ mode:'geode', font:'courier', entropy:0, speed:.004,wave:55, bg:'#f5f0ea', spacing:8, maxSize:18,noiseScale:.008, palette:'neonpastel', compEnabled:false });geodeTiles = [];},
+  cascade_glitch: function(){ap({ mode:'cascaderects', font:'courier', entropy:.08, speed:.003,wave:15, bg:'#f5f0ea', spacing:8, maxSize:12,noiseScale:.01, palette:'mono', compEnabled:false });cascadeRects = [];},
+  diagonal_dense: function(){ap({ mode:'diagonalfield', font:'courier', entropy:.02, speed:.004,wave:20, bg:'#f5f0ea', spacing:5, maxSize:14,noiseScale:.008, palette:'mono', compEnabled:false });},
+  scatter_bloom: function(){ap({ mode:'scatterdots', font:'courier', entropy:.05, speed:.003,wave:25, bg:'#f5f0ea', spacing:10, maxSize:16,noiseScale:.01, palette:'neonpastel', compEnabled:false });scatterClouds = [];},
+  still_red: function(){ap({mode:'clyffordstill', font:'courier', entropy:.03, speed:.002,wave:30, bg:'#1a0a05',spacing:4, maxSize:18,noiseScale:.012, palette:'volcanic', compEnabled:false });stillForms = [];},
   
 };
 
