@@ -663,6 +663,10 @@ select option{background:var(--ink)}
         </div>
         
       </div></div>
+
+
+
+      
       
             <!-- Mode Specific Controls -->
       
@@ -772,31 +776,55 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
       </div></div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('blend')"><span class="sl">Blend mode</span><span class="sec-arrow" id="arr-blend">›</span></div>
-      <div class="sec-body collapsed" id="body-blend">
-        <div class="sl2" style="margin-bottom:.4rem">Canvas compositing</div>
-        <select id="blendSelect" title="Canvas blend mode — changes how new pixels are composited over the background">
-          <option value="source-over">Normal (default)</option>
-          <option value="screen">Screen — lighten, neon glow</option>
-          <option value="multiply">Multiply — darken, print-like</option>
-          <option value="overlay">Overlay — contrast boost</option>
-          <option value="hard-light">Hard Light — intense overlay</option>
-          <option value="soft-light">Soft Light — subtle dodge/burn</option>
-          <option value="color-dodge">Color Dodge — bright, luminous</option>
-          <option value="linear-dodge">Linear Dodge — Add: very bright</option>
-          <option value="color-burn">Color Burn — deep darken</option>
-          <option value="difference">Difference — invert-like, psychedelic</option>
-          <option value="exclusion">Exclusion — lower contrast difference</option>
-          <option value="lighten">Lighten — keep max</option>
-          <option value="darken">Darken — keep min</option>
-          <option value="hue">Hue — apply hue only</option>
-          <option value="saturation">Saturation — apply saturation</option>
-          <option value="luminosity">Luminosity — apply luminosity</option>
-          <option value="xor">XOR — exclusive or, abstract</option>
-        </select>
-        <p class="hn">Blend mode applies to every draw call. Screen and Color Dodge create neon/glow effects. Multiply works best on light backgrounds.</p>
-      </div></div>
+      
+<!-- RENDERING - Color Mapping, Noise, and Blending Controls -->
+<div class="sec">
+  <div class="sec-hd" onclick="toggleSec('render')">
+    <span class="sl">Rendering & Mapping</span>
+    <span class="sec-arrow" id="arr-render">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-render">
+    <div class="sl2" style="margin-bottom:.4rem">Canvas Blending</div>
+    <select id="blendSelect" title="Canvas blend mode">
+      <option value="source-over">Normal (default)</option>
+      <option value="screen">Screen — lighten, neon glow</option>
+      <option value="multiply">Multiply — darken, print-like</option>
+      <option value="overlay">Overlay — contrast boost</option>
+      <option value="hard-light">Hard Light — intense overlay</option>
+      <option value="soft-light">Soft Light — subtle dodge/burn</option>
+      <option value="color-dodge">Color Dodge — bright, luminous</option>
+      <option value="linear-dodge">Linear Dodge — Add</option>
+      <option value="color-burn">Color Burn — deep darken</option>
+      <option value="difference">Difference — psychedelic</option>
+      <option value="exclusion">Exclusion — lower contrast</option>
+      <option value="lighten">Lighten</option>
+      <option value="darken">Darken</option>
+      <option value="hue">Hue</option>
+      <option value="saturation">Saturation</option>
+      <option value="luminosity">Luminosity</option>
+      <option value="xor">XOR</option>
+    </select>
+    <div class="sl2" style="margin-top:1rem">Color Mapping Strategy</div>
+    <div class="cg" id="mapGrid">
+      <button class="cb active" data-map="noise">Mottled</button>
+      <button class="cb" data-map="radial">Radial</button>
+      <button class="cb" data-map="axial">Woven</button>
+      <button class="cb" data-map="stepped">Stepped</button>
+      <button class="cb" data-map="diamond">Diamond</button>
+      <button class="cb" data-map="scan">Scanline</button>
+    </div>
+    <div class="sl2">Noise Texture (For 'Mottled')</div>
+    <div class="cg" id="noiseTypeGrid">
+      <button class="cb active" data-ntype="perlin">Soft</button>
+      <button class="cb" data-ntype="ridged">Ridged</button>
+      <button class="cb" data-ntype="billow">Billow</button>
+    </div>
+    <p class="hn">Mapping determines how colors spread; Blend Mode determines how they stack.</p>
+  </div>
+</div>
 
+      
+<!-- COMPOSITION BLOCKS CONTROL -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
       <div class="sec-body collapsed" id="body-comp">
         <div class="tr"><span class="tl">Overlay blocks</span><button class="tb" id="btnComp">Off</button></div>
@@ -822,18 +850,18 @@ select option{background:var(--ink)}
         </div>
       </div></div>
 
+
+    <!-- SHAPE OVERLAY CONTROLS -->  
       <div class="sec">
   <div class="sec-hd" onclick="toggleSec('shapes')">
     <span class="sl">Shape overlay</span>
     <span class="sec-arrow" id="arr-shapes">›</span>
   </div>
   <div class="sec-body collapsed" id="body-shapes">
-
     <!-- Global enable/disable -->
     <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
       <div class="tr"><span class="tl">Draw shapes on canvas</span><button class="tb" id="btnShapes">Off</button></div>
     </div>
-
     <!-- New shape defaults -->
     <div class="shape-group" style="margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--stone);">
       <div class="sl2">➕ New shape defaults</div>
@@ -1261,6 +1289,8 @@ let S={
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
+  colorMapMode: 'noise', // Default mode
+  noiseScale: 0.005,      // Controls the "mottled" cloud size
   trailPersist:0,
   compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
   imgStretch:false,imgInvert:false,
@@ -1347,6 +1377,45 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 // Native ctx
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
+
+
+// --- COLOR MAPPING & NOISE TYPE
+function getColorIndex(x, y, t) {
+  let nx = x * S.noiseScale;
+  let ny = y * S.noiseScale;
+  let W = window.innerWidth, H = window.innerHeight;
+  let val = 0;
+  // Handle Mapping Strategy
+  switch(S.colorMapMode) {
+    case 'radial':
+      val = (Math.sqrt((x - W/2)**2 + (y - H/2)**2) * 0.002) % 1.0;
+      break;
+    case 'axial':
+      val = (Math.sin(x * 0.01) + Math.cos(y * 0.01) + 2) / 4;
+      break;
+    case 'scan':
+      val = (Math.sin(y * 0.05 + t * 0.1) + 1) / 2;
+      break;
+    case 'diamond':
+      val = (Math.abs(W/2 - x) / (W/2) + Math.abs(H/2 - y) / (H/2)) % 1.0;
+      break;
+    case 'stepped':
+      let r = noise(nx, ny, t * 0.01); 
+      val = Math.floor(r * 5) / 5;
+      break;
+    default: // 'noise'
+      val = noise(nx, ny, t * 0.01);
+  }
+  // Apply Noise Texture modification (only if in a noise-based mode)
+  if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
+    if (S.noiseType === 'ridged') {
+      val = 1.0 - Math.abs(val * 2 - 1);
+    } else if (S.noiseType === 'billow') {
+      val = Math.abs(val * 2 - 1);
+    }
+  }
+  return val;
+}
  
 
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
@@ -5077,7 +5146,7 @@ function toggleSec(id){
   
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
 const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'];
-const ALL_SECS = ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
+const ALL_SECS = ['presets', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 document.getElementById('btnCollapseAll').addEventListener('click', function() {
@@ -5281,7 +5350,8 @@ document.getElementById('btnReactOscillate').addEventListener('click', function(
   this.classList.toggle('on', S.reactOscillate);
   window._st.rd();
 });
-// ── PALETTE ───────────────────────────────────────────────────────────────────
+  
+// ── PALETTE LISTENERS───────────────────────────────────────────────────────────────────
 document.getElementById('palGrid').addEventListener('click', function(e) {
   let b = e.target.closest('.pb');
   if (!b) return;
@@ -5312,7 +5382,49 @@ document.getElementById('bgRow').addEventListener('click', function(e) {
   window._st.rd();
 });
 
-// ── BLEND MODE ────────────────────────────────────────────────────────────────
+
+ // ── COLOR MAPPING LISTENERS ──────────────────────────────────────────────────────────────── 
+document.getElementById('mapGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b) return;
+  // Toggle UI
+  document.querySelectorAll('#mapGrid .cb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  // Update State
+  S.colorMapMode = b.dataset.map;
+  // Trigger redraw if your engine uses a manual refresh
+  if(window._st) window._st.rd(); 
+});
+
+// ── RENDERING LISTENERS ──────────────────────────────────────────────────────────────── 
+const renderBody = document.getElementById('body-render');
+
+if (renderBody) {
+  // 1. Handle the Dropdown (Change event)
+  const bSelect = document.getElementById('blendSelect');
+  if (bSelect) {
+    bSelect.addEventListener('change', function() {
+      S.blendMode = this.value;
+      if (window._st) window._st.rd(); // Redraw
+    });
+  }
+  // 2. Handle the Buttons (Click event)
+  renderBody.addEventListener('click', function(e) {
+    let b = e.target.closest('.cb');
+    if (!b) return;
+    // Toggle active state in the specific grid clicked
+    let grid = b.parentElement;
+    grid.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    // Update State
+    if (b.dataset.map) S.colorMapMode = b.dataset.map;
+    if (b.dataset.ntype) S.noiseType = b.dataset.ntype;
+    if (window._st) window._st.rd(); // Redraw
+  });
+}
+  
+  
+// ── BLENDING LISTENERS ────────────────────────────────────────────────────────────────
 (function(){
   var sel=document.getElementById('blendSelect');
   if(sel) sel.addEventListener('change',function(){
