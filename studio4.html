@@ -4984,6 +4984,13 @@ new p5(function(p){
     if (S.shapesEnabled) drawShapes(p, t);
     if (S.overlayEnabled) drawOverlay(p, t);
   }
+  // ── Function Rc ─────────────────────────────────────────────────────────────────
+    function rc(preset){
+    S.compPreset=preset;
+    buildComp(preset,W,H);
+    recRects=[];rd();
+  }
+  
   // ── WINDOW._ST - STATE & CONTROL BRIDGE ────────────────────────────────────────────────── 
   window._st = {
     rd: rd,
