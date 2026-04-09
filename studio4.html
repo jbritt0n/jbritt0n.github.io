@@ -4983,25 +4983,8 @@ new p5(function(p){
     recRects=[];rd();
   }
   
- // ── STATE & CONTROL BRIDGE ──────────────────────────────────────────────────
+ // ── WINDOW._ST - STATE & CONTROL BRIDGE ──────────────────────────────────────────────────
 
-
-    S.playing = !S.playing;
-    S.playing ? p.loop() : p.noLoop();
-    return S.playing;
-  },
-  regen: function() { ri(); },
-  save: function() {
-    p.saveCanvas('studio-' + Date.now(), 'png');
-    showToast('Saved PNG');
-  },
-  rsz: resize,
-  w: function() { return W; },
-  h: function() { return H; },
-  p: p
-};
-  
-  
  window._st = {
     rd: rd,
     ri: ri,
