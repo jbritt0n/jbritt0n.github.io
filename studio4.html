@@ -5005,7 +5005,7 @@ new p5(function(p){
     },
     
     save: function() {
-      // ── WATERMARK ─────────────────────────────────────────────────────────────
+      // ──* WATERMARK *────────────────────────────────────────────────────────────
       CTX.save();
       CTX.font = 'bold 11px Jost,sans-serif';
       CTX.fillStyle = 'rgba(200,188,176,0.55)';
@@ -5014,7 +5014,7 @@ new p5(function(p){
       let wmW = CTX.measureText(wm).width;
       CTX.fillText(wm, W - wmW - 10, H - 8);
       CTX.restore();
-      // ── END WATERMARK ─────────────────────────────────────────────────────────
+      // ─* END WATERMARK *────────────────────────────────────────────────────────
 
       p.saveCanvas('studio-' + Date.now(), 'png');
       showToast('Saved PNG');
@@ -5115,16 +5115,15 @@ p.setup = function() {
   });
 };
 
+// ── P.Draw ──────────────────────────────────────────────────  
   
 p.draw = function() {
   S.fc++;
 
-  // Ensure CTX is defined (fallback to p5 drawingContext)
   if (!CTX) CTX = p.drawingContext;
-  if (!CTX) return;  // safety: exit if still null
+  if (!CTX) return; 
   let t = S.fc * (S.speed || 0.01);
-
-  // FPS display
+  // FPS display (PRESERVED)
   let now = performance.now();
   _frameCount++;
   if (now - _fpsTimer > 1000) {
@@ -5134,17 +5133,13 @@ p.draw = function() {
     let fpsLabel = document.getElementById('fpsLabel');
     if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
-
-// Clear canvas with solid color (no save/restore needed)
-CTX.globalCompositeOperation = 'source-over';
-CTX.globalAlpha = 1;
-CTX.fillStyle = S.bg;
-CTX.fillRect(0, 0, W, H);
-  
+  // Clear canvas (PRESERVED)
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.fillStyle = S.bg;
+  CTX.fillRect(0, 0, W, H);
   CTX.textBaseline = 'middle';
-  CTX.globalCompositeOperation = S.blendMode || 'source-over';
-
-  // Signal collapse effect
+  // Signal collapse effect (PRESERVED)
   if (S.signalCollapse) {
     let elapsed = S.fc - S.signalStart;
     if (elapsed < 80) {
@@ -5153,14 +5148,15 @@ CTX.fillRect(0, 0, W, H);
       CTX.fillRect(0, scanY - 2, W, 4);
     }
   }
-
-
-
-  CTX.globalCompositeOperation = 'source-over';
-  drawShapes(p, t);
-  drawOverlay(p, t);
+  // ── DRAWING THE SCENE ──
+  // This calls the master router we defined above
+  drawScene(p, t);
+  // Handle secondary layers (PRESERVED)
+  if (S.shapesEnabled) drawShapes(p, t);
+  if (S.overlayEnabled) drawOverlay(p, t);
 };
 
+  
   // --- Event Listeners (Outside Draw, Inside p5 instance) ---
   ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
     let el = document.getElementById(id);
