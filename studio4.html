@@ -435,10 +435,22 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="crossstitch" title="X-shaped markers and stitches">Cross-stitch</button>
         <button class="cb" data-cs="daggers" title="Daggers, crosses, and pointed symbols">Daggers</button>
         <button class="cb" data-cs="barcode" title="Vertical bars of varying widths">Barcode</button>
-        <button class="cb" data-cs="particles" title="Tiny, sparse debris-like characters">Particles</button>
         <button class="cb" data-cs="void" title="Zero-width or invisible spacing characters">Void</button>
       </div>
     </div>
+        <div class="sl2" onclick="toggleSec('chars-organic')">
+        Organic & Generative <span class="sec-arrow" id="arr-chars-organic">›</span>
+        </div>
+        <div class="sec-body collapsed" id="body-chars-organic" style="padding:0">
+        <div class="cg">
+        <button class="cb" data-cs="particles" title="Geometric: Circles, Squares, Triangles">Geo Particles</button>
+        <button class="cb" data-cs="arch" title="Architectural drafting marks and crosshairs">Architect</button>
+        <button class="cb" data-cs="glitch_p" title="Digital slivers and data noise">Glitch Bits</button>
+        <button class="cb" data-cs="microbe" title="Microscopic wiggly tails and dots">Microbes</button>
+        <button class="cb" data-cs="husks" title="Curved seed-like crescents">Seed Husks</button>
+        <button class="cb" data-cs="filaments" title="Bent, organic fiber segments">Filaments</button>
+        </div>
+        </div>
     <div class="sl2" onclick="toggleSec('chars-custom')">
       Custom & Algorithmic <span class="sec-arrow" id="arr-chars-custom">›</span>
     </div>
@@ -1337,7 +1349,12 @@ function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 function dc(x, y, sz, rot, col, ch) {
   if (!CTX) return;
   if (S.useParticleMode) {
-    CTX.fillStyle = col;
+  CTX.fillStyle = col;
+  CTX.strokeStyle = col;
+  CTX.lineWidth = Math.max(1, sz * 0.05);
+  let cs = S.charSet;
+  // 1. Geometric (Original)
+  if (cs === 'particles') {
     CTX.beginPath();
     let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
     if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
@@ -1349,8 +1366,56 @@ function dc(x, y, sz, rot, col, ch) {
       CTX.closePath();
     }
     CTX.fill();
-    return;
+  } 
+  // 2. Architect (Drafting Marks)
+  else if (cs === 'arch') {
+    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+    let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
+    if (t === 0) { // Crosshair
+      CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
+    } else if (t === 1) { // L-Bracket
+      CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
+    } else { // Dot Circle
+      CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
+    }
+    CTX.restore();
   }
+// 3. Microbe (Wiggly Tails)
+  else if (cs === 'microbe') {
+    CTX.beginPath(); CTX.arc(x, y, sz*0.15, 0, 6.28); CTX.fill();
+    CTX.beginPath();
+    CTX.moveTo(x, y);
+    CTX.bezierCurveTo(x+sz*0.5, y-sz*0.5, x-sz*0.5, y+sz*0.5, x+Math.cos(rot)*sz, y+Math.sin(rot)*sz);
+    CTX.stroke();
+  }
+  // 4. Seed Husks (Organic Crescents)
+  else if (cs === 'husks') {
+    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+    CTX.beginPath();
+    CTX.moveTo(-sz/2, 0);
+    CTX.quadraticCurveTo(0, -sz, sz/2, 0);
+    CTX.quadraticCurveTo(0, -sz/4, -sz/2, 0);
+    CTX.fill();
+    CTX.restore();
+  }
+  // 5. Filaments (Bent Fibers)
+  else if (cs === 'filaments') {
+    CTX.beginPath();
+    CTX.moveTo(x-sz/2, y-sz/2);
+    CTX.lineTo(x, y);
+    CTX.lineTo(x+sz/2, y+Math.sin(x)*sz/2);
+    CTX.stroke();
+  }
+  // 6. Glitch Bits (Thin Slivers)
+  else if (cs === 'glitch_p') {
+    let w = sz * (0.5 + Math.random());
+    let h = sz * 0.1;
+    CTX.fillRect(x - w/2, y - h/2, w, h);
+    if (Math.random() > 0.8) CTX.fillRect(x - w/2, y + h*2, w*0.4, h);
+  }
+  return;
+}
   if(!CTX||!ch) return;
   if(!ch.trim()&&S.entropy<.1) return;
   let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
@@ -5111,12 +5176,14 @@ if (characterUI) {
         RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; 
     }
     // 4. Handle Particles mode
-    if (cs === 'particles') {
-      S.useParticleMode = true;
-      RAND_UNICODE_MODE = null;
-      window._st.rd();
-      return;
-    }
+    const particleTypes = ['particles', 'arch', 'glitch_p', 'microbe', 'husks', 'filaments'];
+    
+      if (particleTypes.includes(cs)) {
+        S.useParticleMode = true;
+        RAND_UNICODE_MODE = null;
+        if (window._st) window._st.rd();
+        return; // Exit early so it doesn't try to load a text charset
+      }
     S.useParticleMode = false;
     // 5. Handle Normal charsets (non-custom, non-random)
     RAND_UNICODE_MODE = null;
@@ -6114,20 +6181,14 @@ const PRESETS={
   sacred:function(){ap({mode:'bloom',font:'times',entropy:0,speed:.002,wave:15,bg:'#0d0c0a',spacing:14,maxSize:22,palette:'site',overlayStreams:[{text:'SACRED TEXT',color:'#b8955a',offset:0},{text:'永遠',color:'#c4bcb0',offset:500}],overlayWave:12,overlaySpeed:1,overlaySize:20,overlayAlpha:35,compEnabled:false,signalCollapse:false});},
   signal:function(){ap({mode:'glitch',font:'vt323',entropy:.05,speed:.008,wave:50,bg:'#0a0c14',spacing:10,maxSize:18,compEnabled:false,overlayStreams:[{text:'SIGNAL LOST',color:'#e63946',offset:0},{text:'████░░░░',color:'#444',offset:300}],overlayWave:5,overlaySpeed:6,overlaySize:14,overlayAlpha:50,signalCollapse:true});},
   webster:function(){ap({mode:'recursive',font:'courier',entropy:.06,speed:.003,wave:8,bg:'#0d0c0a',spacing:10,maxSize:22,flipChance:.4,compEnabled:true,compPreset:1,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#b8955a',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:14,overlayAlpha:40,signalCollapse:false});},
-  dream:function(){
-    let blended=[];['ascii','cyrillic','symbols'].forEach(function(cs){CHARSETS[cs].forEach(function(c){blended.push(c);});});
-    blended.sort(function(){return Math.random()-.5;}).splice(80);
-    ap({mode:'loops',font:'mono',entropy:.18,speed:.005,wave:38,bg:'#14101e',spacing:10,maxSize:24,chars:blended,palette:'neon',compEnabled:false,overlayStreams:[{text:'MACHINE DREAM',color:'#4cc9f0',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:28,overlaySpeed:4,overlaySize:22,overlayAlpha:48,signalCollapse:false});
-  },
+  dream:function(){let blended=[];['ascii','cyrillic','symbols'].forEach(function(cs){CHARSETS[cs].forEach(function(c){blended.push(c);});});blended.sort(function(){return Math.random()-.5;}).splice(80);ap({mode:'loops',font:'mono',entropy:.18,speed:.005,wave:38,bg:'#14101e',spacing:10,maxSize:24,chars:blended,palette:'neon',compEnabled:false,overlayStreams:[{text:'MACHINE DREAM',color:'#4cc9f0',offset:0},{text:'∞∆◊',color:'#f72585',offset:400}],overlayWave:28,overlaySpeed:4,overlaySize:22,overlayAlpha:48,signalCollapse:false});},
   topo:function(){ap({mode:'topo',font:'typewriter',entropy:0,speed:.003,wave:60,bg:'#0a0c14',spacing:8,maxSize:18,noiseScale:.008,palette:'frost',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'elevation',color:'#8aaccc',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:12,overlayAlpha:25});},
   deepsea:function(){ap({mode:'topolines',font:'courier',entropy:0,speed:.002,wave:45,bg:'#020d18',spacing:6,maxSize:14,noiseScale:.006,palette:'tidal',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'DEPTH',color:'#20B2AA',offset:0},{text:'∞~≈',color:'#4682B4',offset:200}],overlayWave:18,overlaySpeed:1,overlaySize:14,overlayAlpha:30});},
   paperink:function(){ap({mode:'halftone',font:'times',entropy:0,speed:.001,wave:8,bg:'#f5efe0',spacing:11,maxSize:20,noiseScale:.012,palette:'paper',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'dada machine poetry',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:2,overlaySize:16,overlayAlpha:55,overlayDir:'alt'});},
   machinepoetry:function(){ap({mode:'webster',font:'courier',entropy:.12,speed:.004,wave:12,bg:'#0d0c0a',spacing:9,maxSize:18,palette:'mono',flipChance:.5,compEnabled:true,compPreset:2,compCols:COMP_PALETTES.default,overlayStreams:[{text:'INFINITE CONTENT',color:'#c4bcb0',offset:0},{text:'MACHINE POETRY',color:'#b8955a',offset:300},{text:'░▒▓█',color:'#5c5550',offset:600}],overlayWave:0,overlaySpeed:3,overlaySize:12,overlayAlpha:40,overlayDir:'alt',signalCollapse:false});},
-  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;
-    let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
+  sacredgeo:function(){ap({mode:'bloom',font:'playfair',entropy:0,speed:.002,wave:20,bg:'#14101e',spacing:12,maxSize:22,noiseScale:.008,palette:'dusk',compEnabled:false,signalCollapse:false});shapes=[];let W=window._st.w(),H=window._st.h(),r=Math.min(W,H)*.28;let cx=W/2,cy=H/2;let cols=['#b8955a','#d890d8','#8aaccc','#e63946','#90d4a0'];['circle','hexagon','star6','ring','polygon'].forEach(function(t2,i){let a=(i/5)*6.28;shapes.push({type:t2,cx:cx+Math.cos(a)*r*.35,cy:cy+Math.sin(a)*r*.35,baseCx:cx+Math.cos(a)*r*.35,baseCy:cy+Math.sin(a)*r*.35,r:r*.5+i*10,col:cols[i],sides:6,la:3,lb:2,spinAngle:0,orbitAngle:a,textOffset:0,text:''});
     });S.shapesEnabled=true;S.shapeCharColorMode='math';S.shapeSpin=40;S.shapePulse=15;document.getElementById('btnShapes').textContent='On';document.getElementById('btnShapes').classList.add('on');renderShapeList();S.overlayEnabled=true;S.overlayStreams=[{text:'φ π √2 e',color:'#b8955a',offset:0},{text:'∞∆◊●',color:'#d890d8',offset:300}];S.overlaySize=16;S.overlayAlpha=35;S.overlaySpeed=1;S.overlayWave=8;document.getElementById('btnOverlay').textContent='On';document.getElementById('btnOverlay').classList.add('on');
-    renderStreamList();window._st.rd();
-  },
+    renderStreamList();window._st.rd();},
   urbannight:function(){ap({mode:'scan',font:'vt323',entropy:.04,speed:.006,wave:35,bg:'#0a0c14',spacing:10,maxSize:22,noiseScale:.01,palette:'navy',compEnabled:true,compPreset:0,compCols:COMP_PALETTES.navy2,overlayStreams:[{text:'CITY',color:'#4a7fb5',offset:0},{text:'███▒░',color:'#1a3050',offset:400}],overlayWave:5,overlaySpeed:4,overlaySize:18,overlayAlpha:35,signalCollapse:false});},
   entropy:function(){ap({mode:'glitch',font:'vt323',entropy:.45,speed:.01,wave:80,bg:'#000',spacing:8,maxSize:24,noiseScale:.015,palette:'fire',compEnabled:false,flipChance:.6,overlayStreams:[{text:'ENTROPY',color:'#e63946',offset:0},{text:'SYSTEM FAILURE',color:'#f4a261',offset:200},{text:'████░░__',color:'#888',offset:500}],overlayWave:25,overlaySpeed:8,overlaySize:20,overlayAlpha:60,overlayDir:'alt',overlayEntropy:60,overlayDistort:20,signalCollapse:true});},
   aurora:function(){ap({mode:'contour',font:'georgia',entropy:0,speed:.003,wave:55,bg:'#020810',spacing:9,maxSize:20,noiseScale:.007,palette:'aurora',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'aurora borealis',color:'#00c9a7',offset:0},{text:'∞∆◊',color:'#845ec2',offset:400}],overlayWave:40,overlaySpeed:2,overlaySize:14,overlayAlpha:30,overlayDir:'alt'});},
@@ -6193,7 +6254,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
 // Collapse all sections on initial load
 ['mode','chars','font','motion','field','entropy','palette','blend','comp','shapes','overlay','img','size','presets', 
  'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
- 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom'
+ 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'
 ].forEach(function(id){
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
