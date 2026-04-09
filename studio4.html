@@ -452,7 +452,8 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="neural" title="Branching neural axons and dendrites">Neural</button>
         <button class="cb" data-cs="astro" title="Binary star systems and constellations">Astro</button>
         <button class="cb" data-cs="slate" title="Geological strata and parallel cracks">Slate</button>
-        <button class="cb" data-cs="petals" title="Nested scales or floral petals">Petals</button>  
+        <button class="cb" data-cs="petals" title="Nested scales or floral petals">Petals</button>
+        <button class="cb" data-cs="tendril" title="Long, wispy overlapping fibers like hair or grass">Tendrils</button>  
         </div>
         </div>
     <div class="sl2" onclick="toggleSec('chars-custom')">
@@ -1442,6 +1443,27 @@ function dc(x, y, sz, rot, col, ch) {
       CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
       CTX.restore();
     }
+  else if (cs === 'tendril') {
+    CTX.save();
+    CTX.translate(x, y);
+    CTX.rotate(rot);
+    CTX.beginPath();
+    CTX.moveTo(0, 0);
+    // Control points create the "bend"
+    // We use a bit of Math.sin(x) to make the bend organic
+    let cp1x = sz * 0.5;
+    let cp1y = sz * Math.sin(x * 0.01) * 0.5;
+    let cp2x = sz * 1.5;
+    let cp2y = sz * Math.cos(y * 0.01) * 0.8;
+    let destX = sz * 2.5; // Extends past the normal "block" size
+    let destY = sz * 0.2;
+    CTX.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, destX, destY);
+    // Set a very thin line for that "whispy" look
+    CTX.globalAlpha = 0.6; // Slightly transparent to help overlapping
+    CTX.stroke();
+    CTX.restore();
+  }
+    
     return; // Important: exits after drawing particle
   }
   // --- TEXT MODE ---
@@ -5202,7 +5224,7 @@ if (characterUI) {
         RAND_UNICODE_MODE = 'drift'; _driftMap.clear(); window._st.rd(); return; 
     }
     // 4. Handle Particles mode
-    const particleTypes = ['particles','arch','glitch_p','microbe','husks','filaments','neural','astro','slate','petals'];
+    const particleTypes = ['particles','arch','glitch_p','microbe','husks','filaments','neural','astro','slate','petals','tendrils'];
     
       if (particleTypes.includes(cs)) {
         S.useParticleMode = true;
