@@ -157,71 +157,168 @@ select option{background:var(--ink)}
       <button class="ab" id="btnRecordGif" title="Record a 5 second gif">Record GIF</button>    
       <button class="ab" id="btnReset" title="Reset all settings to defaults">Reset All</button>
     </div>
+
+
 <div class="sec" id="presetSec">
   <div class="sec-hd" onclick="toggleSec('presets')">
     <span class="sl">Presets</span>
     <span class="sec-arrow" id="arr-presets">›</span>
   </div>
   <div class="sec-body collapsed" id="body-presets">
-    <div class="pbar-grid" id="presetBar">
-        <button class="pbar-btn" data-preset="sacred">Sacred</button>
-        <button class="pbar-btn" data-preset="signal">Signal</button>
-        <button class="pbar-btn" data-preset="webster">Webster</button>
-        <button class="pbar-btn" data-preset="dream">Dream</button>
-        <button class="pbar-btn" data-preset="topo">Topo</button>
-        <button class="pbar-btn" data-preset="deepsea">Deep Sea</button>
-        <button class="pbar-btn" data-preset="paperink">Paper Ink</button>
-        <button class="pbar-btn" data-preset="machinepoetry">Machine Poetry</button>
-        <button class="pbar-btn" data-preset="sacredgeo">Sacred Geo</button>
-        <button class="pbar-btn" data-preset="urbannight">Urban Night</button>
-        <button class="pbar-btn" data-preset="entropy">Entropy</button>
-        <button class="pbar-btn" data-preset="aurora">Aurora</button>
-        <button class="pbar-btn" data-preset="midnighttokyo">Midnight Tokyo</button>
-        <button class="pbar-btn" data-preset="neonjungle">Neon Jungle</button>
-        <button class="pbar-btn" data-preset="desertstorm">Desert Storm</button>
-        <button class="pbar-btn" data-preset="arcticbloom">Arctic Bloom</button>
-        <button class="pbar-btn" data-preset="voidsignal">Void Signal</button>
-        <button class="pbar-btn" data-preset="copperetch">Copper Etch</button>
-        <button class="pbar-btn" data-preset="sakurarain">Sakura Rain</button>
-        <button class="pbar-btn" data-preset="turing">Turing Spots</button>
-        <button class="pbar-btn" data-preset="mycelium">Mycelium</button>
-        <button class="pbar-btn" data-preset="truchet_tiles">Truchet</button>
-        <button class="pbar-btn" data-preset="seisma_print">Seisma Print</button>
-        <button class="pbar-btn" data-preset="hatch">Hatches</button>
-        <button class="pbar-btn" data-preset="liquid_crystal">Liquid Crystal</button>
-        <button class="pbar-btn" data-preset="topographic">Topographic</button>
-        <button class="pbar-btn" data-preset="tesseract4d">Tesseract 4D</button>
-        <button class="pbar-btn" data-preset="hypersphere4d">Hypersphere</button>
-        <button class="pbar-btn" data-preset="flock">Flock</button>
-        <button class="pbar-btn" data-preset="dipole">Dipole Field</button>
-        <button class="pbar-btn" data-preset="volcanic_flow">Volcanic</button>
-        <button class="pbar-btn" data-preset="neon_grid">Neon Grid</button>
-        <button class="pbar-btn" data-preset="fingerprint">Fingerprint</button>
-        <button class="pbar-btn" data-preset="kintsugi_breaks">Kintsugi</button>
-        <button class="pbar-btn" data-preset="bioluminescent">Biolum</button>
-        <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
-        <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
-        <button class="pbar-btn" data-preset="wfc_tiles">River</button>
-        <button class="pbar-btn" data-preset="stripe_rects">Stripe Rects</button>
-        <button class="pbar-btn" data-preset="does_not_compute">Does Not Compute</button>
-        <button class="pbar-btn" data-preset="ink_wash_density">Ink Wash</button>
-        <button class="pbar-btn" data-preset="maze_shift">Maze</button>
-        <button class="pbar-btn" data-preset="unknown_pleasures">Unknown Pleasures</button>
-        <button class="pbar-btn" data-preset="mondrian_shift">Mondrian</button>
-        <button class="pbar-btn" data-preset="painted_puppy">Painted Puppy</button>
-        <button class="pbar-btn" data-preset="geode_bloom">Geode</button>
-        <button class="pbar-btn" data-preset="maeda_mori">Maeda</button>
-        <button class="pbar-btn" data-preset="monogrid_dada">Monogrid</button>
-        <button class="pbar-btn" data-preset="bauhaus_primary">Bauhaus</button>
-        <button class="pbar-btn" data-preset="bauhaus_dark">Bauhaus Dark</button>
-        <button class="pbar-btn" data-preset="maeda_eyechart">Eye Chart</button>
-        <button class="pbar-btn" data-preset="geode_vibrate">Geode</button>
-        <button class="pbar-btn" data-preset="cascade_glitch">Cascade</button>
-        <button class="pbar-btn" data-preset="diagonal_dense">Diagonal</button>
-        <button class="pbar-btn" data-preset="scatter_bloom">Scatter</button>
-        <button class="pbar-btn" data-preset="still_red">Still</button>
+    <!-- Sub‑category styles (add to your <style> block) -->
+    <style>
+      .preset-category {margin-bottom: 0.75rem;border-bottom: 1px solid var(--stone);padding-bottom: 0.5rem;}
+      .preset-category:last-child {border-bottom: none;margin-bottom: 0;}.sub-hd {padding: 0.45rem 1.3rem 0.45rem 1.8rem !important;font-size: 0.58rem !important;letter-spacing: 0.2em !important;color: var(--mid) !important;background: rgba(255,255,255,0.01);}
+      .sub-hd .sec-arrow {font-size: 0.7rem !important;margin-left: 8px !important;}.pbar-grid {padding: 0.2rem 1.3rem 0.2rem 2rem;}
+      /* Tooltip style (browser default is fine, we just enhance readability) */
+      .pbar-btn[title] {cursor: help;}
+    </style>
+
+    <!-- ====== ORGANIC & NATURE ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-organic')">
+        <span>🌿 Organic & Nature</span>
+        <span class="sec-arrow" id="arr-preset-cat-organic">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-organic">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="mycelium" title="Branching fungal networks that grow and spread">Mycelium</button>
+          <button class="pbar-btn" data-preset="bioluminescent" title="Glowing organic threads in dark depths">Biolum</button>
+          <button class="pbar-btn" data-preset="neonjungle" title="Vibrant mycelium with neon overgrowth">Neon Jungle</button>
+          <button class="pbar-btn" data-preset="desertstorm" title="Sand particles drifting like desert winds">Desert Storm</button>
+          <button class="pbar-btn" data-preset="arcticbloom" title="Reaction‑diffusion frost patterns">Arctic Bloom</button>
+          <button class="pbar-btn" data-preset="aurora" title="Flowing contour lines like northern lights">Aurora</button>
+          <button class="pbar-btn" data-preset="deepsea" title="Oceanic depth contours">Deep Sea</button>
+          <button class="pbar-btn" data-preset="volcanic_flow" title="Magma‑like warped grid">Volcanic</button>
+          <button class="pbar-btn" data-preset="worms" title="Wandering worm trails (Shai Hulud)">Shai Hulud</button>
+          <button class="pbar-btn" data-preset="flock" title="Boid flocking simulation with characters">Flock</button>
+          <button class="pbar-btn" data-preset="turing" title="Turing pattern spots (reaction‑diffusion)">Turing Spots</button>
+        </div>
+      </div>
     </div>
-  </div>
+    <!-- ====== GEOMETRIC & STRUCTURAL ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-geometric')">
+        <span>📐 Geometric & Structural</span>
+        <span class="sec-arrow" id="arr-preset-cat-geometric">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-geometric">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="sacredgeo" title="Orbiting geometric shapes with sacred proportions">Sacred Geo</button>
+          <button class="pbar-btn" data-preset="truchet_tiles" title="Truchet quarter‑circle tiles forming patterns">Truchet</button>
+          <button class="pbar-btn" data-preset="hatch" title="Plotter‑style hatching lines">Hatches</button>
+          <button class="pbar-btn" data-preset="seisma_print" title="Seismograph‑like parallel line plots">Seisma Print</button>
+          <button class="pbar-btn" data-preset="liquid_crystal" title="Warped lattice / liquid crystal grid">Liquid Crystal</button>
+          <button class="pbar-btn" data-preset="topographic" title="Isoline contours (topographic map)">Topographic</button>
+          <button class="pbar-btn" data-preset="topo" title="Topographic bands with character fills">Topo</button>
+          <button class="pbar-btn" data-preset="copperetch" title="Etched copper plate texture">Copper Etch</button>
+          <button class="pbar-btn" data-preset="kintsugi_breaks" title="Shattered fragments with gold seams">Kintsugi</button>
+          <button class="pbar-btn" data-preset="fingerprint" title="Dense isolines resembling fingerprints">Fingerprint</button>
+          <button class="pbar-btn" data-preset="maze_shift" title="Recursive backtracker maze that shifts over time">Maze</button>
+          <button class="pbar-btn" data-preset="wfc_tiles" title="Wave Function Collapse tile river">River</button>
+          <button class="pbar-btn" data-preset="stripe_rects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
+          <button class="pbar-btn" data-preset="cascade_glitch" title="Nested character rectangles cascading diagonally">Cascade</button>
+          <button class="pbar-btn" data-preset="diagonal_dense" title="Dense diagonal character lanes with shifting bands">Diagonal</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== TYPOGRAPHY & LAYOUT ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-typo')">
+        <span>🔤 Typography & Layout</span>
+        <span class="sec-arrow" id="arr-preset-cat-typo">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-typo">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="webster" title="Recursive blocks with typewriter texture">Webster</button>
+          <button class="pbar-btn" data-preset="machinepoetry" title="Dense text blocks with glitchy overlay">Machine Poetry</button>
+          <button class="pbar-btn" data-preset="paperink" title="Halftone text on paper background">Paper Ink</button>
+          <button class="pbar-btn" data-preset="ink_wash_density" title="Tonal density from repeated characters (ink wash)">Ink Wash</button>
+          <button class="pbar-btn" data-preset="does_not_compute" title="Phrase 'does not compute' repeated at varying size">Does Not Compute</button>
+          <button class="pbar-btn" data-preset="maeda_mori" title="Maeda‑style typescale: huge to tiny characters">Maeda</button>
+          <button class="pbar-btn" data-preset="maeda_eyechart" title="Eye‑chart variation with katakana">Eye Chart</button>
+          <button class="pbar-btn" data-preset="monogrid_dada" title="Uniform text grid with opaque palette blocks">Monogrid</button>
+          <button class="pbar-btn" data-preset="bauhaus_primary" title="Bauhaus geometric shapes with orbital motion">Bauhaus</button>
+          <button class="pbar-btn" data-preset="bauhaus_dark" title="Dark Bauhaus variant">Bauhaus Dark</button>
+          <button class="pbar-btn" data-preset="mondrian_shift" title="Recursive subdivision with primary colors">Mondrian</button>
+          <button class="pbar-btn" data-preset="still_red" title="Clyfford Still – jagged vertical tears with impasto">Still</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== GLITCH & ENTROPY ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-glitch')">
+        <span>⚠️ Glitch & Entropy</span>
+        <span class="sec-arrow" id="arr-preset-cat-glitch">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-glitch">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="entropy" title="High entropy glitch with signal collapse">Entropy</button>
+          <button class="pbar-btn" data-preset="signal" title="Glitch mode with 'SIGNAL LOST' overlay">Signal</button>
+          <button class="pbar-btn" data-preset="voidsignal" title="Interference patterns with stark contrast">Void Signal</button>
+          <button class="pbar-btn" data-preset="screen_blend" title="Neon bloom with screen blend mode">Screen Blend</button>
+          <button class="pbar-btn" data-preset="dream" title="Loops mode with blended character sets">Dream</button>
+          <button class="pbar-btn" data-preset="unknown_pleasures" title="Joy Division stacked noise peaks">Unknown Pleasures</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== 4D & MATH ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-4d')">
+        <span>🧮 4D & Math</span>
+        <span class="sec-arrow" id="arr-preset-cat-4d">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-4d">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="tesseract4d" title="Rotating 4D hypercube projection">Tesseract 4D</button>
+          <button class="pbar-btn" data-preset="hypersphere4d" title="4D hypersphere lattice projected to 2D">Hypersphere</button>
+          <button class="pbar-btn" data-preset="dipole" title="Magnetic dipole field lines">Dipole Field</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== URBAN & NEON ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-urban')">
+        <span>🌃 Urban & Neon</span>
+        <span class="sec-arrow" id="arr-preset-cat-urban">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-urban">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="urbannight" title="Scan mode with navy blocks">Urban Night</button>
+          <button class="pbar-btn" data-preset="midnighttokyo" title="Matrix rain with katakana">Midnight Tokyo</button>
+          <button class="pbar-btn" data-preset="neon_grid" title="Outrun‑style neon grid with retro palette">Neon Grid</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== SACRED & SPIRITUAL ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-sacred')">
+        <span>✨ Sacred & Spiritual</span>
+        <span class="sec-arrow" id="arr-preset-cat-sacred">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-sacred">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="sacred" title="Bloom mode with sacred text overlay">Sacred</button>
+          <button class="pbar-btn" data-preset="sakurarain" title="Rain characters with sakura palette">Sakura Rain</button>
+        </div>
+      </div>
+    </div>
+    <!-- ====== PAINTERLY & ARTISTIC ====== -->
+    <div class="preset-category">
+      <div class="sec-hd sub-hd" onclick="toggleSec('preset-cat-painterly')">
+        <span>🎨 Painterly & Artistic</span>
+        <span class="sec-arrow" id="arr-preset-cat-painterly">›</span>
+      </div>
+      <div class="sec-body collapsed" id="body-preset-cat-painterly">
+        <div class="pbar-grid">
+          <button class="pbar-btn" data-preset="painted_puppy" title="Brush contour (Rotsztain style)">Painted Puppy</button>
+          <button class="pbar-btn" data-preset="geode_bloom" title="Lars Wander – rotated tiles in organic blob">Geode</button>
+          <button class="pbar-btn" data-preset="geode_vibrate" title="Geode with increased vibration">Geode</button>
+          <button class="pbar-btn" data-preset="scatter_bloom" title="Dot characters in cloud formations">Scatter</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- end #body-presets -->
 </div>
     
     <div id="ctl">
