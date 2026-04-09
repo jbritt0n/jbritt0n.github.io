@@ -19,7 +19,7 @@
 :root{--ink:#0d0c0a;--dark:#1a1917;--stone:#2e2c28;--dim:#5c5550;--mid:#8a8078;--pale:#c4bcb0;--cream:#ede9e2;--gold:#b8955a;--panel-w:296px}
 html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--pale);font-family:'Jost',sans-serif;font-weight:300}
 #app{display:grid;grid-template-columns:1fr var(--panel-w);height:100vh}
-#canvas-wrap{position: relative;width: 100%;height: 100%;position:relative;overflow:hidden;background:var(--ink)}
+#canvas-wrap {position: relative;width: 100%;height: 100%;overflow: hidden;background: var(--ink);display: flex;align-items: center;justify-content: center;}
 #canvas-wrap canvas{position:absolute;top:0;left:0;display:block}
 #panel {background: var(--dark);border-left: 1px solid var(--stone);display: flex;flex-direction: column;height: 100vh;overflow: hidden;}
 .ph{padding:.9rem 1.3rem .75rem;border-bottom:1px solid var(--stone);flex-shrink:0;position:relative}
@@ -4933,46 +4933,54 @@ let _currentSizeMode='fill';
 let _customW=800,_customH=800;
 
 new p5(function(p){
-  let W,H;
+  // Use the variables defined here
+  let W, H;
+
   function resize(w,h){
-    if(w==='fill'){let wrap=document.getElementById('canvas-wrap');W=wrap.offsetWidth;H=wrap.offsetHeight;}
-    else{W=w||800;H=h||600;}
+    if(w==='fill'){
+      let wrap=document.getElementById('canvas-wrap');
+      W=wrap.offsetWidth;
+      H=wrap.offsetHeight;
+    } else {
+      W=w||800;
+      H=h||600;
+    }
     p.resizeCanvas(W,H);
     CTX=p.drawingContext;
-    ri();rd();
+    ri(); // ri calls rd internally
   }
-  
- function ri() {
+  // ── Function RI - reinitialize ─────────────────────────────────────────────────────────────────
+  function ri() {
     if (!p) return;
-    // Seeds ensure noise is different every time you click "Regen" or a Preset
     p.noiseSeed(Math.random() * 99999);
     p.randomSeed(Math.random() * 99999);
-    // existing initializers
+    // Initialize state frame count if missing
+    if (S.fc === undefined) S.fc = 0;
     initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
     initLoops(W,H); initStripedRects(W,H);
-    // Clear all particle/grid arrays
     recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
     lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[];
     cascadeRects=[]; scatterClouds=[]; stillForms=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[];
-    // New specific mode initializers if they exist
+    
     if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
-    rd(); // Always call rd after resetting
+    
+    rd(); 
   }
-  
+  // ── Function Rd - redraw ─────────────────────────────────────────────────────────────────
   function rd() {
     if (!p || !p.width) return;
-    // Clear canvas
     CTX.globalCompositeOperation = 'source-over';
-    CTX.fillStyle = S.bg;
+    CTX.fillStyle = S.bg || '#000000';
     CTX.fillRect(0, 0, W, H);
-    let t = p.frameCount * (S.speed || 0.004);
-    // Call the master router
+    
+    // Ensure t is a valid number
+    let t = (S.fc || 0) * (S.speed || 0.004);
     drawScene(p, t);
-    // Draw additive layers (Shapes / Overlays)
+    
     if (S.shapesEnabled) drawShapes(p, t);
     if (S.overlayEnabled) drawOverlay(p, t);
   }
@@ -4980,12 +4988,11 @@ new p5(function(p){
   function rc(preset){
     S.compPreset=preset;
     buildComp(preset,W,H);
-    recRects=[];rd();
+    recRects=[];
+    rd();
   }
-  
- // ── WINDOW._ST - STATE & CONTROL BRIDGE ──────────────────────────────────────────────────
-
- window._st = {
+  // ── WINDOW._ST - STATE & CONTROL BRIDGE ────────────────────────────────────────────────── 
+  window._st = {
     rd: rd,
     ri: ri,
     rc: rc,
@@ -4999,9 +5006,8 @@ new p5(function(p){
       }
       return S.playing;
     },
-    regen: function() { ri(); rd(); },
+    regen: function() { ri(); },
     save: function() {
-      // ── WATERMARK ────────────────────────────────────────────────
       CTX.save();
       CTX.font = 'bold 11px Jost,sans-serif';
       CTX.fillStyle = 'rgba(200,188,176,0.55)';
@@ -5010,7 +5016,6 @@ new p5(function(p){
       let wmW = CTX.measureText(wm).width;
       CTX.fillText(wm, W - wmW - 10, H - 8);
       CTX.restore();
-      // ── END WATERMARK ────────────────────────────────────────────────────────
       p.saveCanvas('studio-' + Date.now(), 'png');
       showToast('Saved PNG');
     },
@@ -5019,140 +5024,133 @@ new p5(function(p){
     h: function() { return H; },
     p: p
   };
-
-// ── drawScene master switch case ──────────────────────────────────────────────────
+ // ── drawScene ────────────────────────────────────────────────── 
   function drawScene(p, t) {
     if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
     switch (S.mode) {
-    case 'bloom': drawBloom(p, t); break;
-    case 'wave': drawWave(p, t); break;
-    case 'rain1': drawRain1(p, t); break;
-    case 'rain2': drawRain2(p, t); break;
-    case 'vortex': drawVortex(p, t); break;
-    case 'ripple': drawRipple(p, t); break;
-    case 'drift': drawDrift(p, t); break;
-    case 'tess': drawTess(p, t); break;
-    case 'warp': drawWarp(p, t); break;
-    case 'glitch': drawGlitch(p, t); break;
-    case 'webster': drawWebster(p, t); break;
-    case 'matrix': drawMatrix(p, t); break;
-    case 'orbit': drawOrbit(p, t); break;
-    case 'spiral': drawSpiral(p, t); break;
-    case 'scan': drawScan(p, t); break;
-    case 'halftone': drawHalftone(p, t); break;
-    case 'shatter': drawShatter(p, t); break;
-    case 'weave': drawWeave(p, t); break;
-    case 'topo': drawTopo(p, t); break;
-    case 'recursive': drawRecursive(p, t); break;
-    case 'contour': drawContour(p, t); break;
-    case 'fabric': drawFabric(p, t); break;
-    case 'loops': drawLoops(p, t); break;
-    case 'imgtext': drawImgText(p, t); break;
-    case 'topolines': drawTopoLines(p, t); break;
-    case 'pipes': drawPipes(p, t); break;
-    case 'reaction': drawReaction(p, t); break;
-    case 'voronoi': drawVoronoi(p, t); break;
-    case 'mycelium': drawMycelium(p, t); break;
-    case 'sand': drawSand(p, t); break;
-    case 'cellular': drawCellular(p, t); break;
-    case 'interference': drawInterference(p, t); break;
-    case 'calligraphy': drawCalligraphy(p, t); break;
-    case 'lissajous': drawLissajous(p, t); break;
-    case 'wireterrain': drawWireTerrain(p, t); break;
-    case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
-    case 'truchet': drawTruchet(p, t); break;
-    case 'seisma': drawSeisma(p, t); break;
-    case 'hatch': drawHatch(p, t); break;
-    case 'warpgrid': drawWarpGrid(p, t); break;
-    case 'isocontour': drawIsoContour(p, t); break;
-    case 'tesseract': drawTesseract(p, t); break;
-    case 'hypersphere': drawHypersphere(p, t); break;
-    case 'boids': drawBoids(p, t); break;
-    case 'magnetic': drawMagnetic(p, t); break;
-    case 'worms': drawWorms(p, t); break;
-    case 'flowerspin': drawFlowerspin(p, t); break;
-    case 'wfc': drawWFC(p, t); break;
-    case 'stripedrects':  drawStripedRects(p, t);  break;
-    case 'tonaldensity':  drawTonalDensity(p, t);  break;
-    case 'maze':        drawMaze(p, t);               break;
-    case 'unknownpleasures': drawUnknownPleasures(p, t); break;
-    case 'mondrian':    drawMondrian(p, t);            break;
-    case 'brushcontour': drawBrushContour(p, t); break;
-    case 'geode':        drawGeode(p, t);        break;
-    case 'typescale':    drawTypescale(p, t);    break;
-    case 'monogrid':     drawMonogrid(p, t);     break;
-    case 'bauhaus': drawBauhaus(p, t); break;
-    case 'cascaderects':   drawCascadeRects(p, t);   break;
-    case 'diagonalfield':  drawDiagonalField(p, t);   break;
-    case 'scatterdots':    drawScatterDots(p, t);     break;
-    case 'clyffordstill':  drawClyffordStill(p, t);   break;  
+      case 'bloom': drawBloom(p, t); break;
+      case 'wave': drawWave(p, t); break;
+      case 'rain1': drawRain1(p, t); break;
+      case 'rain2': drawRain2(p, t); break;
+      case 'vortex': drawVortex(p, t); break;
+      case 'ripple': drawRipple(p, t); break;
+      case 'drift': drawDrift(p, t); break;
+      case 'tess': drawTess(p, t); break;
+      case 'warp': drawWarp(p, t); break;
+      case 'glitch': drawGlitch(p, t); break;
+      case 'webster': drawWebster(p, t); break;
+      case 'matrix': drawMatrix(p, t); break;
+      case 'orbit': drawOrbit(p, t); break;
+      case 'spiral': drawSpiral(p, t); break;
+      case 'scan': drawScan(p, t); break;
+      case 'halftone': drawHalftone(p, t); break;
+      case 'shatter': drawShatter(p, t); break;
+      case 'weave': drawWeave(p, t); break;
+      case 'topo': drawTopo(p, t); break;
+      case 'recursive': drawRecursive(p, t); break;
+      case 'contour': drawContour(p, t); break;
+      case 'fabric': drawFabric(p, t); break;
+      case 'loops': drawLoops(p, t); break;
+      case 'imgtext': drawImgText(p, t); break;
+      case 'topolines': drawTopoLines(p, t); break;
+      case 'pipes': drawPipes(p, t); break;
+      case 'reaction': drawReaction(p, t); break;
+      case 'voronoi': drawVoronoi(p, t); break;
+      case 'mycelium': drawMycelium(p, t); break;
+      case 'sand': drawSand(p, t); break;
+      case 'cellular': drawCellular(p, t); break;
+      case 'interference': drawInterference(p, t); break;
+      case 'calligraphy': drawCalligraphy(p, t); break;
+      case 'lissajous': drawLissajous(p, t); break;
+      case 'wireterrain': drawWireTerrain(p, t); break;
+      case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
+      case 'truchet': drawTruchet(p, t); break;
+      case 'seisma': drawSeisma(p, t); break;
+      case 'hatch': drawHatch(p, t); break;
+      case 'warpgrid': drawWarpGrid(p, t); break;
+      case 'isocontour': drawIsoContour(p, t); break;
+      case 'tesseract': drawTesseract(p, t); break;
+      case 'hypersphere': drawHypersphere(p, t); break;
+      case 'boids': drawBoids(p, t); break;
+      case 'magnetic': drawMagnetic(p, t); break;
+      case 'worms': drawWorms(p, t); break;
+      case 'flowerspin': drawFlowerspin(p, t); break;
+      case 'wfc': drawWFC(p, t); break;
+      case 'stripedrects':  drawStripedRects(p, t);  break;
+      case 'tonaldensity':  drawTonalDensity(p, t);  break;
+      case 'maze':        drawMaze(p, t);               break;
+      case 'unknownpleasures': drawUnknownPleasures(p, t); break;
+      case 'mondrian':    drawMondrian(p, t);            break;
+      case 'brushcontour': drawBrushContour(p, t); break;
+      case 'geode':        drawGeode(p, t);        break;
+      case 'typescale':    drawTypescale(p, t);    break;
+      case 'monogrid':     drawMonogrid(p, t);     break;
+      case 'bauhaus': drawBauhaus(p, t); break;
+      case 'cascaderects':   drawCascadeRects(p, t);   break;
+      case 'diagonalfield':  drawDiagonalField(p, t);   break;
+      case 'scatterdots':    drawScatterDots(p, t);     break;
+      case 'clyffordstill':  drawClyffordStill(p, t);   break;  
     }
   }
+// ── P.Setup ────────────────────────────────────────────────── 
+  p.setup = function() {
+    let wrap = document.getElementById('canvas-wrap');
+    // Important: assign to the variables in the outer scope
+    W = wrap.offsetWidth; 
+    H = wrap.offsetHeight;
+    
+    let cnv = p.createCanvas(W, H);
+    cnv.parent('canvas-wrap');
+    CTX = p.drawingContext;
+    CTX.textBaseline = 'middle';
+    if (typeof S === 'undefined') window.S = {};
+    Object.assign(S, DEFAULT_STATE); 
+    S.fc = 0; // Initialize frame counter
+    p.noLoop();
+    p.pixelDensity(1);
+    
+    ri(); 
+    
+    window.addEventListener('resize', function() {
+      if (_currentSizeMode === 'fill') resize('fill');
+    });
+  };
 
- // ── P.Setup ────────────────────────────────────────────────── 
+  p.draw = function() {
+    if (!S.playing) return;
+    S.fc++;
 
-p.setup = function() {
-  let wrap = document.getElementById('canvas-wrap');
-  W = wrap.offsetWidth; 
-  H = wrap.offsetHeight;
-  let cnv = p.createCanvas(W, H);
-  cnv.parent('canvas-wrap');
-  CTX = p.drawingContext;
-  CTX.textBaseline = 'middle';
-  // CRITICAL: Ensure state exists before first draw
-  if (typeof S === 'undefined') window.S = {};
-  Object.assign(S, DEFAULT_STATE); 
-  p.noLoop();
-  p.pixelDensity(1);
-  ri(); // This calls rd() which now uses drawScene
-  window.addEventListener('resize', function() {
-    if (_currentSizeMode === 'fill') resize('fill');
-  });
-};
-
-// ── P.Draw ──────────────────────────────────────────────────  
-  
-p.draw = function() {
-  S.fc++;
-
-  if (!CTX) CTX = p.drawingContext;
-  if (!CTX) return; 
-  let t = S.fc * (S.speed || 0.01);
-  // FPS display (PRESERVED)
-  let now = performance.now();
-  _frameCount++;
-  if (now - _fpsTimer > 1000) {
-    _fps = _frameCount;
-    _frameCount = 0;
-    _fpsTimer = now;
-    let fpsLabel = document.getElementById('fpsLabel');
-    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
-  }
-  // Clear canvas (PRESERVED)
-  CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
-  CTX.fillStyle = S.bg;
-  CTX.fillRect(0, 0, W, H);
-  CTX.textBaseline = 'middle';
-  // Signal collapse effect (PRESERVED)
-  if (S.signalCollapse) {
-    let elapsed = S.fc - S.signalStart;
-    if (elapsed < 80) {
-      let scanY = p.map(elapsed, 0, 80, 0, H);
-      CTX.fillStyle = 'rgba(230,57,70,.12)';
-      CTX.fillRect(0, scanY - 2, W, 4);
+    if (!CTX) CTX = p.drawingContext;
+    let t = S.fc * (S.speed || 0.01);
+    // FPS display
+    let now = performance.now();
+    _frameCount++;
+    if (now - _fpsTimer > 1000) {
+      _fps = _frameCount;
+      _frameCount = 0;
+      _fpsTimer = now;
+      let fpsLabel = document.getElementById('fpsLabel');
+      if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
     }
-  }
-  // ── DRAWING THE SCENE ──
-  // This calls the master router we defined above
-  drawScene(p, t);
-  // Handle secondary layers (PRESERVED)
-  if (S.shapesEnabled) drawShapes(p, t);
-  if (S.overlayEnabled) drawOverlay(p, t);
-};
-
-  
-  // --- Event Listeners (Outside Draw, Inside p5 instance) ---
+    // Clear canvas
+    CTX.globalCompositeOperation = 'source-over';
+    CTX.globalAlpha = 1;
+    CTX.fillStyle = S.bg;
+    CTX.fillRect(0, 0, W, H);
+    // Signal collapse effect
+    if (S.signalCollapse) {
+      let elapsed = S.fc - S.signalStart;
+      if (elapsed < 80) {
+        let scanY = p.map(elapsed, 0, 80, 0, H);
+        CTX.fillStyle = 'rgba(230,57,70,.12)';
+        CTX.fillRect(0, scanY - 2, W, 4);
+      }
+    }
+    drawScene(p, t);
+    if (S.shapesEnabled) drawShapes(p, t);
+    if (S.overlayEnabled) drawOverlay(p, t);
+  };
+  // Event Listeners
   ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
     let el = document.getElementById(id);
     if (el) {
@@ -5168,9 +5166,7 @@ p.draw = function() {
       });
     }
   });
-
-}); // Closes the p5 instance
-
+});
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
   let el=document.getElementById('toast');
