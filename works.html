@@ -8,14 +8,61 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<!-- Favicon / App Icons -->
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">    
+<link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">  
 <style>
+  /* Protection: Prevent text/image selection and dragging */
+  body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+  }
+
+  /* Watermark Overlay for Lightbox Image ONLY */
+  .lb-inner img {
+    max-height: 70vh;
+    width: auto;
+    max-width: 100%;
+    display: block;
+    position: relative;
+    z-index: 1; /* Ensure image is below the watermark */
+  }
+
+  /* Target a wrapper specific to the real image */
+  .lb-image-wrapper {
+    position: relative;
+    display: inline-block; /* Crucial: Makes wrapper exact size of image */
+    line-height: 0; /* Prevents slight gaps below image */
+  }
+
+  .lb-image-wrapper::after {
+    content: "© Jonathan Britton";
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none; /* Allows clicks to pass through */
+    text-transform: uppercase;
+    z-index: 2; /* Ensure watermark is on top */
+    background: rgba(8, 7, 6, 0.4); /* Subtly darker background for contrast */
+    padding: 3px 6px;
+    border-radius: 2px;
+  }
+
   /* Empty section */
   .empty-section {
     padding: 4rem 2.5rem;
@@ -49,9 +96,7 @@
   }
 </style>
 </head>
-<body>
-
-<header id="header">
+<body oncontextmenu="return false;"> <header id="header">
   <a href="index.html" class="site-name">Jonathan Britton</a>
   <nav class="site-nav">
     <div class="nav-group">
@@ -60,8 +105,8 @@
         <a href="#painting"        onclick="sw('painting',this);return false;">Oil &amp; Acrylic</a>
         <a href="#works-on-paper"  onclick="sw('works-on-paper',this);return false;">Watercolor &amp; Gouache</a>
         <a href="#charcoal-pastel" onclick="sw('charcoal-pastel',this);return false;">Charcoal &amp; Pastel</a>
-        <a href="#encaustic"       onclick="sw('encaustic',this);return false;">Encaustic</a>
-        <a href="#collage"         onclick="sw('collage',this);return false;">Collage</a>
+        <a href="#encaustic"        onclick="sw('encaustic',this);return false;">Encaustic</a>
+        <a href="#collage"          onclick="sw('collage',this);return false;">Collage</a>
         <a href="#printmaking"     onclick="sw('printmaking',this);return false;">Printmaking</a>
         <a href="#studies"         onclick="sw('studies',this);return false;">Studies</a>
       </div>
@@ -81,8 +126,8 @@
     <a href="#painting"        onclick="sw('painting',this);return false;">Oil &amp; Acrylic</a>
     <a href="#works-on-paper"  onclick="sw('works-on-paper',this);return false;">Watercolor &amp; Gouache</a>
     <a href="#charcoal-pastel" onclick="sw('charcoal-pastel',this);return false;">Charcoal &amp; Pastel</a>
-    <a href="#encaustic"       onclick="sw('encaustic',this);return false;">Encaustic</a>
-    <a href="#collage"         onclick="sw('collage',this);return false;">Collage</a>
+    <a href="#encaustic"        onclick="sw('encaustic',this);return false;">Encaustic</a>
+    <a href="#collage"          onclick="sw('collage',this);return false;">Collage</a>
     <a href="#printmaking"     onclick="sw('printmaking',this);return false;">Printmaking</a>
     <a href="#studies"         onclick="sw('studies',this);return false;">Studies</a>
   </nav>
@@ -91,7 +136,6 @@
   <div id="worksContainer"></div>
 </main>
 
-<!-- Lightbox -->
 <div class="lb" id="lb" onclick="lbBg(event)">
   <button class="lb-close" onclick="closeLb()">Close ×</button>
   <div class="lb-inner" id="lbInner"></div>
@@ -107,23 +151,15 @@
 </footer>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────
-// WORKS DATA
-// To add real images, change the work object to include: img: 'images/filename.jpg'
-// The build() function checks for w.img and uses <img> instead of SVG if present.
-// medium: be specific — 'Acrylic underpainting, oil on linen' etc.
-// aspect: '' = portrait (4:5), 'landscape' = 5:4, 'square' = 1:1
-// ─────────────────────────────────────────────────────────────────────────
+  
 const WORKS = {
-
   painting: {
     label: 'Oil & Acrylic',
     note: 'Works principally executed with oil or acrylic paint',
     years: [
       { year: 2026, works: [
-        { title: 'Self-Portrait (Life During Wartime)',  img: 'images/lifeduringwartime1.jpg', medium: 'Oil on board',   size: '6 × 10 in.', available: false, price: null, aspect: '' },
+        { title: 'Self-Portrait (Life During Wartime)',  img: 'images/lifeduringwartime1.jpg', medium: 'Oil on board',    size: '6 × 10 in.', available: false, price: null, aspect: '' },
         { title: 'Obstacle I', img: 'images/yotei.jpg', medium: 'Oil on collaged canvas board', size: '12 × 16 in.', available: true,  price: 150,  aspect: '' },
-
       ]},
       { year: 2025, works: [
         { title: 'Untitled (chimp in robe)', img: 'images/apebishop.jpg',   medium: 'Oil on collaged board', size: '24 × 30 in.', available: false,  price: null, aspect: '' },
@@ -169,7 +205,6 @@ const WORKS = {
       ]},
     ]
   },
-
   'works-on-paper': {
     label: 'Watercolor & Gouache',
     note: 'Works on paper — watercolor, gouache, and mixed',
@@ -178,10 +213,8 @@ const WORKS = {
         { title: 'Placeholder I',   medium: 'Gouache on paper',    size: '9 × 12 in.',  available: true,  price: 240, aspect: 'landscape' },
         { title: 'Placeholder II',  medium: 'Gouache on paper',    size: '9 × 12 in.',  available: true,  price: 240, aspect: 'landscape' },
       ]},
-
     ]
   },
-
   'charcoal-pastel': {
     label: 'Charcoal & Pastel',
     note: 'Drawings on paper — charcoal, soft pastel, and combined',
@@ -194,10 +227,8 @@ const WORKS = {
         { title: 'Self-portrait', img: 'images/selfportraitpastel.jpg', medium: 'Charcoal and pastel on construction paper',  size: '18 × 24 in.', available: false,  price: 480, aspect: '' },
         { title: 'Self-portrait', img: 'images/numb.jpg', medium: 'Pastel and acrylic on paper',  size: '18 × 24 in.', available: false,  price: 480, aspect: '' },
       ]},
-
     ]
   },
-
   collage: {
     label: 'Collage',
     note: 'Works composed with paper collage',
@@ -206,24 +237,20 @@ const WORKS = {
         { title: 'Untitled (map)', img: 'images/collagemap1.jpg', medium: 'Collage on board', size: '6 × 12 in.', available: true,  price: 120, aspect: '' },
         { title: 'Composition on cardboard', img:'images/cardboard.jpg', medium: 'Collage on cardboard', size: '10 × 11 in.', available: true,  price: 80, aspect: 'square' },
       ]},
-
     ]
   },
-
   printmaking: {
     label: 'Printmaking',
     note: 'Linocut, monoprint, cyanotype, and other print processes — edition sizes noted per piece',
     years: [
       { year: 2025, works: [
-        { title: 'Placeholder',         medium: 'Linocut on Japanese tissue · edition of 10', size: '8 × 10 in.',  available: false,  price: 180, aspect: '' },
-
+        { title: 'Placeholder',          medium: 'Linocut on Japanese tissue · edition of 10', size: '8 × 10 in.',  available: false,  price: 180, aspect: '' },
       ]},
       { year: 2018, works: [
         { title: 'Fish', img: 'images/fishlino.jpg',  medium: 'Linocut on paper', size: '11 × 8.5 in.',   available: false, price: 50, aspect: 'landscape' },
       ]},
     ]
   },
-
   encaustic: {
     label: 'Encaustic',
     note: 'Wax and pigment on board',
@@ -231,7 +258,6 @@ const WORKS = {
     emptyMessage: 'Works in progress — I\'m new to encaustic and taking my time with it. Check back.',
     years: []
   },
-  
   studies: {
     label: 'Selected Studies',
     note: 'Smaller works, quick observations, things made without too much intention',
@@ -239,23 +265,18 @@ const WORKS = {
     years: [
       { year: 2026, works: [
         { title: 'Taksim Haircut', img: 'images/taksim haircut.jpg', medium: 'Sanguine in sketch book · 6 × 9 in.',  available: true,  price: 100, note: 'I took a picture after a haircut I received in Taksim Istanbul and decided to sketch it with sanguine.'},
-        { title: 'Horsing Around', img: 'images/horsingaround.jpg', medium: 'Pastel on paper · 5 × 7 in.',     available: true,  price: 40,  note: 'As part of an exploration into generative code as art. I was horsing around with generative coding and wanted to combine it with analog traditional pastel.'},
-
-
+        { title: 'Horsing Around', img: 'images/horsingaround.jpg', medium: 'Pastel on paper · 5 × 7 in.',      available: true,  price: 40,  note: 'As part of an exploration into generative code as art. I was horsing around with generative coding and wanted to combine it with analog traditional pastel.'},
       ]},
       { year: 2025, works: [
-        { title: 'Sketch of Father', img: 'images/sketch of father.jpg', medium: 'Oil on paper · 6 × 8 in.',         available: false,  price: 120 },
+        { title: 'Sketch of Father', img: 'images/sketch of father.jpg', medium: 'Oil on paper · 6 × 8 in.',          available: false,  price: 120 },
         { title: 'Self-portrait sketch', img: 'images/selfportraitsketchoil.jpg', medium: 'Oil on wood · 5 × 7 in.',   available: true,  price: 95, note: 'Timed self-portrait to practice economizing strokes on a small substrate.'},
       ]},
-
     ]
   },
-
 };
 
-// SVG colour palettes per group
 const PAL = {
-  painting:         [['#2a3d52','#1a2535','#8b5c2a'],['#3a1e14','#1e1008','#7a3020'],['#1e2e1e','#0e1808','#4a6a30'],['#2a2040','#151020','#6040a0']],
+  painting:      [['#2a3d52','#1a2535','#8b5c2a'],['#3a1e14','#1e1008','#7a3020'],['#1e2e1e','#0e1808','#4a6a30'],['#2a2040','#151020','#6040a0']],
   'works-on-paper': [['#3a4020','#1e2210','#6a7030'],['#3a2030','#1e1018','#704050'],['#4a3828','#281e14','#8a6040']],
   'charcoal-pastel':[['#282420','#141210','#605848'],['#201c18','#100e0c','#504038'],['#281c18','#140e0c','#604038']],
   encaustic:        [['#5a4020','#2e2010','#c0901a']],
@@ -333,7 +354,6 @@ function build(group) {
       var asp = isStudies ? '' : (w.aspect||'');
       thumb.className = 'work-thumb' + (asp ? ' '+asp : '');
 
-      // Use real image if provided, otherwise SVG placeholder
       if (w.img) {
         thumb.innerHTML = `<img src="${w.img}" alt="${w.title}" loading="lazy">`;
       } else {
@@ -370,16 +390,18 @@ function openLb(idx) {
   if (!item) return;
   var w = item.work, g = item.group, def = WORKS[g];
   var isStudies = !!def.isStudies;
+
+  // Modified: Real images get wrapped in a div that CSS targets for the watermark
   var visual = w.img
-    ? `<img src="${w.img}" alt="${w.title}" style="max-height:70vh;width:auto;max-width:100%;display:block;">`
+    ? `<div class="lb-image-wrapper"><img src="${w.img}" alt="${w.title}"></div>`
     : mkSvg(g, isStudies?'':(w.aspect||''), idx);
 
   var inquireHref = w.available ? 'contact.html?painting='+encodeURIComponent(w.title) : null;
-var defaultNote = isStudies
-  ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
-  : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work has been sold. Similar commissions considered on request.');
+  var defaultNote = isStudies
+    ? (w.available ? 'Small works ship flat. Happy to chat about it.' : 'This one is gone — but I make similar things often. Get in touch if you\'d like to know when new studies are available.')
+    : (w.available ? 'Happy to answer questions, share more photos, or arrange a viewing.' : 'This work has been sold. Similar commissions considered on request.');
 
-var note = w.note || defaultNote;
+  var note = w.note || defaultNote;
 
   document.getElementById('lbInner').innerHTML = `
     <div class="lb-image">${visual}</div>
