@@ -202,6 +202,16 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="screen_blend">Screen Blend</button>
         <button class="pbar-btn" data-preset="worms">Shai Hulud</button>
         <button class="pbar-btn" data-preset="wfc_tiles">River</button>
+        <button class="pbar-btn" data-preset="stripe_rects">Stripe Rects</button>
+        <button class="pbar-btn" data-preset="does_not_compute">Does Not Compute</button>
+        <button class="pbar-btn" data-preset="ink_wash_density">Ink Wash</button>
+        <button class="pbar-btn" data-preset="maze_shift">Maze</button>
+        <button class="pbar-btn" data-preset="unknown_pleasures">Unknown Pleasures</button>
+        <button class="pbar-btn" data-preset="mondrian_shift">Mondrian</button>
+        <button class="pbar-btn" data-preset="painted_puppy">Painted Puppy</button>
+        <button class="pbar-btn" data-preset="geode_bloom">Geode</button>
+        <button class="pbar-btn" data-preset="maeda_mori">Maeda</button>
+        <button class="pbar-btn" data-preset="monogrid_dada">Monogrid</button>
     </div>
   </div>
 </div>
@@ -242,10 +252,19 @@ select option{background:var(--ink)}
           <button class="mb" data-mode="cellular">Cellular</button>
           <button class="mb" data-mode="worms">Worms</button>
           <button class="mb" data-mode="interference">Interfere</button>
+          <button class="mb new-mode" data-mode="stripedrects" title="Striped Rects — solid and barcode rectangles on a light ground">Stripe Rects</button>
+          <button class="mb new-mode" data-mode="tonaldensity"  title="Tonal Density — phrase repeats at noise-driven size and spacing, creating ink-wash tones">Tonal Density</button>
           <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◼ Geometry &amp; Lines</div>
           <button class="mb" data-mode="truchet" title="Truchet tiles — quarter-circles forming infinite ornamental patterns">Truchet</button>
           <button class="mb" data-mode="seisma" title="Seismograph">Seisma</button>
+          <button class="mb new-mode" data-mode="maze"             title="Recursive-backtracker maze, walls shift over time">Maze</button>
+          <button class="mb new-mode" data-mode="unknownpleasures" title="Joy Division Unknown Pleasures — stacked noise peaks">Unknown Pleasures</button>
+          <button class="mb new-mode" data-mode="mondrian"         title="Mondrian — recursive subdivision with primary color fills">Mondrian</button>
           <button class="mb" data-mode="warpgrid" title="Warped lattice — deformed grid pulled by noise field">Warp Grid</button>
+          <button class="mb new-mode" data-mode="brushcontour" title="Rotsztain — contour levels drawn as rotated brushstroke rectangles">Brush Contour</button>
+          <button class="mb new-mode" data-mode="geode"        title="Lars Wander — rotated tiles scatter into an organic blob">Geode</button>
+          <button class="mb new-mode" data-mode="typescale"    title="Maeda — characters grade from enormous at top to microscopic below">Typescale</button>
+          <button class="mb new-mode" data-mode="monogrid"     title="Asendorf — uniform text grid with opaque palette blocks overlaid">Monogrid</button>
           <button class="mb" data-mode="isocontour" title="Pure contour isolines — marching squares on noise, no characters">Iso Lines</button>
           <button class="mb new-mode" data-mode="wfc" title="Wave Function Collapse inspired tile pattern">WFC Tiles</button>
           <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection — inner/outer cubes linked by edges">Tesseract</button>
@@ -358,6 +377,7 @@ select option{background:var(--ink)}
           <div class="pb" data-pal="abyss"       title="Abyss"         style="background:linear-gradient(135deg,#003566,#ffd60a)"></div>
           <div class="pb" data-pal="infrared"    title="Infrared"      style="background:linear-gradient(135deg,#ff0055,#00ff88)"></div>
           <div class="pb" data-pal="amberterm"   title="Amber Term"    style="background:linear-gradient(135deg,#1a0a00,#ffb000)"></div>
+          <div class="pb" data-pal="mondrian" title="Piet Mondrian" style="background:linear-gradient(135deg,#FAFAFA,#212121,#D32F2F,#1A237E,#FDD835)"></div>
           <!-- Green -->
           <div class="pb" data-pal="jade"        title="Jade"          style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
           <div class="pb" data-pal="moss"        title="Moss"          style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)"></div>
@@ -402,17 +422,52 @@ select option{background:var(--ink)}
           <div class="pb" data-pal="midnightrain" title="Midnight Rain" style="background:linear-gradient(135deg,#0f172a,#94a3b8)"></div>
         </div>
         <div class="sl2">Accent 1</div>
-        <div class="ag" id="accentRow1">
-          <div class="as active" data-accent="#e63946" style="background:#e63946"></div>
-          <div class="as" data-accent="#f4a261"   style="background:#f4a261"></div>
-          <div class="as" data-accent="#ede66c"   style="background:#ede66c"></div>
-          <div class="as" data-accent="#90d4a0"   style="background:#90d4a0"></div>
-          <div class="as" data-accent="#80b8e8"   style="background:#80b8e8"></div>
-          <div class="as" data-accent="#d890d8"   style="background:#d890d8"></div>
-          <div class="as" data-accent="#ffffff"   style="background:#fff;border:1px solid #555"></div>
-          <div class="as" data-accent="none"      style="background:var(--stone);border:1px dashed var(--dim)"></div>
-        </div>
+          <div class="ag" id="accentRow1">
+          <!-- Reds & Oranges -->
+          <div class="as active" data-accent="#e63946" style="background:#e63946" title="Red"></div>
+          <div class="as" data-accent="#ff0000" style="background:#ff0000" title="Pure Red"></div>
+          <div class="as" data-accent="#dc143c" style="background:#dc143c" title="Crimson"></div>
+          <div class="as" data-accent="#ff4500" style="background:#ff4500" title="Orange Red"></div>
+          <div class="as" data-accent="#f4a261" style="background:#f4a261" title="Orange"></div>
+          <div class="as" data-accent="#ff8c00" style="background:#ff8c00" title="Dark Orange"></div>
+          <!-- Yellows & Golds -->
+          <div class="as" data-accent="#ede66c" style="background:#ede66c" title="Yellow"></div>
+          <div class="as" data-accent="#ffff00" style="background:#ffff00" title="Bright Yellow"></div>
+          <div class="as" data-accent="#ffd700" style="background:#ffd700" title="Gold"></div>
+          <div class="as" data-accent="#adff2f" style="background:#adff2f" title="Green Yellow"></div>
+          <!-- Greens -->
+          <div class="as" data-accent="#90d4a0" style="background:#90d4a0" title="Mint"></div>
+          <div class="as" data-accent="#00ff00" style="background:#00ff00" title="Lime"></div>
+          <div class="as" data-accent="#00fa9a" style="background:#00fa9a" title="Medium Spring Green"></div>
+          <!-- Cyans & Blues -->
+          <div class="as" data-accent="#00ffff" style="background:#00ffff" title="Cyan"></div>
+          <div class="as" data-accent="#00ced1" style="background:#00ced1" title="Dark Turquoise"></div>
+          <div class="as" data-accent="#80b8e8" style="background:#80b8e8" title="Light Blue"></div>
+          <div class="as" data-accent="#00bfff" style="background:#00bfff" title="Deep Sky Blue"></div>
+          <div class="as" data-accent="#1e90ff" style="background:#1e90ff" title="Dodger Blue"></div>
+          <div class="as" data-accent="#0000ff" style="background:#0000ff" title="Blue"></div>
+          <!-- Purples & Pinks -->
+          <div class="as" data-accent="#d890d8" style="background:#d890d8" title="Lavender"></div>
+          <div class="as" data-accent="#8a2be2" style="background:#8a2be2" title="Blue Violet"></div>
+          <div class="as" data-accent="#ff00ff" style="background:#ff00ff" title="Magenta"></div>
+          <div class="as" data-accent="#ff69b4" style="background:#ff69b4" title="Hot Pink"></div>
+          <div class="as" data-accent="#ff1493" style="background:#ff1493" title="Deep Pink"></div>
+          <div class="as" data-accent="#c71585" style="background:#c71585" title="Medium Violet Red"></div>
+          <!-- Neutrals -->
+          <div class="as" data-accent="#ffffff" style="background:#fff;border:1px solid #555" title="White"></div>
+            <!-- Darks -->
+          <div class="as" data-accent="#000000" style="background:#000" title="Black"></div>
+          <div class="as" data-accent="#1a1a1a" style="background:#1a1a1a" title="Charcoal"></div>
+          <div class="as" data-accent="#0d0c0a" style="background:#0d0c0a" title="Ink"></div>
+          <div class="as" data-accent="#0a1628" style="background:#0a1628" title="Navy"></div>
+          <div class="as" data-accent="#0b3d0b" style="background:#0b3d0b" title="Dark Green"></div>
+          <div class="as" data-accent="#3e2723" style="background:#3e2723" title="Dark Brown"></div>
+          <div class="as" data-accent="#2c2c2c" style="background:#2c2c2c" title="Dark Grey"></div>  
+          <!-- None (always last) -->
+          <div class="as" data-accent="none" style="background:var(--stone);border:1px dashed var(--dim)" title="No accent"></div>
+</div>
         <div class="rw"><div class="rl"><span class="rn">Accent 1</span><span class="rv" id="vAccent1">10</span></div><input type="range" id="sAccent1" min="0" max="60" value="10" step="2" title="Accent 1 strength — how often the accent colour replaces the palette colour"></div>
+       
         <div class="sl2">Accent 2</div>
         <div class="ag" id="accentRow2">
           <div class="as" data-a2="#e63946"  style="background:#e63946"></div>
@@ -428,17 +483,44 @@ select option{background:var(--ink)}
         <div class="sl2">Background</div>
         <div class="ag" id="bgRow">
           <div class="as active" data-bg="#0d0c0a" style="background:#0d0c0a;border:1px solid var(--stone)"></div>
-          <div class="as" data-bg="#234b09"  style="background:#234b09"></div>
-          <div class="as" data-bg="#0a0c14"  style="background:#0a0c14"></div>
-          <div class="as" data-bg="#1a1008"  style="background:#1a1008"></div>
-          <div class="as" data-bg="#f2ede6"  style="background:#f2ede6"></div>
-          <div class="as" data-bg="#14101e"  style="background:#14101e"></div>
-          <div class="as" data-bg="#2e2c28"  style="background:#2e2c28"></div>
-          <div class="as" data-bg="#1a2b3c"  style="background:#1a2b3c"></div>
-          <div class="as" data-bg="#2d1b2d"  style="background:#2d1b2d"></div>
-          <div class="as" data-bg="#f9f5d7"  style="background:#f9f5d7"></div>
-          <div class="as" data-bg="#000000"  style="background:#000"></div>
-          <div class="as" data-bg="#333333"  style="background:#333"></div>
+        <!-- Neutrals & Greys -->
+          <div class="as" data-bg="#000000" style="background:#000" title="Black"></div>
+          <div class="as" data-bg="#333333" style="background:#333" title="Medium Grey"></div>
+          <div class="as" data-bg="#2e2c28" style="background:#2e2c28" title="Dark Grey"></div>
+          <div class="as" data-bg="#f9f5d7" style="background:#f9f5d7" title="Pale Cream"></div>
+          <div class="as" data-bg="#f2ede6" style="background:#f2ede6" title="Warm Ivory"></div>
+          <div class="as" data-bg="#1a1008" style="background:#1a1008" title="Dark Earth"></div>
+        <!-- Blues & Teals -->
+          <div class="as" data-bg="#0a0c14" style="background:#0a0c14" title="Deep Navy"></div>
+          <div class="as" data-bg="#1a2b3c" style="background:#1a2b3c" title="Midnight Blue"></div>
+          <div class="as" data-bg="#add8e6" style="background:#add8e6" title="Light Blue"></div>
+          <div class="as" data-bg="#87ceeb" style="background:#87ceeb" title="Sky Blue"></div>
+          <div class="as" data-bg="#008080" style="background:#008080" title="Teal"></div>
+          <div class="as" data-bg="#3d8080" style="background:#3d8080" title="Teal 2"></div>
+          <div class="as" data-bg="#97baba" style="background:#97baba" title="Pale Teal"></div>
+          <div class="as" data-bg="#00ced1" style="background:#00ced1" title="Dark Turquoise"></div>
+          <div class="as" data-bg="#40e0d0" style="background:#40e0d0" title="Turquoise"></div>
+        <!-- Greens -->
+          <div class="as" data-bg="#234b09" style="background:#234b09" title="Forest Green"></div>
+          <div class="as" data-bg="#006400" style="background:#006400" title="Dark Green"></div>
+          <div class="as" data-bg="#00ff7f" style="background:#00ff7f" title="Spring Green"></div>
+          <div class="as" data-bg="#98fb98" style="background:#98fb98" title="Pale Green"></div>
+          <div class="as" data-bg="#2e8b57" style="background:#2e8b57" title="Sea Green"></div>
+        <!-- Purples & Pinks -->
+          <div class="as" data-bg="#14101e" style="background:#14101e" title="Deep Purple"></div>
+          <div class="as" data-bg="#2d1b2d" style="background:#2d1b2d" title="Plum"></div>
+          <div class="as" data-bg="#dda0dd" style="background:#dda0dd" title="Plum Light"></div>
+          <div class="as" data-bg="#ff69b4" style="background:#ff69b4" title="Hot Pink"></div>
+          <div class="as" data-bg="#ffb6c1" style="background:#ffb6c1" title="Light Pink"></div>
+          <div class="as" data-bg="#ff00ff" style="background:#ff00ff" title="Fuchsia"></div>
+        <!-- Reds, Oranges & Yellows -->
+          <div class="as" data-bg="#ff0000" style="background:#ff0000" title="Red"></div>
+          <div class="as" data-bg="#dc143c" style="background:#dc143c" title="Crimson"></div>
+          <div class="as" data-bg="#ffa500" style="background:#ffa500" title="Orange"></div>
+          <div class="as" data-bg="#ff8c00" style="background:#ff8c00" title="Dark Orange"></div>
+          <div class="as" data-bg="#ffb347" style="background:#ffb347" title="Pastel Orange"></div>
+          <div class="as" data-bg="#ffff00" style="background:#ffff00" title="Bright Yellow"></div>
+          <div class="as" data-bg="#fffacd" style="background:#fffacd" title="Lemon Chiffon"></div>
         </div>
         
       </div></div>
@@ -707,18 +789,42 @@ select option{background:var(--ink)}
 </div>
       </div>
 
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('img')"><span class="sl">Image → Text</span><span class="sec-arrow" id="arr-img">›</span></div>
-      <div class="sec-body collapsed" id="body-img">
-        <input type="file" id="imgFile" accept="image/*" style="display:none">
-        <button class="iu" onclick="document.getElementById('imgFile').click()">Upload image</button>
-        <div class="cr" style="margin-bottom:.4rem">
-          <input class="ci" id="imgUrlInput" placeholder="or paste image URL…">
-          <button class="ca" id="imgUrlApply">Load</button>
-        </div>
-        <div class="is" id="imgStatus">No image loaded</div>
+<div class="sec">
+  <div class="sec-hd" onclick="toggleSec('img')">
+    <span class="sl">Image → Text</span>
+    <span class="sec-arrow" id="arr-img">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-img">
+    <input type="file" id="imgFile" accept="image/*" style="display:none">
+    <button class="iu" onclick="document.getElementById('imgFile').click()">Upload Reference</button>
+    <div class="cr" style="margin-bottom:.4rem">
+      <input class="ci" id="imgUrlInput" placeholder="or paste image URL…">
+      <button class="ca" id="imgUrlApply">Load</button>
+    </div>
         <div class="tr"><span class="tl">Stretch to fill</span><button class="tb" id="btnStretch">Off</button></div>
         <div class="tr"><span class="tl">Invert brightness</span><button class="tb" id="btnInvert">Off</button></div>
-      </div></div>
+    <div id="imgStatus" style="font-size:0.5rem; color:var(--dim); margin-top:0.3rem;"></div>
+    <div class="sl2">Draw Mode</div>
+    <div class="mg" id="imgModeGrid">
+      <div class="mb active" data-imode="chars">Chars</div>
+      <div class="mb" data-imode="hatch">Hatch</div>
+      <div class="mb" data-imode="crosshatch">Cross‑hatch</div>
+      <div class="mb" data-imode="blocks">Blocks</div>
+      <div class="mb" data-imode="stipple">Stipple</div>
+      <div class="mb" data-imode="edge">Edge</div>
+    </div>
+    <div class="sl2">Color Mapping</div>
+    <div class="mg" id="imgColorModeGrid">
+      <div class="mb active" data-cm="tonal">Tonal</div>
+      <div class="mb" data-cm="random">Random</div>
+    </div>
+    <div class="sl2">Contrast Engine</div>
+    <div class="mg" id="imgDitherGrid">
+      <div class="mb active" data-idither="none">Raw</div>
+      <div class="mb" data-idither="atkinson">Atkinson</div>
+    </div>
+  </div>
+</div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('size')"><span class="sl">Canvas size</span><span class="sec-arrow" id="arr-size">›</span></div>
       <div class="sec-body collapsed" id="body-size">
@@ -896,7 +1002,7 @@ const PALETTES={
   rust:      ['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],
   copper:    ['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],
   aurora:    ['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],
-  // New palettes
+  mondrian:   ['#FAFAFA', '#212121', '#D32F2F', '#1A237E', '#FDD835', '#9E9E9E'],
   brutalist: ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],
   risograph: ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],
   cyanotype: ['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],
@@ -905,7 +1011,6 @@ const PALETTES={
   velvet:    ['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],
   tidal:     ['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],
   solaris:   ['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
-  // ── NEW PALETTES 2025 ─────────────────────────────────────
   // Warm & Fire
   volcanic:   ['#FF4500','#8B0000','#FF8C00','#2F0A00','#5C1A00'],
   lava:       ['#ff1493','#ff8c00','#ffd700','#ff4500','#8b008b'],
@@ -994,6 +1099,9 @@ let S={
   shapePosition:'center',shapeSides:7,shapeText:'',
   signalCollapse:false,signalStart:0,
   blendMode:'source-over',
+  imgMode: 'chars',
+  imgColorMode: 'tonal',
+  imgDither: 'none',
   playing:false,fc:0,
   useParticleMode:false, 
   reactFeed: 0.033, //reaction
@@ -1012,11 +1120,22 @@ let S={
 
 // ── DYNAMIC STATE ─────────────────────────────────────────────────────────────
 let imgPix=null,imgW=0,imgH=0;
+let imgEdgeStrength = null;  
 let rainDrops=[],tessGrid=[],matrixCols=[],shatterParts=[],compBlocks=[];
 let shapes=[];
 let recRects=[];
 let loopParticles=[];
+let geodeTiles = [];
+let monogridBlocks = [];  
 let topoSegs=[];
+// Maze
+let mazeGrid = null, mazeCols = 0, mazeRows = 0;
+let mazeShiftTimer = 0;
+// Mondrian
+let mondrianRects = [];
+let mondrianShiftTimer = 0;  
+// Striped Rects
+let stripedRects = [];  
 // Boids state
 let boidAgents=[];
 // Magnetic field state
@@ -1678,27 +1797,147 @@ function drawLoops(p,t){
   });
   CTX.globalAlpha=1;
 }
-function drawImgText(p,t){
-  if(!imgPix){
-    CTX.fillStyle=S.palette[0];CTX.font='13px '+S.fontStack;
-    CTX.textAlign='center';CTX.fillText('Upload an image →',p.width/2,p.height/2);
-    CTX.textAlign='left';return;
+function drawImgText(p, t) {
+  if (!imgPix || !imgW || !imgH) {
+    CTX.fillStyle = S.palette[0];
+    CTX.font = '13px ' + S.fontStack;
+    CTX.textAlign = 'center';
+    CTX.fillText('Upload an image →', p.width / 2, p.height / 2);
+    CTX.textAlign = 'left';
+    return;
   }
-  let sp=S.spacing,sx,sy,ox=0,oy=0;
-  if(S.imgStretch){sx=imgW/p.width;sy=imgH/p.height;}
-  else{let sc=Math.min(p.width/imgW,p.height/imgH);sx=sy=1/sc;ox=(p.width-imgW*sc)/2;oy=(p.height-imgH*sc)/2;}
-  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
-    let ix=Math.floor((x-ox)*sx),iy=Math.floor((y-oy)*sy);
-    if(ix<0||ix>=imgW||iy<0||iy>=imgH) continue;
-    let idx=(iy*imgW+ix)*4,rv=imgPix.data[idx],gv=imgPix.data[idx+1],bv=imgPix.data[idx+2];
-    let bri=(rv*.299+gv*.587+bv*.114)/255;
-    if(S.imgInvert) bri=1-bri;
-    let d=1-bri;if(d<.1) continue;
-    let wx=Math.sin(y*.01+t)*S.wave*.07,wy=Math.cos(x*.01+t*.7)*S.wave*.05;
-    let res=pcc(p,x,y,t);
-    dc(x+wx,y+wy,p.map(d,.1,1,1.5,S.maxSize),0,res.col,res.ch);
+  let step = S.spacing || 10;
+  let palette = Array.isArray(S.palette) ? S.palette : (PALETTES[S.palette] || PALETTES['site']);
+  console.log('Image mode palette:', palette);
+  // Calculate scaling and offset based on stretch mode
+  let scaleX, scaleY, offsetX = 0, offsetY = 0;
+  if (S.imgStretch) {
+    // Stretch to fill the whole canvas
+    scaleX = imgW / p.width;
+    scaleY = imgH / p.height;
+  } else {
+    // Fit inside canvas (preserve aspect ratio)
+    let scale = Math.min(p.width / imgW, p.height / imgH);
+    scaleX = 1 / scale;
+    scaleY = 1 / scale;
+    offsetX = (p.width - imgW * scale) / 2;
+    offsetY = (p.height - imgH * scale) / 2;
+  }
+  for (let x = 0; x < p.width; x += step) {
+    for (let y = 0; y < p.height; y += step) {
+      // Map canvas coordinates to image coordinates
+      let imgX = Math.floor((x - offsetX) * scaleX);
+      let imgY = Math.floor((y - offsetY) * scaleY);
+      if (imgX < 0 || imgX >= imgW || imgY < 0 || imgY >= imgH) continue;
+
+      let idx = (imgY * imgW + imgX) * 4;
+      let r = imgPix.data[idx];
+      let g = imgPix.data[idx + 1];
+      let b = imgPix.data[idx + 2];
+      let br = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      if (S.imgInvert) br = 255 - br;
+      if (S.imgDither === 'atkinson') {
+        br = br < 128 ? 0 : 255;
+      }
+
+      let col;
+      if (S.imgColorMode === 'tonal') {
+        let colIdx = Math.floor(p.map(br, 0, 255, 0, palette.length - 1));
+        col = palette[colIdx];
+      } else {
+        col = palette[Math.floor(p.random() * palette.length)];
+      }
+
+      // Edge strength (only needed for edge mode)
+      let edgeVal = 0;
+      if (S.imgMode === 'edge' && imgEdgeStrength) {
+        edgeVal = imgEdgeStrength[imgY * imgW + imgX] || 0;
+      }
+
+      p.push();
+      p.translate(x, y);
+
+      if (S.imgMode === 'chars') renderImgChars(p, br, col);
+      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
+      else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
+      else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
+      else if (S.imgMode === 'stipple') renderImgStipple(p, br, col);
+      else if (S.imgMode === 'edge') renderImgEdge(p, br, col, t, edgeVal);
+
+      p.pop();
+    }
   }
 }
+  //drawImgText Helpers
+function renderImgChars(p, br, col) {
+  // Set to 1000 for testing to ensure pixels are drawing
+  if (br > 1000) return; 
+  let chars = S.chars || ['#'];
+  let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
+  p.noStroke();
+  p.fill(col);
+  p.textSize(S.spacing * 1.2);
+  p.text(chars[charIdx], 0, 0);
+}
+function renderImgHatch(p, br, col, t) {
+  if (br > 220) return;
+  let weight = p.map(br, 0, 220, 2.5, 0.3);
+  // Using spatial noise makes the texture feel more like physical graphite
+  // We use the current translation context
+  let n = p.noise(p.frameCount * 0.005, br * 0.01); 
+  p.rotate(n * p.TWO_PI);
+  p.stroke(col);
+  p.strokeWeight(weight);
+  p.line(-S.spacing/2, 0, S.spacing/2, 0);
+}
+function renderImgBlocks(p, br, col) {
+  if (br > 240) return;
+  let s = p.map(br, 0, 255, S.spacing, 1);
+  p.noStroke();
+  p.fill(col);
+  p.rectMode(p.CENTER);
+  p.rect(0, 0, s, s);
+}
+function renderImgCrossHatch(p, br, col, t) {
+  // Skip very bright areas
+  if (br > 220) return;
+  let weight = p.map(br, 0, 220, 2.5, 0.3);
+  p.stroke(col);
+  p.strokeWeight(weight);
+  // First hatch direction (45°)
+  p.line(-S.spacing/2, -S.spacing/2, S.spacing/2, S.spacing/2);
+  // Second hatch direction (135°)
+  p.line(-S.spacing/2, S.spacing/2, S.spacing/2, -S.spacing/2);
+  // Optional: add a third direction (0°) for very dark areas
+  if (br < 80) {
+    p.line(-S.spacing/2, 0, S.spacing/2, 0);
+  }
+}
+function renderImgStipple(p, br, col) {
+  // Dot density based on brightness (darker = more dots)
+  let density = p.map(br, 0, 255, 0.8, 0.05);
+  if (Math.random() > density) return;
+  let dotSize = p.map(br, 0, 255, S.spacing * 0.6, 1);
+  p.noStroke();
+  p.fill(col);
+  p.circle(0, 0, dotSize);
+}
+function renderImgEdge(p, br, col, t, edgeVal) {
+  if (edgeVal < 30) return;
+  let sz = p.map(edgeVal, 30, 255, 1, S.spacing * 0.8);
+  p.noStroke();
+  p.fill(col);
+  p.circle(0, 0, sz);
+}  
+  
+function getPaletteColors() {
+    // Force a fallback to a known palette if the state is undefined
+    let activePalette = PALETTES[S.palette] || PALETTES['site'] || ['#0d0c0a', '#c4bcb0', '#b8955a', '#ede9e2'];
+    return activePalette;
+}
+  
+  
 function drawTopoLines(p,t){
   let W=p.width,H=p.height;
   let res=Math.max(6,S.spacing*.9);
@@ -1791,7 +2030,273 @@ function drawReaction(p,t){
   }
 }
 
-// ── NEW MODE: VORONOI ─────────────────────────────────────────────────────────
+// ── MAZE ─────────────────────────────────────────────────────────────────────
+// Recursive-backtracker maze. Walls dissolve and regenerate over time.
+// Characters fill corridors; walls are CTX lines.
+
+function buildMaze(cols, rows) {
+  // Each cell stores which walls are open: N E S W
+  let cells = new Array(cols * rows).fill(null).map(() => ({
+    visited: false, N: true, E: true, S: true, W: true
+  }));
+  let idx = (c, r) => r * cols + c;
+  let stack = [];
+  let start = idx(Math.floor(cols / 2), Math.floor(rows / 2));
+  cells[start].visited = true;
+  stack.push(start);
+  while (stack.length) {
+    let cur = stack[stack.length - 1];
+    let c = cur % cols, r = Math.floor(cur / cols);
+    let neighbors = [];
+    if (r > 0       && !cells[idx(c, r-1)].visited) neighbors.push([c, r-1, 'N', 'S']);
+    if (c < cols-1  && !cells[idx(c+1, r)].visited) neighbors.push([c+1, r, 'E', 'W']);
+    if (r < rows-1  && !cells[idx(c, r+1)].visited) neighbors.push([c, r+1, 'S', 'N']);
+    if (c > 0       && !cells[idx(c-1, r)].visited) neighbors.push([c-1, r, 'W', 'E']);
+    if (!neighbors.length) { stack.pop(); continue; }
+    let [nc, nr, d1, d2] = neighbors[Math.floor(Math.random() * neighbors.length)];
+    cells[cur][d1] = false;
+    cells[idx(nc, nr)][d2] = false;
+    cells[idx(nc, nr)].visited = true;
+    stack.push(idx(nc, nr));
+  }
+  return cells;
+}
+
+function drawMaze(p, t) {
+  let cw = Math.max(12, S.spacing * 2);
+  let ch = Math.max(12, S.spacing * 2);
+  let cols = Math.floor(p.width  / cw) + 1;
+  let rows = Math.floor(p.height / ch) + 1;
+
+  // Rebuild when size changes or on regen
+  if (!mazeGrid || mazeCols !== cols || mazeRows !== rows) {
+    mazeCols = cols; mazeRows = rows;
+    mazeGrid = buildMaze(cols, rows);
+  }
+
+  // Shift: randomly remove a wall and carve a new passage every N frames
+  if (S.playing) {
+    mazeShiftTimer++;
+    let shiftRate = 15;
+    if (mazeShiftTimer > shiftRate) {
+      mazeShiftTimer = 0;
+      // Pick a random cell and knock out a random wall
+      let c = Math.floor(Math.random() * cols);
+      let r = Math.floor(Math.random() * rows);
+      let dirs = ['N','E','S','W'];
+      let d1 = dirs[Math.floor(Math.random() * 4)];
+      let nc = c + (d1==='E'?1:d1==='W'?-1:0);
+      let nr = r + (d1==='S'?1:d1==='N'?-1:0);
+      let opp = {N:'S',S:'N',E:'W',W:'E'};
+      if (nc>=0 && nc<cols && nr>=0 && nr<rows) {
+        mazeGrid[r * cols + c][d1]         = false;
+        mazeGrid[nr * cols + nc][opp[d1]]  = false;
+        // Optionally close a different wall elsewhere to keep it maze-like
+        let rc2 = Math.floor(Math.random() * cols);
+        let rr2 = Math.floor(Math.random() * rows);
+        let d2  = dirs[Math.floor(Math.random() * 4)];
+        mazeGrid[rr2 * cols + rc2][d2] = true;
+      }
+    }
+  }
+
+  // Draw walls
+  let wallCol = S.palette[0];
+  CTX.save();
+  CTX.strokeStyle = wallCol;
+  CTX.lineWidth   = Math.max(1, S.maxSize * 0.06);
+  CTX.lineCap     = 'square';
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let cell = mazeGrid[r * cols + c];
+      let x = c * cw, y = r * ch;
+      // Draw only walls that are still closed
+      if (cell.N) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x + cw, y);      CTX.stroke(); }
+      if (cell.W) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x, y + ch);      CTX.stroke(); }
+      // Draw S and E only at edges to avoid double-drawing
+      if (r === rows-1 && cell.S) { CTX.beginPath(); CTX.moveTo(x, y+ch); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
+      if (c === cols-1 && cell.E) { CTX.beginPath(); CTX.moveTo(x+cw, y); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
+    }
+  }
+
+  // Fill corridors (open passages) with characters
+  if (S.chars && S.chars.length) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        let cell = mazeGrid[r * cols + c];
+        let openCount = (cell.N?0:1)+(cell.E?0:1)+(cell.S?0:1)+(cell.W?0:1);
+        if (openCount < 1) continue; // dead end — skip to keep visual clarity
+        let x = c * cw + cw * 0.5;
+        let y = r * ch + ch * 0.5;
+        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        let col = pickColor(p, x, y, t);
+        let ch2 = pickChar(p, x, y, t);
+        dc(x, y, p.map(n, 0, 1, S.maxSize * 0.3, S.maxSize * 0.8), 0, col, ch2);
+      }
+    }
+  }
+  CTX.restore();
+  _lastFill = '';
+}
+
+
+// ── UNKNOWN PLEASURES ─────────────────────────────────────────────────────────
+// Joy Division "Unknown Pleasures" — stacked horizontal lines with
+// noise-driven peaks that are tallest at vertical center.
+// Each line is a polyline; lines are filled below (solid ink style).
+
+function drawUnknownPleasures(p, t) {
+  let lineCount   = Math.floor(20 + S.density * 60);
+  let lineSpacing = p.height / (lineCount + 1);
+  let peakHeight  = p.height * 0.25 + S.wave * 1.8;
+  let pts         = 120;
+  let ns          = S.noiseScale * 2;
+
+  CTX.save();
+
+  // Draw from back (top) to front (bottom) so lower lines occlude upper ones
+  for (let li = lineCount - 1; li >= 0; li--) {
+    let baseY = p.height - lineSpacing * (li + 1);
+
+    // Gaussian envelope — peaks are tallest at vertical center of stack
+    let env = Math.exp(-Math.pow((li / lineCount) - 0.5, 2) / 0.06);
+
+    // Build points once, reuse for fill + stroke
+    let points = [];
+    for (let pi = 0; pi <= pts; pi++) {
+      let x   = (pi / pts) * p.width;
+      let n1  = p.noise(x * ns,        li * 0.4 + 100, t * 0.6);
+      let n2  = p.noise(x * ns * 3.1,  li * 0.4 + 200, t * 0.9) * 0.3;
+      let nv  = (n1 + n2) / 1.3;
+      let henv = Math.exp(-Math.pow((pi / pts) - 0.5, 2) / 0.12);
+      let dy  = -nv * peakHeight * env * henv;
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.04) {
+        dy -= Math.random() * peakHeight * 0.4 * env;
+      }
+      points.push({ x, y: baseY + dy });
+    }
+
+    // Fill from curve all the way down to canvas bottom — occludes everything behind
+    CTX.beginPath();
+    CTX.moveTo(points[0].x, points[0].y);
+    for (let pi = 1; pi < points.length; pi++) {
+      CTX.lineTo(points[pi].x, points[pi].y);
+    }
+    CTX.lineTo(p.width, p.height + 2);
+    CTX.lineTo(0,       p.height + 2);
+    CTX.closePath();
+    CTX.fillStyle = S.bg;
+    CTX.fill();
+
+    // Stroke the profile line
+    let lineCol = S.palette[li % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0 &&
+        p.noise(li * 0.3, t * 0.5) > (1 - S.accentAmt)) {
+      lineCol = S.accent;
+    }
+    CTX.beginPath();
+    CTX.moveTo(points[0].x, points[0].y);
+    for (let pi = 1; pi < points.length; pi++) {
+      CTX.lineTo(points[pi].x, points[pi].y);
+    }
+    CTX.lineWidth   = Math.max(0.5, S.maxSize * 0.055);
+    CTX.strokeStyle = lineCol;
+    CTX.stroke();
+  }
+
+  CTX.restore();
+}
+
+
+// ── MONDRIAN ─────────────────────────────────────────────────────────────────
+// Recursive subdivision into rectangles filled with Mondrian primaries.
+// Thick black borders. Slowly shifts subdivisions over time.
+
+function buildMondrian(x, y, w, h, depth) {
+  let minSize = 60 + S.spacing * 3;
+  if (depth <= 0 || w < minSize || h < minSize || Math.random() < 0.22) {
+    let r = Math.random();
+    // ~40% chance of a colored cell, rest use bg/near-white
+    let colored = r < 0.40;
+    mondrianRects.push({
+      x, y, w, h,
+      palIdx:   Math.floor(Math.random() * S.palette.length),
+      colored,  // true = use palette color; false = use background
+    });
+    return;
+  }
+  let splitVert = w >= h ? (Math.random() < 0.65) : (Math.random() < 0.35);
+  if (splitVert) {
+    let split = w * (0.25 + Math.random() * 0.5);
+    buildMondrian(x,         y, split,     h, depth - 1);
+    buildMondrian(x + split, y, w - split, h, depth - 1);
+  } else {
+    let split = h * (0.25 + Math.random() * 0.5);
+    buildMondrian(x, y,         w, split,     depth - 1);
+    buildMondrian(x, y + split, w, h - split, depth - 1);
+  }
+}
+
+function drawMondrian(p, t) {
+  if (!mondrianRects.length) {
+    buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
+  }
+  if (S.playing) {
+    mondrianShiftTimer = (mondrianShiftTimer || 0) + 1;
+    let rate = Math.max(1, Math.floor(180 - S.speed * 15000));
+    if (mondrianShiftTimer > rate) {
+      mondrianShiftTimer = 0;
+      mondrianRects = [];
+      buildMondrian(0, 0, p.width, p.height, 5 + Math.floor(S.density * 3));
+    }
+  }
+  let border = Math.max(2, S.maxSize * 0.18);
+  CTX.save();
+  // Draw filled cells
+  mondrianRects.forEach(function(r) {
+    let col = r.colored
+      ? S.palette[r.palIdx % S.palette.length]
+      : S.bg;
+    CTX.fillStyle = col;
+    CTX.fillRect(r.x + border * 0.5, r.y + border * 0.5,
+                 r.w - border,       r.h - border);
+  });
+  // Draw borders – use accent if set, otherwise darkest palette color
+  let borderCol = (S.accent !== 'none') ? S.accent : S.palette[S.palette.length - 1];
+  CTX.strokeStyle = borderCol;
+  CTX.lineWidth = border;
+  CTX.lineJoin = 'miter';
+  mondrianRects.forEach(function(r) {
+    CTX.strokeRect(r.x + border * 0.5, r.y + border * 0.5,
+                   r.w - border,       r.h - border);
+  });
+  // Optional character overlay (contrast based on luminance)
+  if (S.chars && S.chars.length && S.maxSize > 8) {
+    mondrianRects.forEach(function(r) {
+      if (r.w < S.spacing * 2 || r.h < S.spacing * 2) return;
+      let fillCol = r.colored ? S.palette[r.palIdx % S.palette.length] : S.bg;
+      let rCol = parseInt(fillCol.slice(1,3), 16);
+      let gCol = parseInt(fillCol.slice(3,5), 16);
+      let bCol = parseInt(fillCol.slice(5,7), 16);
+      let luminance = 0.2126 * rCol + 0.7152 * gCol + 0.0722 * bCol;
+      let isDark = luminance < 128;
+      let charCol = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)';
+      let sp = S.spacing;
+      for (let cx = r.x + sp; cx < r.x + r.w - sp; cx += sp) {
+        for (let cy = r.y + sp; cy < r.y + r.h - sp; cy += sp) {
+          let n = p.noise(cx * S.noiseScale, cy * S.noiseScale, S.fc * S.speed);
+          if (n < 0.5) continue;
+          dc(cx, cy, S.maxSize * 0.55, 0, charCol, pickChar(p, cx, cy, S.fc * S.speed));
+        }
+      }
+    });
+  }
+  CTX.restore();
+  _lastFill = '';
+}
+  
+// ── VORONOI ─────────────────────────────────────────────────────────
 // Living Voronoi diagram — cells drift and breathe
 function drawVoronoi(p,t){
   if(!voronoiSites.length) initVoronoi(p.width,p.height);
@@ -2567,7 +3072,6 @@ function drawTesseract(p,t){
   let W=p.width,H=p.height;
   let cx=W/2,cy=H/2;
   let scale=Math.min(W,H)*.28*(0.7+S.wave*.004);
-
   // 16 vertices of a tesseract in 4D: all combinations of ±1 in xyzw
   let verts4D=[];
   for(let i=0;i<16;i++){
@@ -2578,14 +3082,12 @@ function drawTesseract(p,t){
       (i&8)?1:-1
     ]);
   }
-
   // 32 edges: vertices that differ in exactly one bit
   let edges=[];
   for(let a=0;a<16;a++) for(let b=a+1;b<16;b++){
     let diff=(a^b);
     if(diff&&(diff&(diff-1))===0) edges.push([a,b]); // power of 2 = one bit
   }
-
   // 4D rotation matrices (XY plane and ZW plane, and XW for hypercube feel)
   let a1=t*S.speed*80, a2=t*S.speed*55, a3=t*S.speed*33;
   function rot4(v){
@@ -2598,7 +3100,6 @@ function drawTesseract(p,t){
     let x2=x1*Math.cos(a3)-z1*Math.sin(a3), z2=x1*Math.sin(a3)+z1*Math.cos(a3);
     return [x2,y1,z2,w1];
   }
-
   // Project 4D → 3D (perspective from w axis)
   function proj4to3(v){
     let [x,y,z,w]=v;
@@ -2606,7 +3107,6 @@ function drawTesseract(p,t){
     let wFac=d/(d-w);
     return [x*wFac,y*wFac,z*wFac];
   }
-
   // Project 3D → 2D (simple perspective)
   function proj3to2(v){
     let [x,y,z]=v;
@@ -2614,14 +3114,11 @@ function drawTesseract(p,t){
     let zFac=d/(d-z);
     return [x*zFac*scale+cx, y*zFac*scale+cy, zFac];
   }
-
   // Project all vertices
   let proj=verts4D.map(function(v){
     return proj3to2(proj4to3(rot4(v)));
   });
-
   CTX.save();
-
   // Draw edges
   edges.forEach(function(e,ei){
     let [ai,bi]=e;
@@ -2642,7 +3139,6 @@ function drawTesseract(p,t){
     CTX.moveTo(pa[0],pa[1]);CTX.lineTo(pb[0],pb[1]);
     CTX.stroke();
   });
-
   // Draw vertices with characters
   proj.forEach(function(pv,i){
     if(pv[2]<0.1) return;
@@ -2656,7 +3152,6 @@ function drawTesseract(p,t){
     if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
     CTX.fillText(ch,pv[0],pv[1]);
   });
-
   CTX.globalAlpha=1;
   CTX.restore();
   _lastFont='';_lastFill='';
@@ -2721,23 +3216,18 @@ function drawHypersphere(p,t){
         let y4=Math.sin(phi)*Math.sin(v)*Math.sin(u);
         let z4=Math.sin(phi)*Math.cos(v);
         let w4=Math.cos(phi);
-
         let [rx,ry,rz,rw]=rot4(x4,y4,z4,w4);
-
         // Project 4D→2D via stereographic projection from north pole (w=1)
         let denom=2-rw;
         if(Math.abs(denom)<0.05) continue;
         let sx=cx+rx/denom*R;
         let sy=cy+ry/denom*R;
         let depth=(rz/denom+1)/2; // 0..1 depth for sizing/alpha
-
         if(sx<-50||sx>W+50||sy<-50||sy>H+50) continue;
-
         let sz=Math.max(2,depth*S.maxSize*.8);
         let ci=Math.floor((ui*stepsV+vi)/(stepsU*stepsV)*S.palette.length)%S.palette.length;
         let col=S.palette[ci];
         if(wi===0&&S.accent!=='none') col=S.accent;
-
         CTX.globalAlpha=0.2+depth*.7;
         let ch=pickChar(p,sx,sy,t);
         let fstr=(sz|0)+'px '+S.fontStack;
@@ -2751,6 +3241,197 @@ function drawHypersphere(p,t){
   _lastFont='';_lastFill='';
 }
 
+// ── BRUSH CONTOUR (Rotsztain) ─────────────────────────────────────────────
+// Noise iso-contours drawn as small rotated rectangular brushstrokes.
+// Each contour level gets a palette color. Density controls band width,
+// Spacing controls stroke resolution, Max Size controls stroke thickness.
+
+function drawBrushContour(p, t) {
+  let ns      = S.noiseScale;
+  let levels  = 6 + Math.floor(S.density * 14);
+  let step    = Math.max(2, S.spacing * 0.55);
+  let bandW   = 0.06 + S.wave * 0.0012;   // contour band width
+  let dashLen = step * 2.2;
+  let dashH   = Math.max(1, S.maxSize * 0.13);
+
+  for (let x = 0; x < p.width; x += step) {
+    for (let y = 0; y < p.height; y += step) {
+      let n     = p.noise(x * ns, y * ns, t * 0.12);
+      let level = n * levels;
+      let frac  = level - Math.floor(level);
+      // Skip points not near a contour threshold
+      if (frac > bandW && frac < 1 - bandW) continue;
+      // Contour direction = perpendicular to noise gradient
+      let gx    = p.noise((x + 1) * ns, y * ns,       t * 0.12)
+                - p.noise((x - 1) * ns, y * ns,       t * 0.12);
+      let gy    = p.noise(x * ns,       (y + 1) * ns, t * 0.12)
+                - p.noise(x * ns,       (y - 1) * ns, t * 0.12);
+      let angle = Math.atan2(gy, gx) + Math.PI * 0.5 + S.charRotRad;
+      // Color by contour level
+      let li  = Math.floor(n * levels);
+      let col = S.palette[li % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && n > (1 - S.accentAmt)) col = S.accent;
+      if (S.accent2 !== 'none' && S.accentAmt2 > 0 && n < S.accentAmt2)    col = S.accent2;
+      // Entropy: scatter angle and size
+      let dLen = dashLen * (0.5 + Math.random() * 1.1);
+      let dH   = dashH   * (0.4 + Math.random() * 1.3);
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.5) angle += (Math.random() - 0.5) * 1.5;
+
+      CTX.save();
+      CTX.translate(x, y);
+      CTX.rotate(angle);
+      CTX.fillStyle = col;
+      CTX.fillRect(-dLen * 0.5, -dH * 0.5, dLen, dH);
+      CTX.restore();
+    }
+  }
+  _lastFill = '';
+}
+
+
+// ── GEODE (Lars Wander) ───────────────────────────────────────────────────
+// Small rotated tiles scatter into a noise-defined organic blob.
+// Each tile's color comes from palette; blob boundary breathes with time.
+// Spacing = tile size, Density = blob fill threshold, Wave = blob animation.
+
+function initGeode(W, H) {
+  geodeTiles = [];
+  let step = Math.max(4, S.spacing);
+  let cx = W * 0.5, cy = H * 0.5;
+  for (let x = step * 0.5; x < W; x += step) {
+    for (let y = step * 0.5; y < H; y += step) {
+      let dx = (x - cx) / (W * 0.42);
+      let dy = (y - cy) / (H * 0.42);
+      geodeTiles.push({
+        x, y,
+        dist: Math.sqrt(dx * dx + dy * dy),
+        rot:  (Math.random() - 0.5) * 0.7,
+        rotV: (Math.random() - 0.5) * 0.002,   // slow spin velocity
+        tw:   step * (0.45 + Math.random() * 0.65),
+        th:   step * (0.45 + Math.random() * 0.9),
+        palIdx: Math.floor(Math.random() * 6),
+        rand:   Math.random(),
+        nx:   x * 0.004,   // noise coords cached
+        ny:   y * 0.004,
+      });
+    }
+  }
+}
+function drawGeode(p, t) {
+  if (!geodeTiles.length) initGeode(p.width, p.height);
+  geodeTiles.forEach(function(tile) {
+    // Blob boundary: base radius + noise perturbation + wave breathing
+    let blobN  = p.noise(tile.nx, tile.ny, t * 0.25);
+    let radius = 0.5 + blobN * 0.4 + S.wave * 0.003;
+    if (tile.dist > radius) return;
+    // Soft alpha falloff at edge
+    let alpha = Math.min(1, (radius - tile.dist) * 9) * 0.88;
+    if (alpha < 0.04) return;
+    // Slow tile rotation when playing
+    if (S.playing) tile.rot += tile.rotV * S.speed * 60;
+    let col = S.palette[tile.palIdx % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0 && tile.rand < S.accentAmt * 0.4) col = S.accent;
+    CTX.save();
+    CTX.globalAlpha = alpha;
+    CTX.translate(tile.x, tile.y);
+    CTX.rotate(tile.rot);
+    CTX.fillStyle = col;
+    CTX.fillRect(-tile.tw * 0.5, -tile.th * 0.5, tile.tw, tile.th);
+    CTX.restore();
+  });
+  CTX.globalAlpha = 1;
+  _lastFill = '';
+}
+
+
+// ── TYPESCALE (Maeda) ─────────────────────────────────────────────────────
+// Characters grade from enormous at top to microscopic dense texture below.
+// Max Size = largest character, Spacing = compression of the gradient,
+// Wave = adds horizontal ripple to the size gradient.
+
+function drawTypescale(p, t) {
+  let y       = 0;
+  let rowIdx  = 0;
+  let maxSz   = S.maxSize * 3.5;
+  let minSz   = 1.5;
+  while (y < p.height + maxSz) {
+    let progress = Math.min(1, y / (p.height * (0.55 + S.spacing * 0.012)));
+    // Ease-in curve so big chars fill top, compression accelerates downward
+    let eased = progress * progress;
+    let rowSz = p.map(eased, 0, 1, maxSz, minSz);
+    // Wave creates left-right size ripple per row
+    let waveOff = S.wave > 0 ? Math.sin(rowIdx * 0.18 + t * 1.2) * S.wave * 0.015 : 0;
+    rowSz = Math.max(minSz, rowSz * (1 + waveOff));
+    let x      = 0;
+    let colIdx = 0;
+    while (x < p.width + rowSz) {
+      let col = pickColor(p, x, y, t);
+      let ch  = pickChar(p, x + rowIdx * 7, y, t);
+      // Entropy: random size spikes
+      let sz = S.entropy > 0 && Math.random() < S.entropy * 0.06
+        ? rowSz * (1 + Math.random() * 2)
+        : rowSz;
+
+      dc(x, y, sz, 0, col, ch);
+      x += Math.max(1, sz * 0.62 + S.spacing * 0.05 * (1 - progress));
+      colIdx++;
+    }
+
+    y      += Math.max(1, rowSz * 0.88);
+    rowIdx ++;
+  }
+}
+
+// ── MONOGRID (Asendorf) ───────────────────────────────────────────────────
+// Uniform repeating-text grid fills the canvas, then opaque palette-colored
+// rectangles are overlaid at various positions and scales.
+// Spacing = text cell size, Max Size = rect scale, Wave = rect drift speed.
+function initMonogrid(W, H) {
+  monogridBlocks = [];
+  let count = 3 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    monogridBlocks.push({
+      x:      Math.random() * W * 0.55,
+      y:      Math.random() * H * 0.55,
+      w:      W * (0.15 + Math.random() * 0.55),
+      h:      H * (0.12 + Math.random() * 0.45),
+      palIdx: Math.floor(Math.random() * 6),
+      alpha:  0.28 + Math.random() * 0.52,
+      phase:  Math.random() * Math.PI * 2,
+    });
+  }
+}
+function drawMonogrid(p, t) {
+  if (!monogridBlocks.length) initMonogrid(p.width, p.height);
+
+  let tokens  = S.chars && S.chars.length ? S.chars : ['·'];
+  let sz      = Math.max(2, S.spacing * 0.85);
+  let charW   = sz * 0.63;
+  let charH   = sz * 1.05;
+  let tokIdx  = Math.floor(S.fc * S.speed * 0.3) % tokens.length; // slow cycle
+  // Uniform text field
+  for (let y = sz; y < p.height + sz; y += charH) {
+    for (let x = 0; x < p.width + charW; x += charW) {
+      let col = pickColor(p, x, y, t);
+      let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      dc(x, y, sz, 0, col, ch);
+    }
+  }
+  // Opaque palette blocks on top
+  CTX.save();
+  monogridBlocks.forEach(function(b) {
+    let bx  = b.x + (S.wave > 0 ? Math.sin(t + b.phase) * S.wave * 0.08 : 0);
+    let by  = b.y + (S.wave > 0 ? Math.cos(t * 0.7 + b.phase) * S.wave * 0.06 : 0);
+    let col = S.palette[b.palIdx % S.palette.length];
+    CTX.globalAlpha = b.alpha;
+    CTX.fillStyle   = col;
+    CTX.fillRect(bx, by, b.w, b.h);
+  });
+  CTX.restore();
+  CTX.globalAlpha = 1;
+  _lastFill = '';
+}
+  
 // ── BOIDS ─────────────────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
 // Characters ride on each agent, rotate toward velocity. Completely emergent.
@@ -2824,7 +3505,153 @@ function drawBoids(p,t){
   });
   CTX.globalAlpha=1;
 }
+// ── STRIPED RECTS (Webster) ───────────────────────────────────────────────
+// Solid and barcode-striped rectangles on a light ground.
+// Works best with a pale background (paper, cream, f5f0ea).
+function initStripedRects(W, H) {
+  stripedRects = [];
+  let cols = Math.floor(W / (S.spacing * 5)) + 2;
+  let rows = Math.floor(H / (S.spacing * 2.5)) + 2;
+  for (let ci = 0; ci < cols; ci++) {
+    for (let ri = 0; ri < rows; ri++) {
+      // Generate all possible rects — density filters them live in draw
+      if (Math.random() > 0.75) continue;
+      let cx = (ci / cols) * W + (Math.random() - 0.5) * (W / cols) * 0.8;
+      let cy = (ri / rows) * H + (Math.random() - 0.5) * (H / rows) * 0.6;
+      let tall = Math.random() < 0.72;
+      // Store BASE sizes — drawStripedRects will scale by S.maxSize
+      let bw = tall ? 12 + Math.random() * 48  : 40 + Math.random() * 90;
+      let bh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
+      let isStriped = Math.random() < 0.44;
+      stripedRects.push({
+        x: cx - bw / 2, y: cy - bh / 2,
+        bw, bh,                                      // base dimensions
+        palIdx: Math.floor(Math.random() * 5),        // live palette index
+        useAccent: isStriped && Math.random() < 0.4,
+        rand: Math.random(),                          // for live density filter
+        type: isStriped ? 'striped' : 'solid',
+        gap: 2 + Math.floor(Math.random() * 5),
+        lw:  1 + (Math.random() < 0.3 ? 1 : 0),
+        vy:  (Math.random() - 0.5) * 0.5,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+}
 
+function drawStripedRects(p, t) {
+  if (!stripedRects.length) initStripedRects(p.width, p.height);
+  CTX.save();
+  stripedRects.forEach(function(r) {
+
+    // ── DENSITY (live) ────────────────────────────────────────────────────
+    // S.density runs 0 (dense) → 0.9 (sparse). Skip rect if rand < density.
+    if (r.rand < S.density) return;
+
+    if (S.playing) {
+      r.y += r.vy * S.speed * 120;
+      if (r.y > p.height + r.h) r.y = -r.h * 2;
+      if (r.y < -r.h * 2)       r.y =  p.height + r.h;
+    }
+
+    // ── SIZE (live via maxSize) ───────────────────────────────────────────
+    // Scale base dimensions proportionally to maxSize (default = 20)
+    let scale = S.maxSize / 20;
+    let rw = r.bw * scale;
+    let rh = r.bh * scale;
+
+    // ── PALETTE (live) ────────────────────────────────────────────────────
+    let rCol = r.useAccent && S.accent !== 'none'
+      ? S.accent
+      : S.palette[r.palIdx % S.palette.length];
+
+    // ── WAVE wobble ───────────────────────────────────────────────────────
+    let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
+    let rx = r.x + wx;
+    let ry = r.y;
+
+    // ── ENTROPY / GLITCH (live) ───────────────────────────────────────────
+    if (S.entropy > 0) {
+      // Randomly drop some rects entirely
+      if (Math.random() < S.entropy * 0.12) return;
+      // Positional jitter
+      if (Math.random() < S.entropy * 0.35) {
+        rx += (Math.random() - 0.5) * S.entropy * 80;
+        ry += (Math.random() - 0.5) * S.entropy * 40;
+      }
+      // Random palette swap on individual rects
+      if (Math.random() < S.entropy * 0.2) {
+        rCol = S.palette[Math.floor(Math.random() * S.palette.length)];
+      }
+      // Occasionally flip striped ↔ solid
+      if (Math.random() < S.entropy * 0.08) {
+        r.type = r.type === 'solid' ? 'striped' : 'solid';
+      }
+    }
+
+    if (r.type === 'solid') {
+      CTX.fillStyle = rCol;
+      CTX.fillRect(rx, ry, rw, rh);
+    } else {
+      CTX.save();
+      CTX.beginPath();
+      CTX.rect(rx, ry, rw, rh);
+      CTX.clip();
+      CTX.strokeStyle = rCol;
+      CTX.lineWidth = r.lw;
+      // Scale stripe gap with size too
+      let gap = Math.max(1, r.gap * scale);
+      for (let lx = rx; lx <= rx + rw; lx += gap) {
+        CTX.beginPath();
+        CTX.moveTo(lx, ry);
+        CTX.lineTo(lx, ry + rh);
+        CTX.stroke();
+      }
+      CTX.restore();
+    }
+  });
+  CTX.restore();
+  _lastFill = '';
+}
+// ── TONAL DENSITY ──────────────────────────────────────────────────────────
+// A repeating phrase/charset fills the canvas. Noise drives both font size
+// and letter spacing — high noise = large tight text (dark), low noise =
+// tiny spaced text (light). Creates ink-wash tonal areas from pure text.
+function drawTonalDensity(p, t) {
+  let tokens = S.chars;
+  if (!tokens || !tokens.length) tokens = ['·'];
+  // Slow character index offset for gentle cycling (0 = static)
+  let globalOffset = Math.floor(S.fc * S.speed * 0.5);
+  let y = S.spacing * 0.5;
+  let tokenCount = 0;
+  while (y < p.height) {
+    let x = 0;
+    let rowMaxSz = 0;
+    while (x < p.width + S.maxSize) {
+      // Two-octave noise for smoother large blobs + fine texture
+      let n  = p.noise(x * S.noiseScale,        y * S.noiseScale * 0.55,  t * 0.18);
+      let n2 = p.noise(x * S.noiseScale * 3.2,  y * S.noiseScale * 3.2,   t * 0.35) * 0.22;
+      let nv = Math.min(1, Math.max(0, n + n2));
+      // Map noise → size
+      let sz = p.map(nv, 0, 1, 1.5, S.maxSize);
+      rowMaxSz = Math.max(rowMaxSz, sz);
+      // Map noise → advance (spacing).
+      // Dense (high nv) = tight overlap; sparse (low nv) = wide gaps.
+      let advance = p.map(nv, 0, 1, sz * 2.8, sz * 0.55);
+      advance = Math.max(2, advance);
+      // Skip near-invisible placements to save draw calls
+      if (sz >= 1.8 && nv > 0.06) {
+        let tok = tokens[(globalOffset + tokenCount) % tokens.length];
+        let col = pickColor(p, x, y, t);
+        dc(x, y, sz, 0, col, tok);
+      }
+      tokenCount++;
+      x += advance;
+    }
+    // Row height tracks the tallest character in that row
+    y += Math.max(3, rowMaxSz * (0.75 + S.wave * 0.003));
+  }
+}
 // ── MAGNETIC FIELD LINES ──────────────────────────────────────────────────────
 // Dipole (and multipole) magnetic field: trace field lines from seed angles,
 // render as smooth curves with characters placed along them.
@@ -2843,7 +3670,6 @@ function initMagnetic(W,H){
 function drawMagnetic(p,t){
   let W=p.width,H=p.height;
   if(!magneticPoles.length) initMagnetic(W,H);
-
   // Slowly rotate poles for animation
   if(S.playing){
     let angle=S.fc*S.speed*.8;
@@ -2856,7 +3682,6 @@ function drawMagnetic(p,t){
       pole.y=cy2+Math.sin(rotAngle)*dist;
     });
   }
-
   function fieldAt(x,y){
     let fx=0,fy=0;
     magneticPoles.forEach(function(pole){
@@ -2869,17 +3694,14 @@ function drawMagnetic(p,t){
     let mag=Math.sqrt(fx*fx+fy*fy)||1;
     return {bx:fx/mag,by:fy/mag,mag};
   }
-
   // Seed field lines from positive poles at many angles
   let nLines=Math.floor(8+S.density*24);
   let stepSize=Math.max(2,S.spacing*.4);
   let maxSteps=Math.floor(Math.min(W,H)/stepSize*2.5);
-
   CTX.save();
   CTX.lineCap='round';
   CTX.lineJoin='round';
   CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
-
   let positivePoles=magneticPoles.filter(function(p2){return p2.sign>0;});
   positivePoles.forEach(function(pole,pi){
     for(let li=0;li<nLines;li++){
@@ -2890,17 +3712,14 @@ function drawMagnetic(p,t){
       if(li===0&&S.accent!=='none') col=S.accent;
       CTX.strokeStyle=col;
       CTX.globalAlpha=0.45;
-
       CTX.beginPath();
       CTX.moveTo(px2,py2);
       let charStep=Math.floor(maxSteps/(8+Math.floor(S.density*8)));
-
       for(let si=0;si<maxSteps;si++){
         let {bx,by}=fieldAt(px2,py2);
         px2+=bx*stepSize;py2+=by*stepSize;
         if(px2<0||px2>W||py2<0||py2>H) break;
         CTX.lineTo(px2,py2);
-
         // Place character periodically along field line
         if(si%charStep===charStep-1){
           CTX.stroke();
@@ -2928,7 +3747,6 @@ function drawMagnetic(p,t){
     CTX.arc(pole2.x,pole2.y,5,0,6.28);
     CTX.fill();
   });
-
   CTX.globalAlpha=1;
   CTX.restore();
   _lastFont='';_lastFill='';
@@ -2967,7 +3785,6 @@ function irregularPolygon(cx, cy, r, sides, irregularity = 0.4, spike = 0) {
   }
   return pts;
 }
-  
 function getShapePos(W,H){
   switch(S.shapePosition){
     case'random': return{x:W*.1+Math.random()*W*.8,y:H*.1+Math.random()*H*.8};
@@ -2997,7 +3814,6 @@ function shapeCharColor(x,y,t,shIdx){
     default: return S.palette[Math.floor(Math.abs(Math.sin(x*.01+y*.01+t))*S.palette.length)%S.palette.length];
   }
 }
-
 function polyPts(cx,cy,r,n,startAngle,innerR){
   let pts=[];
   for(let i=0;i<n;i++){
@@ -3021,7 +3837,6 @@ function drawShapes(p, t) {
     let spin = sh.spinAngle || 0;
     let r = sh.size || 55;
     if (S.shapePulse > 0) r = r * (1 + Math.sin(t * 2 + (sh.cx || 0) * 0.01) * S.shapePulse * 0.02);
-    
     // Initialize missing properties
     if (sh.size === undefined) sh.size = 55;
     if (sh.driftEnabled === undefined) sh.driftEnabled = false;
@@ -3030,7 +3845,6 @@ function drawShapes(p, t) {
     if (sh.driftAmpY === undefined) sh.driftAmpY = 6;
     if (sh.textEnabled === undefined) sh.textEnabled = true;
     if (sh.driftPhase === undefined) sh.driftPhase = Math.random() * Math.PI * 2;
-    
     // Lissajous drift
     let driftX = 0, driftY = 0;
     if (sh.driftEnabled === true) {
@@ -3040,7 +3854,6 @@ function drawShapes(p, t) {
     }
     let cx = (sh.cx || 0) + driftX;
     let cy = (sh.cy || 0) + driftY;
-
     // Orbit around canvas center
     if (S.shapeOrbitEnabled && S.playing) {
       sh.orbitAngle = (sh.orbitAngle || Math.atan2(sh.cy - p.height / 2, sh.cx - p.width / 2)) + (S.shapeSpin || 1) * 0.0005;
@@ -3049,10 +3862,8 @@ function drawShapes(p, t) {
       cy = p.height / 2 + Math.sin(sh.orbitAngle) * or;
       sh.cx = cx; sh.cy = cy;
     }
-
     let type = sh.type;
     let shapePts = null;
-    
     // Use stored irregular points if available
     if (sh.pts && (type === 'polygon' || type === 'equilateral' || type === 'hexagon' || type === 'star5' || type === 'star6')) {
       shapePts = sh.pts;
@@ -3064,11 +3875,9 @@ function drawShapes(p, t) {
       else if (type === 'star6') shapePts = polyPts(cx, cy, r, 6, spin, r*0.5);
       else if (type === 'polygon') shapePts = polyPts(cx, cy, r, sh.sides || 7, spin);
     }
-
     // Opacity and Jitter
     let globalAlpha = (sh.opacity !== undefined) ? sh.opacity : 0.8;
     let jitter = sh.jitter || 0;
-    
    // Special handling for Lissajous – draw a cluster of characters around the moving point
 if (type === 'lissajous') {
   let la = sh.la || 2, lb = sh.lb || 3;
@@ -3104,7 +3913,6 @@ if (type === 'lissajous') {
   return; // skip the rest of the shape drawing for lissajous
 }
 
-
     // Draw main field characters inside shape
     let x0 = cx - r - sp, x1 = cx + r + sp, y0 = cy - r - sp, y1 = cy + r + sp;
     if (type === 'band') { x0 = 0; x1 = p.width; y0 = cy - r; y1 = cy + r; }
@@ -3136,7 +3944,6 @@ if (type === 'lissajous') {
         CTX.restore();
       }
     }
-
     // Solid fill background
     if (sh.solidFill) {
       CTX.save();
@@ -3171,7 +3978,6 @@ if (type === 'lissajous') {
       }
       CTX.restore();
     }
-
     // Custom text inside shape (scattered)
     if (sh.textEnabled && sh.text && sh.text.length) {
       let step = Math.max(8, S.spacing * 0.8);
@@ -3205,7 +4011,6 @@ if (type === 'lissajous') {
         }
       }
     }
-  
     // Draw shape border
     if (sh.borderEnabled !== false) {
       CTX.save();
@@ -3325,9 +4130,9 @@ new p5(function(p){
     ri();rd();
   }
   function ri(){
-    initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);
-    recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];
-    sandParticles=[];caGrid=null;lissParticles=[];
+    initRain(W,H);initTess(W,H);initMatrix(W,H);initShatter(W,H);initLoops(W,H);initStripedRects(W,H);
+    recRects=[];rdGrid=null;voronoiSites=[];myceliumBranches=[];mazeGrid=null;mondrianRects=[];
+    sandParticles=[];caGrid=null;lissParticles=[];geodeTiles=[];monogridBlocks=[];
     wtHeightmap=null;fsPolygons=[];_driftMap.clear();
     boidAgents=[];magneticPoles=[];
     if(S.compEnabled) buildComp(S.compPreset,W,H);
@@ -3370,6 +4175,7 @@ new p5(function(p){
     },
     rsz:resize,w:function(){return W;},h:function(){return H;},p:p
   };
+
   p.setup=function(){
     let wrap=document.getElementById('canvas-wrap');
     W=wrap.offsetWidth;H=wrap.offsetHeight;
@@ -3385,9 +4191,15 @@ new p5(function(p){
       if(_currentSizeMode==='fill') resize('fill');
     });
   };
-  p.draw = function(){
-  S.fc++;   // ← UNCOMMENTED – frame counter increments each frame
-  // FPS, background, etc.
+  
+p.draw = function() {
+  S.fc++;
+
+  // Ensure CTX is defined (fallback to p5 drawingContext)
+  if (!CTX) CTX = p.drawingContext;
+  if (!CTX) return;  // safety: exit if still null
+  let t = S.fc * (S.speed || 0.01);
+
   // FPS display
   let now = performance.now();
   _frameCount++;
@@ -3395,23 +4207,18 @@ new p5(function(p){
     _fps = _frameCount;
     _frameCount = 0;
     _fpsTimer = now;
-    document.getElementById('fpsLabel').textContent = _fps + ' fps';
+    let fpsLabel = document.getElementById('fpsLabel');
+    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
 
-  // Background with trail persistence
-  if (S.trailPersist > 0) {
-    CTX.fillStyle = S.bg;
-    CTX.globalAlpha = 1 - S.trailPersist / 100;
-    CTX.fillRect(0, 0, W, H);
-    CTX.globalAlpha = 1;
-  } else {
-    CTX.fillStyle = S.bg;
-    CTX.fillRect(0, 0, W, H);
-  }
-
+// Clear canvas with solid color (no save/restore needed)
+CTX.globalCompositeOperation = 'source-over';
+CTX.globalAlpha = 1;
+CTX.fillStyle = S.bg;
+CTX.fillRect(0, 0, W, H);
+  
   CTX.textBaseline = 'middle';
   CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  let t = S.fc * S.speed;
 
   // Signal collapse effect
   if (S.signalCollapse) {
@@ -3473,14 +4280,40 @@ new p5(function(p){
     case 'worms': drawWorms(p, t); break;
     case 'flowerspin': drawFlowerspin(p, t); break;
     case 'wfc': drawWFC(p, t); break;
+    case 'stripedrects':  drawStripedRects(p, t);  break;
+    case 'tonaldensity':  drawTonalDensity(p, t);  break;
+    case 'maze':        drawMaze(p, t);               break;
+    case 'unknownpleasures': drawUnknownPleasures(p, t); break;
+    case 'mondrian':    drawMondrian(p, t);            break;
+    case 'brushcontour': drawBrushContour(p, t); break;
+    case 'geode':        drawGeode(p, t);        break;
+    case 'typescale':    drawTypescale(p, t);    break;
+    case 'monogrid':     drawMonogrid(p, t);     break;  
   }
 
   CTX.globalCompositeOperation = 'source-over';
   drawShapes(p, t);
   drawOverlay(p, t);
-}; // <--- This closes p.draw
+};
 
-}); // <--- This closes the "new p5(function(p){" block
+  // --- Event Listeners (Outside Draw, Inside p5 instance) ---
+  ['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
+    let el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', function(e) {
+        let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
+        if (!b) return;
+        el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        if (b.dataset.imode) S.imgMode = b.dataset.imode;
+        if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
+        if (b.dataset.idither) S.imgDither = b.dataset.idither;
+        if (window._st && window._st.rd) window._st.rd(); 
+      });
+    }
+  });
+
+}); // Closes the p5 instance
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
@@ -3653,10 +4486,15 @@ document.getElementById('btnReactOscillate').addEventListener('click', function(
   window._st.rd();
 });
 // ── PALETTE ───────────────────────────────────────────────────────────────────
-document.getElementById('palGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.pb');if(!b) return;
-  document.querySelectorAll('.pb').forEach(function(x){x.classList.remove('active');});
-  b.classList.add('active');S.palette=PALETTES[b.dataset.pal];window._st.rd();
+document.getElementById('palGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.pb');
+  if (!b) return;
+  document.querySelectorAll('.pb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  let newPalKey = b.dataset.pal;
+  S.palette = PALETTES[newPalKey];
+  console.log('Palette changed to:', newPalKey, S.palette); // debug
+  window._st.rd();
 });
 document.getElementById('accentRow1').addEventListener('click',function(e){
   let s=e.target.closest('[data-accent]');if(!s) return;
@@ -3668,10 +4506,14 @@ document.getElementById('accentRow2').addEventListener('click',function(e){
   document.querySelectorAll('#accentRow2 [data-a2]').forEach(function(x){x.classList.remove('active');});
   s.classList.add('active');S.accent2=s.dataset.a2;window._st.rd();
 });
-document.getElementById('bgRow').addEventListener('click',function(e){
-  let s=e.target.closest('[data-bg]');if(!s) return;
-  document.querySelectorAll('[data-bg]').forEach(function(x){x.classList.remove('active');});
-  s.classList.add('active');S.bg=s.dataset.bg;window._st.rd();
+document.getElementById('bgRow').addEventListener('click', function(e) {
+  let s = e.target.closest('[data-bg]');
+  if (!s) return;
+  document.querySelectorAll('[data-bg]').forEach(x => x.classList.remove('active'));
+  s.classList.add('active');
+  S.bg = s.dataset.bg;
+  console.log('Background changed to:', S.bg); // temporary debug
+  window._st.rd();
 });
 
 // ── BLEND MODE ────────────────────────────────────────────────────────────────
@@ -4107,47 +4949,101 @@ function renderShapeList() {
   });
 }
   
-// ── IMAGE ─────────────────────────────────────────────────────────────────────
-document.getElementById('imgFile').addEventListener('change',function(e){
-  let file=e.target.files[0];if(!file) return;
-  let reader=new FileReader();
-  reader.onload=function(ev){
-    let img=new Image();
-    img.onload=function(){
-      let oc=document.createElement('canvas');oc.width=img.width;oc.height=img.height;
-      let cx2=oc.getContext('2d');cx2.drawImage(img,0,0);
-      imgPix=cx2.getImageData(0,0,img.width,img.height);imgW=img.width;imgH=img.height;
-      document.getElementById('imgStatus').textContent=img.width+'×'+img.height+' — ready';
-      S.mode='imgtext';
-      document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
-      document.querySelectorAll('[data-mode="imgtext"]').forEach(function(b){b.classList.add('active');});
-      document.getElementById('modeLabel').textContent='Img→Text';
-      window._st.rd();
-    };img.src=ev.target.result;
-  };reader.readAsDataURL(file);
-});
-document.getElementById('imgUrlApply').addEventListener('click',function(){
-  let url=document.getElementById('imgUrlInput').value.trim();if(!url) return;
-  document.getElementById('imgStatus').textContent='Loading…';
-  let img=new Image();img.crossOrigin='anonymous';
-  img.onload=function(){
-    let oc=document.createElement('canvas');oc.width=img.width;oc.height=img.height;
-    let cx2=oc.getContext('2d');cx2.drawImage(img,0,0);
-    try{imgPix=cx2.getImageData(0,0,img.width,img.height);imgW=img.width;imgH=img.height;
-      document.getElementById('imgStatus').textContent=img.width+'×'+img.height+' — ready';
-    }catch(e){document.getElementById('imgStatus').textContent='CORS blocked — use upload';}
-    S.mode='imgtext';
-    document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('[data-mode="imgtext"]').forEach(function(b){b.classList.add('active');});
-    document.getElementById('modeLabel').textContent='Img→Text';window._st.rd();
+// ── IMAGE PROCESSING ──────────────────────────────────────────────────────────
+document.getElementById('imgFile').addEventListener('change', function(e) {
+  let file = e.target.files[0]; if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function(ev) {
+    let img = new Image();
+    img.onload = function() {
+      processImage(img);
+    };
+    img.src = ev.target.result;
   };
-  img.onerror=function(){document.getElementById('imgStatus').textContent='Failed';};
-  img.src=url;
+  reader.readAsDataURL(file);
 });
-document.getElementById('imgUrlInput').addEventListener('keydown',function(e){if(e.key==='Enter') document.getElementById('imgUrlApply').click();});
-document.getElementById('btnStretch').addEventListener('click',function(){S.imgStretch=!S.imgStretch;this.textContent=S.imgStretch?'On':'Off';this.classList.toggle('on',S.imgStretch);window._st.rd();});
-document.getElementById('btnInvert').addEventListener('click',function(){S.imgInvert=!S.imgInvert;this.textContent=S.imgInvert?'On':'Off';this.classList.toggle('on',S.imgInvert);window._st.rd();});
+document.getElementById('imgUrlApply').addEventListener('click', function() {
+  let url = document.getElementById('imgUrlInput').value.trim(); if (!url) return;
+  document.getElementById('imgStatus').textContent = 'Loading…';
+  let img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    try {
+      processImage(img);
+    } catch (e) {
+      document.getElementById('imgStatus').textContent = 'CORS blocked — use upload';
+    }
+  };
+  img.onerror = function() { document.getElementById('imgStatus').textContent = 'Failed'; };
+  img.src = url;
+});
+// Helper to convert loaded images into the format our new drawImgText needs
+function processImage(img) {
+  let oc = document.createElement('canvas');
+  oc.width = img.width;
+  oc.height = img.height;
+  let cx2 = oc.getContext('2d');
+  cx2.drawImage(img, 0, 0);
+  // Global variables (already declared elsewhere)
+  imgPix = cx2.getImageData(0, 0, img.width, img.height);
+  imgW = img.width;
+  imgH = img.height;
+  // Compute edge strength for Edge mode
+  computeEdges();
+  document.getElementById('imgStatus').textContent = img.width + '×' + img.height + ' — ready';
+  S.mode = 'imgtext';
+  // UI Updates
+  document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-mode="imgtext"]').forEach(b => b.classList.add('active'));
+  document.getElementById('modeLabel').textContent = 'Img→Text';
+  window._st.rd();
+  console.log("Image Data Captured:", imgPix.data.length, "pixels");
+  console.log("First Pixel (RGBA):", imgPix.data[0], imgPix.data[1], imgPix.data[2], imgPix.data[3]);
+} //processimage function
 
+
+// ── ADDITIONAL IMAGE FUNCTIONALITY (Stretch/Invert) ──────────────────────────────────
+document.getElementById('btnStretch').addEventListener('click', function() {
+  S.imgStretch = !S.imgStretch;
+  this.textContent = S.imgStretch ? 'On' : 'Off';
+  this.classList.toggle('on', S.imgStretch);
+  window._st.rd();
+});
+
+document.getElementById('btnInvert').addEventListener('click', function() {
+  S.imgInvert = !S.imgInvert;
+  this.textContent = S.imgInvert ? 'On' : 'Off';
+  this.classList.toggle('on', S.imgInvert);
+  window._st.rd();
+});
+
+
+// ── COMPUTE EDGES ──────────────────────────────────
+function computeEdges() {
+  if (!imgPix) return;
+  let w = imgW, h = imgH;
+  let data = imgPix.data;
+  imgEdgeStrength = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      let gx = 0, gy = 0;
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          let px = x + kx, py = y + ky;
+          let pIdx = (py * w + px) * 4;
+          let r = data[pIdx], g = data[pIdx+1], b = data[pIdx+2];
+          let luma = 0.299 * r + 0.587 * g + 0.114 * b;
+          gx += luma * (kx === -1 ? -1 : kx === 1 ? 1 : 0);
+          gy += luma * (ky === -1 ? -1 : ky === 1 ? 1 : 0);
+        }
+      }
+      let mag = Math.sqrt(gx * gx + gy * gy);
+      imgEdgeStrength[y * w + x] = Math.min(255, mag);
+    }
+  }
+}  
+  
+  
 // ── CANVAS SIZE ───────────────────────────────────────────────────────────────
 document.getElementById('sizeGrid').addEventListener('click',function(e){
   let b=e.target.closest('[data-size]');if(!b) return;
@@ -4577,9 +5473,22 @@ const PRESETS={
   kintsugi_breaks:function(){ap({mode:'shatter',font:'playfair',entropy:0,speed:.002,wave:40,bg:'#1a0a05',spacing:12,maxSize:22,noiseScale:.009,palette:'kintsugi',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'金継ぎ KINTSUGI',color:'#e8b87a',offset:0}],overlayWave:3,overlaySpeed:1,overlaySize:14,overlayAlpha:35,chars:CHARSETS.kanji});},
   bioluminescent:function(){ap({mode:'mycelium',font:'courier',entropy:.01,speed:.003,wave:15,bg:'#001a0a',spacing:8,maxSize:18,noiseScale:.008,palette:'biolum',compEnabled:false,signalCollapse:false,trailPersist:70,overlayStreams:[{text:'bioluminescence',color:'#00FFAA',offset:0}],overlayWave:12,overlaySpeed:2,overlaySize:12,overlayAlpha:30,chars:CHARSETS.dots});},
   screen_blend:function(){ap({mode:'bloom',font:'courier',entropy:.05,speed:.005,wave:35,bg:'#000000',spacing:10,maxSize:24,noiseScale:.01,palette:'neon',compEnabled:false,signalCollapse:false,overlayStreams:[{text:'SCREEN BLEND',color:'#f72585',offset:0}],overlayWave:20,overlaySpeed:3,overlaySize:16,overlayAlpha:60});S.blendMode='screen';let bs=document.getElementById('blendSelect');if(bs)bs.value='screen';},
-  worms: function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
-  hatch: function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
-  wfc_tiles: function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});}             
+  worms:function(){ap({mode:'worms',palette:'fire',speed:0.008,wave:40,spacing:8,maxSize: 16,bg:'#1a0a00',overlayStreams:[{text:'SHAI HULUD',color:'#e63946',offset:0}],overlayEnabled:true});},
+  hatch:function(){ap({mode:'hatch',font:'courier',entropy:0.02,speed:0.001,wave:15,bg:'#0a0c14',spacing:6,maxSize:10,noiseScale: 0.012,palette:'mono',compEnabled:false,signalCollapse:false,trailPersist:0,overlayStreams:[{text:'hatch etching',color:'#2e2820',offset:0}],overlayWave:0,overlaySpeed:1,overlaySize:10,overlayAlpha:25});},
+  wfc_tiles:function(){ap({mode:'wfc',font:'courier',entropy:0,speed:0.002,wave:100,bg:'#0a0c14',spacing:4,maxSize:20,noiseScale:0.009,palette:'lagoon',compEnabled:false,signalCollapse:true,charRotation:230,overlayStreams:[{text:'RIVERFLOW',color:'#b8955a',offset:4}],overlayWave:20,overlaySpeed:1,overlaySize: 14,overlayAlpha:25});},             
+  stripe_rects:function(){ap({mode:'stripedrects',font:'courier',entropy: 0,speed: .003,wave:12,bg:'#f5f0ea',spacing: 14,maxSize:18,noiseScale:.008,palette:'pumpkin',compEnabled:false,signalCollapse:false,});window._st.ri();},
+  does_not_compute:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.002,wave: 0,bg:'#e8e4dc',spacing:6,maxSize:22,noiseScale:.007,palette:'ember',compEnabled:false,signalCollapse:false,chars:'does not compute'.split(''),});},
+  ink_wash_density:function(){ap({mode:'tonaldensity',font:'courier',entropy:0,speed:.001,wave: 8,bg:'#f0ede6',spacing:5,maxSize:18,noiseScale:.009,palette:'moss',compEnabled:false,signalCollapse:false,chars:CHARSETS.chinese,});},
+  maze_shift: function(){ap({mode:'maze',font:'courier',entropy:0,speed:.003,wave:0, bg:'#0d0c0a',spacing: 10,maxSize:12,noiseScale: .01,palette:'site',compEnabled: false,signalCollapse: false,});},
+  unknown_pleasures: function(){ap({mode:'unknownpleasures',font:'courier',entropy:0,speed:.002,wave:55,bg:'#000000',spacing:8,maxSize:14,noiseScale:.008, palette:'ghost',compEnabled: false,signalCollapse: false,});},
+  mondrian_shift: function(){ap({mode:'mondrian',font:'courier',entropy:0,speed:.001,wave:0,palette:'mondrian',bg:'#FAFAFA',accent:'#000000',spacing:22,maxSize:22,noiseScale:.01,compEnabled:false,signalCollapse: false,});},
+  painted_puppy: function(){ap({mode:'brushcontour',font:'courier',entropy:0, speed:.002,wave:20,bg:'#0d0c0a',spacing:5,maxSize:14,noiseScale:.009, palette:'mono',compEnabled:false});},
+  geode_bloom: function(){ap({mode:'geode',font:'courier',entropy:0,speed:.003,wave:35,bg:'#f5f0ea',spacing:9,maxSize:16,noiseScale:.008,palette:'neonpastel',compEnabled:false});},
+  maeda_mori: function(){ap({mode:'typescale',font:'courier',entropy:0,speed:.001,wave:0,bg:'#f5f0ea',spacing:8,maxSize:28,noiseScale:.01,palette:'mono',compEnabled:false,chars:CHARSETS.katakana});},
+  monogrid_dada: function(){ap({mode:'monogrid',font:'courier',entropy:0,speed:.002,wave:10,bg:'#f5f0ea',spacing:10,maxSize:20,noiseScale:.01,palette:'moss',compEnabled:false,chars:'dada machine poetry'.split('')});
+},
+
+  
 };
 
 
