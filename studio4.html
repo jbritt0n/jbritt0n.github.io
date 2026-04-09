@@ -4970,7 +4970,6 @@ new p5(function(p){
     rd(); 
   }
   // ── Function Rd - redraw ─────────────────────────────────────────────────────────────────
-  function rd() {
 function rd() {
   if (!p || !p.width) return;
   CTX.globalCompositeOperation = 'source-over';
@@ -5161,10 +5160,11 @@ p.setup = function() {
         if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
         if (b.dataset.idither) S.imgDither = b.dataset.idither;
         if (window._st && window._st.rd) window._st.rd(); 
-      });
+});
     }
   });
-});
+
+}); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
   let el=document.getElementById('toast');
