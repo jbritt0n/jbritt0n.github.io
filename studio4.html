@@ -5058,20 +5058,13 @@ function toggleSec(id){
   if(arrow) arrow.classList.toggle('open',!collapsed);
 }
   
-const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom'];
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
-const preSubSecs = ['pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech'];
-const ALL_SECTIONS = [
-  'presets', 'mode', 'chars', 'font', 'motion', 'field', 
-  'entropy', 'palette', 'blend', 'comp', 'shapes', 
-  'overlay', 'img', 'size', 
-  ...modeSubSecs, 
-  ...preSubSecs
-];
+const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'];
+const ALL_SECS = ['presets', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 document.getElementById('btnCollapseAll').addEventListener('click', function() {
-  ALL_SECTIONS.forEach(function(id) {
+  ALL_SECS.forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
@@ -5083,7 +5076,7 @@ document.getElementById('btnCollapseAll').addEventListener('click', function() {
 
 // Expand All
 document.getElementById('btnExpandAll').addEventListener('click', function() {
-  ALL_SECTIONS.forEach(function(id) {
+  ALL_SECS.forEach(function(id) {
     let body = document.getElementById('body-' + id);
     let arrow = document.getElementById('arr-' + id);
     if (body) {
