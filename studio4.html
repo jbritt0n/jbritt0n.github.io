@@ -1352,130 +1352,125 @@ function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 
 function dc(x, y, sz, rot, col, ch) {
   if (!CTX) return;
+
+  
+  // --- PARTICLE MODES ---
   if (S.useParticleMode) {
-  CTX.fillStyle = col;
-  CTX.strokeStyle = col;
-  CTX.lineWidth = Math.max(1, sz * 0.05);
-  let cs = S.charSet;
-  // 1. Geometric (Original)
-  if (cs === 'particles') {
-    CTX.beginPath();
-    let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
-    if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
-    else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
-    else {
-      CTX.moveTo(x, y - sz * 0.4);
-      CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
-      CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
-      CTX.closePath();
+    CTX.fillStyle = col;
+    CTX.strokeStyle = col;
+    CTX.lineWidth = Math.max(1, sz * 0.05);
+    let cs = S.charSet;
+
+    if (cs === 'particles') {
+      CTX.beginPath();
+      let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
+      if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
+      else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+      else {
+        CTX.moveTo(x, y - sz * 0.4);
+        CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
+        CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
+        CTX.closePath();
+      }
+      CTX.fill();
+    } 
+    else if (cs === 'arch') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
+      if (t === 0) { // Crosshair
+        CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
+      } else if (t === 1) { // L-Bracket
+        CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
+      } else { // Dot Circle
+        CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
+        CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
+      }
+      CTX.restore();
     }
-    CTX.fill();
-  } 
-  // 2. Architect (Drafting Marks)
-  else if (cs === 'arch') {
-    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
-    let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
-    if (t === 0) { // Crosshair
-      CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
-    } else if (t === 1) { // L-Bracket
-      CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
-    } else { // Dot Circle
-      CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
-      CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
-    }
-    CTX.restore();
-  }
-// 3. Microbe (Wiggly Tails)
-  else if (cs === 'microbe') {
-    CTX.beginPath(); CTX.arc(x, y, sz*0.15, 0, 6.28); CTX.fill();
-    CTX.beginPath();
-    CTX.moveTo(x, y);
-    CTX.bezierCurveTo(x+sz*0.5, y-sz*0.5, x-sz*0.5, y+sz*0.5, x+Math.cos(rot)*sz, y+Math.sin(rot)*sz);
-    CTX.stroke();
-  }
-  // 4. Seed Husks (Organic Crescents)
-  else if (cs === 'husks') {
-    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
-    CTX.beginPath();
-    CTX.moveTo(-sz/2, 0);
-    CTX.quadraticCurveTo(0, -sz, sz/2, 0);
-    CTX.quadraticCurveTo(0, -sz/4, -sz/2, 0);
-    CTX.fill();
-    CTX.restore();
-  }
-  // 5. Filaments (Bent Fibers)
-  else if (cs === 'filaments') {
-    CTX.beginPath();
-    CTX.moveTo(x-sz/2, y-sz/2);
-    CTX.lineTo(x, y);
-    CTX.lineTo(x+sz/2, y+Math.sin(x)*sz/2);
-    CTX.stroke();
-  }
-  // 6. Glitch Bits (Thin Slivers)
-  else if (cs === 'glitch_p') {
-    let w = sz * (0.5 + Math.random());
-    let h = sz * 0.1;
-    CTX.fillRect(x - w/2, y - h/2, w, h);
-    if (Math.random() > 0.8) CTX.fillRect(x - w/2, y + h*2, w*0.4, h);
-  }
-  return;
-}
-  if(!CTX||!ch) return;
-  if(!ch.trim()&&S.entropy<.1) return;
-  let needTransform=rot!==0||S.charRotRad!==0||S.flipChance>0||S.flipHMirror||S.flipVMirror;
-  let fstr=(sz|0)+'px '+S.fontStack;
-  if(needTransform){
-    CTX.save();CTX.translate(x,y);
-    let r=(rot||0)+S.charRotRad;
-    if(r) CTX.rotate(r);
-    let fx=1,fy=1;
-    if(S.flipHMirror&&Math.random()<S.flipChance*.6) fx=-1;
-    if(S.flipVMirror&&Math.random()<S.flipChance*.35) fy=-1;
-    if(fx!==1||fy!==1) CTX.scale(fx,fy);
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-    CTX.fillText(ch,0,0);CTX.restore();
-    _lastFont='';_lastFill='';
-  } else {
-    if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-    if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-    CTX.fillText(ch,x,y);
-  }
-}
-    // 7. Neural (Axons)
-  else if (cs === 'neural') {
-    CTX.beginPath(); CTX.arc(x, y, sz*0.1, 0, 6.28); CTX.fill();
-    for(let i=0; i<3; i++) {
+    else if (cs === 'microbe') {
+      CTX.beginPath(); CTX.arc(x, y, sz*0.15, 0, 6.28); CTX.fill();
       CTX.beginPath(); CTX.moveTo(x, y);
-      let ang = rot + i * 2.1; 
-      CTX.lineTo(x + Math.cos(ang)*sz*0.6, y + Math.sin(ang)*sz*0.6);
+      CTX.bezierCurveTo(x+sz*0.5, y-sz*0.5, x-sz*0.5, y+sz*0.5, x+Math.cos(rot)*sz, y+Math.sin(rot)*sz);
       CTX.stroke();
     }
+    else if (cs === 'husks') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.beginPath(); CTX.moveTo(-sz/2, 0);
+      CTX.quadraticCurveTo(0, -sz, sz/2, 0);
+      CTX.quadraticCurveTo(0, -sz/4, -sz/2, 0);
+      CTX.fill();
+      CTX.restore();
+    }
+    else if (cs === 'filaments') {
+      CTX.beginPath(); CTX.moveTo(x-sz/2, y-sz/2);
+      CTX.lineTo(x, y);
+      CTX.lineTo(x+sz/2, y+Math.sin(x)*sz/2);
+      CTX.stroke();
+    }
+    else if (cs === 'glitch_p') {
+      let w = sz * (0.5 + Math.random());
+      let h = sz * 0.1;
+      CTX.fillRect(x - w/2, y - h/2, w, h);
+      if (Math.random() > 0.8) CTX.fillRect(x - w/2, y + h*2, w*0.4, h);
+    }
+    else if (cs === 'neural') {
+      CTX.beginPath(); CTX.arc(x, y, sz*0.1, 0, 6.28); CTX.fill();
+      for(let i=0; i<3; i++) {
+        CTX.beginPath(); CTX.moveTo(x, y);
+        let ang = rot + i * 2.1; 
+        CTX.lineTo(x + Math.cos(ang)*sz*0.6, y + Math.sin(ang)*sz*0.6);
+        CTX.stroke();
+      }
+    }
+    else if (cs === 'astro') {
+      CTX.beginPath(); CTX.arc(x-sz*0.3, y-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(x+sz*0.2, y+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
+      CTX.globalAlpha = 0.3;
+      CTX.beginPath(); CTX.moveTo(x-sz*0.3, y-sz*0.1); CTX.lineTo(x+sz*0.2, y+sz*0.2); CTX.stroke();
+      CTX.globalAlpha = 1.0;
+    }
+    else if (cs === 'slate') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.fillRect(-sz*0.4, -sz*0.2, sz*0.8, sz*0.05);
+      CTX.fillRect(-sz*0.3, 0, sz*0.6, sz*0.05);
+      CTX.fillRect(-sz*0.5, sz*0.2, sz*0.9, sz*0.05);
+      CTX.restore();
+    }
+    else if (cs === 'petals') {
+      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, Math.PI, true); CTX.stroke();
+      CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
+      CTX.restore();
+    }
+    return; // Important: exits after drawing particle
   }
-  // 8. Astro (Binary Stars)
-  else if (cs === 'astro') {
-    CTX.beginPath(); CTX.arc(x-sz*0.3, y-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
-    CTX.beginPath(); CTX.arc(x+sz*0.2, y+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
-    CTX.globalAlpha = 0.3;
-    CTX.beginPath(); CTX.moveTo(x-sz*0.3, y-sz*0.1); CTX.lineTo(x+sz*0.2, y+sz*0.2); CTX.stroke();
-    CTX.globalAlpha = 1.0;
-  }
-  // 9. Slate (Strata)
-  else if (cs === 'slate') {
-    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
-    CTX.fillRect(-sz*0.4, -sz*0.2, sz*0.8, sz*0.05);
-    CTX.fillRect(-sz*0.3, 0, sz*0.6, sz*0.05);
-    CTX.fillRect(-sz*0.5, sz*0.2, sz*0.9, sz*0.05);
-    CTX.restore();
-  }
-  // 10. Petals (Scales)
-  else if (cs === 'petals') {
-    CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
-    CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, Math.PI, true); CTX.stroke();
-    CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
-    CTX.restore();
-  }
+  // --- TEXT MODE ---
+  if(!ch || (!ch.trim() && S.entropy < 0.1)) return;
+  let needTransform = rot !== 0 || S.charRotRad !== 0 || S.flipChance > 0 || S.flipHMirror || S.flipVMirror;
+  let fstr = (sz|0) + 'px ' + S.fontStack;
 
+  if (needTransform) {
+    CTX.save(); CTX.translate(x, y);
+    let r = (rot || 0) + S.charRotRad;
+    if (r) CTX.rotate(r);
+    let fx = 1, fy = 1;
+    if (S.flipHMirror && Math.random() < S.flipChance * 0.6) fx = -1;
+    if (S.flipVMirror && Math.random() < S.flipChance * 0.35) fy = -1;
+    if (fx !== 1 || fy !== 1) CTX.scale(fx, fy);
+    if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+    if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
+    CTX.fillText(ch, 0, 0); 
+    CTX.restore();
+    _lastFont = ''; _lastFill = '';
+  } else {
+    if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+    if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
+    CTX.fillText(ch, x, y);
+  }
+}
+
+
+  
   
 function pickChar(p,x,y,t){
   let ch;
