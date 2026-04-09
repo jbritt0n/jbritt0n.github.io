@@ -1382,11 +1382,12 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
 // --- COLOR MAPPING & NOISE TYPE
 function getColorIndex(p, x, y, t) {
-  // Use the S.noiseScale from your DEFAULT_STATE
-  let nx = x * S.noiseScale; // Using S.noiseScale from DEFAULT_STATE
+  // Safe Fallback: If p5 isn't ready, return a neutral value
+  if (!p || !p.noise) return 0.5;
+  let nx = x * S.noiseScale;
   let ny = y * S.noiseScale;
-  let W = p.width, H = p.height; 
-  let val = p.noise(nx, ny, t * 0.01);
+  let W = p.width, H = p.height;
+  let val = 0;
   switch(S.colorMapMode) {
     case 'radial':
       val = (Math.sqrt((x - W/2)**2 + (y - H/2)**2) * 0.002) % 1.0;
@@ -1401,21 +1402,16 @@ function getColorIndex(p, x, y, t) {
       val = (Math.abs(W/2 - x) / (W/2) + Math.abs(H/2 - y) / (H/2)) % 1.0;
       break;
     case 'stepped':
-      // CRITICAL: use p.noise
       let r = p.noise(nx, ny, t * 0.01); 
       val = Math.floor(r * 5) / 5;
       break;
-    default: 
-      // CRITICAL: use p.noise
+    default: // noise
       val = p.noise(nx, ny, t * 0.01);
   }
-  // Handle Noise Types
+  // Handle Noise Texture Types
   if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
-    if (S.noiseType === 'ridged') {
-      val = 1.0 - Math.abs(val * 2 - 1);
-    } else if (S.noiseType === 'billow') {
-      val = Math.abs(val * 2 - 1);
-    }
+    if (S.noiseType === 'ridged') val = 1.0 - Math.abs(val * 2 - 1);
+    else if (S.noiseType === 'billow') val = Math.abs(val * 2 - 1);
   }
   return val;
 }
@@ -1834,26 +1830,27 @@ function buildComp(preset,W,H){
 
 // ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
-  // 1. Setup Canvas Context
+  // Set the global blend mode at the start of the frame
   if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  // 2. Use S.spacing to determine grid density
-  let step = (S.spacing || 12) * p.map(S.density, 0, 1, 2, 0.5);
-  for (let x = 0; x <= p.width; x += step) {
-    for (let y = 0; y <= p.height; y += step) {
-      // Pass 'p' to the color helper
-      let ci = getColorIndex(p, x, y, t);
-      let col = S.palette[Math.floor(ci * S.palette.length)] || S.palette[0];
-      // FIX: Use S.maxSize (from DEFAULT_STATE) instead of S.size
-      let sizeBase = p.map(S.maxSize || 20, 0, 100, 5, 100);
-      // Calculate dynamic rotation using p.noise
-      let angle = (p.noise(x * 0.01, y * 0.01, t * 0.01) * Math.PI * 2) * (S.entropy || 0);
-      // Select character using p.noise
-      let ch = '';
-      if (S.chars && S.chars.length > 0) {
-        ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
-      }
+  let sp = S.spacing || 12;
+  for (let x = 0; x < p.width; x += sp) {
+    for (let y = 0; y < p.height; y += sp) {
+      // 1. Get noise value using our new Color Mapping & Noise Type logic
+      // We pass 'p' to ensure the math engine is ready
+      let n = getColorIndex(p, x, y, t);
+      // 2. The Original Density Filter (This creates the "Bloom" gaps)
+      if (n < S.density) continue;
+      // 3. The Original Rotation logic (influenced by Entropy)
+      let a = p.noise(x * S.noiseScale * 0.5, y * S.noiseScale * 0.5, t * 0.5) * 6.28 * 4;
+      if (S.entropy > 0) a *= S.entropy; // Connect Entropy slider
+      // 4. New Color Mapping: Get color from palette based on the noise value
+      let col = S.palette[Math.floor(n * S.palette.length)] || S.palette[0];
+      // 5. Original Dynamic Sizing
+      let sz = p.map(n, S.density, 1, 2, S.maxSize);
+      // 6. Character Selection (Support for your character sets)
+      let ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
       // Render
-      dc(x, y, sizeBase, angle, col, ch);
+      dc(x, y, sz, a, col, ch);
     }
   }
 }
