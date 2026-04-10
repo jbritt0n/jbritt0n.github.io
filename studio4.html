@@ -133,8 +133,17 @@ select option{background:var(--ink)}
 <div id="app">
   <div id="canvas-wrap">
     <canvas id="gc"></canvas>
-    <div class="corner" id="modeLabel">Bloom</div>
+    <!-- Corner Currently Playing List -->
+    <div class="corner" id="cornerLabel">
+  <span id="modeLabel">Bloom</span> 
+  <span style="opacity:0.3; margin: 0 4px;">/</span> 
+  <span id="charLabel">Sacred</span>
+  <span style="opacity:0.3; margin: 0 4px;">/</span> 
+  <span id="fontLabel">Jost</span>
+</div>
+    <!-- FPS -->
     <div class="fps" id="fpsLabel"></div>
+    <!-- HOTKEYS -->
     <div id="kbHint">Space: play/pause · R: regen · S: save</div>
     <button id="panelBtn" onclick="togglePanel()">⊕ Controls</button>
     <div id="toast"></div>
