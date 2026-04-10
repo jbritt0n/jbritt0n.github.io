@@ -1911,10 +1911,12 @@ function drawBloom(p, t) {
   let W = p.width, H = p.height;
   for (let x = 0; x < W; x += sp) {
     for (let y = 0; y < H; y += sp) {
-      // 1. Use the new Color Index
+      // 1. Density Check (Force noise for the "organic" look)
+      let ns = S.noiseScale || 0.005;
+      let densityVal = p.noise(x * ns, y * ns, t * (S.speed * 0.1));
+      if (densityVal < S.density) continue;
+      // 2. Color/Logic Check (Use the chosen mapping mode)
       let n = getColorIndex(p, x, y, t);
-      // 2. Density filter
-      if (n < S.density) continue;
       // 3. RADIAL MATH (The "Bloom" Secret)
       // Calculate angle from center to the current point
       let angleToCenter = Math.atan2(y - H/2, x - W/2);
@@ -1927,9 +1929,9 @@ function drawBloom(p, t) {
         a += noiseRot * S.entropy * 2;
       }
       // 5. COLOR & SIZE
-      // Ensure we handle the palette safely
-      let pal = CURRENT_PALETTE; 
-      let col = pal[Math.floor(n * pal.length)] || pal[0];
+      // Use S.palette directly (the array of hex strings)
+      let pal = S.palette; 
+      let col = (pal && pal.length > 0) ? pal[Math.floor(n * pal.length) % pal.length] : "#ffffff";
       let sz = p.map(n, S.density, 1, 2, S.maxSize);
       // 6. CHARACTER selection
       // Use the charNoiseScale we've been building toward
