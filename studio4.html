@@ -5803,6 +5803,9 @@ if (characterUI) {
     // 1. Clear active state for all buttons in this section
     characterUI.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
+    
+document.getElementById('charLabel').textContent = b.textContent.trim();
+  
     let cs = b.dataset.cs;
     S.charSet = cs; // Update state tracker
     // 2. Handle the Custom Input Row visibility
@@ -5851,6 +5854,9 @@ document.getElementById('fontSelect').addEventListener('change', function() {
     if (confirm('⚠️ Universal Unicode font can be slow on mobile with large charsets.\nContinue anyway?')) {
       S.fontKey = newFont;
       S.fontStack = FONTS[newFont];
+      // get font text for display
+      document.getElementById('fontLabel').textContent = fontDisplayText;
+      
       invalidateFontCache();
       window._st.rd();
       showToast('Unicode font enabled – may be slow');
@@ -5861,6 +5867,9 @@ document.getElementById('fontSelect').addEventListener('change', function() {
   } else {
     S.fontKey = newFont;
     S.fontStack = FONTS[newFont] || FONTS.courier;
+    // get font text for display
+    document.getElementById('fontLabel').textContent = fontDisplayText;
+    
     invalidateFontCache();
     window._st.rd();
   }
@@ -6078,7 +6087,7 @@ document.getElementById('btnAddShape').addEventListener('click', function() {
   window._st.rd();
 });
 
-  
+// ── RENDER SHAPES ────────────────────────────────────────────────────────────────────  
 function renderShapeList() {
   let W = window._st.w();
   let H = window._st.h();
@@ -6907,7 +6916,24 @@ const PRESETS={
     
 };
 
-
+ // ── PRESET WIRING ──────────────────────────────────────────────────────── 
+  // Helper to keep UI labels synced with current State (S)
+function updateCornerLabels() {
+  // Update Mode
+  if (document.getElementById('modeLabel')) {
+    document.getElementById('modeLabel').textContent = S.mode || 'Bloom';
+  }
+  // Update Character Label based on the currently active button
+  let activeChar = document.querySelector('#body-chars .cb.active');
+  if (activeChar && document.getElementById('charLabel')) {
+    document.getElementById('charLabel').textContent = activeChar.textContent.trim();
+  }
+  // Update Font Label based on the dropdown's selected text
+  let fSel = document.getElementById('fontSelect');
+  if (fSel && document.getElementById('fontLabel')) {
+    document.getElementById('fontLabel').textContent = fSel.options[fSel.selectedIndex].text;
+  }
+}
 // Wire preset bar (updated for sub-sections)
 document.getElementById('body-presets').addEventListener('click', function(e) {
   let b = e.target.closest('[data-preset]');
@@ -6915,6 +6941,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   let fn = PRESETS[b.dataset.preset];
   if (fn) {
     fn();
+    updateCornerLabels();
     showToast(b.textContent);
   }
 });
