@@ -1483,6 +1483,16 @@ function invalidateFontCache(){_lastFont='';_lastSize=-1;}
 function dc(x, y, sz, rot, col, ch) {
   if (!CTX) return;
 
+   // --- JITTER ---
+ let jx = 0, jy = 0;
+    if (S.jitter > 0) {
+        jx = (Math.random() - 0.5) * S.jitter * 2;
+        jy = (Math.random() - 0.5) * S.jitter * 2;
+    }
+    CTX.save();
+    // Translate to jittered position
+    CTX.translate(x + jx, y + jy);
+    if (rot) CTX.rotate(rot);
   
   // --- PARTICLE MODES ---
   if (S.useParticleMode) {
@@ -5779,28 +5789,47 @@ p.setup = function() {
   
 
 // ── MODE CLICK HANDLER - updated for rebuildModeUI ──────────────────────────────────────────────────   
-document.getElementById('modeGrid').addEventListener('click',function(e){
-  let b=e.target.closest('.mb');if(!b)return;
-  document.querySelectorAll('.mb').forEach(function(x){x.classList.remove('active');});
-  b.classList.add('active');
-  S.mode=b.dataset.mode;
-  document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
-  // ── Rebuild dynamic mode controls ──
-  rebuildModeUI(b.dataset.mode);
-  let sec=document.getElementById('mode-extra-sec');
-  let hasParams = PARAM_REGISTRY[b.dataset.mode] && PARAM_REGISTRY[b.dataset.mode].length;
-  if(sec) sec.style.display = hasParams ? 'block' : 'none';
-  // Auto-expand the section when switching to a mode that has params
-  if(hasParams){
-    let body=document.getElementById('body-modeextra');
-    let arrow=document.getElementById('arr-modeextra');
-    if(body){body.classList.remove('collapsed');if(arrow)arrow.classList.add('open');}
-    let lbl=document.getElementById('mode-extra-label');
-    if(lbl) lbl.textContent=b.textContent.trim()+' parameters';
-  }
-  window._st.ri();
-  window._st.rd();
-}); // End addEventListener
+
+const modeGridContainer = document.getElementById('modeGrid');
+if (modeGridContainer) {
+    modeGridContainer.addEventListener('click', function(e) {
+        let b = e.target.closest('.mb');
+        if (!b) return;
+        // UI Feedback
+        document.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        // State Update
+        S.mode = b.dataset.mode;
+        const labelEl = document.getElementById('modeLabel');
+        if (labelEl) labelEl.textContent = b.textContent.replace('✦', '').trim();
+        // ── Rebuild Dynamic Controls ──
+        if (typeof rebuildModeUI === 'function') {
+            rebuildModeUI(S.mode);
+        }
+        // ── Handle the Extra Parameters Section Visibility ──
+        let sec = document.getElementById('mode-extra-sec');
+        let hasParams = PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length;
+            if (sec) {
+            sec.style.display = hasParams ? 'block' : 'none';
+            if (hasParams) {
+                // Expand the section automatically
+                let body = document.getElementById('body-modeextra');
+                let arrow = document.getElementById('arr-modeextra');
+                if (body) body.classList.remove('collapsed');
+                if (arrow) arrow.classList.add('open');
+                let lbl = document.getElementById('mode-extra-label');
+                if (lbl) lbl.textContent = b.textContent.trim() + ' parameters';
+            }
+        }
+        // Reset and Redraw
+        if (window._st) {
+            window._st.ri(); // Reset instance (important for boids/trails)
+            window._st.rd(); // Redraw
+        }
+    });
+} else {
+    console.warn("Element #modeGrid not found. Ensure your HTML wrapper is in place.");
+}
 
 
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
@@ -6137,6 +6166,7 @@ wireSlider('sSpacing','vSpacing','spacing',null,function(){window._st.ri();});
 wireSlider('sMaxSize','vMaxSize','maxSize');
 wireSlider('sNoise','vNoise','noiseScale',function(v){return v*.002;});
 wireSlider('sCharNoise','vCharNoise','charNoiseScale',function(v){return v*.01;});
+wireSlider('sJitter', 'vJitter', 'jitter', v => parseFloat(v));  
 wireSlider('sRot','vRot','charRotation',null,function(){S.charRotRad=S.charRotation*Math.PI/180;});
 wireSlider('sEntropy','vEntropy','entropy',function(v){return v/100;});
 wireSlider('sCase','vCase','caseGlitch',function(v){return v/100;});
