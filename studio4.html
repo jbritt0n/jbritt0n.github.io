@@ -5401,6 +5401,7 @@ const DEFAULT_STATE={
   charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
+  updateCornerLabels(),
   trailPersist:0,
   compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
   imgStretch:false,imgInvert:false,
@@ -5859,6 +5860,8 @@ document.getElementById('charLabel').textContent = b.textContent.trim();
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change', function() {
   let newFont = this.value;
+  // This line captures the actual text shown in the dropdown (e.g., "EB Garamond")
+  let fontDisplayText = this.options[this.selectedIndex].text;
   if (newFont === 'unicode') {
     if (confirm('⚠️ Universal Unicode font can be slow on mobile with large charsets.\nContinue anyway?')) {
       S.fontKey = newFont;
@@ -6925,24 +6928,39 @@ const PRESETS={
     
 };
 
- // ── PRESET WIRING ──────────────────────────────────────────────────────── 
+ // ── CORNER LABELS ──────────────────────────────────────────────────────── 
   // Helper to keep UI labels synced with current State (S)
 function updateCornerLabels() {
-  // Update Mode
-  if (document.getElementById('modeLabel')) {
-    document.getElementById('modeLabel').textContent = S.mode || 'Bloom';
+  // 1. Update Mode
+  let mLab = document.getElementById('modeLabel');
+  if (mLab) {
+    // Convert 'bloom' to 'Bloom' for better looks
+    let modeText = S.mode ? S.mode.charAt(0).toUpperCase() + S.mode.slice(1) : 'Bloom';
+    mLab.textContent = modeText;
   }
-  // Update Character Label based on the currently active button
-  let activeChar = document.querySelector('#body-chars .cb.active');
-  if (activeChar && document.getElementById('charLabel')) {
-    document.getElementById('charLabel').textContent = activeChar.textContent.trim();
+  // 2. Update Character Label
+  let cLab = document.getElementById('charLabel');
+  if (cLab) {
+    // Try to find the button that matches the current state S.charSet
+    let activeCharBtn = document.querySelector(`#body-chars .cb[data-cs="${S.charSet}"]`);
+    if (activeCharBtn) {
+      cLab.textContent = activeCharBtn.textContent.trim();
+    } else {
+      // Fallback if no button is active
+      cLab.textContent = S.charSet || 'Sacred';
+    }
   }
-  // Update Font Label based on the dropdown's selected text
+  // 3. Update Font Label
   let fSel = document.getElementById('fontSelect');
-  if (fSel && document.getElementById('fontLabel')) {
-    document.getElementById('fontLabel').textContent = fSel.options[fSel.selectedIndex].text;
+  let fLab = document.getElementById('fontLabel');
+  if (fSel && fLab) {
+    // Force the dropdown to match the state S.fontKey first
+    if (S.fontKey) fSel.value = S.fontKey;
+    // Then grab the text
+    fLab.textContent = fSel.options[fSel.selectedIndex].text;
   }
 }
+ // ── PRESET WIRING ────────────────────────────────────────────────────────  
 // Wire preset bar (updated for sub-sections)
 document.getElementById('body-presets').addEventListener('click', function(e) {
   let b = e.target.closest('[data-preset]');
