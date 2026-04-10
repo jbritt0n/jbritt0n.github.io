@@ -5788,7 +5788,9 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   b.classList.add('active');
   // 3. Update the state and labels
   S.mode = b.dataset.mode;
-  document.getElementById('modeLabel').textContent = b.textContent.trim();
+  if (document.getElementById('modeLabel')) {
+      document.getElementById('modeLabel').textContent = b.textContent.trim();
+  }
   // 4. Handle mode-specific control panels (if you have them)
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
@@ -5800,6 +5802,7 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
     window._st.ri();
     window._st.rd();
   }
+  updateCornerLabels();
 });
 
   
@@ -6927,36 +6930,34 @@ const PRESETS={
     
 };
 
- // ── CORNER LABELS ──────────────────────────────────────────────────────── 
+ // ── CORNER LABELS UI HELPER ──────────────────────────────────────────────────────── 
   // Helper to keep UI labels synced with current State (S)
+// ── UI HELPERS ───────────────────────────────────────────────────────────────
 function updateCornerLabels() {
-  // 1. Update Mode
-  let mLab = document.getElementById('modeLabel');
-  if (mLab) {
-    // Convert 'bloom' to 'Bloom' for better looks
-    let modeText = S.mode ? S.mode.charAt(0).toUpperCase() + S.mode.slice(1) : 'Bloom';
-    mLab.textContent = modeText;
-  }
-  // 2. Update Character Label
-  let cLab = document.getElementById('charLabel');
-  if (cLab) {
-    // Try to find the button that matches the current state S.charSet
-    let activeCharBtn = document.querySelector(`#body-chars .cb[data-cs="${S.charSet}"]`);
-    if (activeCharBtn) {
-      cLab.textContent = activeCharBtn.textContent.trim();
-    } else {
-      // Fallback if no button is active
-      cLab.textContent = S.charSet || 'Sacred';
+  try {
+    // 1. Update Mode Label
+    let mLab = document.getElementById('modeLabel');
+    if (mLab) {
+      // Ensure we use the Display Name if available, otherwise capitalize S.mode
+      let activeModeBtn = document.querySelector(`#body-mode .mb[data-mode="${S.mode}"]`);
+      mLab.textContent = activeModeBtn ? activeModeBtn.textContent.trim() : (S.mode || 'Bloom');
     }
-  }
-  // 3. Update Font Label
-  let fSel = document.getElementById('fontSelect');
-  let fLab = document.getElementById('fontLabel');
-  if (fSel && fLab) {
-    // Force the dropdown to match the state S.fontKey first
-    if (S.fontKey) fSel.value = S.fontKey;
-    // Then grab the text
-    fLab.textContent = fSel.options[fSel.selectedIndex].text;
+    // 2. Update Character Label
+    let cLab = document.getElementById('charLabel');
+    if (cLab) {
+      let activeCharBtn = document.querySelector(`#body-chars .cb[data-cs="${S.charSet}"]`);
+      cLab.textContent = activeCharBtn ? activeCharBtn.textContent.trim() : (S.charSet || 'Sacred');
+    }
+    // 3. Update Font Label
+    let fSel = document.getElementById('fontSelect');
+    let fLab = document.getElementById('fontLabel');
+    if (fSel && fLab) {
+      // Sync the dropdown to the state first
+      if (S.fontKey) fSel.value = S.fontKey;
+      fLab.textContent = fSel.options[fSel.selectedIndex].text;
+    }
+  } catch (err) {
+    console.warn("Corner update skipped:", err);
   }
 }
  // ── PRESET WIRING ────────────────────────────────────────────────────────  
