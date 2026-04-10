@@ -1484,62 +1484,63 @@ function getColorIndex(p, x, y, t) {
  
 
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
-
-function dc(x, y, sz, rot, col, ch) {
-  if (!CTX) return;
-
-   // --- JITTER ---
- let jx = 0, jy = 0;
-    if (S.jitter > 0) {
-        jx = (Math.random() - 0.5) * S.jitter * 2;
-        jy = (Math.random() - 0.5) * S.jitter * 2;
-    }
-    CTX.save();
-    // Translate to jittered position
-    CTX.translate(x + jx, y + jy);
-    if (rot) CTX.rotate(rot);
   
+function dc(x, y, sz, rot, col, ch) {
+  // 1. Safety Check: Exit if basic requirements aren't met
+  if (!sz || sz <= 0) return;
+
+  // 2. Handle Jitter
+  let jx = 0, jy = 0;
+  let jit = S.jitter || 0; 
+  if (jit > 0) {
+    jx = (Math.random() - 0.5) * jit;
+    jy = (Math.random() - 0.5) * jit;
+  }
+
+  // 3. Setup Global Context for this draw call
+  CTX.fillStyle = col || "#ffffff";
+  CTX.strokeStyle = col || "#ffffff";
+  CTX.lineWidth = Math.max(1, sz * 0.05);
+
   // --- PARTICLE MODES ---
+  // If useParticleMode is on, we draw geometry instead of text
   if (S.useParticleMode) {
-    CTX.fillStyle = col;
-    CTX.strokeStyle = col;
-    CTX.lineWidth = Math.max(1, sz * 0.05);
     let cs = S.charSet;
 
     if (cs === 'particles') {
       CTX.beginPath();
       let type = Math.floor(Math.abs(Math.sin(x + y)) * 3);
-      if (type === 0) CTX.arc(x, y, sz * 0.4, 0, Math.PI * 2);
-      else if (type === 1) CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+      if (type === 0) CTX.arc(x + jx, y + jy, sz * 0.4, 0, Math.PI * 2);
+      else if (type === 1) CTX.rect(x + jx - sz * 0.3, y + jy - sz * 0.3, sz * 0.6, sz * 0.6);
       else {
-        CTX.moveTo(x, y - sz * 0.4);
-        CTX.lineTo(x + sz * 0.4, y + sz * 0.4);
-        CTX.lineTo(x - sz * 0.4, y + sz * 0.4);
+        CTX.moveTo(x + jx, y + jy - sz * 0.4);
+        CTX.lineTo(x + jx + sz * 0.4, y + jy + sz * 0.4);
+        CTX.lineTo(x + jx - sz * 0.4, y + jy + sz * 0.4);
         CTX.closePath();
       }
       CTX.fill();
     } 
     else if (cs === 'arch') {
-      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
       let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
-      if (t === 0) { // Crosshair
+      if (t === 0) { 
         CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
-      } else if (t === 1) { // L-Bracket
+      } else if (t === 1) { 
         CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
-      } else { // Dot Circle
+      } else { 
         CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
         CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
       }
       CTX.restore();
     }
     else if (cs === 'microbe') {
-      CTX.beginPath(); CTX.arc(x, y, sz*0.15, 0, 6.28); CTX.fill();
-      CTX.beginPath(); CTX.moveTo(x, y);
-      CTX.bezierCurveTo(x+sz*0.5, y-sz*0.5, x-sz*0.5, y+sz*0.5, x+Math.cos(rot)*sz, y+Math.sin(rot)*sz);
+      CTX.beginPath(); CTX.arc(x + jx, y + jy, sz*0.15, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.moveTo(x + jx, y + jy);
+      CTX.bezierCurveTo(x+jx+sz*0.5, y+jy-sz*0.5, x+jx-sz*0.5, y+jy+sz*0.5, x+jx+Math.cos(rot)*sz, y+jy+Math.sin(rot)*sz);
       CTX.stroke();
     }
     else if (cs === 'husks') {
-      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
       CTX.beginPath(); CTX.moveTo(-sz/2, 0);
       CTX.quadraticCurveTo(0, -sz, sz/2, 0);
       CTX.quadraticCurveTo(0, -sz/4, -sz/2, 0);
@@ -1547,69 +1548,74 @@ function dc(x, y, sz, rot, col, ch) {
       CTX.restore();
     }
     else if (cs === 'filaments') {
-      CTX.beginPath(); CTX.moveTo(x-sz/2, y-sz/2);
-      CTX.lineTo(x, y);
-      CTX.lineTo(x+sz/2, y+Math.sin(x)*sz/2);
+      CTX.beginPath(); CTX.moveTo(x+jx-sz/2, y+jy-sz/2);
+      CTX.lineTo(x+jx, y+jy);
+      CTX.lineTo(x+jx+sz/2, y+jy+Math.sin(x)*sz/2);
       CTX.stroke();
     }
     else if (cs === 'glitch_p') {
       let w = sz * (0.5 + Math.random());
       let h = sz * 0.1;
-      CTX.fillRect(x - w/2, y - h/2, w, h);
-      if (Math.random() > 0.8) CTX.fillRect(x - w/2, y + h*2, w*0.4, h);
+      CTX.fillRect(x + jx - w/2, y + jy - h/2, w, h);
+      if (Math.random() > 0.8) CTX.fillRect(x + jx - w/2, y + jy + h*2, w*0.4, h);
     }
     else if (cs === 'neural') {
-      CTX.beginPath(); CTX.arc(x, y, sz*0.1, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(x + jx, y + jy, sz*0.1, 0, 6.28); CTX.fill();
       for(let i=0; i<3; i++) {
-        CTX.beginPath(); CTX.moveTo(x, y);
+        CTX.beginPath(); CTX.moveTo(x + jx, y + jy);
         let ang = rot + i * 2.1; 
-        CTX.lineTo(x + Math.cos(ang)*sz*0.6, y + Math.sin(ang)*sz*0.6);
+        CTX.lineTo(x + jx + Math.cos(ang)*sz*0.6, y + jy + Math.sin(ang)*sz*0.6);
         CTX.stroke();
       }
     }
     else if (cs === 'astro') {
-      CTX.beginPath(); CTX.arc(x-sz*0.3, y-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
-      CTX.beginPath(); CTX.arc(x+sz*0.2, y+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(x+jx-sz*0.3, y+jy-sz*0.1, sz*0.15, 0, 6.28); CTX.fill();
+      CTX.beginPath(); CTX.arc(x+jx+sz*0.2, y+jy+sz*0.2, sz*0.08, 0, 6.28); CTX.fill();
       CTX.globalAlpha = 0.3;
-      CTX.beginPath(); CTX.moveTo(x-sz*0.3, y-sz*0.1); CTX.lineTo(x+sz*0.2, y+sz*0.2); CTX.stroke();
+      CTX.beginPath(); CTX.moveTo(x+jx-sz*0.3, y+jy-sz*0.1); CTX.lineTo(x+jx+sz*0.2, y+jy+sz*0.2); CTX.stroke();
       CTX.globalAlpha = 1.0;
     }
     else if (cs === 'slate') {
-      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
       CTX.fillRect(-sz*0.4, -sz*0.2, sz*0.8, sz*0.05);
       CTX.fillRect(-sz*0.3, 0, sz*0.6, sz*0.05);
       CTX.fillRect(-sz*0.5, sz*0.2, sz*0.9, sz*0.05);
       CTX.restore();
     }
     else if (cs === 'petals') {
-      CTX.save(); CTX.translate(x, y); CTX.rotate(rot);
+      CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
       CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, Math.PI, true); CTX.stroke();
       CTX.beginPath(); CTX.arc(0, sz*0.1, sz*0.2, 0, Math.PI, true); CTX.stroke();
       CTX.restore();
     }
-  else if (cs === 'tendril') {
-    CTX.save();
-    CTX.translate(x, y);
-    CTX.rotate(rot);
-    CTX.beginPath();
-    CTX.moveTo(0, 0);
-    // Control points create the "bend"
-    // We use a bit of Math.sin(x) to make the bend organic
-    let cp1x = sz * 0.5;
-    let cp1y = sz * Math.sin(x * 0.01) * 0.5;
-    let cp2x = sz * 1.5;
-    let cp2y = sz * Math.cos(y * 0.01) * 0.8;
-    let destX = sz * 2.5; // Extends past the normal "block" size
-    let destY = sz * 0.2;
-    CTX.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, destX, destY);
-    // Set a very thin line for that "whispy" look
-    CTX.globalAlpha = 0.6; // Slightly transparent to help overlapping
-    CTX.stroke();
-    CTX.restore();
+    else if (cs === 'tendril') {
+      CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
+      CTX.beginPath(); CTX.moveTo(0, 0);
+      let cp1x = sz * 0.5, cp1y = sz * Math.sin(x * 0.01) * 0.5;
+      let cp2x = sz * 1.5, cp2y = sz * Math.cos(y * 0.01) * 0.8;
+      let destX = sz * 2.5, destY = sz * 0.2;
+      CTX.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, destX, destY);
+      CTX.globalAlpha = 0.6;
+      CTX.stroke();
+      CTX.restore();
+    }
+    return; // Exit here if in Particle Mode
   }
-    
-    return; // Important: exits after drawing particle
-  }
+
+  // --- STANDARD TEXT MODE ---
+  // Only runs if useParticleMode is FALSE
+  if (!ch) return;
+  CTX.save();
+  CTX.translate(x + jx, y + jy);
+  if (rot) CTX.rotate(rot);
+
+  let finalSize = Math.max(1, sz);
+  CTX.font = finalSize + "px " + (S.fontFamily || "monospace");
+  CTX.textAlign = "center";
+  CTX.textBaseline = "middle";
+  CTX.fillText(ch, 0, 0);
+  CTX.restore();
+}
   // --- TEXT MODE ---
   if(!ch || (!ch.trim() && S.entropy < 0.1)) return;
   let needTransform = rot !== 0 || S.charRotRad !== 0 || S.flipChance > 0 || S.flipHMirror || S.flipVMirror;
@@ -1907,36 +1913,49 @@ function buildComp(preset,W,H){
 
 // ── BLOOM 2.0 - updated 4/10/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
+  // 1. Component Safety Guards
   let sp = S.spacing || 12;
-  let W = p.width, H = p.height;
-  // Local speed multiplier to make Bloom feel "organic"
-  let bloomTime = t * (S.speed || 1.0);
+  let W = p.width || 800;
+  let H = p.height || 600;
+  let ns = S.noiseScale || 0.005;
+  let densityThreshold = S.density !== undefined ? S.density : 0.5;
+  let entropyVal = S.entropy || 0;
+  // Use a local time variable that is guaranteed to be a number
+  let bloomTime = t || 0;
   for (let x = 0; x < W; x += sp) {
     for (let y = 0; y < H; y += sp) {
-      // 1. Organic Density Check (The "Shape")
-      // Use a fixed scale for density so it doesn't disappear when noiseScale is 0
+      // 2. Organic Shape Check
+      // Use a fixed scale for the "bloom clouds" so they are stable
       let dVal = p.noise(x * 0.005, y * 0.005, bloomTime * 0.1);
-      if (dVal < (S.density || 0.5)) continue;
-      // 2. Get Color Mapping Value (The "Shade")
-      let n = getColorIndex(p, x, y, t);
-      // 3. Radial Math (The "Direction")
-      let angleToCenter = Math.atan2(y - H/2, x - W/2);
-      // Add a bit of noise-swirl based on Entropy
-      let swirl = p.noise(x * 0.01, y * 0.01, bloomTime * 0.05) * p.TWO_PI;
-      let a = angleToCenter + (swirl * (S.entropy || 0));
-      // 4. Color Selection
+      if (dVal < densityThreshold) continue;
+      // 3. Get Color Mapping Value (Safety check for the function)
+      let n = 0.5;
+      try {
+        n = getColorIndex(p, x, y, bloomTime);
+      } catch(e) { n = 0.5; }
+      // 4. Radial Math (The "Bloom" Direction)
+      let dx = x - W/2;
+      let dy = y - H/2;
+      let angleToCenter = Math.atan2(dy, dx);
+      // Swirl math
+      let swirl = p.noise(x * ns, y * ns, bloomTime * 0.05) * 6.28;
+      let a = angleToCenter + (swirl * entropyVal);
+      // 5. Palette Safety
       let col = "#ffffff";
-      if (S.palette && S.palette.length > 0) {
+      if (Array.isArray(S.palette) && S.palette.length > 0) {
         let pIdx = Math.floor(n * S.palette.length);
-        col = S.palette[pIdx % S.palette.length];
+        col = S.palette[pIdx % S.palette.length] || "#ffffff";
       }
-      // 5. Size & Character
+      // 6. Character Safety
+      let chars = (S.chars && S.chars.length > 0) ? S.chars : ["+"];
+      let chIdx = Math.floor(p.noise(x * 0.05, y * 0.05) * chars.length);
+      let ch = chars[chIdx % chars.length];
+      // 7. Size
       let sz = p.map(n, 0, 1, 2, S.maxSize || 12);
-      let chars = S.chars || ["+"];
-      let ch = chars[Math.floor(p.noise(x * 0.05, y * 0.05) * chars.length) % chars.length];
-      // 6. Final Render
-      // Ensure dc exists and has CTX.save/restore
-      dc(x, y, sz, a, col, ch);
+      // 8. Final Render
+      if (typeof dc === 'function') {
+        dc(x, y, sz, a, col, ch);
+      }
     }
   }
 }
