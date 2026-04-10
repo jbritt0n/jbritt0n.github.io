@@ -5138,7 +5138,8 @@ p.setup = function() {
   p.pixelDensity(1);
   
   ri(); 
-  p.redraw(); 
+    // Delay first draw to ensure canvas is ready
+  setTimeout(() => { p.redraw(); }, 50);
 };
   
 // ── P.Draw ────────────────────────────────────────────────── 
