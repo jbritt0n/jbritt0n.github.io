@@ -5603,7 +5603,7 @@ p.setup = function() {
   S.playing = false; // Start static
   p.noLoop();
   p.pixelDensity(1);
-  
+  updateCornerLabels();
   ri(); 
     // Delay first draw to ensure canvas is ready
   setTimeout(() => { p.redraw(); }, 50);
