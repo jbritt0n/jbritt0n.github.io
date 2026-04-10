@@ -1908,21 +1908,35 @@ function buildComp(preset,W,H){
 // ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
   let sp = S.spacing || 12;
-  for (let x = 0; x < p.width; x += sp) {
-    for (let y = 0; y < p.height; y += sp) {
-      // Get value from your new Color Mapping logic
+  let W = p.width, H = p.height;
+  for (let x = 0; x < W; x += sp) {
+    for (let y = 0; y < H; y += sp) {
+      // 1. Use the new Color Index
       let n = getColorIndex(p, x, y, t);
-      // ORIGINAL LOOK: The Density filter
+      // 2. Density filter
       if (n < S.density) continue;
-      // ORIGINAL LOOK: Rotation influenced by Entropy slider
-      let a = p.noise(x * S.noiseScale * 0.5, y * S.noiseScale * 0.5, t * 0.5) * 6.28 * 4;
-      if (S.entropy > 0) a *= (1 + S.entropy);
-      // COLOR MAPPING: Pick color based on noise value 'n'
-      let col = S.palette[Math.floor(n * S.palette.length)] || S.palette[0];
-      // SIZE: Map noise to size range
+      // 3. RADIAL MATH (The "Bloom" Secret)
+      // Calculate angle from center to the current point
+      let angleToCenter = Math.atan2(y - H/2, x - W/2);
+      // 4. ROTATION: Combine radial direction with your noise/entropy
+      // We start with the angle pointing away from center (the bloom)
+      let noiseRot = p.noise(x * S.noiseScale, y * S.noiseScale, t * 0.2) * p.TWO_PI;
+      let a = angleToCenter; 
+      // If entropy is up, we twist the bloom
+      if (S.entropy > 0) {
+        a += noiseRot * S.entropy * 2;
+      }
+      // 5. COLOR & SIZE
+      // Ensure we handle the palette safely
+      let pal = CURRENT_PALETTE; 
+      let col = pal[Math.floor(n * pal.length)] || pal[0];
       let sz = p.map(n, S.density, 1, 2, S.maxSize);
-      // CHARACTER: Selection from your current set
-      let ch = S.chars[Math.floor(p.noise(x * 0.05, y * 0.05) * S.chars.length)];
+      // 6. CHARACTER selection
+      // Use the charNoiseScale we've been building toward
+      let nsChar = S.charNoiseScale || 0.05;
+      let chIdx = Math.floor(p.noise(x * nsChar, y * nsChar) * S.chars.length);
+      let ch = S.chars[chIdx % S.chars.length];
+      // 7. DRAW
       dc(x, y, sz, a, col, ch);
     }
   }
