@@ -5860,8 +5860,7 @@ document.getElementById('charLabel').textContent = b.textContent.trim();
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change', function() {
   let newFont = this.value;
-  // This line captures the actual text shown in the dropdown (e.g., "EB Garamond")
-  let fontDisplayText = this.options[this.selectedIndex].text;
+  let fontDisplayText = this.options[this.selectedIndex].text; // Get "EB Garamond" not "eb"
   if (newFont === 'unicode') {
     if (confirm('⚠️ Universal Unicode font can be slow on mobile with large charsets.\nContinue anyway?')) {
       S.fontKey = newFont;
