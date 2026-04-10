@@ -305,6 +305,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="warp" title="Local space distortion and stretching">Warp</button>
         <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
         <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
+        <button class="mb" data-mode="spiro">✦ Spiro</button>
         <button class="mb" data-mode="interference" title="Overlapping wave patterns creating moiré">Interfere</button>
       </div>
     </div>
@@ -400,6 +401,17 @@ select option{background:var(--ink)}
 </div>
 
 
+<!-- Dynamic mode-specific controls — populated by rebuildModeUI() -->
+<div id="mode-extra-sec" class="sec" style="display:none">
+  <div class="sec-hd" onclick="toggleSec('modeextra')">
+    <span class="sl" id="mode-extra-label">Mode parameters</span>
+    <span class="sec-arrow" id="arr-modeextra">›</span>
+  </div>
+  <div class="sec-body collapsed" id="body-modeextra">
+    <div id="mode-extra-controls"></div>
+  </div>
+</div>
+      
 
       
  <!-- Character Controls -->     
@@ -705,22 +717,7 @@ select option{background:var(--ink)}
       
             <!-- Mode Specific Controls -->
       
-      <!-- Reaction Controls -->
-<div id="ctrl-reaction" class="mode-ctrl">
-  <div class="sl2">Reaction Parameters</div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Feed rate</span><span class="rv" id="vReactFeed">0.035</span></div>
-    <input type="range" id="sReactFeed" min="10" max="100" value="35" step="1">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Kill rate</span><span class="rv" id="vReactKill">0.065</span></div>
-    <input type="range" id="sReactKill" min="10" max="100" value="65" step="1">
-  </div>
-  <div class="tr">
-  <span class="tl">Oscillate</span>
-  <button class="tb" id="btnReactOscillate">Off</button>
-  </div>
-  </div>
+
   <div id="ctrl-magnetic" class="mode-ctrl">
   <div class="sl2">Magnetic Parameters</div>
     <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
@@ -735,6 +732,16 @@ select option{background:var(--ink)}
           <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
         </div>
 
+      <!-- Voronoi Controls -->
+<div id="ctrl-magnetic" class="mode-ctrl">
+  <div class="sl2">Magnetic Parameters</div>
+      <div class="rw"><div class="rl">
+    <span class="rn">Wire Weight</span>
+    <span class="rv" id="vVorWeight">1.0</span>
+  </div>
+  <input type="range" id="sVorWeight" min="1" max="50" value="10">
+</div></div>
+      
       <!-- Monogrid Controls -->
       <div id="ctrl-monogrid" class="mode-ctrl">
   <div class="sl2">Monogrid</div>
@@ -790,6 +797,9 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
         <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
         <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
+        <div class="rw"><div class="rl"><span class="rn">Jitter</span><span class="rv" id="vJitter">0</span></div><input type="range" id="sJitter" min="0" max="20" value="0">
+</div>
+      
       </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
@@ -798,9 +808,9 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
         <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
         <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
-        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
-        <div class="rw"><div class="rl"><span class="rn">Noise Scale</span><span class="rv" id="vNoise">0.02</span></div><input type="range" id="sNoise" min="1" max="100" value="10"></div>
         <div class="rw"><div class="rl"><span class="rn">Char Variation</span><span class="rv" id="vCharNoise">0.08</span></div><input type="range" id="sCharNoise" min="1" max="100" value="8"><div class="hn">Controls how fast characters change across the field.</div>
+        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
+        
 
           
         </div>
@@ -2097,7 +2107,27 @@ function drawSpiral(p,t){
     dc(x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,res.col,res.ch);
   }
 }
-  
+// ── SPIRO (4/10/26) ──────────────────────────────────────────────────
+function drawSpiro(p) {
+    p.push();
+    p.translate(p.width/2, p.height/2);
+    let time = p.frameCount * (S.speed * 0.1);
+    // Spirograph Math (Hypotrochoid)
+    // R = S.spiroR, r = S.spiror, p = S.spiroPetals
+    for (let i = 0; i < S.density * 5; i++) {
+        let theta = p.map(i, 0, S.density * 5, 0, p.TWO_PI * S.spiroPetals);
+        let x = (S.spiroR - S.spiror) * p.cos(theta) + S.spiroSkew * p.cos(((S.spiroR - S.spiror) / S.spiror) * theta);
+        let y = (S.spiroR - S.spiror) * p.sin(theta) - S.spiroSkew * p.sin(((S.spiroR - S.spiror) / S.spiror) * theta);
+        // Use your existing color index logic
+        let col = getColorIndex(p, x + p.width/2, y + p.height/2, time);
+        p.fill(col);
+        let char = pickChar(p, x, y, time);
+        p.textSize(S.maxSize);
+        p.text(char, x, y);
+    }
+    p.pop();
+}
+// ── SCAN ────────────────────────────────────────────────── 
 function drawScan(p,t){
   let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=70+S.wave*.8,sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -2109,7 +2139,7 @@ function drawScan(p,t){
     dc(x+disp,y,p.map(br,0,1,2,S.maxSize),0,res.col,res.ch);
   }
 }
-  
+// ── Halftone ──────────────────────────────────────────────────  
 function drawHalftone(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
@@ -2447,7 +2477,8 @@ function drawReaction(p,t){
   if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
   let g=rdGrid,W=rdW,H=rdH;
   // Gray-Scott parameters (feed/kill tuned for spots)
-  let feed = S.reactFeed, kill = S.reactKill;
+  let feed = S.reactFeed !== undefined ? S.reactFeed : 0.035;
+  let kill = S.reactKill !== undefined ? S.reactKill : 0.065;
   let dA=1.0,dB=0.5;
   // Simulate steps
   let steps=S.playing?2:0;
@@ -3231,20 +3262,40 @@ function drawSeisma(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
-// ── HATCH LINES ───────────────────────────────────────────────────────────────
-function drawHatch(p,t){
-  let sp=S.spacing,ang=S.hatchAngle*Math.PI/180;
-  CTX.lineWidth=1;
-  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let localAng=ang+(n-.5)*S.hatchCurve*0.2;
-    let x2=x+Math.cos(localAng)*sp*2,y2=y+Math.sin(localAng)*sp*2;
-    CTX.strokeStyle=pickColor(p,x,y,t);
-    CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x2,y2);CTX.stroke();
-    if(n>S.density+0.2){
-      let x3=x+Math.cos(localAng+Math.PI/2)*sp*2,y3=y+Math.sin(localAng+Math.PI/2)*sp*2;
-      CTX.beginPath();CTX.moveTo(x,y);CTX.lineTo(x3,y3);CTX.stroke();
+// ── HATCH LINES (updated 4/10/26) ─────────────────────────────────────────────────────────
+function drawHatch(p, t) {
+  // 1. Get the values from the state or fallback
+  let baseDeg = S.hatchAngle !== undefined ? S.hatchAngle : 45;
+  let curveVal = S.hatchCurve !== undefined ? S.hatchCurve : 5;
+  // 2. Convert base degree to Radians
+  let baseRad = baseDeg * Math.PI / 180;
+  let sp = S.spacing;
+  CTX.lineWidth = 1;
+  for (let x = 0; x < p.width; x += sp) {
+    for (let y = 0; y < p.height; y += sp) {
+      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      // 3. APPLY THE CURVE HERE (This creates the "wiggle")
+      // We take the baseRad and add a noise-based offset
+      let localAng = baseRad + (n - 0.5) * curveVal * 0.2;
+      // 4. Use localAng for the actual drawing
+      let x2 = x + Math.cos(localAng) * sp * 2;
+      let y2 = y + Math.sin(localAng) * sp * 2;
+      CTX.strokeStyle = pickColor(p, x, y, t);
+      CTX.beginPath();
+      CTX.moveTo(x, y);
+      CTX.lineTo(x2, y2);
+      CTX.stroke();
+      // Cross-hatching logic
+      if (n > S.density + 0.2) {
+        // Cross lines should also follow the local curve, just 90 degrees offset
+        let x3 = x + Math.cos(localAng + Math.PI / 2) * sp * 2;
+        let y3 = y + Math.sin(localAng + Math.PI / 2) * sp * 2;
+        CTX.beginPath();
+        CTX.moveTo(x, y);
+        CTX.lineTo(x3, y3);
+        CTX.stroke();
+      }
     }
   }
 }
@@ -4620,7 +4671,7 @@ function drawMonogrid(p, t) {
   });
 }
   
-// ── BOIDS ─────────────────────────────────────────────────────────────────────
+// ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
 // Characters ride on each agent, rotate toward velocity. Completely emergent.
 function initBoids(W,H){
@@ -4635,15 +4686,16 @@ function initBoids(W,H){
     });
   }
 }
-function drawBoids(p,t){
+
+  function drawBoids(p,t){
   let W=p.width,H=p.height;
   if(!boidAgents.length) initBoids(W,H);
 
   let n=boidAgents.length;
-  let perception=S.spacing*4+20;
-  let maxSpd=S.speed*600+1.5;
-  let sep=S.wave*.015+0.8; // separation force
-  let aln=0.06, coh=0.004;
+  let sep = S.boidSep !== undefined ? S.boidSep : (S.wave * .015 + 0.8);
+  let aln = S.boidAln !== undefined ? S.boidAln : 0.06;
+  let coh = S.boidCoh !== undefined ? S.boidCoh : 0.004;
+  let perception = S.boidView !== undefined ? S.boidView : (S.spacing * 4 + 20);
   if(S.playing){
     for(let i=0;i<n;i++){
       let b=boidAgents[i];
@@ -5721,25 +5773,34 @@ p.setup = function() {
       if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
     }
   };
-  // Event Listeners
-['imgModeGrid', 'imgColorModeGrid', 'imgDitherGrid'].forEach(id => {
-    let el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('click', function(e) {
-        let b = e.target.closest('[data-imode], [data-cm], [data-idither]');
-        if (!b) return;
-        
-        el.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        
-        if (b.dataset.imode) S.imgMode = b.dataset.imode;
-        if (b.dataset.cm) S.imgColorMode = b.dataset.cm;
-        if (b.dataset.idither) S.imgDither = b.dataset.idither;
-        
-        if (window._st && window._st.rd) window._st.rd(); 
-      }); // End addEventListener
-    } // End if(el)
-  }); // End forEach
+
+  
+  
+
+// ── MODE CLICK HANDLER - updated for rebuildModeUI ──────────────────────────────────────────────────   
+document.getElementById('modeGrid').addEventListener('click',function(e){
+  let b=e.target.closest('.mb');if(!b)return;
+  document.querySelectorAll('.mb').forEach(function(x){x.classList.remove('active');});
+  b.classList.add('active');
+  S.mode=b.dataset.mode;
+  document.getElementById('modeLabel').textContent=b.textContent.replace('✦','').trim();
+  // ── Rebuild dynamic mode controls ──
+  rebuildModeUI(b.dataset.mode);
+  let sec=document.getElementById('mode-extra-sec');
+  let hasParams = PARAM_REGISTRY[b.dataset.mode] && PARAM_REGISTRY[b.dataset.mode].length;
+  if(sec) sec.style.display = hasParams ? 'block' : 'none';
+  // Auto-expand the section when switching to a mode that has params
+  if(hasParams){
+    let body=document.getElementById('body-modeextra');
+    let arrow=document.getElementById('arr-modeextra');
+    if(body){body.classList.remove('collapsed');if(arrow)arrow.classList.add('open');}
+    let lbl=document.getElementById('mode-extra-label');
+    if(lbl) lbl.textContent=b.textContent.trim()+' parameters';
+  }
+  window._st.ri();
+  window._st.rd();
+}); // End addEventListener
+
 
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
@@ -5788,7 +5849,272 @@ document.getElementById('btnExpandAll').addEventListener('click', function() {
   });
 });
 
+// ── PARAMETER REGISTRY ────────────────────────────────────────────────────────
+// Each mode can define extra controls beyond the global sliders.
+// Format: { id, label, min, max, step, def, scale, type }
+// type: 'range' (default) | 'toggle' | 'select'
+// scale: multiply slider integer value to get S[id] (e.g. step=1, scale=0.01 → S.id=0.05)
 
+const PARAM_REGISTRY = {
+
+  // ── Existing mode-specific params, now data-driven ────────────────────────
+  reaction: [
+    { id:'reactFeed',  label:'Feed rate',    min:10,  max:100, step:1,  def:35,  scale:0.001 },
+    { id:'reactKill',  label:'Kill rate',    min:10,  max:100, step:1,  def:65,  scale:0.001 },
+    { id:'reactOscillate', label:'Oscillate', type:'toggle', def:false },
+  ],
+  mycelium: [
+    { id:'mycSpeed',  label:'Growth speed',  min:0,   max:50,  step:1,  def:10,  scale:0.1  },
+    { id:'mycBranch', label:'Branching',     min:1,   max:8,   step:1,  def:3,   scale:1    },
+  ],
+  hatch: [
+    { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
+    { id:'hatchCurve', label:'Curvature',    min:0,   max:20,  step:1,  def:5,   scale:1    },
+  ],
+  magnetic: [
+    { id:'magPoles',   label:'Pole count',   min:1,   max:8,   step:1,  def:2,   scale:1,
+      extra: function(){ window._st.ri(); } },
+  ],
+  voronoi: [
+    { id:'vorWire',    label:'Wireframe edges', type:'toggle', def:false },
+  ],
+  boids: [
+    { id:'boidSep',    label:'Separation',   min:0,   max:100, step:2,  def:15,  scale:0.01 },
+    { id:'boidAln',    label:'Alignment',    min:0,   max:100, step:2,  def:6,   scale:0.001 },
+    { id:'boidCoh',    label:'Cohesion',     min:0,   max:100, step:2,  def:4,   scale:0.0001 },
+    { id:'boidView',   label:'Vision range', min:10,  max:200, step:5,  def:60,  scale:1    },
+  ],
+  bloom: [
+    { id:'bloomRotMult', label:'Rotation chaos', min:1, max:12, step:1, def:4,  scale:1    },
+  ],
+  matrix: [
+    { id:'matrixTrail', label:'Trail length', min:3,  max:30,  step:1,  def:10,  scale:1    },
+  ],
+  drift: [
+    { id:'driftScale',  label:'Drift blob size', min:1, max:20, step:1, def:5,  scale:0.001 },
+    { id:'lissA',       label:'Lissajous A',     min:1, max:7,  step:1, def:1,  scale:1,
+      hint:'1=circular, 2=figure-8, 3=trefoil' },
+    { id:'lissB',       label:'Lissajous B',     min:1, max:7,  step:1, def:1,  scale:1    },
+  ],
+  spiral: [
+    { id:'spiralTurns', label:'Coil count',   min:3,   max:40,  step:1,  def:22,  scale:1   },
+  ],
+  vortex: [
+    { id:'vortexSpin',  label:'Spin bias',    min:0,   max:20,  step:1,  def:5,   scale:0.1  },
+  ],
+  topo: [
+    { id:'topoLevels',  label:'Contour levels', min:2, max:24,  step:1,  def:8,   scale:1   },
+  ],
+  scan: [
+    { id:'scanWidth',   label:'Beam width',   min:10,  max:200, step:5,  def:70,  scale:1   },
+  ],
+  halftone: [
+    { id:'halftoneFreq',label:'Dot frequency',min:1,   max:10,  step:1,  def:3,   scale:0.01 },
+  ],
+  recursive: [
+    { id:'recursionDepth', label:'Depth',     min:2,   max:8,   step:1,  def:5,   scale:1,
+      extra: function(){ recRects=[]; } },
+  ],
+  fractalsubdiv: [
+    { id:'fractalDepth', label:'Detail level', min:1,  max:6,   step:1,  def:4,   scale:1,
+      extra: function(){ fsPolygons=[]; } },
+  ],
+  orbit: [
+    { id:'orbitCenters', label:'Center count', min:1, max:6,   step:1,  def:2,   scale:1   },
+  ],
+  shatter: [
+    { id:'shatterForce', label:'Explosion',   min:50,  max:800, step:10, def:280, scale:1   },
+  ],
+  loops: [
+    { id:'loopDamping',  label:'Trail inertia', min:50, max:99, step:1, def:85,  scale:0.01 },
+    { id:'loopLife',     label:'Trail length',  min:50, max:500, step:10, def:300, scale:1  },
+  ],
+  seisma: [
+    { id:'seismaCross',  label:'Cross-hatch',  type:'toggle', def:false },
+  ],
+  lissajous: [
+    { id:'lissA',   label:'Harmonic A',     min:1, max:7, step:1, def:2,  scale:1,
+      hint:'Frequency ratio — try 2:3, 3:4, 1:2' },
+    { id:'lissB',   label:'Harmonic B',     min:1, max:7, step:1, def:3,  scale:1 },
+  ],
+
+  // ── New modes (Phases 4–5, add as built) ─────────────────────────────────
+  spiro: [
+    { id:'spiroR',      label:'Outer radius', min:10, max:200, step:5,  def:80,  scale:1   },
+    { id:'spiror',      label:'Inner radius',  min:2,  max:100, step:2,  def:30,  scale:1   },
+    { id:'spiroPetals', label:'Petal ratio',   min:1,  max:9,   step:1,  def:5,   scale:1   },
+    { id:'spiroSkew',   label:'Skew',          min:0,  max:100, step:2,  def:0,   scale:0.01 },
+  ],
+  flowfield: [
+    { id:'fbmOctaves',  label:'Complexity',    min:1,  max:8,   step:1,  def:4,   scale:1   },
+    { id:'fbmLacun',    label:'Lacunarity',    min:10, max:40,  step:1,  def:20,  scale:0.1  },
+    { id:'fbmPersist',  label:'Roughness',     min:10, max:90,  step:5,  def:50,  scale:0.01 },
+    { id:'flowForce',   label:'Current strength', min:0, max:100, step:2, def:30, scale:0.01 },
+  ],
+  quadtree: [
+    { id:'qtMaxDepth',  label:'Max splits',    min:2,  max:8,   step:1,  def:5,   scale:1,
+      extra: function(){ qtTree=null; } },
+    { id:'qtThreshold', label:'Split threshold', min:5, max:95, step:5,  def:40,  scale:0.01 },
+  ],
+};
+
+// ── Default values for new state properties ───────────────────────────────────
+// Merge all registry defaults into S at startup
+(function applyRegistryDefaults(){
+  Object.values(PARAM_REGISTRY).forEach(function(params){
+    params.forEach(function(p){
+      if(!(p.id in S)){
+        S[p.id] = p.type === 'toggle' ? (p.def || false)
+                : ((p.def || 0) * (p.scale || 1));
+      }
+    });
+  });
+})();
+
+
+
+
+  
+// ── MODE UI INJECTION ENGINE ──────────────────────────────────────────────────
+
+function rebuildModeUI(mode) {
+  let container = document.getElementById('mode-extra-controls');
+  if (!container) return;
+
+  // Clear previous mode controls
+  container.innerHTML = '';
+
+  let params = PARAM_REGISTRY[mode];
+  if (!params || !params.length) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+
+  // Section label
+  let label = document.createElement('div');
+  label.className = 'sl2';
+  label.style.marginTop = '0';
+  label.textContent = 'Mode parameters';
+  container.appendChild(label);
+
+  params.forEach(function(param) {
+
+    // ── Toggle type ───────────────────────────────────────────────────────
+    if (param.type === 'toggle') {
+      let row = document.createElement('div');
+      row.className = 'tr';
+
+      let lbl = document.createElement('span');
+      lbl.className = 'tl';
+      lbl.textContent = param.label;
+
+      let btn = document.createElement('button');
+      btn.className = 'tb' + (S[param.id] ? ' on' : '');
+      btn.id = 'mdp_' + param.id;
+      btn.textContent = S[param.id] ? 'On' : 'Off';
+      btn.addEventListener('click', function(){
+        S[param.id] = !S[param.id];
+        this.textContent = S[param.id] ? 'On' : 'Off';
+        this.classList.toggle('on', S[param.id]);
+        if(param.extra) param.extra();
+        window._st.rd();
+      });
+
+      row.appendChild(lbl);
+      row.appendChild(btn);
+      container.appendChild(row);
+      return;
+    }
+
+    // ── Select type ───────────────────────────────────────────────────────
+    if (param.type === 'select') {
+      let row = document.createElement('div');
+      row.className = 'rw';
+      let lbl = document.createElement('div');
+      lbl.className = 'sl2';
+      lbl.style.marginTop = '.4rem';
+      lbl.textContent = param.label;
+      let sel = document.createElement('select');
+      sel.id = 'mdp_' + param.id;
+      (param.options || []).forEach(function(opt) {
+        let o = document.createElement('option');
+        o.value = opt.value; o.textContent = opt.label;
+        if(opt.value === S[param.id]) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function(){
+        S[param.id] = this.value;
+        if(param.extra) param.extra();
+        window._st.rd();
+      });
+      row.appendChild(lbl);
+      row.appendChild(sel);
+      container.appendChild(row);
+      return;
+    }
+
+    // ── Range slider (default) ────────────────────────────────────────────
+    let scale   = param.scale || 1;
+    let stateVal = S[param.id] !== undefined ? S[param.id] : (param.def * scale);
+    let sliderVal = Math.round(stateVal / scale);
+    // Clamp to slider range
+    sliderVal = Math.max(param.min, Math.min(param.max, sliderVal));
+
+    let slId = 'mdp_' + param.id;
+    let vId  = 'mdpv_' + param.id;
+
+    let row = document.createElement('div');
+    row.className = 'rw';
+
+    let rl = document.createElement('div');
+    rl.className = 'rl';
+
+    let nameSpan = document.createElement('span');
+    nameSpan.className = 'rn';
+    nameSpan.textContent = param.label;
+    if(param.hint){
+      nameSpan.title = param.hint;
+      nameSpan.style.cursor = 'help';
+      nameSpan.textContent += ' ⓘ';
+    }
+
+    let valSpan = document.createElement('span');
+    valSpan.className = 'rv';
+    valSpan.id = vId;
+    // Display value: if scale < 0.01 show more decimals
+    valSpan.textContent = scale < 0.01
+      ? (stateVal).toFixed(4)
+      : sliderVal;
+
+    rl.appendChild(nameSpan);
+    rl.appendChild(valSpan);
+    row.appendChild(rl);
+
+    let slider = document.createElement('input');
+    slider.type  = 'range';
+    slider.id    = slId;
+    slider.min   = param.min;
+    slider.max   = param.max;
+    slider.step  = param.step;
+    slider.value = sliderVal;
+
+    slider.addEventListener('input', function(){
+      let v = parseFloat(this.value);
+      let sv = v * scale;
+      S[param.id] = sv;
+      document.getElementById(vId).textContent = scale < 0.01
+        ? sv.toFixed(4) : v;
+      if(param.extra) param.extra();
+      window._st.rd();
+    });
+
+    row.appendChild(slider);
+    container.appendChild(row);
+  });
+}
+  
   
 // ── SLIDER WIRING ─────────────────────────────────────────────────────────────
 function wireSlider(slId,vId,key,mapFn,extra){
@@ -5834,6 +6160,7 @@ wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
 wireSlider('sHatchCurve','vHatchCurve','hatchCurve'); 
 wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
 wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
+wireSlider('sVorWeight', 'vVorWeight', 'vorWeight', v => v * 0.1);  
 wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
 wireSlider('sGeoFreq',  'vGeoFreq',  'geoVibFreq');  
 wireSlider('sMgBlocks', 'vMgBlocks', 'mgBlockCount', null,function(){ monogridBlocks = []; });
@@ -5864,6 +6191,16 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
   });
+//Voronoi wireframe
+const btnVorWire = document.getElementById('btnVorWire');
+if (btnVorWire) {
+  btnVorWire.addEventListener('click', function() {
+    S.vorWire = !S.vorWire; // Toggle the boolean
+    this.classList.toggle('active', S.vorWire);
+    if (window._st) window._st.rd(); // Trigger redraw
+  });
+  
+}
   let activeCtrl = document.getElementById('ctrl-' + S.mode);
   if (activeCtrl) activeCtrl.classList.add('active');
   // 5. Re-initialize and redraw
@@ -6894,7 +7231,12 @@ function ap(cfg){
     document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('active');});
     let mb=document.querySelector('[data-mode="'+cfg.mode+'"]');
     if(mb){mb.classList.add('active');document.getElementById('modeLabel').textContent=mb.textContent.replace('✦','').trim();}
+      rebuildModeUI(cfg.mode);
+    let sec=document.getElementById('mode-extra-sec');
+    let hasParams=PARAM_REGISTRY[cfg.mode]&&PARAM_REGISTRY[cfg.mode].length;
+    if(sec) sec.style.display=hasParams?'block':'none';
   }
+  
   if(cfg.font){S.fontKey=cfg.font;S.fontStack=FONTS[cfg.font]||FONTS.courier;let fs=document.getElementById('fontSelect');if(fs) fs.value=cfg.font;}
   function ss(slId,vId,key,val,dv){
     S[key]=val;let sl=document.getElementById(slId),vl=document.getElementById(vId);
@@ -6918,7 +7260,8 @@ function ap(cfg){
   if(cfg.overlaySpeed!==undefined) ss('sOvSpeed','vOvSpeed','overlaySpeed',cfg.overlaySpeed,cfg.overlaySpeed);
   if(cfg.overlaySize!==undefined) ss('sOvSize','vOvSize','overlaySize',cfg.overlaySize,cfg.overlaySize);
   if(cfg.overlayAlpha!==undefined) ss('sOvAlpha','vOvAlpha','overlayAlpha',cfg.overlayAlpha,cfg.overlayAlpha);
-  if(cfg.signalCollapse!==undefined){S.signalCollapse=cfg.signalCollapse;S.signalStart=S.fc;if(cfg.signalCollapse&&!S.playing){S.playing=true;window._st.p.loop();document.getElementById('btnPlay').textContent='⏸ Pause';}}
+  if(cfg.signalCollapse!==undefined){S.signalCollapse=cfg.signalCollapse;S.signalStart=S.fc;
+  if(cfg.signalCollapse&&!S.playing){S.playing=true;window._st.p.loop();document.getElementById('btnPlay').textContent='⏸ Pause';}}
   if(cfg.shapesEnabled!==undefined){S.shapesEnabled=cfg.shapesEnabled;let btn=document.getElementById('btnShapes');btn.textContent=S.shapesEnabled?'On':'Off';btn.classList.toggle('on',S.shapesEnabled);}
   if(cfg.shapes){shapes=cfg.shapes;renderShapeList();}
   if(cfg.trailPersist!==undefined) ss('sTrail','vTrail','trailPersist',cfg.trailPersist,cfg.trailPersist);
