@@ -799,7 +799,13 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
         <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
         <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
-      </div></div>
+        <div class="rw"><div class="rl"><span class="rn">Noise Scale</span><span class="rv" id="vNoise">0.02</span></div><input type="range" id="sNoise" min="1" max="100" value="10"></div>
+        <div class="rw"><div class="rl"><span class="rn">Char Variation</span><span class="rv" id="vCharNoise">0.08</span></div><input type="range" id="sCharNoise" min="1" max="100" value="8"><div class="hn">Controls how fast characters change across the field.</div>
+
+          
+        </div>
+      </div>
+      </div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
       <div class="sec-body collapsed" id="body-entropy">
@@ -1606,31 +1612,32 @@ function dc(x, y, sz, rot, col, ch) {
 
   
   
-function pickChar(p,x,y,t){
+function pickChar(p, x, y, t) {
   let ch;
   // Random Unicode modes bypass the normal charset array
-  if(RAND_UNICODE_MODE){
-    ch=pickRandUnicode(x,y,t);
+  if (RAND_UNICODE_MODE) {
+    ch = pickRandUnicode(x, y, t);
   } else {
-    let i=Math.floor(p.noise(x*.08,y*.08)*S.chars.length);
-    ch=S.chars[i%S.chars.length];
+    // UPDATED: Replaced 0.08 with S.charNoiseScale for both X and Y
+    let i = Math.floor(p.noise(x * S.charNoiseScale, y * S.charNoiseScale) * S.chars.length);
+    ch = S.chars[i % S.chars.length];
   }
   // Case glitch (unchanged from original)
-  if(S.caseGlitch>0&&Math.random()<S.caseGlitch){
-    ch=(ch===ch.toUpperCase())?ch.toLowerCase():ch.toUpperCase();
+  if (S.caseGlitch > 0 && Math.random() < S.caseGlitch) {
+    ch = (ch === ch.toUpperCase()) ? ch.toLowerCase() : ch.toUpperCase();
   }
   // Entropy / glitch-to-unicode: when entropy is high, replace with random Unicode
-  if(S.entropy>0&&Math.random()<S.entropy){
-    let r=Math.random();
-    if(r<.3)ch='█';else if(r<.5)ch='_';else if(r<.62)ch=' ';
-    else if(r<.78)ch=GLITCH[Math.floor(Math.random()*GLITCH.length)];
-    else if(S.entropy>.5&&r>.92){
+  if (S.entropy > 0 && Math.random() < S.entropy) {
+    let r = Math.random();
+    if (r < .3) ch = '█'; else if (r < .5) ch = '_'; else if (r < .62) ch = ' ';
+    else if (r < .78) ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+    else if (S.entropy > .5 && r > .92) {
       // Glitch-to-unicode: high entropy replaces with random Unicode
-      let cp=Math.floor(Math.random()*0x2FFF)+0x0021;
-      if(cp>=0xD800&&cp<=0xDFFF) cp=0x25A0;
-      try{ch=String.fromCodePoint(cp);}catch(e){ch='?';}
+      let cp = Math.floor(Math.random() * 0x2FFF) + 0x0021;
+      if (cp >= 0xD800 && cp <= 0xDFFF) cp = 0x25A0;
+      try { ch = String.fromCodePoint(cp); } catch (e) { ch = '?'; }
     } else {
-      ch=String.fromCharCode(33+Math.floor(Math.random()*93));
+      ch = String.fromCharCode(33 + Math.floor(Math.random() * 93));
     }
   }
   return ch;
@@ -5409,31 +5416,82 @@ function drawOverlay(p, t) {
 }
 
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
-const DEFAULT_STATE={
-  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
-  accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
-  bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
-  spacing:12,maxSize:20,
-  colorMapMode:'noise',
-  noiseType:'perlin',
-  blendMode:'source-over',
-  noiseScale:0.01,
-  charRotation:0,
-  entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
-  fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
-  trailPersist:0,
-  compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
-  imgStretch:false,imgInvert:false,
-  overlayEnabled:false,overlayStreams:[],overlaySpeed:3,overlayWave:0,
-  overlaySize:18,overlayAlpha:60,overlayDir:'ltr',overlayColor:'#e63946',
-  overlayEntropy:0,overlayDistort:0,
-  shapesEnabled:false,shapeDens:6,selectedShape:'circle',
-  shapeCharKey:'same',shapeChars:null,shapeCharSpeed:50,
-  shapeCharColorMode:'inherit',shapeCharFixedColor:'#c4bcb0',
-  shapePulse:0,shapeSpin:0,shapeOrbitEnabled:false,
-  shapePosition:'center',shapeSides:7,shapeText:'',
-  signalCollapse:false,signalStart:0,
-  playing:false,fc:0,
+const DEFAULT_STATE = {
+  // ========== CORE / MODE ==========
+  mode: 'bloom',                     // Active visual mode (bloom, wave, matrix, etc.)
+  chars: CHARSETS.chinese,           // Character set for text rendering
+  palette: PALETTES.site,            // Active color palette
+  bg: '#0d0c0a',                     // Background color (canvas clear color)
+  playing: false,                    // Animation running state
+  fc: 0,                             // Frame counter (increments when playing)
+  // ========== COLORS & ACCENTS ==========
+  accent: '#e63946',                 // Primary accent color (overrides palette)
+  accentAmt: 0.10,                   // Probability (0–1) of using accent1 instead of palette
+  accent2: 'none',                   // Secondary accent color (or 'none')
+  accentAmt2: 0,                     // Probability of using accent2
+  // ========== MOTION & ANIMATION ==========
+  speed: 0.004,                      // Global animation speed multiplier (t = fc * speed)
+  wave: 30,                          // Wave amplitude (displacement strength)
+  turb: 0.005,                       // Turbulence frequency multiplier
+  density: 0.45,                     // Character placement density (threshold, lower = more chars)
+  spacing: 12,                       // Grid spacing between characters (pixels)
+  maxSize: 20,                       // Maximum character font size (pixels)
+  trailPersist: 0,                   // Frame‑to‑frame persistence (0 = no trail, 95 = long smear)
+  // ========== NOISE & COLOR MAPPING ==========
+  colorMapMode: 'noise',             // Strategy: 'noise', 'radial', 'axial', 'stepped', 'diamond', 'scan'
+  noiseType: 'perlin',               // Noise texture: 'perlin', 'ridged', 'billow'
+  noiseScale: 0.01,                  // Scale for noise field (lower = larger features)
+  charNoiseScale: 0.08,              // Frequency for character selection noise (mottling)
+  // ========== CHARACTER TRANSFORMATIONS ==========
+  charRotation: 0,                   // Global rotation offset (degrees)
+  charRotRad: 0,                     // Same as charRotation in radians (synced)
+  flipHMirror: false,                // Mirror all characters horizontally
+  flipVMirror: false,                // Mirror all characters vertically
+  flipChance: 0,                     // Probability (0–1) of applying flip per character
+  // ========== ENTROPY & GLITCH ==========
+  entropy: 0,                        // Probability (0–1) of replacing char with glitch symbol
+  caseGlitch: 0,                     // Probability (0–1) of toggling character case
+  // ========== FONT ==========
+  fontKey: 'courier',                // Identifier for selected font
+  fontStack: "'Courier New',Courier,monospace",  // CSS font-family string
+  // ========== RENDERING ==========
+  blendMode: 'source-over',          // Canvas globalCompositeOperation
+  // ========== COMPOSITION BLOCKS ==========
+  compEnabled: false,                // Enable overlay of colored blocks
+  compPreset: 0,                     // Layout preset index (0–4 or 'rand')
+  compCols: COMP_PALETTES.default,   // Color array for composition blocks
+  // ========== IMAGE → TEXT ==========
+  imgStretch: false,                 // Stretch image to fill canvas (else fit)
+  imgInvert: false,                  // Invert brightness of image
+  // ========== OVERLAY TEXT STREAMS ==========
+  overlayEnabled: false,             // Enable scrolling text overlays
+  overlayStreams: [],                // Array of stream objects {text, color, offset, ...}
+  overlaySpeed: 3,                   // Base scroll speed (pixels per frame)
+  overlayWave: 0,                    // Vertical undulation amplitude (pixels)
+  overlaySize: 18,                   // Font size for overlay text (pixels)
+  overlayAlpha: 60,                  // Opacity (0–100)
+  overlayDir: 'ltr',                 // Direction: 'ltr', 'rtl', 'alt', 'vert'
+  overlayColor: '#e63946',           // Default color for new streams
+  overlayEntropy: 0,                 // Glitch probability for overlay chars (0–1)
+  overlayDistort: 0,                 // Horizontal jitter amplitude (pixels)
+  // ========== SHAPE OVERLAY ==========
+  shapesEnabled: false,              // Enable drawing of custom shapes
+  shapeDens: 6,                      // Character density inside shapes (1–10, higher = fewer)
+  selectedShape: 'circle',           // Default shape type for new shapes
+  shapeCharKey: 'same',              // Character set for shape fill ('same' or charset key)
+  shapeChars: null,                  // Resolved character array (or null to use main chars)
+  shapeCharSpeed: 50,                // How fast shape characters cycle (0–100)
+  shapeCharColorMode: 'inherit',     // 'inherit', 'fixed', 'math', 'palette'
+  shapeCharFixedColor: '#c4bcb0',    // Fixed color when mode = 'fixed'
+  shapePulse: 0,                     // Global pulse amplitude for all shapes (0–50)
+  shapeSpin: 0,                      // Global spin speed for all shapes (0–100)
+  shapeOrbitEnabled: false,          // Whether shapes orbit canvas center
+  shapePosition: 'center',           // Default position for new shapes
+  shapeSides: 7,                     // Number of sides for polygon shape (3–16)
+  shapeText: '',                     // Default custom text for new shapes
+  // ========== SIGNAL COLLAPSE (temporary effect) ==========
+  signalCollapse: false,             // Trigger scan‑line collapse effect
+  signalStart: 0,                    // Frame counter when effect started
 };
 
   
@@ -5743,6 +5801,7 @@ function wireSlider(slId,vId,key,mapFn,extra){
     window._st.rd();
   });
 }
+  
 wireSlider('sSpeed','vSpeed','speed',function(v){return v*.001;});
 wireSlider('sWave','vWave','wave');
 wireSlider('sTurb','vTurb','turb',function(v){return v*.001;});
@@ -5750,6 +5809,7 @@ wireSlider('sDens','vDens','density',function(v){return 1-(v*.1);});
 wireSlider('sSpacing','vSpacing','spacing',null,function(){window._st.ri();});
 wireSlider('sMaxSize','vMaxSize','maxSize');
 wireSlider('sNoise','vNoise','noiseScale',function(v){return v*.002;});
+wireSlider('sCharNoise','vCharNoise','charNoiseScale',function(v){return v*.01;});
 wireSlider('sRot','vRot','charRotation',null,function(){S.charRotRad=S.charRotation*Math.PI/180;});
 wireSlider('sEntropy','vEntropy','entropy',function(v){return v/100;});
 wireSlider('sCase','vCase','caseGlitch',function(v){return v/100;});
@@ -5771,7 +5831,7 @@ wireSlider('sMycBranch', 'vMycBranch', 'mycBranch');
 wireSlider('sMycLifespan', 'vMycLifespan', 'mycLifespan', null, () => window._st.ri()); 
 wireSlider('sMagPoles','vMagPoles','magPoles',null,()=>window._st.ri());
 wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
-wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
+wireSlider('sHatchCurve','vHatchCurve','hatchCurve'); 
 wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
 wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
 wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
@@ -5779,18 +5839,8 @@ wireSlider('sGeoFreq',  'vGeoFreq',  'geoVibFreq');
 wireSlider('sMgBlocks', 'vMgBlocks', 'mgBlockCount', null,function(){ monogridBlocks = []; });
 wireSlider('sMgAlpha',  'vMgAlpha',  'mgAlpha', function(v){ return v / 100; });
 wireSlider('sMgTextSpd','vMgTextSpd','mgTextSpd');document.getElementById('btnMgAnim').addEventListener('click', function(){S.mgAnim = !S.mgAnim;this.textContent = S.mgAnim ? 'On' : 'Off';this.classList.toggle('on', S.mgAnim);});
-document.getElementById('btnMgStack').addEventListener('click', function(){
-  S.mgStack = !S.mgStack;
-  this.textContent = S.mgStack ? 'On' : 'Off';
-  this.classList.toggle('on', S.mgStack);
-  window._st.rd();
-});  
-document.getElementById('btnRepeatFill').addEventListener('click', function() {
-  S.overlayRepeatFill = !S.overlayRepeatFill;
-  this.textContent = S.overlayRepeatFill ? 'On' : 'Off';
-  this.classList.toggle('on', S.overlayRepeatFill);
-  window._st.rd();
-});  
+document.getElementById('btnMgStack').addEventListener('click', function(){S.mgStack = !S.mgStack;this.textContent = S.mgStack ? 'On' : 'Off';this.classList.toggle('on', S.mgStack);window._st.rd();});  
+document.getElementById('btnRepeatFill').addEventListener('click', function() {S.overlayRepeatFill = !S.overlayRepeatFill;this.textContent = S.overlayRepeatFill ? 'On' : 'Off';this.classList.toggle('on', S.overlayRepeatFill);window._st.rd();});  
 
 
 // ── MODE EVENT LISTENERS ────────────────────────────────────────────────────────────────────── 
