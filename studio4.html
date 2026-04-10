@@ -223,6 +223,15 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="bauhaus_primary" title="Classic Bauhaus shapes">Bauhaus</button>
         <button class="pbar-btn" data-preset="bauhaus_dark" title="Bauhaus on dark ground">Bauhaus Dark</button>
         <button class="pbar-btn" data-preset="mondrian_shift" title="Primary color subdivisions">Mondrian</button>
+        <button class="pbar-btn" data-preset="strange_loops_dna">DNA Strips</button>
+        <button class="pbar-btn" data-preset="strange_loops_rects">Scat. Rects</button>
+        <button class="pbar-btn" data-preset="distrkt_orange">distraKted ☀</button>
+        <button class="pbar-btn" data-preset="distrkt_dark">distraKted ◼</button>
+        <button class="pbar-btn" data-preset="cosmic_red">Cosmic Red</button>
+        <button class="pbar-btn" data-preset="cosmic_purple">Cosmic Purple</button>
+        <button class="pbar-btn" data-preset="hypertype_mode">Hypertype</button>
+        <button class="pbar-btn" data-preset="hypertype_hearts">♥ Hypertype</button>
+        <button class="pbar-btn" data-preset="circle_field_warm">Circle Field</button>
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('pre-atmos')">
@@ -328,7 +337,13 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
         <button class="mb" data-mode="weave" title="Interlocking over-under line logic">Weave</button>
         <button class="mb" data-mode="shatter" title="Fragmented plane and polygon explosion">Shatter</button>
-        <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
+        <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
+        <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
+        <button class="mb new-mode" data-mode="scattrects"  title="Strange Loops — scattered solid and hollow rectangles">Scat. Rects</button>
+        <button class="mb new-mode" data-mode="distrkt"     title="distraKted — dense text field with bold geometric shapes on top">distraKted</button>
+        <button class="mb new-mode" data-mode="cosmicpoems" title="Cosmic Poems — checkerboard grid morphing into circles">Cosmic Poems</button>
+        <button class="mb new-mode" data-mode="hypertype"   title="Hypertype — large characters on micro-pattern backgrounds">Hypertype</button>
+        <button class="mb new-mode" data-mode="circlefield" title="Strange Loops — mixed filled/hollow circle field">Circle Field</button>
       </div>
     </div>
 
@@ -361,6 +376,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
         <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
         <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
+        <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
         <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
@@ -1347,7 +1363,11 @@ let topoSegs=[];
 let cascadeRects = [];
 let scatterClouds = [];  
 let bauhausShapes = []; 
-let stillForms = [];  
+let stillForms = [];
+let dnaCols = [];
+let cosmicGrid = [];
+let hypertypeGrid = [];
+let distrktShapes = []; 
 // Maze
 let mazeGrid = null, mazeCols = 0, mazeRows = 0;
 let mazeShiftTimer = 0;
@@ -3600,6 +3620,436 @@ function drawHypersphere(p,t){
   _lastFont='';_lastFill='';
 }
 
+// ── DNA STRIPS — Strange Loops sl_29 ─────────────────────────────────────
+// Vertical columns of stacked colored rectangles — like DNA gel strips.
+// Each column has its own color sequence driven by noise.
+// Spacing = column width, Max Size = segment height, Density = gap frequency.
+
+function initDnaStrips(W, H) {
+  dnaCols = [];
+  let colW = Math.max(6, S.spacing * 1.2);
+  let cols = Math.floor(W / colW) + 1;
+  for (let ci = 0; ci < cols; ci++) {
+    let x = ci * colW + colW * 0.5;
+    let segs = [];
+    let y = 0;
+    while (y < H + S.maxSize) {
+      let segH = S.maxSize * (0.3 + Math.random() * 1.8);
+      // Gap: leave blank space between segments
+      let gap  = Math.random() < (0.3 + S.density * 0.4) ? segH * (0.1 + Math.random() * 0.6) : 0;
+      segs.push({ y, h: segH, gap, palIdx: Math.floor(Math.random() * 6) });
+      y += segH + gap;
+    }
+    dnaCols.push({ x, segs, phase: Math.random() * Math.PI * 2 });
+  }
+}
+
+function drawDnaStrips(p, t) {
+  if (!dnaCols.length) initDnaStrips(p.width, p.height);
+  let colW = Math.max(6, S.spacing * 1.2);
+  let scale = S.maxSize / 20;
+  dnaCols.forEach(function(col) {
+    // Gentle vertical drift per column
+    let drift = S.playing
+      ? (Math.sin(t * 0.8 + col.phase) * S.wave * 0.08) : 0;
+    col.segs.forEach(function(seg) {
+      let sy = seg.y + drift;
+      if (sy > p.height + seg.h || sy + seg.h < -10) return;
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.15) return;
+
+      let col2 = S.palette[seg.palIdx % S.palette.length];
+      // Accent override: noise drives accent appearance
+      let n = p.noise(col.x * S.noiseScale, sy * S.noiseScale, t * 0.4);
+      if (S.accent !== 'none' && n > (1 - S.accentAmt)) col2 = S.accent;
+
+      let segH = seg.h * scale;
+      let segW = colW * (0.55 + Math.random() * 0.35);
+
+      CTX.fillStyle = col2;
+      CTX.fillRect(col.x - segW * 0.5, sy, segW, segH);
+    });
+  });
+  _lastFill = '';
+}
+
+
+// ── SCATTERED RECTS — Strange Loops ms_04 ────────────────────────────────
+// Small solid and hollow rectangles scattered across canvas.
+// Noise drives clustering. Only 2-3 palette colors used at once.
+// This is the core Webster composition language.
+
+let scatteredRects = [];
+function initScatteredRects(W, H) {
+  scatteredRects = [];
+  let count = Math.floor(W * H / (S.spacing * S.spacing * 8) * S.density + 80);
+  // Limit to 3 colors for Webster look
+  let cols = [
+    S.palette[0],
+    S.palette[Math.floor(S.palette.length * 0.5)] || S.palette[1],
+    S.bg,  // white/hollow rects — fill with bg
+  ];
+  for (let i = 0; i < count; i++) {
+    let n   = Math.random();
+    let tall = Math.random() < 0.6;
+    scatteredRects.push({
+      x:     Math.random() * W,
+      y:     Math.random() * H,
+      w:     tall ? S.spacing * (0.4 + Math.random() * 0.8) : S.spacing * (0.8 + Math.random() * 2.5),
+      h:     tall ? S.spacing * (1.2 + Math.random() * 4.0) : S.spacing * (0.4 + Math.random() * 0.8),
+      col:   cols[Math.floor(Math.random() * cols.length)],
+      hollow: Math.random() < 0.22,  // hollow rects show bg
+      palIdx: Math.floor(Math.random() * 3),
+      phase:  Math.random() * Math.PI * 2,
+      vx:    (Math.random() - 0.5) * 0.15,
+      vy:    (Math.random() - 0.5) * 0.08,
+    });
+  }
+}
+
+function drawScatteredRects(p, t) {
+  if (!scatteredRects.length) initScatteredRects(p.width, p.height);
+  let scale = S.maxSize / 20;
+  scatteredRects.forEach(function(r) {
+    if (S.playing) {
+      r.x += r.vx * S.speed * 40 + Math.sin(t * 0.9 + r.phase) * S.wave * 0.003;
+      r.y += r.vy * S.speed * 40;
+      if (r.x > p.width  + r.w * 2) r.x = -r.w;
+      if (r.x < -r.w * 2)           r.x = p.width + r.w;
+      if (r.y > p.height + r.h * 2) r.y = -r.h;
+      if (r.y < -r.h * 2)           r.y = p.height + r.h;
+    }
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.08) return;
+    let col  = S.palette[r.palIdx % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0 &&
+        p.noise(r.x * S.noiseScale, r.y * S.noiseScale, t) > (1 - S.accentAmt)) col = S.accent;
+    let w = r.w * scale, h = r.h * scale;
+    if (r.hollow) {
+      CTX.strokeStyle = col;
+      CTX.lineWidth   = Math.max(1, scale * 1.5);
+      CTX.strokeRect(r.x, r.y, w, h);
+    } else {
+      CTX.fillStyle = col;
+      CTX.fillRect(r.x, r.y, w, h);
+    }
+  });
+  _lastFill = '';
+}
+
+
+// ── DISTRAKTER — distraKted series ───────────────────────────────────────
+// Dense tiny-text field fills the whole canvas, then bold geometric shapes
+// (solid rectangles, L-shapes, T-shapes, horizontal bars) are drawn on top.
+// Light bg + colored shapes (dskt_007/Image 4) OR
+// Dark bg + white shapes (dstk_022/Image 5): controlled by bg color.
+
+function initDistrktShapes(W, H) {
+  distrktShapes = [];
+  let types = ['rect', 'rect', 'rect', 'hbar', 'vbar', 'Lshape', 'Tshape', 'step'];
+  let count = 3 + Math.floor(S.density * 8);
+  for (let i = 0; i < count; i++) {
+    let bw = W * (0.08 + Math.random() * 0.45);
+    let bh = H * (0.06 + Math.random() * 0.38);
+    distrktShapes.push({
+      x:     Math.random() * (W - bw),
+      y:     Math.random() * (H - bh),
+      w:     bw, h: bh,
+      type:  types[Math.floor(Math.random() * types.length)],
+      palIdx: Math.floor(Math.random() * 6),
+      phase:  Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+function drawDistrkt(p, t) {
+  if (!distrktShapes.length) initDistrktShapes(p.width, p.height);
+
+  // ── Text field background ─────────────────────────────────────────────
+  let tokens = S.chars && S.chars.length ? S.chars : ['·'];
+  let sz     = Math.max(2, S.spacing * 0.65);
+  let charW  = sz * 0.62;
+  let charH  = sz * 1.05;
+  let tokOff = Math.floor(S.fc * S.speed * 0.5) % tokens.length;
+  // Text color is a very faint tint of accent or palette[0]
+  let textCol = S.palette[0];
+  for (let y = 0; y < p.height + sz; y += charH) {
+    for (let x = 0; x < p.width + charW; x += charW) {
+      // Noise drives subtle diagonal wave in the text
+      let n  = p.noise(x * S.noiseScale * 1.5, y * S.noiseScale * 0.8, t * 0.25);
+      let n2 = p.noise(x * S.noiseScale * 4 + 30, y * S.noiseScale * 4, t * 0.5) * 0.3;
+      let wave = (n + n2) / 1.3;
+      // Create diagonal banding like in dstk_038
+      let diagPhase = (x * 0.6 + y * 0.4) * S.noiseScale * 8 + t * 0.2;
+      if (wave < 0.35 && (diagPhase % 1.0) < 0.45) continue;
+      let ch = tokens[(tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      dc(x, y, sz, 0, textCol, ch);
+    }
+  }
+
+  // ── Geometric shape overlays ──────────────────────────────────────────
+  distrktShapes.forEach(function(sh) {
+    if (S.playing) {
+      // Shapes slowly drift
+      sh.x += Math.sin(t * 0.4 + sh.phase) * S.wave * 0.005;
+      sh.y += Math.cos(t * 0.3 + sh.phase) * S.wave * 0.003;
+    }
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.04) return;
+    let col = S.palette[sh.palIdx % S.palette.length];
+    if (S.accent !== 'none' && sh.palIdx === 0) col = S.accent;
+    // Entropy: glitch position
+    let ex = S.entropy > 0 && Math.random() < S.entropy * 0.1 ? (Math.random()-0.5)*40 : 0;
+    let ey = S.entropy > 0 && Math.random() < S.entropy * 0.1 ? (Math.random()-0.5)*20 : 0;
+    let x = sh.x + ex, y = sh.y + ey, w = sh.w, h = sh.h;
+
+    CTX.fillStyle = col;
+    switch (sh.type) {
+      case 'rect':
+        CTX.fillRect(x, y, w, h);
+        break;
+      case 'hbar': // Wide thin horizontal bar
+        CTX.fillRect(x, y + h * 0.45, w * 1.8, h * 0.12);
+        break;
+      case 'vbar': // Tall thin vertical bar
+        CTX.fillRect(x + w * 0.45, y, w * 0.1, h * 1.6);
+        break;
+      case 'Lshape':
+        CTX.fillRect(x, y, w * 0.18, h);          // vertical leg
+        CTX.fillRect(x, y + h * 0.82, w, h * 0.18); // horizontal foot
+        break;
+      case 'Tshape':
+        CTX.fillRect(x, y, w, h * 0.16);          // top bar
+        CTX.fillRect(x + w * 0.42, y, w * 0.16, h); // vertical stem
+        break;
+      case 'step': // Staircase form like dskt_007 bottom-right
+        let step = w / 4;
+        for (let si = 0; si < 4; si++) {
+          CTX.fillRect(x + si * step * 0.7, y + si * (h * 0.22), step, h * 0.2);
+        }
+        break;
+    }
+  });
+  _lastFill = '';
+}
+
+
+// ── COSMIC POEMS — Cosmic Poems / cs_image series ────────────────────────
+// Uniform grid where each cell can be: filled square, hollow circle,
+// filled circle, or checkerboard tile. Noise drives which pattern appears
+// in each zone. Cell size = spacing. Animates by shifting zone boundaries.
+
+function initCosmicGrid(W, H) {
+  cosmicGrid = [];
+  let cs = Math.max(6, S.spacing);
+  let cols = Math.floor(W / cs) + 1;
+  let rows = Math.floor(H / cs) + 1;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cosmicGrid.push({
+        c, r,
+        x: c * cs + cs * 0.5,
+        y: r * cs + cs * 0.5,
+        rand: Math.random(),
+      });
+    }
+  }
+}
+
+function drawCosmicPoems(p, t) {
+  if (!cosmicGrid.length) initCosmicGrid(p.width, p.height);
+  let cs = Math.max(6, S.spacing);
+  let r  = cs * 0.42;  // circle radius
+  let col1 = S.palette[0];
+  let col2 = S.accent !== 'none' ? S.accent : S.palette[1];
+  CTX.save();
+  cosmicGrid.forEach(function(cell) {
+    // Zone noise — slow movement creates shifting pattern regions
+    let n1 = p.noise(cell.x * S.noiseScale * 0.7, cell.y * S.noiseScale * 0.7, t * 0.35);
+    let n2 = p.noise(cell.x * S.noiseScale * 2.5 + 10, cell.y * S.noiseScale * 2.5, t * 0.5);
+    // Entropy: flicker cells
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.06) return;
+    // Four visual patterns based on noise zones
+    let zone = Math.floor(n1 * 4);  // 0=checker, 1=filled-sq, 2=hollow-circle, 3=filled-circle
+    // Override with accent for some cells
+    let cellCol = (n2 > 0.72 && S.accent !== 'none') ? S.accent : col1;
+    CTX.strokeStyle = cellCol;
+    CTX.fillStyle   = cellCol;
+    CTX.lineWidth   = Math.max(0.5, cs * 0.04);
+    switch (zone) {
+      case 0: // Checkerboard cell
+        if ((cell.c + cell.r) % 2 === 0) {
+          CTX.fillRect(cell.x - r, cell.y - r, cs * 0.88, cs * 0.88);
+        }
+        break;
+      case 1: // Solid square
+        CTX.fillRect(cell.x - r, cell.y - r, r * 2, r * 2);
+        break;
+      case 2: // Hollow circle
+        CTX.beginPath();
+        CTX.arc(cell.x, cell.y, r * 0.88, 0, Math.PI * 2);
+        CTX.stroke();
+        break;
+      case 3: // Filled circle
+        CTX.beginPath();
+        CTX.arc(cell.x, cell.y, r * 0.82, 0, Math.PI * 2);
+        CTX.fill();
+        break;
+    }
+  });
+  CTX.restore();
+  _lastFill = '';
+}
+
+
+// ── HYPERTYPE — Hypertype series ──────────────────────────────────────────
+// Large single characters in a sparse grid. Each cell background is filled
+// with one of several micro-patterns (dots, checker, hatching, hearts/shapes).
+// Character color and background pattern driven by noise zones.
+
+function initHypertypeGrid(W, H) {
+  hypertypeGrid = [];
+  let cs = Math.max(20, S.spacing * 3.5);
+  let cols = Math.floor(W / cs) + 1;
+  let rows = Math.floor(H / cs) + 1;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      hypertypeGrid.push({
+        c, r,
+        x: c * cs, y: r * cs,
+        cs,
+        patIdx:  Math.floor(Math.random() * 5),  // background pattern
+        palIdx:  Math.floor(Math.random() * 6),
+        charIdx: Math.floor(Math.random() * 100),
+        phase:   Math.random() * Math.PI * 2,
+      });
+    }
+  }
+}
+
+function drawHypertype(p, t) {
+  if (!hypertypeGrid.length) initHypertypeGrid(p.width, p.height);
+  let cs     = Math.max(20, S.spacing * 3.5);
+  let tokens = S.chars && S.chars.length ? S.chars : CHARSETS.ascii;
+  // Refresh grid if spacing changed
+  if (hypertypeGrid.length && Math.abs(hypertypeGrid[0].cs - cs) > 1) initHypertypeGrid(p.width, p.height);
+
+  CTX.save();
+  hypertypeGrid.forEach(function(cell) {
+    let n1 = p.noise(cell.x * S.noiseScale, cell.y * S.noiseScale, t * 0.3);
+    let n2 = p.noise(cell.x * S.noiseScale * 3, cell.y * S.noiseScale * 3, t * 0.5 + 20);
+    if (S.entropy > 0 && Math.random() < S.entropy * 0.05) return;
+    let col1 = S.palette[cell.palIdx % S.palette.length];
+    let col2 = S.accent !== 'none' ? S.accent : S.palette[(cell.palIdx + 2) % S.palette.length];
+    // Zone: what pattern fills this cell?
+    let zone = Math.floor(n1 * 5);
+
+    // ── Draw background micro-pattern inside cell ──────────────────────
+    CTX.save();
+    CTX.rect(cell.x, cell.y, cs, cs);
+    CTX.clip();
+
+    let dotR = cs * 0.06;
+    switch (zone) {
+      case 0: // Dot grid
+        CTX.fillStyle = col1;
+        for (let dy = dotR * 2; dy < cs; dy += dotR * 3.2) {
+          for (let dx = dotR * 2; dx < cs; dx += dotR * 3.2) {
+            CTX.beginPath();
+            CTX.arc(cell.x + dx, cell.y + dy, dotR, 0, Math.PI * 2);
+            CTX.fill();
+          }
+        }
+        break;
+      case 1: // Checkerboard
+        let checkS = cs * 0.16;
+        CTX.fillStyle = col1;
+        for (let cy2 = 0; cy2 < cs; cy2 += checkS) {
+          for (let cx2 = 0; cx2 < cs; cx2 += checkS) {
+            if ((Math.floor(cx2/checkS) + Math.floor(cy2/checkS)) % 2 === 0)
+              CTX.fillRect(cell.x + cx2, cell.y + cy2, checkS, checkS);
+          }
+        }
+        break;
+      case 2: // Diagonal hatching
+        CTX.strokeStyle = col1;
+        CTX.lineWidth   = 0.5;
+        for (let hi = -cs; hi < cs * 2; hi += cs * 0.12) {
+          CTX.beginPath();
+          CTX.moveTo(cell.x + hi,      cell.y);
+          CTX.lineTo(cell.x + hi + cs, cell.y + cs);
+          CTX.stroke();
+        }
+        break;
+      case 3: // Solid fill
+        CTX.fillStyle = col2;
+        CTX.fillRect(cell.x, cell.y, cs, cs);
+        break;
+      case 4: // Large dot / circle
+        CTX.fillStyle = col2;
+        CTX.beginPath();
+        CTX.arc(cell.x + cs * 0.5, cell.y + cs * 0.5, cs * 0.42, 0, Math.PI * 2);
+        CTX.fill();
+        break;
+    }
+    CTX.restore();
+
+    // ── Draw the large foreground character ───────────────────────────
+    // Character color contrasts with background pattern
+    let charCol = (zone === 3 || zone === 4) ? S.bg : col1;
+    if (n2 > 0.75 && S.accent !== 'none') charCol = S.accent;
+    let tokFrame = Math.floor(S.fc * S.speed * 0.8 + cell.phase * 10);
+    let ch = tokens[(cell.charIdx + tokFrame) % tokens.length];
+    let charSz = cs * 0.88;
+    dc(cell.x + cs * 0.5, cell.y + cs * 0.5, charSz, 0, charCol, ch);
+  });
+  CTX.restore();
+  _lastFill = '';
+}
+
+
+// ── CIRCLE FIELD — Strange Loops ms_092 ──────────────────────────────────
+// Grid of mixed filled/hollow circles in multiple palette colors.
+// Noise drives size, fill type, and color. Slow drift animation.
+
+function drawCircleField(p, t) {
+  let sp  = Math.max(4, S.spacing);
+  let maxR = sp * 0.48;
+
+  CTX.save();
+  for (let x = sp * 0.5; x < p.width; x += sp) {
+    for (let y = sp * 0.5; y < p.height; y += sp) {
+      let n1 = p.noise(x * S.noiseScale, y * S.noiseScale, t * 0.4);
+      let n2 = p.noise(x * S.noiseScale * 3, y * S.noiseScale * 3, t * 0.6 + 10);
+      let n3 = p.noise(x * S.noiseScale * 0.4, y * S.noiseScale * 0.4, t * 0.2 + 50);
+      if (n3 < S.density * 0.6) continue;
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.08) continue;
+      // Size from noise
+      let r = p.map(n1, 0, 1, maxR * 0.12, maxR);
+      // Color: pick from palette by noise zone
+      let ci  = Math.floor(n2 * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && n1 > (1 - S.accentAmt)) col = S.accent;
+      if (S.accent2 !== 'none' && n1 < S.accentAmt2)      col = S.accent2;
+      // Drift
+      let dx = S.wave > 0 ? Math.sin(t * 0.7 + x * 0.03) * S.wave * 0.025 : 0;
+      let dy = S.wave > 0 ? Math.cos(t * 0.6 + y * 0.03) * S.wave * 0.02  : 0;
+      // Fill or hollow: driven by a third noise layer
+      let hollow = n2 > 0.6;
+      CTX.beginPath();
+      CTX.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+      if (hollow) {
+        CTX.strokeStyle = col;
+        CTX.lineWidth   = Math.max(0.4, r * 0.12);
+        CTX.stroke();
+      } else {
+        CTX.fillStyle = col;
+        CTX.fill();
+      }
+    }
+  }
+  CTX.restore();
+  _lastFill = '';
+}
+
+  
 // ── BRUSH CONTOUR (Rotsztain) ─────────────────────────────────────────────
 // Noise iso-contours drawn as small rotated rectangular brushstrokes.
 // Each contour level gets a palette color. Density controls band width,
@@ -4989,7 +5439,7 @@ new p5(function(p){
     recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
     lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[];
-    cascadeRects=[]; scatterClouds=[]; stillForms=[];
+    cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[];
     
@@ -5118,7 +5568,13 @@ function rd() {
       case 'cascaderects':   drawCascadeRects(p, t);   break;
       case 'diagonalfield':  drawDiagonalField(p, t);   break;
       case 'scatterdots':    drawScatterDots(p, t);     break;
-      case 'clyffordstill':  drawClyffordStill(p, t);   break;  
+      case 'clyffordstill':  drawClyffordStill(p, t);   break; 
+      case 'dnastrips':      drawDnaStrips(p, t);      break;
+      case 'scattrects':     drawScatteredRects(p, t);  break;
+      case 'distrkt':        drawDistrkt(p, t);         break;
+      case 'cosmicpoems':    drawCosmicPoems(p, t);     break;
+      case 'hypertype':      drawHypertype(p, t);       break;
+      case 'circlefield':    drawCircleField(p, t);     break;  
     }
   }
 // ── P.Setup ────────────────────────────────────────────────── 
@@ -6437,7 +6893,16 @@ const PRESETS={
   diagonal_dense: function(){ap({ mode:'diagonalfield', font:'courier', entropy:.02, speed:.004,wave:20, bg:'#f5f0ea', spacing:5, maxSize:14,noiseScale:.008, palette:'mono', compEnabled:false });},
   scatter_bloom: function(){ap({ mode:'scatterdots', font:'courier', entropy:.05, speed:.003,wave:25, bg:'#f5f0ea', spacing:10, maxSize:16,noiseScale:.01, palette:'neonpastel', compEnabled:false });scatterClouds = [];},
   still_red: function(){ap({mode:'clyffordstill', font:'courier', entropy:.03, speed:.002,wave:30, bg:'#1a0a05',spacing:4, maxSize:18,noiseScale:.012, palette:'volcanic', compEnabled:false });stillForms = [];},
-  
+  strange_loops_dna: function() {ap({ mode:'dnastrips', font:'courier', entropy:0, speed:.003,wave:18, bg:'#f5f0ea', spacing:10, maxSize:28,noiseScale:.008, palette:'pumpkin', compEnabled:false });dnaCols = [];},
+  strange_loops_rects: function() {ap({ mode:'scattrects', font:'courier', entropy:.04, speed:.002,wave:8, bg:'#f5f0ea', spacing:14, maxSize:20,noiseScale:.01, palette:'abyss', compEnabled:false });scatteredRects = [];},
+  distrkt_orange: function() {ap({ mode:'distrkt', font:'courier', entropy:.02, speed:.002,wave:15, bg:'#f5f0ea', spacing:7, maxSize:14,noiseScale:.009, palette:'ember', compEnabled:false,chars: 'distraKted '.split('') });distrktShapes = [];},
+  distrkt_dark: function() {ap({ mode:'distrkt', font:'courier', entropy:.06, speed:.004,wave:20, bg:'#ffffff', spacing:6, maxSize:12,noiseScale:.012, palette:'dusk', compEnabled:false,chars: 'language is broken '.split('') });distrktShapes = [];},
+  cosmic_red: function() {ap({ mode:'cosmicpoems', font:'courier', entropy:0, speed:.003,wave:0, bg:'#f5f0ea', spacing:14, maxSize:14,noiseScale:.009, palette:'fire', compEnabled:false });cosmicGrid = [];},
+  cosmic_purple: function() {ap({ mode:'cosmicpoems', font:'courier', entropy:0, speed:.002,wave:5, bg:'#f5f0ea', spacing:16, maxSize:16,noiseScale:.008, palette:'dusk', compEnabled:false });cosmicGrid = [];},
+  hypertype_mode: function() {ap({ mode:'hypertype', font:'courier', entropy:.04, speed:.004,wave:15, bg:'#f5f0ea', spacing:18, maxSize:24,noiseScale:.01, palette:'neon', compEnabled:false,chars: CHARSETS.ascii });hypertypeGrid = [];},
+  hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
+  circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
+    
 };
 
 
