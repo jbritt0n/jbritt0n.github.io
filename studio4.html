@@ -820,21 +820,23 @@ select option{background:var(--ink)}
       <option value="luminosity">Luminosity</option>
       <option value="xor">XOR</option>
     </select>
-    <div class="sl2" style="margin-top:1rem">Color Mapping Strategy</div>
-    <div class="cg" id="mapGrid">
-      <button class="cb active" data-map="noise">Mottled</button>
-      <button class="cb" data-map="radial">Radial</button>
-      <button class="cb" data-map="axial">Woven</button>
-      <button class="cb" data-map="stepped">Stepped</button>
-      <button class="cb" data-map="diamond">Diamond</button>
-      <button class="cb" data-map="scan">Scanline</button>
-    </div>
-    <div class="sl2">Noise Texture (For 'Mottled')</div>
-    <div class="cg" id="noiseTypeGrid">
-      <button class="cb active" data-ntype="perlin">Soft</button>
-      <button class="cb" data-ntype="ridged">Ridged</button>
-      <button class="cb" data-ntype="billow">Billow</button>
-    </div>
+    <div class="sl2">Noise Type</div>
+<div class="cg" id="noiseTypeGrid">
+  <button class="cb active" data-ntype="perlin">Perlin</button>
+  <button class="cb" data-ntype="ridged">Ridged</button>
+  <button class="cb" data-ntype="billow">Billow</button>
+  <button class="cb" data-ntype="cellular">Cellular</button> 
+  <button class="cb" data-ntype="simplex">Simplex</button> 
+</div>
+<div class="sl2">Color Mapping</div>
+<div class="cg" id="mapGrid">
+  <button class="cb active" data-map="noise">Noise</button>
+  <button class="cb" data-map="radial">Radial</button>
+  <button class="cb" data-map="axial">Axial</button>
+  <button class="cb" data-map="angular">Angular</button> 
+  <button class="cb" data-map="tunnel">Tunnel</button>   
+  <button class="cb" data-map="diamond">Diamond</button>
+</div>
     <p class="hn">Mapping determines how colors spread; Blend Mode determines how they stack.</p>
   </div>
 </div>
@@ -5455,7 +5457,7 @@ function rd() {
   CTX.fillStyle = S.bg || '#0d0c0a';
   CTX.fillRect(0, 0, W, H);
     let bgColor = S.bg || '#0d0c0a';
-    let currentFC = S.fc || 0;
+    let currentFC = S.fc || 0; 
     let currentSpd = S.speed || 0.004;
     let t = currentFC * currentSpd;
     drawScene(p, t);
@@ -5911,16 +5913,16 @@ document.getElementById('bgRow').addEventListener('click', function(e) {
 
 
  // ── COLOR MAPPING LISTENERS ──────────────────────────────────────────────────────────────── 
-document.getElementById('mapGrid').addEventListener('click', function(e) {
+  document.getElementById('mapGrid').addEventListener('click', function(e) {
   let b = e.target.closest('.cb');
   if (!b) return;
-  // Toggle UI
-  document.querySelectorAll('#mapGrid .cb').forEach(x => x.classList.remove('active'));
+  // Update UI
+  document.querySelectorAll('#mapGrid .cb').forEach(el => el.classList.remove('active'));
   b.classList.add('active');
   // Update State
   S.colorMapMode = b.dataset.map;
-  // Trigger redraw if your engine uses a manual refresh
-  if(window._st) window._st.rd(); 
+  // Redraw
+  if (window._st) window._st.rd();
 });
 
 // ── RENDERING LISTENERS ──────────────────────────────────────────────────────────────── 
