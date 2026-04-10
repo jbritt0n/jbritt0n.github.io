@@ -1486,12 +1486,12 @@ function getColorIndex(p, x, y, t) {
 function invalidateFontCache(){_lastFont='';_lastSize=-1;}
   
 function dc(x, y, sz, rot, col, ch) {
-  // 1. Safety Check: Exit if basic requirements aren't met
+  // 1. Safety Check
   if (!sz || sz <= 0) return;
 
   // 2. Handle Jitter
   let jx = 0, jy = 0;
-  let jit = S.jitter || 0; 
+  let jit = S.jitter || 0;
   if (jit > 0) {
     jx = (Math.random() - 0.5) * jit;
     jy = (Math.random() - 0.5) * jit;
@@ -1503,7 +1503,6 @@ function dc(x, y, sz, rot, col, ch) {
   CTX.lineWidth = Math.max(1, sz * 0.05);
 
   // --- PARTICLE MODES ---
-  // If useParticleMode is on, we draw geometry instead of text
   if (S.useParticleMode) {
     let cs = S.charSet;
 
@@ -1519,15 +1518,15 @@ function dc(x, y, sz, rot, col, ch) {
         CTX.closePath();
       }
       CTX.fill();
-    } 
+    }
     else if (cs === 'arch') {
       CTX.save(); CTX.translate(x + jx, y + jy); CTX.rotate(rot);
       let t = Math.floor(Math.abs(Math.cos(x*y)) * 3);
-      if (t === 0) { 
+      if (t === 0) {
         CTX.beginPath(); CTX.moveTo(-sz/2, 0); CTX.lineTo(sz/2, 0); CTX.moveTo(0, -sz/2); CTX.lineTo(0, sz/2); CTX.stroke();
-      } else if (t === 1) { 
+      } else if (t === 1) {
         CTX.beginPath(); CTX.moveTo(sz/2, -sz/2); CTX.lineTo(-sz/2, -sz/2); CTX.lineTo(-sz/2, sz/2); CTX.stroke();
-      } else { 
+      } else {
         CTX.beginPath(); CTX.arc(0, 0, sz*0.1, 0, 6.28); CTX.fill();
         CTX.beginPath(); CTX.arc(0, 0, sz*0.4, 0, 6.28); CTX.stroke();
       }
@@ -1563,7 +1562,7 @@ function dc(x, y, sz, rot, col, ch) {
       CTX.beginPath(); CTX.arc(x + jx, y + jy, sz*0.1, 0, 6.28); CTX.fill();
       for(let i=0; i<3; i++) {
         CTX.beginPath(); CTX.moveTo(x + jx, y + jy);
-        let ang = rot + i * 2.1; 
+        let ang = rot + i * 2.1;
         CTX.lineTo(x + jx + Math.cos(ang)*sz*0.6, y + jy + Math.sin(ang)*sz*0.6);
         CTX.stroke();
       }
@@ -1602,27 +1601,13 @@ function dc(x, y, sz, rot, col, ch) {
     return; // Exit here if in Particle Mode
   }
 
-  // --- STANDARD TEXT MODE ---
-  // Only runs if useParticleMode is FALSE
-  if (!ch) return;
-  CTX.save();
-  CTX.translate(x + jx, y + jy);
-  if (rot) CTX.rotate(rot);
-
-  let finalSize = Math.max(1, sz);
-  CTX.font = finalSize + "px " + (S.fontFamily || "monospace");
-  CTX.textAlign = "center";
-  CTX.textBaseline = "middle";
-  CTX.fillText(ch, 0, 0);
-  CTX.restore();
-}
-  // --- TEXT MODE ---
-  if(!ch || (!ch.trim() && S.entropy < 0.1)) return;
+  // --- TEXT MODE (only runs when useParticleMode is false) ---
+  if (!ch || (!ch.trim() && S.entropy < 0.1)) return;
   let needTransform = rot !== 0 || S.charRotRad !== 0 || S.flipChance > 0 || S.flipHMirror || S.flipVMirror;
   let fstr = (sz|0) + 'px ' + S.fontStack;
 
   if (needTransform) {
-    CTX.save(); CTX.translate(x, y);
+    CTX.save(); CTX.translate(x + jx, y + jy);
     let r = (rot || 0) + S.charRotRad;
     if (r) CTX.rotate(r);
     let fx = 1, fy = 1;
@@ -1631,13 +1616,13 @@ function dc(x, y, sz, rot, col, ch) {
     if (fx !== 1 || fy !== 1) CTX.scale(fx, fy);
     if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
     if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
-    CTX.fillText(ch, 0, 0); 
+    CTX.fillText(ch, 0, 0);
     CTX.restore();
     _lastFont = ''; _lastFill = '';
   } else {
     if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
     if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
-    CTX.fillText(ch, x, y);
+    CTX.fillText(ch, x + jx, y + jy);
   }
 }
 
@@ -5886,12 +5871,18 @@ function showToast(msg){
 }
 
 // ── SECTION COLLAPSE ─────────────────────────────────────────────────────────
-function toggleSec(id){
-  let body=document.getElementById('body-'+id);
-  let arrow=document.getElementById('arr-'+id);
-  if(!body) return;
-  let collapsed=body.classList.toggle('collapsed');
-  if(arrow) arrow.classList.toggle('open',!collapsed);
+function toggleSec(id) {
+  const body = document.getElementById('body-' + id);
+  const arrow = document.getElementById('arr-' + id);
+  if (!body) return;
+  const isCollapsed = body.classList.contains('collapsed');
+  if (isCollapsed) {
+    body.classList.remove('collapsed');
+    if (arrow) arrow.classList.add('open');
+  } else {
+    body.classList.add('collapsed');
+    if (arrow) arrow.classList.remove('open');
+  }
 }
   
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
