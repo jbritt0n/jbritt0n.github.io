@@ -1905,40 +1905,37 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
-// ── BLOOM 2.0 - updated 4/9/26 ──────────────────────────────────────────────────
+// ── BLOOM 2.0 - updated 4/10/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
   let sp = S.spacing || 12;
   let W = p.width, H = p.height;
+  // Local speed multiplier to make Bloom feel "organic"
+  let bloomTime = t * (S.speed || 1.0);
   for (let x = 0; x < W; x += sp) {
     for (let y = 0; y < H; y += sp) {
-      // 1. Density Check (Force noise for the "organic" look)
-      let ns = S.noiseScale || 0.005;
-      let densityVal = p.noise(x * ns, y * ns, t * (S.speed * 0.1));
-      if (densityVal < S.density) continue;
-      // 2. Color/Logic Check (Use the chosen mapping mode)
+      // 1. Organic Density Check (The "Shape")
+      // Use a fixed scale for density so it doesn't disappear when noiseScale is 0
+      let dVal = p.noise(x * 0.005, y * 0.005, bloomTime * 0.1);
+      if (dVal < (S.density || 0.5)) continue;
+      // 2. Get Color Mapping Value (The "Shade")
       let n = getColorIndex(p, x, y, t);
-      // 3. RADIAL MATH (The "Bloom" Secret)
-      // Calculate angle from center to the current point
+      // 3. Radial Math (The "Direction")
       let angleToCenter = Math.atan2(y - H/2, x - W/2);
-      // 4. ROTATION: Combine radial direction with your noise/entropy
-      // We start with the angle pointing away from center (the bloom)
-      let noiseRot = p.noise(x * S.noiseScale, y * S.noiseScale, t * 0.2) * p.TWO_PI;
-      let a = angleToCenter; 
-      // If entropy is up, we twist the bloom
-      if (S.entropy > 0) {
-        a += noiseRot * S.entropy * 2;
+      // Add a bit of noise-swirl based on Entropy
+      let swirl = p.noise(x * 0.01, y * 0.01, bloomTime * 0.05) * p.TWO_PI;
+      let a = angleToCenter + (swirl * (S.entropy || 0));
+      // 4. Color Selection
+      let col = "#ffffff";
+      if (S.palette && S.palette.length > 0) {
+        let pIdx = Math.floor(n * S.palette.length);
+        col = S.palette[pIdx % S.palette.length];
       }
-      // 5. COLOR & SIZE
-      // Use S.palette directly (the array of hex strings)
-      let pal = S.palette; 
-      let col = (pal && pal.length > 0) ? pal[Math.floor(n * pal.length) % pal.length] : "#ffffff";
-      let sz = p.map(n, S.density, 1, 2, S.maxSize);
-      // 6. CHARACTER selection
-      // Use the charNoiseScale we've been building toward
-      let nsChar = S.charNoiseScale || 0.05;
-      let chIdx = Math.floor(p.noise(x * nsChar, y * nsChar) * S.chars.length);
-      let ch = S.chars[chIdx % S.chars.length];
-      // 7. DRAW
+      // 5. Size & Character
+      let sz = p.map(n, 0, 1, 2, S.maxSize || 12);
+      let chars = S.chars || ["+"];
+      let ch = chars[Math.floor(p.noise(x * 0.05, y * 0.05) * chars.length) % chars.length];
+      // 6. Final Render
+      // Ensure dc exists and has CTX.save/restore
       dc(x, y, sz, a, col, ch);
     }
   }
@@ -5773,40 +5770,47 @@ p.setup = function() {
 };
   
 // ── P.Draw ────────────────────────────────────────────────── 
-  p.draw = function() {
-    if (!CTX) CTX = p.drawingContext;
-    let t = S.fc * (S.speed || 0.01);
-    // Clear canvas
-    CTX.globalCompositeOperation = 'source-over';
-    CTX.globalAlpha = 1;
-    CTX.fillStyle = S.bg;
-    CTX.fillRect(0, 0, W, H);
-    // Signal collapse effect
-    if (S.signalCollapse) {
-      let elapsed = S.fc - S.signalStart;
-      if (elapsed < 80) {
-        let scanY = p.map(elapsed, 0, 80, 0, H);
-        CTX.fillStyle = 'rgba(230,57,70,.12)';
-        CTX.fillRect(0, scanY - 2, W, 4);
-      }
+p.draw = function() {
+  if (!CTX) CTX = p.drawingContext;
+  // FIXED: We now use a stable time increment (S.fc * 0.01) 
+  // This ensures the noise field 't' moves even if the speed slider is being adjusted.
+  let t = S.fc * 0.01; 
+  // Clear canvas
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.fillStyle = S.bg;
+  CTX.fillRect(0, 0, W, H);
+  // Signal collapse effect
+  if (S.signalCollapse) {
+    let elapsed = S.fc - S.signalStart;
+    if (elapsed < 80) {
+      let scanY = p.map(elapsed, 0, 80, 0, H);
+      CTX.fillStyle = 'rgba(230,57,70,.12)';
+      CTX.fillRect(0, scanY - 2, W, 4);
     }
-    drawScene(p, t);
-    if (S.shapesEnabled) drawShapes(p, t);
-    if (S.overlayEnabled) drawOverlay(p, t);
-    // Only advance time and track FPS when actually playing
-    if (!S.playing) return;
-    S.fc++;
-    let now = performance.now();
-    _frameCount++;
-    if (now - _fpsTimer > 1000) {
-      _fps = _frameCount;
-      _frameCount = 0;
-      _fpsTimer = now;
-      let fpsLabel = document.getElementById('fpsLabel');
-      if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
-    }
-  };
-
+  }
+  // Draw the main scene using our stable 't'
+  drawScene(p, t);
+  if (S.shapesEnabled) drawShapes(p, t);
+  if (S.overlayEnabled) drawOverlay(p, t);
+  // Only advance time and track FPS when actually playing
+  // IMPORTANT: Ensure S.playing is being toggled by your Play button
+  if (!S.playing) return;
+  // S.fc (Frame Count) is the 'engine' of your animation. 
+  // We multiply it by the speed slider here to control the pace of the frame increment.
+  // We use a Math.max to ensure speed never actually hits zero and stops the engine.
+  let speedMult = Math.max(S.speed || 0.01, 0.001);
+  S.fc += speedMult * 1.5; 
+  let now = performance.now();
+  _frameCount++;
+  if (now - _fpsTimer > 1000) {
+    _fps = _frameCount;
+    _frameCount = 0;
+    _fpsTimer = now;
+    let fpsLabel = document.getElementById('fpsLabel');
+    if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
+  }
+};
   
   
 
