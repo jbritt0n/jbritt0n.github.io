@@ -1907,8 +1907,10 @@ function drawBloom(p, t) {
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
       // Density gate — same noise field as original
-      let n = p.noise(x * ns, y * ns, t);
-      if (n < S.density) continue;
+  let n = p.noise(x * ns, y * ns, t);
+  if (S.noiseType === 'ridged') n = 1.0 - Math.abs(n * 2 - 1);
+  else if (S.noiseType === 'billow') n = Math.abs(n * 2 - 1);
+  if (n < S.density) continue;
       // Rotation — original noise-driven angle, no radial center math
       // bloomRotMult (default 4) controls how many full rotations of variation
       let a = p.noise(x * ns * 0.5, y * ns * 0.5, t * 0.5) * 6.28 * rotMult;
