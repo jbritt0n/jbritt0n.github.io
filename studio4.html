@@ -5766,15 +5766,17 @@ p.setup = function() {
   // CRITICAL: Load defaults into S BEFORE doing anything else
   if (typeof S === 'undefined') window.S = {};
   Object.assign(S, DEFAULT_STATE); 
-  S.fc = 0; // Initialize frame count
-  S.playing = false; // Start static
+  S.fc = 0;
+  S.playing = true;
   p.noLoop();
   p.pixelDensity(1);
   updateCornerLabels();
-  ri(); 
-    // Delay first draw to ensure canvas is ready
-  setTimeout(() => { p.redraw(); }, 50);
-};
+  ri();
+  setTimeout(() => {
+    p.loop();
+    let btn = document.getElementById('btnPlay');
+    if (btn) btn.textContent = '⏸ Pause';
+  }, 50);
   
 // ── P.Draw ────────────────────────────────────────────────── 
 p.draw = function() {
