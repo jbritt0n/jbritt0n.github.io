@@ -1450,6 +1450,42 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
 
+// ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
+// Worley / Cellular noise — returns 0 (cell edge) → 1 (cell center)
+function worleyNoise(x, y, t) {
+  let ix = Math.floor(x), iy = Math.floor(y);
+  let minD = 2.0;
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      let cx = ix + dx, cy = iy + dy;
+      let hx = Math.sin(cx * 127.1 + cy * 311.7 + t * 18.3) * 43758.5453;
+      let hy = Math.sin(cx * 269.5 + cy * 183.3 + t *  9.1) * 23421.631;
+      let fx = cx + (hx - Math.floor(hx));
+      let fy = cy + (hy - Math.floor(hy));
+      let d = Math.sqrt((x - fx) * (x - fx) + (y - fy) * (y - fy));
+      if (d < minD) minD = d;
+    }
+  }
+  return 1.0 - Math.min(minD, 1.0);
+}
+
+// Simplex-approximation — skewed Perlin coords + fBm to remove grid artifacts
+function simplexNoise(p, x, y, t) {
+  let s = (x + y) * 0.366; // (sqrt(3)-1)/2 skew factor
+  let rx = x + s, ry = y + s;
+  let v  =        p.noise(rx,       ry,       t);
+  v += 0.5  *     p.noise(rx * 2.1, ry * 2.1, t * 1.7);
+  v += 0.25 *     p.noise(rx * 4.3, ry * 4.3, t * 2.4);
+  return v / 1.75;
+}
+
+// Unified router — use everywhere instead of bare p.noise()
+function sampleNoise(p, nx, ny, nt) {
+  if (S.noiseType === 'cellular') return worleyNoise(nx, ny, nt);
+  if (S.noiseType === 'simplex')  return simplexNoise(p, nx, ny, nt);
+  return p.noise(nx, ny, nt);
+}
+  
 
 // --- COLOR MAPPING & NOISE TYPE getColorIndex
 function getColorIndex(p, x, y, t) {
@@ -1472,10 +1508,10 @@ function getColorIndex(p, x, y, t) {
       break;
     case 'stepped':
       // This creates "bands" of color
-      val = Math.floor(p.noise(nx, ny, colTime) * 5) / 5;
-      break;
-    default: // 'noise' mode
-      val = p.noise(nx, ny, colTime);
+    val = Math.floor(sampleNoise(p, nx, ny, colTime) * 5) / 5;
+    break;
+  default: // 'noise' mode
+    val = sampleNoise(p, nx, ny, colTime);
   }
   // 3. Apply Noise Morphology (Ridged/Billow)
   if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
@@ -1907,10 +1943,9 @@ function drawBloom(p, t) {
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
       // Density gate — same noise field as original
-  let n = p.noise(x * ns, y * ns, t);
+  let n = sampleNoise(p, x * ns, y * ns, t);
   if (S.noiseType === 'ridged') n = 1.0 - Math.abs(n * 2 - 1);
   else if (S.noiseType === 'billow') n = Math.abs(n * 2 - 1);
-  if (n < S.density) continue;
       // Rotation — original noise-driven angle, no radial center math
       // bloomRotMult (default 4) controls how many full rotations of variation
       let a = p.noise(x * ns * 0.5, y * ns * 0.5, t * 0.5) * 6.28 * rotMult;
