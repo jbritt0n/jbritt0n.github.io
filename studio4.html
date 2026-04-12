@@ -506,7 +506,7 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="randuni_drift" title="Unicode Drift — characters slowly morph via code points">Rand Drift</button>
       </div>
       <div class="cr" id="customRow" style="display:none; margin: 0.5rem 0.8rem 0.8rem;">
-        <input class="ci" id="customInput" placeholder="chars or words space-separated…" maxlength="120">
+        <input class="ci" id="customInput" placeholder="word;phrase;★;A;hello" maxlength="120">
         <button class="ca" id="customApply">Set</button>
       </div>
     </div>
@@ -1197,6 +1197,9 @@ function pickRandUnicode(x,y,t){
   return '?';
 }
 
+
+
+  
 const CHARSETS={
   // CJK sets now pull randomly from the full Unicode block each call.
   // A fixed seed array is kept for presets and shape overlay that reference CHARSETS directly.
@@ -4664,7 +4667,7 @@ function drawMonogrid(p, t) {
       let diagVal = ((x * 0.4 + y * 0.4) * S.noiseScale * 12 + t * 0.3) % 1.0;
       if (n2 > 0.7 && diagVal < 0.5) continue;
       let col = pickColor(p, x, y, t);
-      let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      let ch = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
       dc(x, y, sz, 0, col, ch);
     }
   }
@@ -6335,6 +6338,40 @@ document.getElementById('charLabel').textContent = b.textContent.trim();
   });
 }
 
+// ── CUSTOM CHARSET ────────────────────────────────────────────────────────────
+function applyCustomCharset() {
+  let raw = document.getElementById('customInput').value;
+  let tokens = raw.split(';')
+    .map(function(t) { return t.trim(); })
+    .filter(function(t) { return t.length > 0; });
+
+  if (!tokens.length) {
+    showToast('Add at least one token');
+    return;
+  }
+
+  S.chars = tokens;
+  RAND_UNICODE_MODE = null;
+  S.useParticleMode = false;
+
+  // Mark Custom button active in UI
+  document.querySelectorAll('#body-chars .cb').forEach(function(x) {
+    x.classList.remove('active');
+  });
+  let customBtn = document.querySelector('#body-chars .cb[data-cs="custom"]');
+  if (customBtn) customBtn.classList.add('active');
+  document.getElementById('charLabel').textContent = 'Custom';
+
+  showToast('Custom: ' + tokens.length + ' token' + (tokens.length > 1 ? 's' : ''));
+  window._st.rd();
+}
+
+document.getElementById('customApply').addEventListener('click', applyCustomCharset);
+document.getElementById('customInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') applyCustomCharset();
+});
+
+  
 // ── FONT ──────────────────────────────────────────────────────────────────────
 document.getElementById('fontSelect').addEventListener('change', function() {
   let newFont = this.value;
