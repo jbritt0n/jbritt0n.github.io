@@ -1901,49 +1901,30 @@ function buildComp(preset,W,H){
 
 // ── BLOOM 2.0 - updated 4/10/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
-  // 1. Component Safety Guards
-  let sp = S.spacing || 12;
-  let W = p.width || 800;
-  let H = p.height || 600;
-  let ns = S.noiseScale || 0.005;
-  let densityThreshold = S.density !== undefined ? S.density : 0.5;
-  let entropyVal = S.entropy || 0;
-  // Use a local time variable that is guaranteed to be a number
-  let bloomTime = t || 0;
-  for (let x = 0; x < W; x += sp) {
-    for (let y = 0; y < H; y += sp) {
-      // 2. Organic Shape Check
-      // Use a fixed scale for the "bloom clouds" so they are stable
-      let dVal = p.noise(x * 0.005, y * 0.005, bloomTime * 0.1);
-      if (dVal < densityThreshold) continue;
-      // 3. Get Color Mapping Value (Safety check for the function)
-      let n = 0.5;
-      try {
-        n = getColorIndex(p, x, y, bloomTime);
-      } catch(e) { n = 0.5; }
-      // 4. Radial Math (The "Bloom" Direction)
-      let dx = x - W/2;
-      let dy = y - H/2;
-      let angleToCenter = Math.atan2(dy, dx);
-      // Swirl math
-      let swirl = p.noise(x * ns, y * ns, bloomTime * 0.05) * 6.28;
-      let a = angleToCenter + (swirl * entropyVal);
-      // 5. Palette Safety
-      let col = "#ffffff";
-      if (Array.isArray(S.palette) && S.palette.length > 0) {
-        let pIdx = Math.floor(n * S.palette.length);
-        col = S.palette[pIdx % S.palette.length] || "#ffffff";
+  let sp  = S.spacing || 12;
+  let ns  = S.noiseScale || 0.01;
+  let rotMult = S.bloomRotMult || 4;
+  for (let x = 0; x < p.width; x += sp) {
+    for (let y = 0; y < p.height; y += sp) {
+      // Density gate — same noise field as original
+      let n = p.noise(x * ns, y * ns, t);
+      if (n < S.density) continue;
+      // Rotation — original noise-driven angle, no radial center math
+      // bloomRotMult (default 4) controls how many full rotations of variation
+      let a = p.noise(x * ns * 0.5, y * ns * 0.5, t * 0.5) * 6.28 * rotMult;
+      // Color — use getColorIndex so radial/axial/noise mapping modes all work
+      let ci  = getColorIndex(p, x, y, t);
+      let col = pickColor(p, x, y, t);
+      if (S.colorMapMode !== 'noise') {
+        // Override palette index with the mapping-aware ci value
+        col = S.palette[Math.floor(ci * S.palette.length) % S.palette.length] || col;
       }
-      // 6. Character Safety
-      let chars = (S.chars && S.chars.length > 0) ? S.chars : ["+"];
-      let chIdx = Math.floor(p.noise(x * 0.05, y * 0.05) * chars.length);
-      let ch = chars[chIdx % chars.length];
-      // 7. Size
-      let sz = p.map(n, 0, 1, 2, S.maxSize || 12);
-      // 8. Final Render
-      if (typeof dc === 'function') {
-        dc(x, y, sz, a, col, ch);
-      }
+      // Character — uses charNoiseScale and entropy like everything else
+      let ch = pickChar(p, x, y, t);
+      // Size — mapped from density threshold to maxSize (original range)
+      let sz = p.map(n, S.density, 1, 2, S.maxSize || 20);
+
+      dc(x, y, sz, a, col, ch);
     }
   }
 }
@@ -5780,12 +5761,12 @@ p.setup = function() {
   
 // ── P.Draw ────────────────────────────────────────────────── 
 p.draw = function() {
-  console.log('draw frame', S.fc, 'playing:', S.playing);  // playing debug
+  //console.log('draw frame', S.fc, 'playing:', S.playing);  // playing debug
   
   if (!CTX) CTX = p.drawingContext;
   // FIXED: We now use a stable time increment (S.fc * 0.01) 
   // This ensures the noise field 't' moves even if the speed slider is being adjusted.
-  let t = S.fc * 0.01; 
+  let t = S.fc * S.speed;
   // Clear canvas
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
@@ -5810,8 +5791,7 @@ p.draw = function() {
   // S.fc (Frame Count) is the 'engine' of your animation. 
   // We multiply it by the speed slider here to control the pace of the frame increment.
   // We use a Math.max to ensure speed never actually hits zero and stops the engine.
-  let speedMult = Math.max(S.speed || 0.01, 0.001);
-  S.fc += speedMult * 1.5; 
+  S.fc += 1;
   let now = performance.now();
   _frameCount++;
   if (now - _fpsTimer > 1000) {
@@ -5821,53 +5801,7 @@ p.draw = function() {
     let fpsLabel = document.getElementById('fpsLabel');
     if (fpsLabel) fpsLabel.textContent = _fps + ' fps';
   }
-};
-  
-  
-
-// ── MODE CLICK HANDLER - updated for rebuildModeUI ──────────────────────────────────────────────────   
-
-const modeGridContainer = document.getElementById('modeGrid');
-if (modeGridContainer) {
-    modeGridContainer.addEventListener('click', function(e) {
-        let b = e.target.closest('.mb');
-        if (!b) return;
-        // UI Feedback
-        document.querySelectorAll('.mb').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        // State Update
-        S.mode = b.dataset.mode;
-        const labelEl = document.getElementById('modeLabel');
-        if (labelEl) labelEl.textContent = b.textContent.replace('✦', '').trim();
-        // ── Rebuild Dynamic Controls ──
-        if (typeof rebuildModeUI === 'function') {
-            rebuildModeUI(S.mode);
-        }
-        // ── Handle the Extra Parameters Section Visibility ──
-        let sec = document.getElementById('mode-extra-sec');
-        let hasParams = PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length;
-            if (sec) {
-            sec.style.display = hasParams ? 'block' : 'none';
-            if (hasParams) {
-                // Expand the section automatically
-                let body = document.getElementById('body-modeextra');
-                let arrow = document.getElementById('arr-modeextra');
-                if (body) body.classList.remove('collapsed');
-                if (arrow) arrow.classList.add('open');
-                let lbl = document.getElementById('mode-extra-label');
-                if (lbl) lbl.textContent = b.textContent.trim() + ' parameters';
-            }
-        }
-        // Reset and Redraw
-        if (window._st) {
-            window._st.ri(); // Reset instance (important for boids/trails)
-            window._st.rd(); // Redraw
-        }
-    });
-} else {
-    console.warn("Element #modeGrid not found. Ensure your HTML wrapper is in place.");
-}
-
+}; // closes p.draw
 
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
