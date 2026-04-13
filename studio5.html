@@ -6812,11 +6812,7 @@ wireSlider('sNoiseOct',  'vNoiseOct',  'noiseOctaves', v => Math.floor(v));
 wireSlider('sNoiseFall', 'vNoiseFall', 'noiseFalloff',  v => v / 100);  
 wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
 wireSlider('sGeoFreq',  'vGeoFreq',  'geoVibFreq');  
-wireSlider('sMgBlocks', 'vMgBlocks', 'mgBlockCount', null,function(){ monogridBlocks = []; });
-wireSlider('sMgAlpha',  'vMgAlpha',  'mgAlpha', function(v){ return v / 100; });
-wireSlider('sMgTextSpd','vMgTextSpd','mgTextSpd');document.getElementById('btnMgAnim').addEventListener('click', function(){S.mgAnim = !S.mgAnim;this.textContent = S.mgAnim ? 'On' : 'Off';this.classList.toggle('on', S.mgAnim);});
-document.getElementById('btnMgStack').addEventListener('click', function(){S.mgStack = !S.mgStack;this.textContent = S.mgStack ? 'On' : 'Off';this.classList.toggle('on', S.mgStack);window._st.rd();});  
-document.getElementById('btnRepeatFill').addEventListener('click', function() {S.overlayRepeatFill = !S.overlayRepeatFill;this.textContent = S.overlayRepeatFill ? 'On' : 'Off';this.classList.toggle('on', S.overlayRepeatFill);window._st.rd();});  
+ 
 
 
 // ── MODE EVENT LISTENERS ────────────────────────────────────────────────────────────────────── 
