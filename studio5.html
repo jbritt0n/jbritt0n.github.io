@@ -2100,37 +2100,55 @@ function drawWave(p, t) {
     }
   }
 }
-// ── RAIN 1 ───────────────────────────────────────────  
-function drawRain1(p,t){
-  if(S.playing) rainDrops.forEach(function(d){
-    d.y+=d.speed*(S.speed*250+1);
-    if(d.y>p.height+S.spacing*2){d.y=-S.spacing*(2+Math.random()*8);d.speed=1+Math.random()*3;}
-  });
-  rainDrops.forEach(function(d,i){
-    let tl=Math.floor(3+(S.wave/20));
-    for(let j=0;j<tl;j++){
-      let ty=d.y-j*S.spacing;
-      if(ty<0||ty>p.height) continue;
-      let alpha=Math.round(p.map(j,0,tl,255,20));
-      let col=j===0?pickColor(p,d.x,ty,t):S.palette[i%S.palette.length];
-      CTX.globalAlpha=alpha/255;
-      let fstr=((j===0?S.maxSize*.8:S.maxSize*.5)|0)+'px '+S.fontStack;
-      if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-      if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-      CTX.fillText(pickChar(p,i,j,t),d.x,ty);
+  
+// ── RAIN 1 2.0 Refactored 4/13/26 ───────────────────────────────────────────  
+function drawRain1(p, t) {
+  let speedMult = S.rainSpeedMult || 250;
+  let trailBase = S.rainTrailBase || 3;
+  let trailWave = S.rainTrailWave || 0.05;
+  let headMult = S.rainHeadSize || 0.8;
+  let tailMult = S.rainTailSize || 0.5;
+  let sp = S.spacing;
+  if (S.playing) {
+    rainDrops.forEach(d => {
+      d.y += d.speed * (S.speed * speedMult + 1);
+      if (d.y > p.height + sp * 2) {
+        d.y = -sp * (2 + Math.random() * 8);
+        d.speed = 1 + Math.random() * 3;
+      }
+    });
+  }
+  rainDrops.forEach((d, i) => {
+    let tl = Math.floor(trailBase + (S.wave * trailWave));
+    for (let j = 0; j < tl; j++) {
+      let ty = d.y - j * sp;
+      if (ty < 0 || ty > p.height) continue;
+      let alpha = p.map(j, 0, tl, 255, 20);
+      let col = j === 0 ? pickColor(p, d.x, ty, t) : S.palette[i % S.palette.length];
+      let sz = (j === 0 ? S.maxSize * headMult : S.maxSize * tailMult) | 0;
+      let ch = pickChar(p, d.x, ty, t);
+      CTX.globalAlpha = alpha / 255;
+      dc(d.x, ty, sz, 0, col, ch);  // use unified dc()
     }
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
-// ── RAIN 2 ───────────────────────────────────────────  
-function drawRain2(p,t){
-  if(S.playing) rainDrops.forEach(function(d){
-    d.y+=d.speed*(S.speed*500+2);
-    if(d.y>p.height+50) d.y=-20;
-  });
-  rainDrops.forEach(function(d,i){
-    let r=pcc(p,d.x,d.y,t);
-    dc(d.x,d.y,S.maxSize,0,r.col,r.ch);
+  
+// ── RAIN 2 2.0 Refactored 4/13/26 ───────────────────────────────────────────  
+function drawRain2(p, t) {
+  let speedMult = S.rain2SpeedMult || 250;
+  let sizeVar = S.rain2SizeVar || 0.5;
+  let sp = S.spacing;
+  if (S.playing) {
+    rainDrops.forEach(d => {
+      d.y += d.speed * (S.speed * speedMult + 2);
+      if (d.y > p.height + 50) d.y = -20;
+    });
+  }
+  rainDrops.forEach((d, i) => {
+    let r = pcc(p, d.x, d.y, t);
+    let sz = S.maxSize * (1 - sizeVar * 0.5 + Math.random() * sizeVar);
+    dc(d.x, d.y, sz, 0, r.col, r.ch);
   });
 }
   
@@ -5228,7 +5246,7 @@ function initBoids(W,H){
   CTX.globalAlpha=1;
 }
   
-// ── STRIPED RECTS (Webster) ───────────────────────────────────────────────
+// ── STRIPED RECTS (Webster) Refactored 4/13/26 ───────────────────────────────────────────────
 // Solid and barcode-striped rectangles on a light ground.
 // Works best with a pale background (paper, cream, f5f0ea).
 function initStripedRects(W, H) {
@@ -5265,42 +5283,38 @@ function initStripedRects(W, H) {
 function drawStripedRects(p, t) {
   if (!stripedRects.length) initStripedRects(p.width, p.height);
   CTX.save();
-  stripedRects.forEach(function(r) {
-    // ── DENSITY (live) ────────────────────────────────────────────────────
-    // S.density runs 0 (dense) → 0.9 (sparse). Skip rect if rand < density.
-    if (r.rand < S.density) return;
+  let densityGate = S.srDensityGate !== undefined ? S.srDensityGate : 0.5;
+  let wobbleAmp   = S.srWobbleAmp !== undefined ? S.srWobbleAmp : 0.04;
+  let gapBase     = S.srGapBase !== undefined ? S.srGapBase : 3;
+  let lineWidth   = S.srLineWidth !== undefined ? S.srLineWidth : 1;
+  stripedRects.forEach(r => {
+    // Noise‑based density gate (replaces Math.random)
+    let n = sampleNoise(p, r.x * 0.01, r.y * 0.01, t * 0.2);
+    if (n > densityGate) return;
     if (S.playing) {
       r.y += r.vy * S.speed * 120;
       if (r.y > p.height + r.h) r.y = -r.h * 2;
-      if (r.y < -r.h * 2)       r.y =  p.height + r.h;
+      if (r.y < -r.h * 2) r.y = p.height + r.h;
     }
-    // ── SIZE (live via maxSize) ───────────────────────────────────────────
-    // Scale base dimensions proportionally to maxSize (default = 20)
     let scale = S.maxSize / 20;
     let rw = r.bw * scale;
     let rh = r.bh * scale;
-    // ── PALETTE (live) ────────────────────────────────────────────────────
     let rCol = r.useAccent && S.accent !== 'none'
       ? S.accent
       : S.palette[r.palIdx % S.palette.length];
-    // ── WAVE wobble ───────────────────────────────────────────────────────
-    let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * 0.04 : 0;
+    let wx = S.wave > 0 ? Math.sin(t * 1.4 + r.phase) * S.wave * wobbleAmp : 0;
     let rx = r.x + wx;
     let ry = r.y;
-    // ── ENTROPY / GLITCH (live) ───────────────────────────────────────────
+    // Entropy effects
     if (S.entropy > 0) {
-      // Randomly drop some rects entirely
       if (Math.random() < S.entropy * 0.12) return;
-      // Positional jitter
       if (Math.random() < S.entropy * 0.35) {
         rx += (Math.random() - 0.5) * S.entropy * 80;
         ry += (Math.random() - 0.5) * S.entropy * 40;
       }
-      // Random palette swap on individual rects
       if (Math.random() < S.entropy * 0.2) {
         rCol = S.palette[Math.floor(Math.random() * S.palette.length)];
       }
-      // Occasionally flip striped ↔ solid
       if (Math.random() < S.entropy * 0.08) {
         r.type = r.type === 'solid' ? 'striped' : 'solid';
       }
@@ -5314,9 +5328,8 @@ function drawStripedRects(p, t) {
       CTX.rect(rx, ry, rw, rh);
       CTX.clip();
       CTX.strokeStyle = rCol;
-      CTX.lineWidth = r.lw;
-      // Scale stripe gap with size too
-      let gap = Math.max(1, r.gap * scale);
+      CTX.lineWidth = lineWidth;
+      let gap = Math.max(1, gapBase * scale);
       for (let lx = rx; lx <= rx + rw; lx += gap) {
         CTX.beginPath();
         CTX.moveTo(lx, ry);
@@ -5330,33 +5343,31 @@ function drawStripedRects(p, t) {
   _lastFill = '';
 }
   
-// ── TONAL DENSITY ──────────────────────────────────────────────────────────
+// ── TONAL DENSITY Refactored 4/13/26 ──────────────────────────────────────────────────────────
 // A repeating phrase/charset fills the canvas. Noise drives both font size
 // and letter spacing — high noise = large tight text (dark), low noise =
 // tiny spaced text (light). Creates ink-wash tonal areas from pure text.
 function drawTonalDensity(p, t) {
   let tokens = S.chars;
   if (!tokens || !tokens.length) tokens = ['·'];
-  // Slow character index offset for gentle cycling (0 = static)
-  let globalOffset = Math.floor(S.fc * S.speed * 0.5);
+  let minSize   = S.tdMinSize !== undefined ? S.tdMinSize : 1.5;
+  let sizeRange = S.tdSizeRange !== undefined ? S.tdSizeRange : 18;
+  let spacingMult = S.tdSpacingMult !== undefined ? S.tdSpacingMult : 0.75;
+  let cycleSpeed = S.tdCycleSpeed !== undefined ? S.tdCycleSpeed : 0.5;
+  let globalOffset = Math.floor(S.fc * S.speed * cycleSpeed);
   let y = S.spacing * 0.5;
   let tokenCount = 0;
   while (y < p.height) {
     let x = 0;
     let rowMaxSz = 0;
     while (x < p.width + S.maxSize) {
-      // Two-octave noise for smoother large blobs + fine texture
-      let n  = p.noise(x * S.noiseScale,        y * S.noiseScale * 0.55,  t * 0.18);
-      let n2 = p.noise(x * S.noiseScale * 3.2,  y * S.noiseScale * 3.2,   t * 0.35) * 0.22;
-      let nv = Math.min(1, Math.max(0, n + n2));
-      // Map noise → size
-      let sz = p.map(nv, 0, 1, 1.5, S.maxSize);
+      // Use sampleNoise for smoother tonal blobs
+      let nv = sampleNoise(p, x * S.noiseScale, y * S.noiseScale * 0.55, t * 0.18);
+      nv = Math.min(1, Math.max(0, nv));
+      let sz = p.map(nv, 0, 1, minSize, S.maxSize);
       rowMaxSz = Math.max(rowMaxSz, sz);
-      // Map noise → advance (spacing).
-      // Dense (high nv) = tight overlap; sparse (low nv) = wide gaps.
-      let advance = p.map(nv, 0, 1, sz * 2.8, sz * 0.55);
+      let advance = p.map(nv, 0, 1, sz * 2.8, sz * spacingMult);
       advance = Math.max(2, advance);
-      // Skip near-invisible placements to save draw calls
       if (sz >= 1.8 && nv > 0.06) {
         let tok = tokens[(globalOffset + tokenCount) % tokens.length];
         let col = pickColor(p, x, y, t);
@@ -5365,11 +5376,10 @@ function drawTonalDensity(p, t) {
       tokenCount++;
       x += advance;
     }
-    // Row height tracks the tallest character in that row
     y += Math.max(3, rowMaxSz * (0.75 + S.wave * 0.003));
   }
 }
-
+  
 // ── Bauhaus Shapes ──────────────────────────────────────────────────────
   
 function initBauhaus(W, H) {
@@ -6376,6 +6386,17 @@ const PARAM_REGISTRY = {
   ],
   vortex: [
     { id:'vortexSpin',  label:'Spin bias',    min:0,   max:20,  step:1,  def:5,   scale:0.1  },
+  ],
+  rain1: [
+    { id:'rainSpeedMult',  label:'Fall speed',      min:100, max:500, step:10, def:250, scale:1 },
+    { id:'rainTrailBase',  label:'Min trail length',min:2,   max:15,  step:1,  def:3,   scale:1 },
+    { id:'rainTrailWave',  label:'Wave trail boost',min:0,   max:1,   step:0.05,def:0.05,scale:1 },
+    { id:'rainHeadSize',   label:'Head size mult',  min:0.5, max:1.2, step:0.05,def:0.8, scale:1 },
+    { id:'rainTailSize',   label:'Tail size mult',  min:0.3, max:0.9, step:0.05,def:0.5, scale:1 },
+  ],
+  rain2: [
+    { id:'rain2SpeedMult', label:'Fall speed',      min:100, max:500, step:10, def:250, scale:1 },
+    { id:'rain2SizeVar',   label:'Size variation',  min:0,   max:1,   step:0.05,def:0.5, scale:1 },
   ],
   glitch: [
     { id: 'glitchRowHeightMult', label: 'Row height',      min: 1,   max: 3,   step: 0.1, def: 1.4, scale: 1 },
