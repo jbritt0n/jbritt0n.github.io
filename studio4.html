@@ -2294,19 +2294,29 @@ function drawMatrix(p,t){
   CTX.globalAlpha=1;
 }
   
-function drawOrbit(p,t){
-  let nC=Math.max(1, S.orbitCenters||2),
-  let centers=[];
-  for(let i=0;i<nC;i++){let a=(i/nC)*6.28;centers.push({x:p.width/2+Math.cos(a+t*.3)*p.width*.28,y:p.height/2+Math.sin(a+t*.3)*p.height*.22});}
-  centers.forEach(function(c,ci){
-    for(let r=sp;r<maxR;r+=sp){
-      let cnt=Math.floor(6.28*r/sp);
-      for(let i=0;i<cnt;i++){
-        if(Math.random()>(0.2+S.density*.08)) continue;
-        let ang=(i/cnt)*6.28+t*(0.5+ci*.3),x=c.x+Math.cos(ang)*r,y=c.y+Math.sin(ang)*r;
-        if(x<0||x>p.width||y<0||y>p.height) continue;
-        let res=pcc(p,x,y,t);
-        dc(x,y,p.map(r,0,maxR,S.maxSize*.8,2),ang+1.5708,res.col,res.ch);
+function drawOrbit(p, t) {
+  let nC = Math.max(1, S.orbitCenters || 2);
+  let maxR = Math.max(p.width, p.height) * 0.58;
+  let sp = S.spacing;
+  let centers = [];
+  for (let i = 0; i < nC; i++) {
+    let a = (i / nC) * 6.28;
+    centers.push({
+      x: p.width / 2 + Math.cos(a + t * 0.3) * p.width * 0.28,
+      y: p.height / 2 + Math.sin(a + t * 0.3) * p.height * 0.22
+    });
+  }
+  centers.forEach(function(c, ci) {
+    for (let r = sp; r < maxR; r += sp) {
+      let cnt = Math.floor(6.28 * r / sp);
+      for (let i = 0; i < cnt; i++) {
+        if (Math.random() > (0.2 + S.density * 0.08)) continue;
+        let ang = (i / cnt) * 6.28 + t * (0.5 + ci * 0.3);
+        let x = c.x + Math.cos(ang) * r;
+        let y = c.y + Math.sin(ang) * r;
+        if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+        let res = pcc(p, x, y, t);
+        dc(x, y, p.map(r, 0, maxR, S.maxSize * 0.8, 2), ang + 1.5708, res.col, res.ch);
       }
     }
   });
