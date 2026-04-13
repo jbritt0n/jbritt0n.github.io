@@ -306,6 +306,15 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
         <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
         <button class="mb" data-mode="matrix" title="Digital rain code-stream aesthetic">Matrix</button>
+        <button class="mb" data-mode="scan" title="Horizontal CRT-style raster scanning">Scan</button>
+        <button class="mb" data-mode="halftone" title="Newsprint-style dot density rendering">Halftone</button>
+        <button class="mb" data-mode="topo" title="Simplified noise-driven contour mapping">Topo</button>
+        <button class="mb" data-mode="contour" title="Multi-level character-based isolines">Contour</button>
+        <button class="mb" data-mode="weave" title="Interlocking over-under line logic">Weave</button>
+        <button class="mb" data-mode="shatter" title="Fragmented plane and polygon explosion">Shatter</button>
+        <button class="mb" data-mode="loops" title="Recursive agent paths closing on themselves">Loops</button>
+        <button class="mb" data-mode="recursive" title="recursive">Recursive</button>
+        <button class="mb" data-mode="fabric" title="Woven thread physics and soft connections">Fabric</button>
       </div>
     </div>
     
@@ -326,8 +335,7 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
       <div class="mg">
-        <button class="mb" data-mode="scan" title="Horizontal CRT-style raster scanning">Scan</button>
-        <button class="mb" data-mode="halftone" title="Newsprint-style dot density rendering">Halftone</button>
+
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
         <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
@@ -353,8 +361,6 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
         <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
         <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
-        <button class="mb" data-mode="weave" title="Interlocking over-under line logic">Weave</button>
-        <button class="mb" data-mode="shatter" title="Fragmented plane and polygon explosion">Shatter</button>
         <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
         <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
         <button class="mb new-mode" data-mode="scattrects"  title="Strange Loops — scattered solid and hollow rectangles">Scat. Rects</button>
@@ -370,8 +376,6 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-topo" style="padding:0">
       <div class="mg">
-        <button class="mb" data-mode="topo" title="Simplified noise-driven contour mapping">Topo</button>
-        <button class="mb" data-mode="contour" title="Multi-level character-based isolines">Contour</button>
         <button class="mb" data-mode="topolines" title="Pure vector-style elevation lines">Topo Lines</button>
         <button class="mb" data-mode="isocontour" title="Pure isolines using marching squares">Iso Lines</button>
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
@@ -398,8 +402,6 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
         <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
-        <button class="mb" data-mode="fabric" title="Woven thread physics and soft connections">Fabric</button>
-        <button class="mb" data-mode="loops" title="Recursive agent paths closing on themselves">Loops</button>
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
       </div>
     </div>
@@ -2504,160 +2506,262 @@ function drawSpiro(p) {
     }
     p.pop();
 }
-// ── SCAN ────────────────────────────────────────────────── 
-function drawScan(p,t){
-  let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=S.scanWidth||70,sp=S.spacing;
-  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
-    let d=Math.abs(y-sc),ins=d<sw;
-    if(!ins&&Math.random()>(1-S.density*.05)) continue;
-    if(ins&&Math.random()>.72) continue;
-    let br=ins?p.map(d,0,sw,1,0):.28,disp=ins?Math.sin(x*.05+t*5)*S.wave*.3:0;
-    let res=pcc(p,x,y,t);
-    dc(x+disp,y,p.map(br,0,1,2,S.maxSize),0,res.col,res.ch);
-  }
-}
-// ── Halftone ──────────────────────────────────────────────────  
-function drawHalftone(p,t){
-  let sp=S.spacing;
-  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
-    let hf=S.halftoneFreq||0.03;
-    let b=Math.min(1,Math.max(0,(Math.sin(x*hf)*Math.cos(y*hf)+1)/2*.7+Math.sin(x*hf*.5+t)*.12+Math.cos(y*hf*.5+t*.8)*.1+.08));
-    if(b<.06) continue;
-    let res=pcc(p,x,y,t);
-    dc(x,y,p.map(b,0,1,.5,S.maxSize),0,res.col,res.ch);
+
+// ── SCAN 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
+function drawScan(p, t) {
+  let sp = S.spacing;
+  let scanSpeed = S.scanSpeed !== undefined ? S.scanSpeed : 45;
+  let scanHeightRange = S.scanHeightRange !== undefined ? S.scanHeightRange : 1.3;
+  let scanWidth = S.scanWidth !== undefined ? S.scanWidth : 70;
+  let waveFreq = S.scanWaveFreq !== undefined ? S.scanWaveFreq : 0.05;
+  let waveSpeed = S.scanWaveSpeed !== undefined ? S.scanWaveSpeed : 5;
+  let waveAmp = S.scanWaveAmp !== undefined ? S.scanWaveAmp : 0.3;
+  let minSize = S.scanMinSize !== undefined ? S.scanMinSize : 2;
+
+  let sc = (t * scanSpeed * (S.speed * 180 + 0.5)) % (p.height * scanHeightRange) - p.height * 0.1;
+  for (let x = sp; x < p.width - sp; x += sp) {
+    for (let y = sp; y < p.height - sp; y += sp) {
+      let d = Math.abs(y - sc);
+      let ins = d < scanWidth;
+      if (!ins && Math.random() > (1 - S.density * 0.05)) continue;
+      if (ins && Math.random() > 0.72) continue;
+      let br = ins ? p.map(d, 0, scanWidth, 1, 0) : 0.28;
+      let disp = ins ? Math.sin(x * waveFreq + t * waveSpeed) * S.wave * waveAmp : 0;
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t); // density for char selection only
+      let res = pcc(p, x, y, t);
+      let sz = p.map(br, 0, 1, minSize, S.maxSize);
+      dc(x + disp, y, sz, 0, res.col, res.ch);
+    }
   }
 }
   
-function drawShatter(p,t){
-  if(!shatterParts.length) initShatter(p.width,p.height);
-  let prog=(Math.sin(t*.6)+1)/2,ex=prog*S.wave*2.5;
-  shatterParts.forEach(function(pt){
-    if(Math.random()>(1-S.density*.04)) return;
-  let force=S.shatterForce||280;
-  let x=pt.ox+Math.cos(pt.angle)*ex*(pt.dist/force),y=pt.oy+Math.sin(pt.angle)*ex*(pt.dist/force);
-    if(x<0||x>p.width||y<0||y>p.height) return;
-    let res=pcc(p,pt.ox,pt.oy,t);
-    dc(x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,res.col,res.ch);
+// ── HALFTONE 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
+function drawHalftone(p, t) {
+  let sp = S.spacing;
+  let freq = S.halftoneFreq !== undefined ? S.halftoneFreq : 0.03;
+  let amp1 = S.halftoneAmp1 !== undefined ? S.halftoneAmp1 : 0.7;
+  let amp2 = S.halftoneAmp2 !== undefined ? S.halftoneAmp2 : 0.12;
+  let amp3 = S.halftoneAmp3 !== undefined ? S.halftoneAmp3 : 0.1;
+  let offset = S.halftoneOffset !== undefined ? S.halftoneOffset : 0.08;
+  let minSize = S.halftoneMinSize !== undefined ? S.halftoneMinSize : 0.5;
+  for (let x = sp; x < p.width - sp; x += sp) {
+    for (let y = sp; y < p.height - sp; y += sp) {
+      let b = (Math.sin(x * freq) * Math.cos(y * freq) + 1) / 2 * amp1
+              + Math.sin(x * freq * 0.5 + t) * amp2
+              + Math.cos(y * freq * 0.5 + t * 0.8) * amp3
+              + offset;
+      b = Math.min(1, Math.max(0, b));
+      if (b < 0.06) continue;
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t); // density not used; b already determines placement
+      let res = pcc(p, x, y, t);
+      let sz = p.map(b, 0, 1, minSize, S.maxSize);
+      dc(x, y, sz, 0, res.col, res.ch);
+    }
+  }
+}
+  
+// ── SHATTER 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
+function drawShatter(p, t) {
+  if (!shatterParts.length) initShatter(p.width, p.height);
+  let prog = (Math.sin(t * (S.shatterSpeed || 0.6)) + 1) / 2;
+  let ex = prog * S.wave * (S.shatterWaveMult || 2.5);
+  let force = S.shatterForce || 280;
+  let maxDist = S.shatterMaxDist || 600;
+  let minSizeMult = S.shatterMinSizeMult || 0.8;
+  let maxSize = S.shatterMaxSize || 1.5;
+  let rotMult = S.shatterRotMult || 1.8;
+  shatterParts.forEach(function(pt) {
+    if (Math.random() > (1 - S.density * 0.04)) return;
+    let x = pt.ox + Math.cos(pt.angle) * ex * (pt.dist / force);
+    let y = pt.oy + Math.sin(pt.angle) * ex * (pt.dist / force);
+    if (x < 0 || x > p.width || y < 0 || y > p.height) return;
+    let res = pcc(p, pt.ox, pt.oy, t);
+    let sz = p.map(pt.dist, 0, maxDist, S.maxSize * minSizeMult, maxSize);
+    dc(x, y, sz, pt.angle * prog * rotMult, res.col, res.ch);
   });
 }
-  
-function drawWeave(p,t){
-  let sp=S.spacing;
-  for(let y=sp;y<p.height;y+=sp*2){
-    let rt=t+y*.002;
-    for(let x=sp;x<p.width;x+=sp){
-      if(Math.random()>(1-S.density*.1)) continue;
-      let res=pcc(p,x,y,t);
-      dc(x,y+Math.sin(x*S.turb*2+rt*2)*S.wave*.38,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);
+
+// ── WEAVE 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+function drawWeave(p, t) {
+  let sp = S.spacing;
+  let freq1 = S.weaveFreq1 !== undefined ? S.weaveFreq1 : 2;
+  let freq2 = S.weaveFreq2 !== undefined ? S.weaveFreq2 : 2;
+  let amp = S.weaveAmp !== undefined ? S.weaveAmp : 0.38;
+  let minSize = S.weaveMinSize !== undefined ? S.weaveMinSize : 3;
+  let maxSizeMult = S.weaveMaxSizeMult !== undefined ? S.weaveMaxSizeMult : 0.6;
+  // First pass: horizontal-ish
+  for (let y = sp; y < p.height; y += sp * 2) {
+    let rt = t + y * 0.002;
+    for (let x = sp; x < p.width; x += sp) {
+      if (Math.random() > (1 - S.density * 0.1)) continue;
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      let res = pcc(p, x, y, t);
+      let offY = Math.sin(x * S.turb * freq1 + rt * 2) * S.wave * amp;
+      let sz = minSize + Math.random() * (S.maxSize * maxSizeMult - minSize);
+      dc(x, y + offY, sz, 0, res.col, res.ch);
     }
   }
-  
-  for(let x=sp*1.5;x<p.width;x+=sp*2){
-    let ct=t+x*.002;
-    for(let y=sp;y<p.height;y+=sp){
-      if(Math.random()>(1-S.density*.1)) continue;
-      let res=pcc(p,x,y,t);
-      dc(x+Math.cos(y*S.turb*2+ct*1.7)*S.wave*.38,y,3+Math.random()*(S.maxSize*.6-3),0,res.col,res.ch);
+  // Second pass: vertical-ish
+  for (let x = sp * 1.5; x < p.width; x += sp * 2) {
+    let ct = t + x * 0.002;
+    for (let y = sp; y < p.height; y += sp) {
+      if (Math.random() > (1 - S.density * 0.1)) continue;
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      let res = pcc(p, x, y, t);
+      let offX = Math.cos(y * S.turb * freq2 + ct * 1.7) * S.wave * amp;
+      let sz = minSize + Math.random() * (S.maxSize * maxSizeMult - minSize);
+      dc(x + offX, y, sz, 0, res.col, res.ch);
     }
   }
 }
   
-function drawTopo(p,t){
-  let sp=S.spacing*.8,nLevels=S.topoLevels||6+Math.floor(S.density*3),bw=S.topoBandWidth||0.06+S.wave*.0012,ns=S.noiseScale;
-  for(let x=sp*.5;x<p.width;x+=sp) for(let y=sp*.5;y<p.height;y+=sp){
-    let n=p.noise(x*ns,y*ns,t*.15);
-    let level=Math.floor(n*nLevels),frac=(n*nLevels)-level;
-    if(frac>bw&&frac<(1-bw)) continue;
-    let gx=p.noise((x+1)*ns,y*ns,t*.15)-p.noise((x-1)*ns,y*ns,t*.15);
-    let gy=p.noise(x*ns,(y+1)*ns,t*.15)-p.noise(x*ns,(y-1)*ns,t*.15);
-    let angle=Math.atan2(gy,gx)+1.5708;
-    let prominence=1-(frac<bw?frac/bw:(1-frac)/bw);
-    let sz=p.map(prominence,0,1,2,S.maxSize*.9);
-    let col=S.palette[level%S.palette.length];
-    if(S.accent!=='none'&&S.accentAmt>0&&(level%Math.ceil(nLevels/3)===0)) col=S.accent;
-    dc(x,y,sz,angle,col,pickChar(p,x,y,t));
+// ── TOPO 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
+function drawTopo(p, t) {
+  let sp = S.spacing * 0.8;
+  let nLevels = S.topoLevels !== undefined ? S.topoLevels : 6 + Math.floor(S.density * 3);
+  let bw = S.topoBandWidth !== undefined ? S.topoBandWidth : 0.06 + S.wave * 0.0012;
+  let ns = S.noiseScale;
+  let szMin = S.topoMinSize !== undefined ? S.topoMinSize : 2;
+  let szMaxMult = S.topoMaxSizeMult !== undefined ? S.topoMaxSizeMult : 0.9
+  for (let x = sp * 0.5; x < p.width; x += sp) {
+    for (let y = sp * 0.5; y < p.height; y += sp) {
+      let n = sampleNoise(p, x * ns, y * ns, t * 0.15);
+      let level = Math.floor(n * nLevels);
+      let frac = (n * nLevels) - level;
+      if (frac > bw && frac < (1 - bw)) continue;
+      let gx = sampleNoise(p, (x + 1) * ns, y * ns, t * 0.15) - sampleNoise(p, (x - 1) * ns, y * ns, t * 0.15);
+      let gy = sampleNoise(p, x * ns, (y + 1) * ns, t * 0.15) - sampleNoise(p, x * ns, (y - 1) * ns, t * 0.15);
+      let angle = Math.atan2(gy, gx) + 1.5708;
+      let prominence = 1 - (frac < bw ? frac / bw : (1 - frac) / bw);
+      let sz = p.map(prominence, 0, 1, szMin, S.maxSize * szMaxMult);
+      let col = S.palette[level % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 && (level % Math.ceil(nLevels / 3) === 0)) col = S.accent;
+      dc(x, y, sz, angle, col, pickChar(p, x, y, t));
+    }
   }
 }
-  
-function drawRecursive(p,t){
-  if(!recRects.length) initRecursive(p.width,p.height);
-  let sp=S.spacing,wobT=t*.5;
-  recRects.forEach(function(rect){
-    let innerSp=sp*.6+Math.sin(wobT+rect.x*.01)*sp*.2;
-    for(let x=rect.x+innerSp*.5;x<rect.x+rect.w-innerSp*.5;x+=innerSp){
-      for(let y=rect.y+innerSp*.5;y<rect.y+rect.h-innerSp*.5;y+=innerSp){
-        if(Math.random()>(0.25+S.density*.07)) continue;
-        let wob=S.wave>0?Math.sin(x*.012+wobT)*S.wave*.1:0;
-        let ch=pickChar(p,x,y,t),sz=S.maxSize*.2+Math.random()*S.maxSize*.8;
-        let col=rect.col;
-        if(S.accent!=='none'&&S.accentAmt>0&&p.noise(x*.025,y*.025,t*.8+99)>(1-S.accentAmt)) col=S.accent;
-        dc(x+wob,y,sz,0,col,ch);
+
+// ── RECURSIVE 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+function drawRecursive(p, t) {
+  if (!recRects.length) initRecursive(p.width, p.height);
+  let sp = S.spacing;
+  let wobT = t * 0.5;
+  let minDens = S.recursiveMinDensity !== undefined ? S.recursiveMinDensity : 0.25;
+  let densScale = S.recursiveDensityScale !== undefined ? S.recursiveDensityScale : 0.07;
+  let innerSpMult = S.recursiveInnerSpMult !== undefined ? S.recursiveInnerSpMult : 0.6;
+  let innerPulseFreq = S.recursivePulseFreq !== undefined ? S.recursivePulseFreq : 0.01;
+  let innerPulseAmp = S.recursivePulseAmp !== undefined ? S.recursivePulseAmp : 0.2;
+  let wobFreq = S.recursiveWobFreq !== undefined ? S.recursiveWobFreq : 0.012;
+  let wobAmp = S.recursiveWobAmp !== undefined ? S.recursiveWobAmp : 0.1;
+  let minSizeMult = S.recursiveMinSizeMult !== undefined ? S.recursiveMinSizeMult : 0.2;
+  let sizeRange = S.recursiveSizeRange !== undefined ? S.recursiveSizeRange : 0.8;
+  recRects.forEach(function(rect) {
+    let innerSp = sp * innerSpMult + Math.sin(wobT + rect.x * innerPulseFreq) * sp * innerPulseAmp;
+    for (let x = rect.x + innerSp * 0.5; x < rect.x + rect.w - innerSp * 0.5; x += innerSp) {
+      for (let y = rect.y + innerSp * 0.5; y < rect.y + rect.h - innerSp * 0.5; y += innerSp) {
+        if (Math.random() > (minDens + S.density * densScale)) continue;
+        let wob = (S.wave > 0) ? Math.sin(x * wobFreq + wobT) * S.wave * wobAmp : 0;
+        let ch = pickChar(p, x, y, t);
+        let sz = S.maxSize * minSizeMult + Math.random() * S.maxSize * sizeRange;
+        let col = rect.col;
+        if (S.accent !== 'none' && S.accentAmt > 0 && sampleNoise(p, x * 0.025, y * 0.025, t * 0.8 + 99) > (1 - S.accentAmt)) col = S.accent;
+        dc(x + wob, y, sz, 0, col, ch);
       }
     }
   });
 }
-  
-function drawContour(p,t){
-  let sp=S.spacing;
-  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t*.2);
-    if(n<S.density) continue;
-    let gx=p.noise((x+2)*S.noiseScale,y*S.noiseScale,t*.2)-n;
-    let gy=p.noise(x*S.noiseScale,(y+2)*S.noiseScale,t*.2)-n;
-    let mag=Math.sqrt(gx*gx+gy*gy)||1;
-    let angle=Math.atan2(gy/mag,gx/mag)+t*.3;
-    let steps=S.contourSteps||2+Math.floor(S.wave*.05);
-    for(let s=0;s<steps;s++){
-      let px=x+Math.cos(angle)*s*sp*.8,py=y+Math.sin(angle)*s*sp*.8;
-      if(px<0||px>p.width||py<0||py>p.height) break;
-      let sz=p.map(n,S.density,1,3,S.maxSize)*(1-s/(steps+1));
-      let res=pcc(p,px,py,t);
-      dc(px,py,sz,angle,res.col,res.ch);
-    }
-  }
-}
-  
-function drawFabric(p,t){
-  let sp=S.spacing;
-  for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
-    if(Math.random()>(1-S.density*.12)) continue;
-    let a1=Math.sin(y*S.turb*(S.fabricFreq1||5)+t*(S.fabricSpeed1||2))*S.wave;
-    let a2=Math.cos(x*S.turb*(S.fabricFreq2||3)+t*(S.fabricSpeed2?S.fabricSpeed2:1.5))*S.wave*.5;
-    let a3=Math.sin((x+y)*S.turb*2+t*2.5)*S.wave*.35;
-    let nw=p.noise(x*(S.fabricNoiseSc||0.003),y*(S.fabricNoiseSc||0.003),t*.8)*S.wave*.5;
-    let rot=Math.sin(x*.01+t)*.6+Math.cos(y*.01+t*.8)*.4;
-    let res=pcc(p,x,y,t);
-    dc(x+a1+a3+nw,y+a2,4+Math.random()*(S.maxSize*.7-4),rot,res.col,res.ch);
-  }
-}
-  
-function drawLoops(p,t){
-  if(!loopParticles.length) initLoops(p.width,p.height);
-  let ns=S.noiseScale;
-  loopParticles.forEach(function(pt){
-    if(S.playing){
-      let angle=p.noise(pt.x*ns,pt.y*ns,t)*6.28*2;
-      let curl=angle+1.5708;
-      let ld=S.loopDamping||0.85;
-      pt.vx=pt.vx*ld+Math.cos(curl)*S.wave*.06;
-      pt.vy=pt.vy*ld+Math.sin(curl)*S.wave*.06;
-      pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;
-      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>(S.loopLife||300)){
-        pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;
-        pt.vx=0;pt.vy=0;pt.age=0;
+
+// ── CONTOUR 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+function drawContour(p, t) {
+  let sp = S.spacing;
+  let stepsBase = S.contourStepsBase !== undefined ? S.contourStepsBase : 2;
+  let stepsWave = S.contourStepsWave !== undefined ? S.contourStepsWave : 0.05;
+  let sizeMult = S.contourSizeMult !== undefined ? S.contourSizeMult : 3;
+  for (let x = sp; x < p.width - sp; x += sp) {
+    for (let y = sp; y < p.height - sp; y += sp) {
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.2);
+      if (n < S.density) continue;
+      let gx = sampleNoise(p, (x + 2) * S.noiseScale, y * S.noiseScale, t * 0.2) - n;
+      let gy = sampleNoise(p, x * S.noiseScale, (y + 2) * S.noiseScale, t * 0.2) - n;
+      let mag = Math.sqrt(gx * gx + gy * gy) || 1;
+      let angle = Math.atan2(gy / mag, gx / mag) + t * 0.3;
+      let steps = stepsBase + Math.floor(S.wave * stepsWave);
+      for (let s = 0; s < steps; s++) {
+        let px = x + Math.cos(angle) * s * sp * 0.8;
+        let py = y + Math.sin(angle) * s * sp * 0.8;
+        if (px < 0 || px > p.width || py < 0 || py > p.height) break;
+        let sz = p.map(n, S.density, 1, sizeMult, S.maxSize) * (1 - s / (steps + 1));
+        let res = pcc(p, px, py, t);
+        dc(px, py, sz, angle, res.col, res.ch);
       }
     }
-    
-    let n=p.noise(pt.x*ns,pt.y*ns,t);
-    if(n<S.density*.6) return;
-    let sz=p.map(n,S.density*.6,1,2,S.maxSize*.7);
-    let angle2=Math.atan2(pt.vy,pt.vx)||0;
-    let res=pcc(p,pt.x,pt.y,t);
-    let ll=S.loopLife||300;
-    CTX.globalAlpha=Math.min(1,(ll-pt.age)/(ll*0.67));
-    dc(pt.x,pt.y,sz,angle2,res.col,res.ch);
+  }
+}
+
+// ── FABRIC 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
+function drawFabric(p, t) {
+  let sp = S.spacing;
+  let freq1 = S.fabricFreq1 !== undefined ? S.fabricFreq1 : 5;
+  let freq2 = S.fabricFreq2 !== undefined ? S.fabricFreq2 : 3;
+  let speed1 = S.fabricSpeed1 !== undefined ? S.fabricSpeed1 : 2;
+  let speed2 = S.fabricSpeed2 !== undefined ? S.fabricSpeed2 : 1.5;
+  let amp2 = S.fabricAmp2 !== undefined ? S.fabricAmp2 : 0.5;
+  let amp3 = S.fabricAmp3 !== undefined ? S.fabricAmp3 : 0.35;
+  let noiseScale = S.fabricNoiseScale !== undefined ? S.fabricNoiseScale : 0.003;
+  let noiseAmp = S.fabricNoiseAmp !== undefined ? S.fabricNoiseAmp : 0.5;
+  let minSize = S.fabricMinSize !== undefined ? S.fabricMinSize : 4;
+  let maxSizeMult = S.fabricMaxSizeMult !== undefined ? S.fabricMaxSizeMult : 0.7;
+  for (let x = 0; x < p.width; x += sp) {
+    for (let y = 0; y < p.height; y += sp) {
+      if (Math.random() > (1 - S.density * 0.12)) continue;
+      let a1 = Math.sin(y * S.turb * freq1 + t * speed1) * S.wave;
+      let a2 = Math.cos(x * S.turb * freq2 + t * speed2) * S.wave * amp2;
+      let a3 = Math.sin((x + y) * S.turb * 2 + t * 2.5) * S.wave * amp3;
+      let nw = sampleNoise(p, x * noiseScale, y * noiseScale, t * 0.8) * S.wave * noiseAmp;
+      let rot = Math.sin(x * 0.01 + t) * 0.6 + Math.cos(y * 0.01 + t * 0.8) * 0.4;
+      let res = pcc(p, x, y, t);
+      let sz = minSize + Math.random() * (S.maxSize * maxSizeMult - minSize);
+      dc(x + a1 + a3 + nw, y + a2, sz, rot, res.col, res.ch);
+    }
+  }
+}
+
+// ── LOOPS 2.0 Refactored 4/13/26 ──────────────────────────────────────────── 
+function drawLoops(p, t) {
+  if (!loopParticles.length) initLoops(p.width, p.height);
+  let ns = S.noiseScale;
+  let damping = S.loopDamping !== undefined ? S.loopDamping : 0.85;
+  let forceMult = S.loopForceMult !== undefined ? S.loopForceMult : 0.06;
+  let maxAge = S.loopMaxAge !== undefined ? S.loopMaxAge : 300;
+  let minSize = S.loopMinSize !== undefined ? S.loopMinSize : 2;
+  let maxSizeMult = S.loopMaxSizeMult !== undefined ? S.loopMaxSizeMult : 0.7;
+  let alphaRange = S.loopAlphaRange !== undefined ? S.loopAlphaRange : 200;
+  loopParticles.forEach(function(pt) {
+    if (S.playing) {
+      let angle = sampleNoise(p, pt.x * ns, pt.y * ns, t) * 6.28 * 2;
+      let curl = angle + 1.5708;
+      pt.vx = pt.vx * damping + Math.cos(curl) * S.wave * forceMult;
+      pt.vy = pt.vy * damping + Math.sin(curl) * S.wave * forceMult;
+      pt.x += pt.vx;
+      pt.y += pt.vy;
+      pt.age++;
+      if (pt.x < 0 || pt.x > p.width || pt.y < 0 || pt.y > p.height || pt.age > maxAge) {
+        pt.x = Math.random() * p.width;
+        pt.y = Math.random() * p.height;
+        pt.vx = 0;
+        pt.vy = 0;
+        pt.age = 0;
+      }
+    }
+    let n = sampleNoise(p, pt.x * ns, pt.y * ns, t);
+    if (n < S.density * 0.6) return;
+    let sz = p.map(n, S.density * 0.6, 1, minSize, S.maxSize * maxSizeMult);
+    let angle2 = Math.atan2(pt.vy, pt.vx) || 0;
+    let res = pcc(p, pt.x, pt.y, t);
+    CTX.globalAlpha = Math.min(1, (maxAge - pt.age) / alphaRange);
+    dc(pt.x, pt.y, sz, angle2, res.col, res.ch);
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
   
 // ── DRAW IMG TEXT - Image to text functions ──────────────────────────────────────────────────  
@@ -6316,6 +6420,83 @@ const PARAM_REGISTRY = {
     { id: 'spiralSizeMin',      label: 'Min char size',     min: 0.5,max: 5,   step: 0.1,def: 0.8,  scale: 1 },
     { id: 'spiralAngleSpeed',   label: 'Rotation speed',    min: 0,  max: 2,   step: 0.1,def: 0.5,  scale: 1 },
   ],
+  scan: [
+    { id: 'scanSpeed',        label: 'Scan speed',        min: 10,  max: 100, step: 5, def: 45, scale: 1 },
+    { id: 'scanHeightRange',  label: 'Height range',      min: 0.5, max: 2.5, step: 0.1, def: 1.3, scale: 1 },
+    { id: 'scanWidth',        label: 'Beam width',        min: 20,  max: 200, step: 5, def: 70,  scale: 1 },
+    { id: 'scanWaveFreq',     label: 'Wave frequency',    min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
+    { id: 'scanWaveSpeed',    label: 'Wave speed',        min: 1,    max: 15,  step: 1, def: 5,    scale: 1 },
+    { id: 'scanWaveAmp',      label: 'Wave amplitude',    min: 0,    max: 1,   step: 0.05, def: 0.3,  scale: 1 },
+    { id: 'scanMinSize',      label: 'Min char size',     min: 1,    max: 10,  step: 1, def: 2,    scale: 1 },
+  ],
+  halftone: [
+    { id: 'halftoneFreq',     label: 'Dot frequency',    min: 0.01, max: 0.1, step: 0.005, def: 0.03, scale: 1 },
+    { id: 'halftoneAmp1',     label: 'Base contrast',    min: 0.2,  max: 1.2, step: 0.05, def: 0.7,  scale: 1 },
+    { id: 'halftoneAmp2',     label: 'X wave strength',  min: 0,    max: 0.5, step: 0.02, def: 0.12, scale: 1 },
+    { id: 'halftoneAmp3',     label: 'Y wave strength',  min: 0,    max: 0.5, step: 0.02, def: 0.1,  scale: 1 },
+    { id: 'halftoneOffset',   label: 'Brightness offset',min: 0,    max: 0.3, step: 0.01, def: 0.08, scale: 1 },
+    { id: 'halftoneMinSize',  label: 'Min dot size',     min: 0.2,  max: 2,   step: 0.1, def: 0.5,  scale: 1 },
+  ],
+  shatter: [
+    { id: 'shatterSpeed',     label: 'Explosion speed',   min: 0.2,  max: 2,   step: 0.1, def: 0.6,  scale: 1 },
+    { id: 'shatterWaveMult',  label: 'Wave multiplier',   min: 0.5,  max: 5,   step: 0.5, def: 2.5,  scale: 1 },
+    { id: 'shatterForce',     label: 'Force factor',      min: 50,   max: 800, step: 10,  def: 280,  scale: 1 },
+    { id: 'shatterMaxDist',   label: 'Max distance',      min: 200,  max: 1000,step: 50,  def: 600,  scale: 1 },
+    { id: 'shatterMinSizeMult', label: 'Min size mult',   min: 0.3,  max: 1.2, step: 0.05,def: 0.8,  scale: 1 },
+    { id: 'shatterMaxSize',   label: 'Max size',          min: 1,    max: 5,   step: 0.5, def: 1.5,  scale: 1 },
+    { id: 'shatterRotMult',   label: 'Rotation factor',   min: 0.5,  max: 3,   step: 0.1, def: 1.8,  scale: 1 },
+  ],
+  weave: [
+    { id: 'weaveFreq1',       label: 'X wave frequency',  min: 1,  max: 8,  step: 1, def: 2,  scale: 1 },
+    { id: 'weaveFreq2',       label: 'Y wave frequency',  min: 1,  max: 8,  step: 1, def: 2,  scale: 1 },
+    { id: 'weaveAmp',         label: 'Wave amplitude',    min: 0.1,max: 1,  step: 0.05, def: 0.38, scale: 1 },
+    { id: 'weaveMinSize',     label: 'Min char size',     min: 2,  max: 10, step: 1, def: 3,  scale: 1 },
+    { id: 'weaveMaxSizeMult', label: 'Max size mult',     min: 0.3,max: 1,  step: 0.05, def: 0.6, scale: 1 },
+  ],
+  topo: [
+    { id: 'topoLevels',       label: 'Contour levels',    min: 2,  max: 24, step: 1, def: 8,   scale: 1 },
+    { id: 'topoBandWidth',    label: 'Line thickness',    min: 0.01,max: 0.2, step: 0.01,def: 0.06,scale: 1 },
+    { id: 'topoMinSize',      label: 'Min stroke size',   min: 1,  max: 10, step: 1, def: 2,   scale: 1 },
+    { id: 'topoMaxSizeMult',  label: 'Max size mult',     min: 0.3,max: 1.2,step: 0.05,def: 0.9, scale: 1 },
+  ],
+  recursive: [
+    { id: 'recursiveMinDensity',    label: 'Min density',       min: 0.05, max: 0.5, step: 0.02, def: 0.25, scale: 1 },
+    { id: 'recursiveDensityScale',  label: 'Density scale',     min: 0,    max: 0.2, step: 0.01, def: 0.07, scale: 1 },
+    { id: 'recursiveInnerSpMult',   label: 'Inner spacing',     min: 0.2,  max: 1,   step: 0.05, def: 0.6,  scale: 1 },
+    { id: 'recursivePulseFreq',     label: 'Pulse frequency',   min: 0.001, max: 0.05,step: 0.001,def: 0.01, scale: 1 },
+    { id: 'recursivePulseAmp',      label: 'Pulse amplitude',   min: 0,    max: 0.5, step: 0.05, def: 0.2,  scale: 1 },
+    { id: 'recursiveWobFreq',       label: 'Wobble frequency',  min: 0.002, max: 0.05,step: 0.002,def: 0.012,scale: 1 },
+    { id: 'recursiveWobAmp',        label: 'Wobble amplitude',  min: 0,    max: 0.3, step: 0.02, def: 0.1,  scale: 1 },
+    { id: 'recursiveMinSizeMult',   label: 'Min size mult',     min: 0.1,  max: 0.8, step: 0.05, def: 0.2,  scale: 1 },
+    { id: 'recursiveSizeRange',     label: 'Size range',        min: 0.1,  max: 1,   step: 0.05, def: 0.8,  scale: 1 },
+  ],
+  contour: [
+    { id: 'contourStepsBase', label: 'Base steps',        min: 1,  max: 6, step: 1, def: 2,   scale: 1 },
+    { id: 'contourStepsWave', label: 'Wave steps',        min: 0,  max: 0.2,step: 0.01,def: 0.05,scale: 1 },
+    { id: 'contourSizeMult',  label: 'Size multiplier',   min: 1,  max: 6, step: 1, def: 3,   scale: 1 },
+  ],
+  fabric: [
+    { id: 'fabricFreq1',      label: 'Freq X',            min: 1,  max: 15, step: 1, def: 5,   scale: 1 },
+    { id: 'fabricFreq2',      label: 'Freq Y',            min: 1,  max: 15, step: 1, def: 3,   scale: 1 },
+    { id: 'fabricSpeed1',     label: 'Speed X',           min: 0.5, max: 5,  step: 0.5,def: 2,   scale: 1 },
+    { id: 'fabricSpeed2',     label: 'Speed Y',           min: 0.5, max: 5,  step: 0.5,def: 1.5, scale: 1 },
+    { id: 'fabricAmp2',       label: 'Amplitude Y',       min: 0,   max: 1.5,step: 0.1,def: 0.5, scale: 1 },
+    { id: 'fabricAmp3',       label: 'Diagonal amplitude',min: 0,   max: 1,  step: 0.05,def: 0.35,scale: 1 },
+    { id: 'fabricNoiseScale', label: 'Noise scale',       min: 0.001,max: 0.01,step: 0.001,def: 0.003,scale: 1 },
+    { id: 'fabricNoiseAmp',   label: 'Noise amplitude',   min: 0,   max: 1,  step: 0.1,def: 0.5, scale: 1 },
+    { id: 'fabricMinSize',     label: 'Min char size',     min: 2,   max: 15, step: 1, def: 4,   scale: 1 },
+    { id: 'fabricMaxSizeMult', label: 'Max size mult',     min: 0.3, max: 1,  step: 0.05,def: 0.7, scale: 1 },
+  ],
+  loops: [
+    { id: 'loopDamping',      label: 'Inertia',           min: 0.5,  max: 0.99,step: 0.01,def: 0.85, scale: 1 },
+    { id: 'loopForceMult',    label: 'Flow strength',     min: 0,    max: 0.2, step: 0.01,def: 0.06, scale: 1 },
+    { id: 'loopMaxAge',       label: 'Max age (frames)',  min: 50,   max: 800, step: 10, def: 300,  scale: 1 },
+    { id: 'loopMinSize',      label: 'Min char size',     min: 1,    max: 10,  step: 1, def: 2,    scale: 1 },
+    { id: 'loopMaxSizeMult',  label: 'Max size mult',     min: 0.3,  max: 1.2, step: 0.05,def: 0.7,  scale: 1 },
+    { id: 'loopAlphaRange',   label: 'Fade length',       min: 50,   max: 500, step: 10, def: 200,  scale: 1 },
+  ],
+
+
   
   //to be refactored
   reaction: [
@@ -6344,37 +6525,9 @@ const PARAM_REGISTRY = {
     { id:'boidCoh',    label:'Cohesion',     min:0,   max:100, step:2,  def:4,   scale:0.0001 },
     { id:'boidView',   label:'Vision range', min:10,  max:200, step:5,  def:60,  scale:1    },
   ],
-  matrix: [
-    { id:'matrixTrail', label:'Trail length', min:3, max:30, step:1, def:10, scale:1,
-      extra: function(){ window._st.ri(); } },
-  ],
-  topo: [
-    { id:'topoLevels',  label:'Contour levels', min:2, max:24,  step:1,  def:8,   scale:1   },
-  ],
-  scan: [
-    { id:'scanWidth',   label:'Beam width',   min:10,  max:200, step:5,  def:70,  scale:1   },
-  ],
-  halftone: [
-    { id:'halftoneFreq',label:'Dot frequency',min:1,   max:10,  step:1,  def:3,   scale:0.01 },
-  ],
-  recursive: [
-    { id:'recursionDepth', label:'Depth',     min:2,   max:8,   step:1,  def:5,   scale:1,
-      extra: function(){ recRects=[]; } },
-  ],
   fractalsubdiv: [
     { id:'fractalDepth', label:'Detail level', min:1,  max:6,   step:1,  def:4,   scale:1,
       extra: function(){ fsPolygons=[]; } },
-  ],
-  orbit: [
-    { id:'orbitCenters', label:'Center count', min:1, max:6, step:1, def:2, scale:1,
-      extra: function(){ window._st.ri(); } },
-  ],
-  shatter: [
-    { id:'shatterForce', label:'Explosion',   min:50,  max:800, step:10, def:280, scale:1   },
-  ],
-  loops: [
-    { id:'loopDamping',  label:'Trail inertia', min:50, max:99, step:1, def:85,  scale:0.01 },
-    { id:'loopLife',     label:'Trail length',  min:50, max:500, step:10, def:300, scale:1  },
   ],
   seisma: [
     { id:'seismaCross',  label:'Cross-hatch',  type:'toggle', def:false },
@@ -6401,25 +6554,10 @@ const PARAM_REGISTRY = {
       extra: function(){ qtTree=null; } },
     { id:'qtThreshold', label:'Split threshold', min:5, max:95, step:5,  def:40,  scale:0.01 },
   ],
-
-  fabric: [
-    { id:'fabricFreq1', label:'Wave freq 1',   min:1, max:20, step:1,  def:5,  scale:1   },
-    { id:'fabricFreq2', label:'Wave freq 2',   min:1, max:20, step:1,  def:3,  scale:1   },
-    { id:'fabricSpeed1',label:'Wave speed 1',  min:1, max:20, step:1,  def:2,  scale:1   },
-    { id:'fabricSpeed2',label:'Wave speed 2',  min:1, max:20, step:1,  def:15, scale:0.1 },
-    { id:'fabricNoiseSc',label:'Noise density',min:1, max:20, step:1,  def:3,  scale:0.001 },
-  ],
   wireterrain: [
     { id:'terrainHeight',   label:'Mountain height', min:1, max:20, step:1,  def:6,  scale:0.1  },
     { id:'terrainCamDist',  label:'Camera distance', min:5, max:50, step:1,  def:18, scale:0.1  },
     { id:'terrainCamSpeed', label:'Orbit speed',     min:0, max:20, step:1,  def:4,  scale:0.01 },
-  ],
-  topo: [
-    { id:'topoLevels',    label:'Contour levels', min:2,  max:24,  step:1, def:8,   scale:1    },
-    { id:'topoBandWidth', label:'Line thickness', min:1,  max:20,  step:1, def:6,   scale:0.01 },
-  ],
-  contour: [
-    { id:'contourSteps',  label:'Stroke steps',   min:1,  max:8,   step:1, def:2,   scale:1    },
   ],
   sand: [
     { id:'sandDamping',   label:'Drag',           min:50, max:99,  step:1, def:92,  scale:0.01 },
