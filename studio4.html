@@ -288,13 +288,21 @@ select option{background:var(--ink)}
   </div>
 <div class="sec-body" id="body-mode">
   <div id="modeGrid">
+        <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-fluid')">
+      REFACTORED MODES<span class="sec-arrow" id="arr-mode-fluid">›</span>
+    </div>
+    <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
+      <div class="mg">
+        <button class="mb active" data-mode="bloom" title="Radiating character growth from the center">Bloom</button>
+
+      </div>
+    </div>
     
     <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-fluid')">
       Fluid & Motion <span class="sec-arrow" id="arr-mode-fluid">›</span>
     </div>
     <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
       <div class="mg">
-        <button class="mb active" data-mode="bloom" title="Radiating character growth from the center">Bloom</button>
         <button class="mb" data-mode="wave" title="Sinuous horizontal character oscillations">Wave</button>
         <button class="mb" data-mode="rain1" title="Vertical falling character streams">Rain</button>
         <button class="mb" data-mode="rain2" title="Dense, heavy precipitation patterns">Rain 2</button>
