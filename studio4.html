@@ -1872,17 +1872,27 @@ function pickChar(p, x, y, t) {
   return ch;
 }
 
-function pickColor(p,x,y,t){
-  if(S.compEnabled){
-    for(let i=compBlocks.length-1;i>=0;i--){
-      let b=compBlocks[i];
-      if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h&&Math.random()<(b.op||.7)) return b.col;
+function pickColor(p, x, y, t) {
+  // 1. Composition blocks (unchanged)
+  if (S.compEnabled) {
+    for (let i = compBlocks.length - 1; i >= 0; i--) {
+      let b = compBlocks[i];
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && Math.random() < (b.op || 0.7)) {
+        return b.col;
+      }
     }
   }
-  if(S.accent2!=='none'&&S.accentAmt2>0&&p.noise(x*.02,y*.02,t*.5+199)>(1-S.accentAmt2)) return S.accent2;
-  if(S.accent!=='none'&&S.accentAmt>0&&p.noise(x*.018,y*.018,t*.7+99)>(1-S.accentAmt)) return S.accent;
-  let ci=Math.floor(p.noise(x*.01,y*.01,t)*S.palette.length);
-  return S.palette[ci%S.palette.length];
+  // 2. Accent overrides (optional, still uses simple noise for speed)
+  if (S.accent2 !== 'none' && S.accentAmt2 > 0 && p.noise(x * 0.02, y * 0.02, t * 0.5 + 199) > (1 - S.accentAmt2)) {
+    return S.accent2;
+  }
+  if (S.accent !== 'none' && S.accentAmt > 0 && p.noise(x * 0.018, y * 0.018, t * 0.7 + 99) > (1 - S.accentAmt)) {
+    return S.accent;
+  }
+  // 3. Main colour – now driven by full colour mapping system
+  let mapVal = getColorIndex(p, x, y, t);
+  let ci = Math.floor(mapVal * S.palette.length);
+  return S.palette[ci % S.palette.length];
 }
 
 function pcc(p,x,y,t){return {ch:pickChar(p,x,y,t),col:pickColor(p,x,y,t)};}
