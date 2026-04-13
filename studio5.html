@@ -6195,6 +6195,60 @@ document.getElementById('btnExpandAll').addEventListener('click', function() {
 const PARAM_REGISTRY = {
 
   // ── Existing mode-specific params, now data-driven ────────────────────────
+  
+  //refactored 4/13
+  bloom: [
+    { id:'bloomRotMult', label:'Rotation chaos', min:1, max:12, step:1, def:4,  scale:1    },
+  ],
+  wave: [
+    { id:'waveFreqX',  label:'Freq X',       min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'waveFreqY',  label:'Freq Y',       min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'waveAmpY',   label:'Amplitude Y',  min:0, max:20, step:1,  def:6,  scale:0.1 },
+  ],
+  ripple: [
+    { id:'rippleFreq',  label:'Ring density',  min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'rippleSpeed', label:'Pulse speed',   min:1, max:20, step:1,  def:5,  scale:1   },
+  ],
+  warp: [
+    { id: 'warpMult',        label: 'Warp strength',     min: 1,  max: 20, step: 1, def: 4,   scale: 1 },
+    { id: 'warpNoiseScale',  label: 'Warp noise scale',  min: 1,  max: 20, step: 1, def: 2,   scale: 0.001,
+      hint: 'Lower = larger warp swirls' },
+  ],
+  tess: [
+    { id: 'tessSpeed',  label: 'Pulse speed',   min: 1,  max: 20, step: 1, def: 2,  scale: 1 },
+  ],
+  drift: [
+    { id: 'driftNoiseScale', label: 'Drift noise scale', min: 1,  max: 20, step: 1, def: 5,  scale: 0.001,
+      hint: 'Lower = larger drift blobs' },
+    { id: 'driftMult',       label: 'Drift amount',      min: 0,  max: 10, step: 1, def: 2,  scale: 1 },
+  ],
+  spiral: [
+    { id:'spiralTurns', label:'Coil count',   min:3,   max:40,  step:1,  def:22,  scale:1   },
+  ],
+  vortex: [
+    { id:'vortexSpin',  label:'Spin bias',    min:0,   max:20,  step:1,  def:5,   scale:0.1  },
+  ],
+  glitch: [
+    { id: 'glitchRowHeightMult', label: 'Row height',      min: 1,   max: 3,   step: 0.1, def: 1.4, scale: 1 },
+    { id: 'glitchDispFreq',      label: 'Wiggle freq',     min: 0.1, max: 2,   step: 0.1, def: 0.4, scale: 1 },
+    { id: 'glitchDispSpeed',     label: 'Wiggle speed',    min: 1,   max: 10,  step: 1,   def: 4,   scale: 1 },
+    { id: 'glitchDispAmp',       label: 'Wiggle amount',   min: 0,   max: 1.5, step: 0.1, def: 0.6, scale: 1 },
+    { id: 'glitchRGBSpeed',      label: 'RGB flicker',     min: 1,   max: 15,  step: 1,   def: 6,   scale: 1 },
+    { id: 'glitchMinSize',       label: 'Min char size',   min: 2,   max: 20,  step: 1,   def: 4,   scale: 1 },
+    { id: 'glitchMaxSizeMult',   label: 'Max size mult',   min: 0.3, max: 1,   step: 0.05,def: 0.65,scale: 1 },
+  ],
+  webster: [
+    { id: 'websterNoiseFreq',      label: 'Wave freq',       min: 0.002, max: 0.03, step: 0.001, def: 0.008, scale: 1 },
+    { id: 'websterWaveXMult',      label: 'Wave X strength', min: 0,     max: 0.5,  step: 0.01,  def: 0.12,  scale: 1 },
+    { id: 'websterWaveYMult',      label: 'Wave Y strength', min: 0,     max: 0.5,  step: 0.01,  def: 0.08,  scale: 1 },
+    { id: 'websterWaveYSpeed',     label: 'Wave Y speed',    min: 0,     max: 2,    step: 0.1,   def: 0.7,   scale: 1 },
+    { id: 'websterMinSizeMult',    label: 'Min size mult',   min: 0.1,   max: 0.8,  step: 0.05,  def: 0.25,  scale: 1 },
+    { id: 'websterSizeRangeMult',  label: 'Size range',      min: 0.1,   max: 1,    step: 0.05,  def: 0.35,  scale: 1 },
+    { id: 'websterBlockWobFreq',   label: 'Block wobble freq', min: 0.001, max: 0.05, step: 0.001, def: 0.01,  scale: 1 },
+    { id: 'websterBlockWobAmp',    label: 'Block wobble amp',  min: 0,     max: 0.3,  step: 0.01,  def: 0.08,  scale: 1 },
+  ],
+
+  //to be refactored
   reaction: [
     { id:'reactFeed',  label:'Feed rate',    min:10,  max:100, step:1,  def:35,  scale:0.001 },
     { id:'reactKill',  label:'Kill rate',    min:10,  max:100, step:1,  def:65,  scale:0.001 },
@@ -6221,24 +6275,9 @@ const PARAM_REGISTRY = {
     { id:'boidCoh',    label:'Cohesion',     min:0,   max:100, step:2,  def:4,   scale:0.0001 },
     { id:'boidView',   label:'Vision range', min:10,  max:200, step:5,  def:60,  scale:1    },
   ],
-  bloom: [
-    { id:'bloomRotMult', label:'Rotation chaos', min:1, max:12, step:1, def:4,  scale:1    },
-  ],
   matrix: [
     { id:'matrixTrail', label:'Trail length', min:3, max:30, step:1, def:10, scale:1,
       extra: function(){ window._st.ri(); } },
-  ],
-  drift: [
-    { id:'driftScale',  label:'Drift blob size', min:1, max:20, step:1, def:5,  scale:0.001 },
-    { id:'lissA',       label:'Lissajous A',     min:1, max:7,  step:1, def:1,  scale:1,
-      hint:'1=circular, 2=figure-8, 3=trefoil' },
-    { id:'lissB',       label:'Lissajous B',     min:1, max:7,  step:1, def:1,  scale:1    },
-  ],
-  spiral: [
-    { id:'spiralTurns', label:'Coil count',   min:3,   max:40,  step:1,  def:22,  scale:1   },
-  ],
-  vortex: [
-    { id:'vortexSpin',  label:'Spin bias',    min:0,   max:20,  step:1,  def:5,   scale:0.1  },
   ],
   topo: [
     { id:'topoLevels',  label:'Contour levels', min:2, max:24,  step:1,  def:8,   scale:1   },
@@ -6276,8 +6315,6 @@ const PARAM_REGISTRY = {
       hint:'Frequency ratio — try 2:3, 3:4, 1:2' },
     { id:'lissB',   label:'Harmonic B',     min:1, max:7, step:1, def:3,  scale:1 },
   ],
-
-  // ── New modes (Phases 4–5, add as built) ─────────────────────────────────
   spiro: [
     { id:'spiroR',      label:'Outer radius', min:10, max:200, step:5,  def:80,  scale:1   },
     { id:'spiror',      label:'Inner radius',  min:2,  max:100, step:2,  def:30,  scale:1   },
@@ -6296,22 +6333,6 @@ const PARAM_REGISTRY = {
     { id:'qtThreshold', label:'Split threshold', min:5, max:95, step:5,  def:40,  scale:0.01 },
   ],
 
-// ── New wired entries ─────────────────────────────────────────────────────
-  wave: [
-    { id:'waveFreqX',  label:'Freq X',       min:1, max:30, step:1,  def:10, scale:1   },
-    { id:'waveFreqY',  label:'Freq Y',       min:1, max:30, step:1,  def:10, scale:1   },
-    { id:'waveAmpY',   label:'Amplitude Y',  min:0, max:20, step:1,  def:6,  scale:0.1 },
-  ],
-  ripple: [
-    { id:'rippleFreq',  label:'Ring density',  min:1, max:30, step:1,  def:10, scale:1   },
-    { id:'rippleSpeed', label:'Pulse speed',   min:1, max:20, step:1,  def:5,  scale:1   },
-  ],
-  warp: [
-    { id:'warpMult',    label:'Warp strength', min:1, max:20, step:1,  def:4,  scale:1   },
-  ],
-  tess: [
-    { id:'tessSpeed',   label:'Pulse speed',   min:1, max:20, step:1,  def:2,  scale:1   },
-  ],
   fabric: [
     { id:'fabricFreq1', label:'Wave freq 1',   min:1, max:20, step:1,  def:5,  scale:1   },
     { id:'fabricFreq2', label:'Wave freq 2',   min:1, max:20, step:1,  def:3,  scale:1   },
