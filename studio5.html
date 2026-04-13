@@ -2169,7 +2169,7 @@ function drawWave(p, t) {
     }
   }
 }
-  
+// ── RAIN 1 ───────────────────────────────────────────  
 function drawRain1(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*250+1);
@@ -2191,7 +2191,7 @@ function drawRain1(p,t){
   });
   CTX.globalAlpha=1;
 }
-  
+// ── RAIN 2 ───────────────────────────────────────────  
 function drawRain2(p,t){
   if(S.playing) rainDrops.forEach(function(d){
     d.y+=d.speed*(S.speed*500+2);
@@ -2379,33 +2379,60 @@ function drawWebster(p, t) {
   });
 }
   
-function drawMatrix(p,t){
-  if(S.playing) matrixCols.forEach(function(c){
-    c.y+=c.speed*(S.speed*280+1);
-    if(c.y>p.height+S.spacing*c.tl){c.y=-S.spacing*(1+Math.random()*5);c.speed=.5+Math.random()*2.5;c.glitch=Math.random()<.2;}
-  });
-  matrixCols.forEach(function(c,ci){
-    for(let j=0;j<c.tl;j++){
-      let ty=c.y-j*S.spacing;
-      if(ty<0||ty>p.height) continue;
-      let alpha=1-j/c.tl;
-      let ch=(c.glitch&&S.entropy>0&&Math.random()<S.entropy*.6)?GLITCH[Math.floor(Math.random()*GLITCH.length)]:pickChar(p,ci*S.spacing,ty,t);
-      let col=j===0?(S.accent!=='none'?S.accent:S.palette[0]):S.palette[1%S.palette.length];
-      let sz=(j===0?S.maxSize*.85:S.maxSize*.5)|0;
-      let fstr=sz+'px '+S.fontStack;
-      CTX.globalAlpha=alpha;
-      if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-      if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-      CTX.fillText(ch,c.x,ty);
+// ── MATRIX 2.0 Refactored 4/13/26 ───────────────────────────────────────────
+function drawMatrix(p, t) {
+  // Mode‑specific parameters
+  let trailBase = S.matrixTrailBase !== undefined ? S.matrixTrailBase : 5;
+  let trailRand = S.matrixTrailRand !== undefined ? S.matrixTrailRand : 16;
+  let speedMult = S.matrixSpeedMult !== undefined ? S.matrixSpeedMult : 280;
+  let glitchProb = S.matrixGlitchProb !== undefined ? S.matrixGlitchProb : 0.2;
+  let headSizeMult = S.matrixHeadSizeMult !== undefined ? S.matrixHeadSizeMult : 0.85;
+  let tailSizeMult = S.matrixTailSizeMult !== undefined ? S.matrixTailSizeMult : 0.5;
+  if (S.playing) {
+    matrixCols.forEach(function(c) {
+      c.y += c.speed * (S.speed * speedMult + 1);
+      if (c.y > p.height + S.spacing * c.tl) {
+        c.y = -S.spacing * (1 + Math.random() * 5);
+        c.speed = 0.5 + Math.random() * 2.5;
+        c.glitch = Math.random() < glitchProb;
+      }
+    });
+  }
+  matrixCols.forEach(function(c, ci) {
+    for (let j = 0; j < c.tl; j++) {
+      let ty = c.y - j * S.spacing;
+      if (ty < 0 || ty > p.height) continue;
+      let alpha = 1 - j / c.tl;
+      let ch;
+      if (c.glitch && S.entropy > 0 && Math.random() < S.entropy * 0.6) {
+        ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+      } else {
+        ch = pickChar(p, ci * S.spacing, ty, t);
+      }
+      let col = (j === 0) ? (S.accent !== 'none' ? S.accent : S.palette[0]) : S.palette[1 % S.palette.length];
+      let sz = (j === 0) ? S.maxSize * headSizeMult : S.maxSize * tailSizeMult;
+      sz = Math.max(1, sz | 0);
+      let fstr = sz + 'px ' + S.fontStack;
+      CTX.globalAlpha = alpha;
+      if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+      if (col !== _lastFill) { CTX.fillStyle = col; _lastFill = col; }
+      CTX.fillText(ch, c.x, ty);
     }
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
-  
+
+// ── ORBIT 2.0 Refactored 4/13/26 ─────────────────────────────────────────────
 function drawOrbit(p, t) {
   let nC = Math.max(1, S.orbitCenters || 2);
-  let maxR = Math.max(p.width, p.height) * 0.58;
+  let maxRMult = S.orbitMaxRMult !== undefined ? S.orbitMaxRMult : 0.58;
+  let maxR = Math.max(p.width, p.height) * maxRMult;
   let sp = S.spacing;
+  let probBase = S.orbitProbBase !== undefined ? S.orbitProbBase : 0.2;
+  let probDensity = S.orbitProbDensity !== undefined ? S.orbitProbDensity : 0.08;
+  let speedOffset = S.orbitSpeedOffset !== undefined ? S.orbitSpeedOffset : 0.5;
+  let sizeMin = S.orbitSizeMin !== undefined ? S.orbitSizeMin : 2;
+  let sizeMaxMult = S.orbitSizeMaxMult !== undefined ? S.orbitSizeMaxMult : 0.8;
   let centers = [];
   for (let i = 0; i < nC; i++) {
     let a = (i / nC) * 6.28;
@@ -2418,29 +2445,46 @@ function drawOrbit(p, t) {
     for (let r = sp; r < maxR; r += sp) {
       let cnt = Math.floor(6.28 * r / sp);
       for (let i = 0; i < cnt; i++) {
-        if (Math.random() > (0.2 + S.density * 0.08)) continue;
-        let ang = (i / cnt) * 6.28 + t * (0.5 + ci * 0.3);
+        // Random skip – keep as is or replace with noise threshold?
+        if (Math.random() > (probBase + S.density * probDensity)) continue;
+        let ang = (i / cnt) * 6.28 + t * (speedOffset + ci * 0.3);
         let x = c.x + Math.cos(ang) * r;
         let y = c.y + Math.sin(ang) * r;
         if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
         let res = pcc(p, x, y, t);
-        dc(x, y, p.map(r, 0, maxR, S.maxSize * 0.8, 2), ang + 1.5708, res.col, res.ch);
+        let sz = p.map(r, 0, maxR, S.maxSize * sizeMaxMult, sizeMin);
+        dc(x, y, sz, ang + 1.5708, res.col, res.ch);
       }
     }
   });
 }
-  
-function drawSpiral(p,t){
-  let cx=p.width/2,cy=p.height/2,maxR=Math.min(p.width,p.height)*.52,a=S.spacing/6.28;
-  for(let th=0;th<6.28*(S.spiralTurns||22);th+=.25){
-    let r=a*th;if(r>maxR)break;
-    let wb=Math.sin(th*3+t*2)*S.wave*.13;
-    let x=cx+Math.cos(th+t*.2)*(r+wb),y=cy+Math.sin(th+t*.2)*(r+wb);
-    if(x<0||x>p.width||y<0||y>p.height) continue;
-    let res=pcc(p,x,y,t);
-    dc(x,y,p.map(r,0,maxR,S.maxSize,.8),th+t*.5,res.col,res.ch);
+
+// ── SPIRAL 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+function drawSpiral(p, t) {
+  let cx = p.width / 2;
+  let cy = p.height / 2;
+  let maxRMult = S.spiralMaxRMult !== undefined ? S.spiralMaxRMult : 0.52;
+  let maxR = Math.min(p.width, p.height) * maxRMult;
+  let a = S.spacing / 6.28;                 // radial step per angle
+  let turns = S.spiralTurns !== undefined ? S.spiralTurns : 22;
+  let waveFreq = S.spiralWaveFreq !== undefined ? S.spiralWaveFreq : 3;
+  let waveSpeed = S.spiralWaveSpeed !== undefined ? S.spiralWaveSpeed : 2;
+  let waveAmpMult = S.spiralWaveAmpMult !== undefined ? S.spiralWaveAmpMult : 0.13;
+  let sizeMin = S.spiralSizeMin !== undefined ? S.spiralSizeMin : 0.8;
+  let angleSpeed = S.spiralAngleSpeed !== undefined ? S.spiralAngleSpeed : 0.5;
+  for (let th = 0; th < 6.28 * turns; th += 0.25) {
+    let r = a * th;
+    if (r > maxR) break;
+    let wb = Math.sin(th * waveFreq + t * waveSpeed) * S.wave * waveAmpMult;
+    let x = cx + Math.cos(th + t * 0.2) * (r + wb);
+    let y = cy + Math.sin(th + t * 0.2) * (r + wb);
+    if (x < 0 || x > p.width || y < 0 || y > p.height) continue;
+    let res = pcc(p, x, y, t);
+    let sz = p.map(r, 0, maxR, S.maxSize, sizeMin);
+    dc(x, y, sz, th + t * angleSpeed, res.col, res.ch);
   }
 }
+  
 // ── SPIRO (4/10/26) ──────────────────────────────────────────────────
 function drawSpiro(p) {
     p.push();
@@ -6247,7 +6291,33 @@ const PARAM_REGISTRY = {
     { id: 'websterBlockWobFreq',   label: 'Block wobble freq', min: 0.001, max: 0.05, step: 0.001, def: 0.01,  scale: 1 },
     { id: 'websterBlockWobAmp',    label: 'Block wobble amp',  min: 0,     max: 0.3,  step: 0.01,  def: 0.08,  scale: 1 },
   ],
-
+  matrix: [
+    { id: 'matrixTrailBase',    label: 'Min trail length',  min: 2,  max: 15, step: 1, def: 5,  scale: 1 },
+    { id: 'matrixTrailRand',    label: 'Max extra length',  min: 0,  max: 30, step: 1, def: 16, scale: 1 },
+    { id: 'matrixSpeedMult',    label: 'Fall speed',        min: 50, max: 500, step: 10,def: 280,scale: 1 },
+    { id: 'matrixGlitchProb',   label: 'Glitch prob',       min: 0,  max: 0.5, step: 0.01,def: 0.2, scale: 1 },
+    { id: 'matrixHeadSizeMult', label: 'Head size mult',    min: 0.5,max: 1.2, step: 0.05,def: 0.85,scale: 1 },
+    { id: 'matrixTailSizeMult', label: 'Tail size mult',    min: 0.2,max: 1,   step: 0.05,def: 0.5, scale: 1 },
+  ],
+  orbit: [
+    { id: 'orbitCenters',       label: 'Center count',      min: 1,  max: 6,   step: 1, def: 2,   scale: 1 },
+    { id: 'orbitMaxRMult',      label: 'Max radius mult',   min: 0.2,max: 0.9, step: 0.02,def: 0.58, scale: 1 },
+    { id: 'orbitProbBase',      label: 'Base density',      min: 0,  max: 0.5, step: 0.02,def: 0.2,  scale: 1 },
+    { id: 'orbitProbDensity',   label: 'Density factor',    min: 0,  max: 0.2, step: 0.01,def: 0.08, scale: 1 },
+    { id: 'orbitSpeedOffset',   label: 'Speed offset',      min: 0,  max: 1.5, step: 0.1, def: 0.5,  scale: 1 },
+    { id: 'orbitSizeMin',       label: 'Min char size',     min: 1,  max: 10,  step: 1, def: 2,   scale: 1 },
+    { id: 'orbitSizeMaxMult',   label: 'Max size mult',     min: 0.3,max: 1,   step: 0.05,def: 0.8,  scale: 1 },
+  ],
+  spiral: [
+    { id: 'spiralTurns',        label: 'Number of turns',   min: 3,  max: 60,  step: 1, def: 22,  scale: 1 },
+    { id: 'spiralMaxRMult',     label: 'Max radius mult',   min: 0.2,max: 0.8, step: 0.02,def: 0.52, scale: 1 },
+    { id: 'spiralWaveFreq',     label: 'Wobble freq',       min: 1,  max: 12,  step: 1, def: 3,   scale: 1 },
+    { id: 'spiralWaveSpeed',    label: 'Wobble speed',      min: 0,  max: 5,   step: 0.5,def: 2,   scale: 1 },
+    { id: 'spiralWaveAmpMult',  label: 'Wobble amount',     min: 0,  max: 0.5, step: 0.01,def: 0.13, scale: 1 },
+    { id: 'spiralSizeMin',      label: 'Min char size',     min: 0.5,max: 5,   step: 0.1,def: 0.8,  scale: 1 },
+    { id: 'spiralAngleSpeed',   label: 'Rotation speed',    min: 0,  max: 2,   step: 0.1,def: 0.5,  scale: 1 },
+  ],
+  
   //to be refactored
   reaction: [
     { id:'reactFeed',  label:'Feed rate',    min:10,  max:100, step:1,  def:35,  scale:0.001 },
