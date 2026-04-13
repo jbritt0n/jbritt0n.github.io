@@ -827,6 +827,7 @@ select option{background:var(--ink)}
     <span class="sec-arrow" id="arr-render">›</span>
   </div>
   <div class="sec-body collapsed" id="body-render">
+
     <div class="sl2" style="margin-bottom:.4rem">Canvas Blending</div>
     <select id="blendSelect" title="Canvas blend mode">
       <option value="source-over">Normal (default)</option>
@@ -847,35 +848,53 @@ select option{background:var(--ink)}
       <option value="luminosity">Luminosity</option>
       <option value="xor">XOR</option>
     </select>
-    <div class="sl2">Noise Type</div>
-<div class="cg" id="noiseTypeGrid">
-  <button class="cb active" data-ntype="perlin">Perlin</button>
-  <button class="cb" data-ntype="ridged">Ridged</button>
-  <button class="cb" data-ntype="billow">Billow</button>
-  <button class="cb" data-ntype="cellular">Cellular</button> 
-  <button class="cb" data-ntype="simplex">Simplex</button> 
-</div>
-    </div>
-  
-<div class="sl2">Noise Detail (fBm)</div>
-<div class="rw"><div class="rl"><span class="rn">Octaves</span><span class="rv" id="vNoiseOct">1</span></div>
-<input type="range" id="sNoiseOct" min="1" max="6" value="1" step="1" title="fBm octaves — layers of noise stacked at increasing frequencies. 1 = plain, 6 = maximum detail"></div>
-<div class="rw"><div class="rl"><span class="rn">Falloff</span><span class="rv" id="vNoiseFall">0.5</span></div>
-<input type="range" id="sNoiseFall" min="10" max="90" value="50" step="5" title="Amplitude falloff per octave — lower = sharper detail layers, higher = smoother blending"></div>
-  
-<div class="sl2">Color Mapping</div>
-<div class="cg" id="mapGrid">
-  <button class="cb active" data-map="noise">Noise</button>
-  <button class="cb" data-map="radial">Radial</button>
-  <button class="cb" data-map="axial">Axial</button>
-  <button class="cb" data-map="angular">Angular</button> 
-  <button class="cb" data-map="tunnel">Tunnel</button>   
-  <button class="cb" data-map="diamond">Diamond</button>
-</div>
-    <p class="hn">Mapping determines how colors spread; Blend Mode determines how they stack.</p>
-  </div>
-</div>
 
+    <div class="sl2">Noise Type</div>
+    <div class="cg" id="noiseTypeGrid">
+      <button class="cb active" data-ntype="perlin"    title="Classic smooth gradient noise">Perlin</button>
+      <button class="cb" data-ntype="simplex"          title="Rounded, less grid-banding than Perlin">Simplex</button>
+      <button class="cb" data-ntype="ridged"           title="Sharp bright ridges with dark valleys">Ridged</button>
+      <button class="cb" data-ntype="billow"           title="Soft rounded domes with dark cuts">Billow</button>
+      <button class="cb" data-ntype="cellular"         title="Worley cells — characters cluster at cell centers">Cellular</button>
+      <button class="cb" data-ntype="value"            title="Blockier than Perlin — hard grid interpolation">Value</button>
+      <button class="cb" data-ntype="marble"           title="Sine veining driven by turbulence">Marble</button>
+      <button class="cb" data-ntype="domainwarp"       title="Noise warps its own coordinates — swirly organic forms">Domain Warp</button>
+      <button class="cb" data-ntype="checker"          title="Animated hard-edge checkerboard cells">Checker</button>
+    </div>
+
+    <div class="sl2">Noise Detail (fBm)</div>
+    <div class="rw">
+      <div class="rl"><span class="rn">Octaves</span><span class="rv" id="vNoiseOct">1</span></div>
+      <input type="range" id="sNoiseOct" min="1" max="6" value="1" step="1" title="fBm octaves — layers of noise stacked at increasing frequencies. 1 = plain, 6 = maximum detail">
+    </div>
+    <div class="rw">
+      <div class="rl"><span class="rn">Falloff</span><span class="rv" id="vNoiseFall">0.5</span></div>
+      <input type="range" id="sNoiseFall" min="10" max="90" value="50" step="5" title="Amplitude falloff per octave — lower = sharper detail layers, higher = smoother blending">
+    </div>
+
+    <div class="sl2">Color Mapping</div>
+    <div class="cg" id="mapGrid">
+      <button class="cb active" data-map="noise"    title="Noise-driven organic color clouds">Noise</button>
+      <button class="cb" data-map="radial"          title="Concentric rings from center">Radial</button>
+      <button class="cb" data-map="angular"         title="Rotating pie-slice wheel">Angular</button>
+      <button class="cb" data-map="diamond"         title="Manhattan distance — diamond shapes">Diamond</button>
+      <button class="cb" data-map="tunnel"          title="Logarithmic zoom-tunnel rings">Tunnel</button>
+      <button class="cb" data-map="spiral"          title="Archimedes spiral — hypnotic spinning">Spiral</button>
+      <button class="cb" data-map="axial"           title="Bidirectional sine wave interference">Axial</button>
+      <button class="cb" data-map="plasma"          title="Demoscene plasma — rich multicolor interference">Plasma</button>
+      <button class="cb" data-map="scan"            title="Horizontal animated scanline bands">Scan</button>
+      <button class="cb" data-map="stepped"         title="Hard quantized color bands">Stepped</button>
+      <button class="cb" data-map="vortex"          title="Spiral + noise — organic spinning field">Vortex</button>
+      <button class="cb" data-map="mosaic"          title="Noise locked to grid tiles — color blocks">Mosaic</button>
+    </div>
+    <div class="rw" id="mapStepsRow" style="display:none">
+      <div class="rl"><span class="rn">Band count</span><span class="rv" id="vMapSteps">5</span></div>
+      <input type="range" id="sMapSteps" min="2" max="16" value="5" step="1" title="Number of color bands (Stepped and Scan modes)">
+    </div>
+    <p class="hn">Mapping determines how colors spread; Blend Mode determines how they stack.</p>
+
+  </div><!-- /body-render -->
+</div><!-- /sec -->
       
 <!-- COMPOSITION BLOCKS CONTROL -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
@@ -1452,7 +1471,7 @@ let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
 
 // ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
-// Worley / Cellular noise — returns 0 (cell edge) → 1 (cell center)
+
 function worleyNoise(x, y, t) {
   let ix = Math.floor(x), iy = Math.floor(y);
   let minD = 2.0;
@@ -1463,49 +1482,57 @@ function worleyNoise(x, y, t) {
       let hy = Math.sin(cx * 269.5 + cy * 183.3 + t *  9.1) * 23421.631;
       let fx = cx + (hx - Math.floor(hx));
       let fy = cy + (hy - Math.floor(hy));
-      let d = Math.sqrt((x - fx) * (x - fx) + (y - fy) * (y - fy));
+      let d  = Math.sqrt((x - fx) * (x - fx) + (y - fy) * (y - fy));
       if (d < minD) minD = d;
     }
   }
   return 1.0 - Math.min(minD, 1.0);
 }
 
-// Simplex-approximation — skewed Perlin coords + fBm to remove grid artifacts
-function simplexNoise(p, x, y, t) {
-  let s = (x + y) * 0.366; // (sqrt(3)-1)/2 skew factor
-  let rx = x + s, ry = y + s;
-  let v  =        p.noise(rx,       ry,       t);
-  v += 0.5  *     p.noise(rx * 2.1, ry * 2.1, t * 1.7);
-  v += 0.25 *     p.noise(rx * 4.3, ry * 4.3, t * 2.4);
-  return v / 1.75;
-}
-
-// Unified router — use everywhere instead of bare p.noise()
-function sampleNoise(p, nx, ny, nt) {
-  if (S.noiseType === 'cellular') return worleyNoise(nx, ny, nt);
-  if (S.noiseType === 'simplex')  return simplexNoise(p, nx, ny, nt);
-  return p.noise(nx, ny, nt);
-}
-  
-// ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
-function worleyNoise(x, y, t) {
+function valueNoise(x, y, t) {
+  // Blockier than Perlin — uses hash-interpolated grid values
   let ix = Math.floor(x), iy = Math.floor(y);
-  let minD = 2.0;
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dy = -2; dy <= 2; dy++) {
-      let cx = ix + dx, cy = iy + dy;
-      let hx = Math.sin(cx * 127.1 + cy * 311.7 + t * 18.3) * 43758.5453;
-      let hy = Math.sin(cx * 269.5 + cy * 183.3 + t *  9.1) * 23421.631;
-      let fx = cx + (hx - Math.floor(hx));
-      let fy = cy + (hy - Math.floor(hy));
-      let d = Math.sqrt((x - fx) * (x - fx) + (y - fy) * (y - fy));
-      if (d < minD) minD = d;
-    }
+  let fx = x - ix, fy = y - iy;
+  // Smoothstep interpolation
+  let ux = fx * fx * (3 - 2 * fx);
+  let uy = fy * fy * (3 - 2 * fy);
+  function hash(a, b) {
+    return (Math.sin(a * 127.1 + b * 311.7 + t * 74.3) * 43758.5453) % 1;
   }
-  return 1.0 - Math.min(minD, 1.0);
+  let v00 = Math.abs(hash(ix,   iy  ));
+  let v10 = Math.abs(hash(ix+1, iy  ));
+  let v01 = Math.abs(hash(ix,   iy+1));
+  let v11 = Math.abs(hash(ix+1, iy+1));
+  return v00*(1-ux)*(1-uy) + v10*ux*(1-uy) + v01*(1-ux)*uy + v11*ux*uy;
 }
 
-function simplexNoise(p, x, y, t) {
+function marbleNoise(p, x, y, t) {
+  // Sine veining driven by Perlin turbulence
+  let turb = 0, amp = 1, freq = 1;
+  for (let i = 0; i < 4; i++) {
+    turb += Math.abs(p.noise(x * 0.008 * freq, y * 0.008 * freq, t * 0.3) - 0.5) * amp;
+    amp  *= 0.5; freq *= 2.0;
+  }
+  return (Math.sin(x * 0.015 + turb * 8 + t * 0.4) + 1) * 0.5;
+}
+
+function domainWarpNoise(p, x, y, t) {
+  // First noise pass warps the coordinates of the second pass — swirly, organic
+  let warpScale = 3.5;
+  let wx = p.noise(x * 0.006, y * 0.006,       t * 0.4) * warpScale;
+  let wy = p.noise(x * 0.006, y * 0.006 + 5.2, t * 0.4) * warpScale;
+  return p.noise((x * 0.006) + wx, (y * 0.006) + wy, t * 0.3);
+}
+
+function checkerNoise(x, y, t) {
+  // Animated hard-edge checkerboard — creates geometric alternating patterns
+  let cellSize = 40;
+  let cx = Math.floor((x + t * 12) / cellSize);
+  let cy = Math.floor((y + t *  8) / cellSize);
+  return ((cx + cy) % 2 === 0) ? 0.85 : 0.15;
+}
+
+function simplexApproxNoise(p, x, y, t) {
   let s  = (x + y) * 0.366;
   let rx = x + s, ry = y + s;
   let v  =       p.noise(rx,       ry,       t);
@@ -1514,31 +1541,27 @@ function simplexNoise(p, x, y, t) {
   return v / 1.75;
 }
 
-// Core router — single octave, no morphology applied here
+// Single-octave base router
 function _baseNoise(p, nx, ny, nt) {
-  if (S.noiseType === 'cellular') return worleyNoise(nx, ny, nt);
-  if (S.noiseType === 'simplex')  return simplexNoise(p, nx, ny, nt);
-  return p.noise(nx, ny, nt);
+  switch(S.noiseType) {
+    case 'cellular':    return worleyNoise(nx * 8, ny * 8, nt);
+    case 'simplex':     return simplexApproxNoise(p, nx, ny, nt);
+    case 'value':       return valueNoise(nx * 6, ny * 6, nt);
+    case 'marble':      return marbleNoise(p, nx / (S.noiseScale || 0.01), ny / (S.noiseScale || 0.01), nt);
+    case 'domainwarp':  return domainWarpNoise(p, nx / (S.noiseScale || 0.01), ny / (S.noiseScale || 0.01), nt);
+    case 'checker':     return checkerNoise(nx / (S.noiseScale || 0.01), ny / (S.noiseScale || 0.01), nt);
+    default:            return p.noise(nx, ny, nt); // perlin, ridged, billow all start here
+  }
 }
 
-// Public API — applies fBm layering then ridged/billow morphology
+// Public API — fBm layering + ridged/billow morphology
 function sampleNoise(p, nx, ny, nt) {
-  let octaves  = Math.max(1, Math.floor(S.noiseOctaves || 1));
-  let falloff  = S.noiseFalloff !== undefined ? S.noiseFalloff : 0.5;
+  let octaves = Math.max(1, Math.floor(S.noiseOctaves || 1));
+  let falloff = S.noiseFalloff !== undefined ? S.noiseFalloff : 0.5;
 
-  if (octaves === 1) {
-    // Fast path — no looping needed
-    let val = _baseNoise(p, nx, ny, nt);
-    if (S.noiseType === 'ridged') val = 1.0 - Math.abs(val * 2 - 1);
-    else if (S.noiseType === 'billow') val = Math.abs(val * 2 - 1);
-    return val;
-  }
-
-  // fBm accumulation
   let val = 0, amp = 1.0, total = 0, freq = 1.0;
   for (let i = 0; i < octaves; i++) {
-    let layer = _baseNoise(p, nx * freq, ny * freq, nt * freq);
-    // Apply morphology per layer so ridged/billow stack correctly
+    let layer = _baseNoise(p, nx * freq, ny * freq, nt);
     if (S.noiseType === 'ridged') layer = 1.0 - Math.abs(layer * 2 - 1);
     else if (S.noiseType === 'billow') layer = Math.abs(layer * 2 - 1);
     val   += layer * amp;
@@ -1546,37 +1569,120 @@ function sampleNoise(p, nx, ny, nt) {
     amp   *= falloff;
     freq  *= 2.0;
   }
-  return val / total; // Normalize to 0–1
+  return Math.max(0, Math.min(1, val / total));
 }
 
-
-// --- COLOR MAPPING & NOISE TYPE getColorIndex
+// --- COLOR MAPPING & NOISE TYPE getColorIndex ─
 function getColorIndex(p, x, y, t) {
   if (!p || !p.noise) return 0.5;
-  // 1. Choose the Scale: Use charNoiseScale if available for "chunky" alignment
-  let ns = (S.charNoiseScale !== undefined) ? S.charNoiseScale : S.noiseScale;
-  let nx = x * ns;
-  let ny = y * ns;
-  // 2. Dynamic Speed: link color shift to the speed slider
-  let colTime = t * (S.speed * 0.2); 
-  let W = p.width, H = p.height;
+  let ns  = S.noiseScale || 0.01;      // use noiseScale, not charNoiseScale
+  let nx  = x * ns;
+  let ny  = y * ns;
+  let colTime = t * 0.2;               // fixed: no speed double-squaring
+  let W   = p.width, H = p.height;
   let val = 0;
-  switch(S.colorMapMode) {
-    case 'radial':
-      // Centered distance mapping
-      val = (Math.sqrt((x - W/2)**2 + (y - H/2)**2) * 0.002 + colTime) % 1.0;
-      break;
-    case 'axial':
-      val = (Math.sin(x * 0.01 + colTime) + Math.cos(y * 0.01 + colTime) + 2) / 4;
-      break;
-    case 'stepped':
-      val = Math.floor(sampleNoise(p, nx, ny, colTime) * 5) / 5;
-      break;
-    default: // 'noise' mode
+
+  switch (S.colorMapMode) {
+
+    // ── Noise-based ────────────────────────────────────────────────────────
+    case 'noise':
+    default:
       val = sampleNoise(p, nx, ny, colTime);
+      break;
+
+    case 'stepped': {
+      // Hard color bands — quantized noise
+      let steps = S.mapSteps || 5;
+      val = Math.floor(sampleNoise(p, nx, ny, colTime) * steps) / steps;
+      break;
+    }
+
+    // ── Geometric ──────────────────────────────────────────────────────────
+    case 'radial': {
+      // Smooth concentric rings from center
+      let dist = Math.sqrt((x - W/2)**2 + (y - H/2)**2);
+      val = (dist * 0.003 + colTime * 0.8) % 1.0;
+      break;
+    }
+
+    case 'angular': {
+      // Pie-slice wheel rotation — animates as spinning spokes
+      let angle = Math.atan2(y - H/2, x - W/2);
+      val = ((angle / (Math.PI * 2)) + 0.5 + colTime * 0.25) % 1.0;
+      break;
+    }
+
+    case 'diamond': {
+      // Manhattan distance — creates diamond/rhombus shapes
+      let mx = Math.abs(x - W/2) / W;
+      let my = Math.abs(y - H/2) / H;
+      val = ((mx + my) * 2 + colTime * 0.6) % 1.0;
+      break;
+    }
+
+    case 'tunnel': {
+      // Logarithmic rings — zoom-tunnel effect that pulses inward
+      let dist2 = Math.sqrt((x - W/2)**2 + (y - H/2)**2);
+      val = (Math.log1p(dist2) * 0.18 - colTime * 1.2) % 1.0;
+      if (val < 0) val += 1.0;
+      break;
+    }
+
+    case 'spiral': {
+      // Archimedes spiral — hypnotic spinning gradient
+      let sd  = Math.sqrt((x - W/2)**2 + (y - H/2)**2);
+      let sa  = Math.atan2(y - H/2, x - W/2);
+      val = ((sd * 0.006 + sa / (Math.PI * 2) + colTime * 0.5)) % 1.0;
+      if (val < 0) val += 1.0;
+      break;
+    }
+
+    // ── Wave / Frequency ───────────────────────────────────────────────────
+    case 'axial': {
+      // Bidirectional sine waves — creates grid-like interference
+      val = (Math.sin(x * 0.012 + colTime * 2) +
+             Math.cos(y * 0.012 + colTime * 1.7) + 2) / 4;
+      break;
+    }
+
+    case 'plasma': {
+      // Classic demoscene plasma — rich multicolor interference pattern
+      let v1 = Math.sin(x * 0.016 + colTime * 2);
+      let v2 = Math.sin(y * 0.016 + colTime * 1.6);
+      let v3 = Math.sin((x + y) * 0.011 + colTime * 1.2);
+      let v4 = Math.sin(Math.sqrt(((x - W/2)**2 + (y - H/2)**2)) * 0.012 + colTime * 1.8);
+      val = (v1 + v2 + v3 + v4 + 4) / 8;
+      break;
+    }
+
+    case 'scan': {
+      // Horizontal scanlines — animated CRT-style bands
+      let bands = S.mapSteps || 8;
+      val = (Math.floor((y / H * bands + colTime * 2)) / bands) % 1.0;
+      break;
+    }
+
+    // ── Hybrid ─────────────────────────────────────────────────────────────
+    case 'vortex': {
+      // Spiral + noise — organic spinning field
+      let vd = Math.sqrt((x - W/2)**2 + (y - H/2)**2);
+      let va = Math.atan2(y - H/2, x - W/2);
+      let base = (vd * 0.004 + va / (Math.PI * 2)) % 1.0;
+      val = (base + sampleNoise(p, nx * 0.5, ny * 0.5, colTime) * 0.35 + colTime * 0.3) % 1.0;
+      break;
+    }
+
+    case 'mosaic': {
+      // Quantized noise cells — color locks to grid tiles, creates block patterns
+      let cellW = Math.max(4, S.spacing * 2);
+      let mx2   = Math.floor(x / cellW) * cellW;
+      let my2   = Math.floor(y / cellW) * cellW;
+      val = sampleNoise(p, mx2 * ns, my2 * ns, colTime);
+      break;
+    }
   }
-// Morphology is applied inside sampleNoise()
-  return val;
+
+  return Math.max(0, Math.min(1, val));
 }
  
 
@@ -2001,7 +2107,7 @@ function drawBloom(p, t) {
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
       // Density gate — same noise field as original
-let n = sampleNoise(p, x * ns, y * ns, t);
+  let n = sampleNoise(p, x * ns, y * ns, t);
       // Rotation — original noise-driven angle, no radial center math
       // bloomRotMult (default 4) controls how many full rotations of variation
       let a = p.noise(x * ns * 0.5, y * ns * 0.5, t * 0.5) * 6.28 * rotMult;
@@ -6269,7 +6375,8 @@ wireSlider('sHatchAngle','vHatchAngle','hatchAngle');
 wireSlider('sHatchCurve','vHatchCurve','hatchCurve'); 
 wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
 wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
-wireSlider('sVorWeight', 'vVorWeight', 'vorWeight', v => v * 0.1);  
+wireSlider('sVorWeight', 'vVorWeight', 'vorWeight', v => v * 0.1);
+wireSlider('sMapSteps', 'vMapSteps', 'mapSteps', v => Math.floor(v));  
 wireSlider('sNoiseOct',  'vNoiseOct',  'noiseOctaves', v => Math.floor(v));
 wireSlider('sNoiseFall', 'vNoiseFall', 'noiseFalloff',  v => v / 100);  
 wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
@@ -6521,18 +6628,22 @@ if (renderBody) {
     });
   }
   // 2. Handle the Buttons (Click event)
-  renderBody.addEventListener('click', function(e) {
-    let b = e.target.closest('.cb');
-    if (!b) return;
-    // Toggle active state in the specific grid clicked
-    let grid = b.parentElement;
-    grid.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    // Update State
-    if (b.dataset.map) S.colorMapMode = b.dataset.map;
-    if (b.dataset.ntype) S.noiseType = b.dataset.ntype;
-    if (window._st) window._st.rd(); // Redraw
-  });
+renderBody.addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b) return;
+  let grid = b.parentElement;
+  grid.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  if (b.dataset.map) {
+    S.colorMapMode = b.dataset.map;
+    let stepsRow = document.getElementById('mapStepsRow');
+    if (stepsRow) {
+      stepsRow.style.display = (S.colorMapMode === 'stepped' || S.colorMapMode === 'scan') ? 'block' : 'none';
+    }
+  }
+  if (b.dataset.ntype) S.noiseType = b.dataset.ntype;
+  if (window._st) window._st.rd();
+});
 }
   
   
@@ -7279,9 +7390,9 @@ const CHAOS_PARAMS=[
   function(){let sl=document.getElementById('sEntropy');let v=Math.floor(Math.random()*50/2)*2;sl.value=v;S.entropy=v/100;document.getElementById('vEntropy').textContent=v;},
   function(){let sl=document.getElementById('sNoise');let v=1+Math.floor(Math.random()*20);sl.value=v;S.noiseScale=v*.002;document.getElementById('vNoise').textContent=v;},
   // Chaos: Color Mapping Strategy
-  function(){const maps = ['noise','radial','axial','stepped','diamond','scan'];const m = maps[Math.floor(Math.random()*maps.length)];S.colorMapMode = m;document.querySelectorAll('#mapGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.map === m);});},
+  function(){const maps = ['noise','radial','angular','diamond','tunnel','spiral','axial','plasma','scan','stepped','vortex','mosaic'];const m = maps[Math.floor(Math.random()*maps.length)];S.colorMapMode = m;document.querySelectorAll('#mapGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.map === m);});},
   // Chaos: Noise Texture Type
-  function(){const types = ['perlin','ridged','billow'];const t = types[Math.floor(Math.random()*types.length)];S.noiseType = t;document.querySelectorAll('#noiseTypeGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.ntype === t);});},
+  function(){const types = ['perlin','ridged','billow','cellular','simplex','value','marble','domainwarp','checker'];const t = types[Math.floor(Math.random()*types.length)];S.noiseType = t;document.querySelectorAll('#noiseTypeGrid .cb').forEach(b => {b.classList.toggle('active', b.dataset.ntype === t);});},
   // Chaos: Blending Mode
   function(){const sel = document.getElementById('blendSelect');if(!sel) return;const opts = sel.options;const idx = Math.floor(Math.random() * opts.length);sel.selectedIndex = idx;S.blendMode = opts[idx].value;},
   function(){let sl=document.getElementById('sTrail');let v=Math.floor(Math.random()*20)*5;sl.value=v;S.trailPersist=v;document.getElementById('vTrail').textContent=v;},
