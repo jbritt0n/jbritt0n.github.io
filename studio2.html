@@ -3482,10 +3482,7 @@ function drawTypescale(p, t) {
   }
 }
 
-// ── MONOGRID (Asendorf) ───────────────────────────────────────────────────
-// Uniform repeating-text grid fills the canvas, then opaque palette-colored
-// rectangles are overlaid at various positions and scales.
-// Spacing = text cell size, Max Size = rect scale, Wave = rect drift speed.
+// ── MONOGRID (Asendorf) – Refactored 4/13/26 ──────────────────────────────
 function initMonogrid(W, H) {
   monogridBlocks = [];
   let count = S.mgBlockCount || 4;
@@ -3504,59 +3501,94 @@ function initMonogrid(W, H) {
 }
 function drawMonogrid(p, t) {
   if (!monogridBlocks.length) initMonogrid(p.width, p.height);
+  // ----- Mode parameters (safe defaults) -----
+  let mgUseSolidRects = S.mgUseSolidRects !== undefined ? S.mgUseSolidRects : false;
+  let mgAlpha         = S.mgAlpha !== undefined ? S.mgAlpha : 0.4;
+  let mgAnim          = S.mgAnim !== undefined ? S.mgAnim : true;
+  let mgStack         = S.mgStack !== undefined ? S.mgStack : false;
+  let mgTextSpd       = S.mgTextSpd !== undefined ? S.mgTextSpd : 30;
+  let mgWaveAmp       = S.mgWaveAmp !== undefined ? S.mgWaveAmp : 0.06;
+  let mgBlockCharScale = S.mgBlockCharScale !== undefined ? S.mgBlockCharScale : 1.1;
+  let mgEdgeNoiseScale = S.mgEdgeNoiseScale !== undefined ? S.mgEdgeNoiseScale : 0.05;
 
   let tokens  = S.chars && S.chars.length ? S.chars : ['·'];
   let sz      = Math.max(2, S.spacing * 0.85);
   let charW   = sz * 0.63;
   let charH   = sz * 1.05;
   // Text cycle speed — 0 = static, 100 = fast
-  let tokIdx  = Math.floor(S.fc * S.speed * (S.mgTextSpd / 30) * 0.4) % tokens.length;
-
-  // Uniform text field
+  let tokIdx  = Math.floor(S.fc * S.speed * (mgTextSpd / 30) * 0.4) % tokens.length;
+  // ── Background text field with noise‑driven diagonal pattern ─────────────
   for (let y = sz; y < p.height + sz; y += charH) {
     for (let x = 0; x < p.width + charW; x += charW) {
+      // Use sampleNoise for banding (respects noiseType, octaves)
+      let n  = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.4);
+      let n2 = sampleNoise(p, x * S.noiseScale * 3.5 + 20, y * S.noiseScale * 3.5, t * 0.7);
+      // Diagonal band skip
+      let diagVal = ((x * 0.4 + y * 0.4) * S.noiseScale * 12 + t * 0.3) % 1.0;
+      if (n2 > 0.7 && diagVal < 0.5) continue;
       let col = pickColor(p, x, y, t);
       let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
       dc(x, y, sz, 0, col, ch);
     }
   }
 
-  // Blocks
+  // ── Overlaid blocks (either solid rects or character blocks) ────────────
+  let blockChars = ['█','▓','▒','░','▉','▊','▋','▌','▍','▎','▏'];
   CTX.save();
-  if (!S.mgStack) {
-    // Default: normal composite
-    CTX.globalCompositeOperation = 'source-over';
-  } else {
-    // Stack mode: multiply blend for layered depth
-    CTX.globalCompositeOperation = 'multiply';
-  }
+  if (mgStack) CTX.globalCompositeOperation = 'multiply';
+  CTX.globalAlpha = mgAlpha;
 
   monogridBlocks.forEach(function(b) {
     // Animate block drift
-    if (S.playing && S.mgAnim) {
+    if (S.playing && mgAnim) {
       b.x += b.vx * S.speed * 60;
       b.y += b.vy * S.speed * 60;
-      if (b.x + b.w < 0)        b.x = p.width;
-      if (b.x > p.width)        b.x = -b.w;
-      if (b.y + b.h < 0)        b.y = p.height;
-      if (b.y > p.height)       b.y = -b.h;
+      if (b.x + b.w < 0)  b.x = p.width;
+      if (b.x > p.width)  b.x = -b.w;
+      if (b.y + b.h < 0)  b.y = p.height;
+      if (b.y > p.height) b.y = -b.h;
     }
 
-    let waveOff = S.wave > 0 ? Math.sin(t + b.phase) * S.wave * 0.06 : 0;
+    let waveOff = S.wave > 0 ? Math.sin(t + b.phase) * S.wave * mgWaveAmp : 0;
+    let bx = b.x + waveOff;
     let col = S.palette[b.palIdx % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
-        p.noise(b.x * 0.01, b.y * 0.01, t) > (1 - S.accentAmt)) col = S.accent;
+        sampleNoise(p, b.x * 0.01, b.y * 0.01, t) > (1 - S.accentAmt)) col = S.accent;
 
-    CTX.globalAlpha = S.mgAlpha !== undefined ? S.mgAlpha : 0.4;
-    CTX.fillStyle   = col;
-    CTX.fillRect(b.x + waveOff, b.y, b.w, b.h);
+    if (mgUseSolidRects) {
+      // ----- Solid rectangles (original version) -----
+      CTX.fillStyle = col;
+      CTX.fillRect(bx, b.y, b.w, b.h);
+    } else {
+      // ----- Character blocks (new version) -----
+      let bSz  = sz * mgBlockCharScale;
+      let bChW = bSz * 0.63;
+      let bChH = bSz * 1.05;
+      for (let cy = b.y; cy < b.y + b.h; cy += bChH) {
+        for (let cx = bx; cx < bx + b.w; cx += bChW) {
+          if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
+          // Edge / interior selection
+          let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
+          let bIdx;
+          if (distFromEdge < bChW * 1.5) {
+            bIdx = Math.floor(Math.random() * blockChars.length);
+          } else {
+            let noiseVal = sampleNoise(p, cx * mgEdgeNoiseScale, cy * mgEdgeNoiseScale, t);
+            bIdx = Math.floor(noiseVal * 3);
+          }
+          let ch = blockChars[bIdx % blockChars.length];
+          dc(cx, cy, bSz, 0, col, ch);
+        }
+      }
+    }
   });
 
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
-  _lastFill = '';
   CTX.restore();
+  _lastFill = '';
 }
+  
 // ── BOIDS ─────────────────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
 // Characters ride on each agent, rotate toward velocity. Completely emergent.
