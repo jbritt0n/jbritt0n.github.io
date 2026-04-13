@@ -855,6 +855,14 @@ select option{background:var(--ink)}
   <button class="cb" data-ntype="cellular">Cellular</button> 
   <button class="cb" data-ntype="simplex">Simplex</button> 
 </div>
+    </div>
+  
+<div class="sl2">Noise Detail (fBm)</div>
+<div class="rw"><div class="rl"><span class="rn">Octaves</span><span class="rv" id="vNoiseOct">1</span></div>
+<input type="range" id="sNoiseOct" min="1" max="6" value="1" step="1" title="fBm octaves — layers of noise stacked at increasing frequencies. 1 = plain, 6 = maximum detail"></div>
+<div class="rw"><div class="rl"><span class="rn">Falloff</span><span class="rv" id="vNoiseFall">0.5</span></div>
+<input type="range" id="sNoiseFall" min="10" max="90" value="50" step="5" title="Amplitude falloff per octave — lower = sharper detail layers, higher = smoother blending"></div>
+  
 <div class="sl2">Color Mapping</div>
 <div class="cg" id="mapGrid">
   <button class="cb active" data-map="noise">Noise</button>
@@ -1351,6 +1359,8 @@ let S={
   colorMapMode: 'noise', // Default mode
   noiseScale: 0.005,      // Controls the "mottled" cloud size
   noiseType: 'perlin',
+  noiseOctaves: 1,
+  noiseFalloff: 0.5,
   trailPersist:0,
   compEnabled:false,compPreset:0,compCols:COMP_PALETTES.default,
   imgStretch:false,imgInvert:false,
@@ -1477,6 +1487,68 @@ function sampleNoise(p, nx, ny, nt) {
   return p.noise(nx, ny, nt);
 }
   
+// ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
+function worleyNoise(x, y, t) {
+  let ix = Math.floor(x), iy = Math.floor(y);
+  let minD = 2.0;
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      let cx = ix + dx, cy = iy + dy;
+      let hx = Math.sin(cx * 127.1 + cy * 311.7 + t * 18.3) * 43758.5453;
+      let hy = Math.sin(cx * 269.5 + cy * 183.3 + t *  9.1) * 23421.631;
+      let fx = cx + (hx - Math.floor(hx));
+      let fy = cy + (hy - Math.floor(hy));
+      let d = Math.sqrt((x - fx) * (x - fx) + (y - fy) * (y - fy));
+      if (d < minD) minD = d;
+    }
+  }
+  return 1.0 - Math.min(minD, 1.0);
+}
+
+function simplexNoise(p, x, y, t) {
+  let s  = (x + y) * 0.366;
+  let rx = x + s, ry = y + s;
+  let v  =       p.noise(rx,       ry,       t);
+  v += 0.5  *    p.noise(rx * 2.1, ry * 2.1, t * 1.7);
+  v += 0.25 *    p.noise(rx * 4.3, ry * 4.3, t * 2.4);
+  return v / 1.75;
+}
+
+// Core router — single octave, no morphology applied here
+function _baseNoise(p, nx, ny, nt) {
+  if (S.noiseType === 'cellular') return worleyNoise(nx, ny, nt);
+  if (S.noiseType === 'simplex')  return simplexNoise(p, nx, ny, nt);
+  return p.noise(nx, ny, nt);
+}
+
+// Public API — applies fBm layering then ridged/billow morphology
+function sampleNoise(p, nx, ny, nt) {
+  let octaves  = Math.max(1, Math.floor(S.noiseOctaves || 1));
+  let falloff  = S.noiseFalloff !== undefined ? S.noiseFalloff : 0.5;
+
+  if (octaves === 1) {
+    // Fast path — no looping needed
+    let val = _baseNoise(p, nx, ny, nt);
+    if (S.noiseType === 'ridged') val = 1.0 - Math.abs(val * 2 - 1);
+    else if (S.noiseType === 'billow') val = Math.abs(val * 2 - 1);
+    return val;
+  }
+
+  // fBm accumulation
+  let val = 0, amp = 1.0, total = 0, freq = 1.0;
+  for (let i = 0; i < octaves; i++) {
+    let layer = _baseNoise(p, nx * freq, ny * freq, nt * freq);
+    // Apply morphology per layer so ridged/billow stack correctly
+    if (S.noiseType === 'ridged') layer = 1.0 - Math.abs(layer * 2 - 1);
+    else if (S.noiseType === 'billow') layer = Math.abs(layer * 2 - 1);
+    val   += layer * amp;
+    total += amp;
+    amp   *= falloff;
+    freq  *= 2.0;
+  }
+  return val / total; // Normalize to 0–1
+}
+
 
 // --- COLOR MAPPING & NOISE TYPE getColorIndex
 function getColorIndex(p, x, y, t) {
@@ -1498,17 +1570,12 @@ function getColorIndex(p, x, y, t) {
       val = (Math.sin(x * 0.01 + colTime) + Math.cos(y * 0.01 + colTime) + 2) / 4;
       break;
     case 'stepped':
-      // This creates "bands" of color
-    val = Math.floor(sampleNoise(p, nx, ny, colTime) * 5) / 5;
-    break;
-  default: // 'noise' mode
-    val = sampleNoise(p, nx, ny, colTime);
+      val = Math.floor(sampleNoise(p, nx, ny, colTime) * 5) / 5;
+      break;
+    default: // 'noise' mode
+      val = sampleNoise(p, nx, ny, colTime);
   }
-  // 3. Apply Noise Morphology (Ridged/Billow)
-  if (S.colorMapMode === 'noise' || S.colorMapMode === 'stepped') {
-    if (S.noiseType === 'ridged') val = 1.0 - Math.abs(val * 2 - 1);
-    else if (S.noiseType === 'billow') val = Math.abs(val * 2 - 1);
-  }
+// Morphology is applied inside sampleNoise()
   return val;
 }
  
@@ -1934,9 +2001,7 @@ function drawBloom(p, t) {
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
       // Density gate — same noise field as original
-  let n = sampleNoise(p, x * ns, y * ns, t);
-  if (S.noiseType === 'ridged') n = 1.0 - Math.abs(n * 2 - 1);
-  else if (S.noiseType === 'billow') n = Math.abs(n * 2 - 1);
+let n = sampleNoise(p, x * ns, y * ns, t);
       // Rotation — original noise-driven angle, no radial center math
       // bloomRotMult (default 4) controls how many full rotations of variation
       let a = p.noise(x * ns * 0.5, y * ns * 0.5, t * 0.5) * 6.28 * rotMult;
@@ -5536,10 +5601,11 @@ const DEFAULT_STATE = {
   trailPersist: 0,                   // Frame‑to‑frame persistence (0 = no trail, 95 = long smear)
   jitter: 0,
   // ========== NOISE & COLOR MAPPING ==========
-  colorMapMode: 'noise',             // Strategy: 'noise', 'radial', 'axial', 'stepped', 'diamond', 'scan'
-  noiseType: 'perlin',               // Noise texture: 'perlin', 'ridged', 'billow'
+  noiseType: 'perlin',               // Noise texture: 'perlin', 'ridged', 'billow', 'cellular', 'simplex'
   noiseScale: 0.01,                  // Scale for noise field (lower = larger features)
   charNoiseScale: 0.08,              // Frequency for character selection noise (mottling)
+  noiseOctaves: 1,                   // fBm octave count — 1 = plain noise, 2–6 = layered detail
+  noiseFalloff: 0.5,                 // Amplitude falloff per octave (0.1 = sharp, 0.9 = lush)
   // ========== CHARACTER TRANSFORMATIONS ==========
   charRotation: 0,                   // Global rotation offset (degrees)
   charRotRad: 0,                     // Same as charRotation in radians (synced)
@@ -6198,6 +6264,8 @@ wireSlider('sHatchCurve','vHatchCurve','hatchCurve');
 wireSlider('sOvKern', 'vOvKern', 'overlayKern'); //scrolling text overlay kerning
 wireSlider('sOvLineSpacing', 'vOvLineSpacing', 'overlayLineSpacing'); //scrolling text overlay spacing
 wireSlider('sVorWeight', 'vVorWeight', 'vorWeight', v => v * 0.1);  
+wireSlider('sNoiseOct',  'vNoiseOct',  'noiseOctaves', v => Math.floor(v));
+wireSlider('sNoiseFall', 'vNoiseFall', 'noiseFalloff',  v => v / 100);  
 wireSlider('sGeoDrift', 'vGeoDrift', 'geodeDrift');
 wireSlider('sGeoFreq',  'vGeoFreq',  'geoVibFreq');  
 wireSlider('sMgBlocks', 'vMgBlocks', 'mgBlockCount', null,function(){ monogridBlocks = []; });
