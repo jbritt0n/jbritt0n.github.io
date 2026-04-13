@@ -1914,7 +1914,7 @@ function initLoops(W,H){
   
 function initRecursive(W,H){
   recRects=[];
-  subdivide(0,0,W,H,Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
+  subdivide(0,0,W,H,S.recursionDepth||Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
 }
   
 function subdivide(x,y,w,h,depth,cols){
@@ -2050,7 +2050,7 @@ function initFractalSubdiv(p,W,H){
     basePts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
   }
   // Recursively subdivide
-  let maxDepth=Math.max(2,Math.min(6,Math.floor(S.density*5+2)));
+  let maxDepth=S.fractalDepth||Math.max(2,Math.min(6,Math.floor(S.density*5+2)));
   _fsSubdivide(p,basePts,0,maxDepth);
 }
 function _fsSubdivide(p,pts,depth,maxDepth){
@@ -2133,8 +2133,8 @@ function drawWave(p,t){
   for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
     if(n<S.density) continue;
-    let wx=Math.sin(y*S.turb*10+t*2)*S.wave;
-    let wy=Math.cos(x*S.turb*10+t*1.5)*S.wave*.6;
+    let wx=Math.sin(y*S.turb*(S.waveFreqX||10)+t*2)*S.wave;
+    let wy=Math.cos(x*S.turb*(S.waveFreqY||10)+t*1.5)*S.wave*(S.waveAmpY||0.6);
     let r=pcc(p,x,y,t);
     dc(x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,r.col,r.ch);
   }
@@ -2178,7 +2178,7 @@ function drawVortex(p,t){
   for(let r=S.spacing;r<maxR;r+=S.spacing){
     let count=Math.floor(6.28*r/S.spacing);
     for(let i=0;i<count;i++){
-      let angle=(i/count)*6.28+(t*(maxR/r)*.5);
+    let angle=(i/count)*6.28+(t*(maxR/r)*(S.vortexSpin||0.5));
       let x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r;
       let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
       if(n<S.density) continue;
@@ -2192,7 +2192,7 @@ function drawRipple(p,t){
   let cx=p.width/2,cy=p.height/2;
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let d=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
-    let ripple=Math.sin(d*S.turb*10-t*5)*S.wave;
+    let ripple=Math.sin(d*S.turb*(S.rippleFreq||10)-t*(S.rippleSpeed||5))*S.wave;
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
     if(n<S.density) continue;
     let res=pcc(p,x,y,t);
@@ -2214,7 +2214,7 @@ function drawTess(p,t){
   tessGrid.forEach(function(cell){
     let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);
     if(n<S.density) return;
-    let pulse=Math.sin(t*2+cell.phase)*.5+.5;
+    let pulse=Math.sin(t*(S.tessSpeed||2)+cell.phase)*.5+.5;
     let res=pcc(p,cell.x,cell.y,t);
     dc(cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,res.col,res.ch);
   });
@@ -2224,7 +2224,7 @@ function drawWarp(p,t){
   for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
     let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
     if(n<S.density) continue;
-    let warp=p.noise(x*.002,y*.002,t)*S.wave*4;
+    let warp=p.noise(x*.002,y*.002,t)*S.wave*(S.warpMult||4);
     let res=pcc(p,x,y,t);
     dc(x+warp,y+warp,S.maxSize,0,res.col,res.ch);
   }
@@ -2276,7 +2276,8 @@ function drawMatrix(p,t){
     c.y+=c.speed*(S.speed*280+1);
     if(c.y>p.height+S.spacing*c.tl){c.y=-S.spacing*(1+Math.random()*5);c.speed=.5+Math.random()*2.5;c.glitch=Math.random()<.2;}
   });
-  matrixCols.forEach(function(c,ci){
+  let tl = S.matrixTrail ? Math.floor(S.matrixTrail * 0.5 + Math.random() * S.matrixTrail) : 5+Math.floor(Math.random()*16);
+  matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:Math.max(2,tl),glitch:Math.random()<.2});
     for(let j=0;j<c.tl;j++){
       let ty=c.y-j*S.spacing;
       if(ty<0||ty>p.height) continue;
@@ -2295,7 +2296,7 @@ function drawMatrix(p,t){
 }
   
 function drawOrbit(p,t){
-  let nC=2+Math.floor(S.density*.6),maxR=Math.max(p.width,p.height)*.58,sp=S.spacing;
+  let nC=Math.max(1, S.orbitCenters||2),
   let centers=[];
   for(let i=0;i<nC;i++){let a=(i/nC)*6.28;centers.push({x:p.width/2+Math.cos(a+t*.3)*p.width*.28,y:p.height/2+Math.sin(a+t*.3)*p.height*.22});}
   centers.forEach(function(c,ci){
@@ -2314,7 +2315,7 @@ function drawOrbit(p,t){
   
 function drawSpiral(p,t){
   let cx=p.width/2,cy=p.height/2,maxR=Math.min(p.width,p.height)*.52,a=S.spacing/6.28;
-  for(let th=0;th<6.28*22;th+=.25){
+  for(let th=0;th<6.28*(S.spiralTurns||22);th+=.25){
     let r=a*th;if(r>maxR)break;
     let wb=Math.sin(th*3+t*2)*S.wave*.13;
     let x=cx+Math.cos(th+t*.2)*(r+wb),y=cy+Math.sin(th+t*.2)*(r+wb);
@@ -2345,7 +2346,7 @@ function drawSpiro(p) {
 }
 // ── SCAN ────────────────────────────────────────────────── 
 function drawScan(p,t){
-  let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=70+S.wave*.8,sp=S.spacing;
+  let sc=(t*45*(S.speed*180+.5))%(p.height*1.3)-p.height*.1,sw=S.scanWidth||70,sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
     let d=Math.abs(y-sc),ins=d<sw;
     if(!ins&&Math.random()>(1-S.density*.05)) continue;
@@ -2359,7 +2360,8 @@ function drawScan(p,t){
 function drawHalftone(p,t){
   let sp=S.spacing;
   for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
-    let b=Math.min(1,Math.max(0,(Math.sin(x*.03)*Math.cos(y*.03)+1)/2*.7+Math.sin(x*.015+t)*.12+Math.cos(y*.015+t*.8)*.1+.08));
+    let hf=S.halftoneFreq||0.03;
+    let b=Math.min(1,Math.max(0,(Math.sin(x*hf)*Math.cos(y*hf)+1)/2*.7+Math.sin(x*hf*.5+t)*.12+Math.cos(y*hf*.5+t*.8)*.1+.08));
     if(b<.06) continue;
     let res=pcc(p,x,y,t);
     dc(x,y,p.map(b,0,1,.5,S.maxSize),0,res.col,res.ch);
@@ -2371,7 +2373,8 @@ function drawShatter(p,t){
   let prog=(Math.sin(t*.6)+1)/2,ex=prog*S.wave*2.5;
   shatterParts.forEach(function(pt){
     if(Math.random()>(1-S.density*.04)) return;
-    let x=pt.ox+Math.cos(pt.angle)*ex*(pt.dist/280),y=pt.oy+Math.sin(pt.angle)*ex*(pt.dist/280);
+  let force=S.shatterForce||280;
+  let x=pt.ox+Math.cos(pt.angle)*ex*(pt.dist/force),y=pt.oy+Math.sin(pt.angle)*ex*(pt.dist/force);
     if(x<0||x>p.width||y<0||y>p.height) return;
     let res=pcc(p,pt.ox,pt.oy,t);
     dc(x,y,p.map(pt.dist,0,600,S.maxSize*.8,1.5),pt.angle*prog*1.8,res.col,res.ch);
@@ -2400,7 +2403,7 @@ function drawWeave(p,t){
 }
   
 function drawTopo(p,t){
-  let sp=S.spacing*.8,nLevels=6+Math.floor(S.density*3),bw=0.06+S.wave*.0012,ns=S.noiseScale;
+  let sp=S.spacing*.8,nLevels=S.topoLevels||6+Math.floor(S.density*3),bw=S.topoBandWidth||0.06+S.wave*.0012,ns=S.noiseScale;
   for(let x=sp*.5;x<p.width;x+=sp) for(let y=sp*.5;y<p.height;y+=sp){
     let n=p.noise(x*ns,y*ns,t*.15);
     let level=Math.floor(n*nLevels),frac=(n*nLevels)-level;
@@ -2443,7 +2446,7 @@ function drawContour(p,t){
     let gy=p.noise(x*S.noiseScale,(y+2)*S.noiseScale,t*.2)-n;
     let mag=Math.sqrt(gx*gx+gy*gy)||1;
     let angle=Math.atan2(gy/mag,gx/mag)+t*.3;
-    let steps=2+Math.floor(S.wave*.05);
+    let steps=S.contourSteps||2+Math.floor(S.wave*.05);
     for(let s=0;s<steps;s++){
       let px=x+Math.cos(angle)*s*sp*.8,py=y+Math.sin(angle)*s*sp*.8;
       if(px<0||px>p.width||py<0||py>p.height) break;
@@ -2458,10 +2461,10 @@ function drawFabric(p,t){
   let sp=S.spacing;
   for(let x=0;x<p.width;x+=sp) for(let y=0;y<p.height;y+=sp){
     if(Math.random()>(1-S.density*.12)) continue;
-    let a1=Math.sin(y*S.turb*5+t*2)*S.wave;
-    let a2=Math.cos(x*S.turb*3+t*1.5)*S.wave*.5;
+    let a1=Math.sin(y*S.turb*(S.fabricFreq1||5)+t*(S.fabricSpeed1||2))*S.wave;
+    let a2=Math.cos(x*S.turb*(S.fabricFreq2||3)+t*(S.fabricSpeed2?S.fabricSpeed2:1.5))*S.wave*.5;
     let a3=Math.sin((x+y)*S.turb*2+t*2.5)*S.wave*.35;
-    let nw=p.noise(x*.003,y*.003,t*.8)*S.wave*.5;
+    let nw=p.noise(x*(S.fabricNoiseSc||0.003),y*(S.fabricNoiseSc||0.003),t*.8)*S.wave*.5;
     let rot=Math.sin(x*.01+t)*.6+Math.cos(y*.01+t*.8)*.4;
     let res=pcc(p,x,y,t);
     dc(x+a1+a3+nw,y+a2,4+Math.random()*(S.maxSize*.7-4),rot,res.col,res.ch);
@@ -2475,10 +2478,11 @@ function drawLoops(p,t){
     if(S.playing){
       let angle=p.noise(pt.x*ns,pt.y*ns,t)*6.28*2;
       let curl=angle+1.5708;
-      pt.vx=pt.vx*.85+Math.cos(curl)*S.wave*.06;
-      pt.vy=pt.vy*.85+Math.sin(curl)*S.wave*.06;
+      let ld=S.loopDamping||0.85;
+      pt.vx=pt.vx*ld+Math.cos(curl)*S.wave*.06;
+      pt.vy=pt.vy*ld+Math.sin(curl)*S.wave*.06;
       pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;
-      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>300){
+      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>(S.loopLife||300)){
         pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;
         pt.vx=0;pt.vy=0;pt.age=0;
       }
@@ -2489,7 +2493,8 @@ function drawLoops(p,t){
     let sz=p.map(n,S.density*.6,1,2,S.maxSize*.7);
     let angle2=Math.atan2(pt.vy,pt.vx)||0;
     let res=pcc(p,pt.x,pt.y,t);
-    CTX.globalAlpha=Math.min(1,(300-pt.age)/200);
+    let ll=S.loopLife||300;
+    CTX.globalAlpha=Math.min(1,(ll-pt.age)/(ll*0.67));
     dc(pt.x,pt.y,sz,angle2,res.col,res.ch);
   });
   CTX.globalAlpha=1;
@@ -3085,13 +3090,13 @@ function drawSand(p,t){
     if(S.playing){
       // Flow field drives particles
       let angle=p.noise(pt.x*ns,pt.y*ns,t*.5)*6.28*2;
-      pt.vx=pt.vx*.92+Math.cos(angle)*S.wave*.03;
-      pt.vy=pt.vy*.92+Math.sin(angle)*S.wave*.03;
+      pt.vx=pt.vx*(S.sandDamping||0.92)+Math.cos(angle)*S.wave*(S.sandForce||0.03);
+      pt.vy=pt.vy*(S.sandDamping||0.92)+Math.sin(angle)*S.wave*(S.sandForce||0.03);
       // Add small random jitter (sand grain behavior)
       pt.vx+=(Math.random()-.5)*.3;
       pt.vy+=(Math.random()-.5)*.3;
       pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;
-      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>400){
+      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>(S.sandMaxAge||400)){
         pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;
         pt.vx=0;pt.vy=0;pt.age=0;
         pt.col=S.palette[Math.floor(Math.random()*S.palette.length)];
@@ -3115,7 +3120,7 @@ function drawCellular(p,t){
   let res=Math.max(4,S.spacing);
   if(caW!==Math.floor(p.width/res)+1||caH!==Math.floor(p.height/res)+1) initCellular(p.width,p.height);
   // Update CA every N frames
-  if(S.playing&&S.fc%3===0){
+  if(S.playing&&S.fc%(S.caStepRate||3)===0){
     for(let r=1;r<caH-1;r++) for(let c=1;c<caW-1;c++){
       let i=r*caW+c;
       let n=caGrid[(r-1)*caW+c-1]+caGrid[(r-1)*caW+c]+caGrid[(r-1)*caW+c+1]+
@@ -3152,7 +3157,7 @@ function drawCellular(p,t){
 function drawInterference(p,t){
   let sp=S.spacing;
   let cx=p.width/2,cy=p.height/2;
-  let nSrc=2+Math.floor(S.density*2);
+  let nSrc=S.interfSources||2;
   // Multiple wave sources
   let sources=[];
   for(let i=0;i<nSrc;i++){
@@ -3163,7 +3168,7 @@ function drawInterference(p,t){
     let sum=0;
     sources.forEach(function(src){
       let d=Math.sqrt((x-src.x)*(x-src.x)+(y-src.y)*(y-src.y));
-      sum+=Math.sin(d*src.freq-t*3);
+      sum+=Math.sin(d*src.freq-t*(S.interfSpeed||3));
     });
     let v=(sum/nSrc+1)/2;
     if(v<.3||v>.7) continue;
@@ -3187,7 +3192,7 @@ function drawCalligraphy(p,t){
     let sx=(si/nStrokes)*p.width+Math.sin(t*.3+si)*p.width*.1;
     let sy=p.height*.1+Math.random()*p.height*.8;
     let angle=p.noise(sx*S.noiseScale,sy*S.noiseScale,t)*6.28;
-    let strokeLen=40+S.wave*2+Math.random()*100;
+    let strokeLen=40+S.wave*(S.calligLenMult||2)+Math.random()*100*((S.calligLenMult||2)/2);
     let maxPressure=S.maxSize;
     for(let step=0;step<strokeLen;step+=sp*.7){
       let px=sx+Math.cos(angle)*step;
@@ -3197,7 +3202,7 @@ function drawCalligraphy(p,t){
       let progress=step/strokeLen;
       let pressure=Math.sin(progress*Math.PI);
       // Add noise wobble
-      let wobble=p.noise(px*.02,py*.02,t+si)*.4-.2;
+      let wobble=p.noise(px*.02,py*.02,t+si)*(S.calligWobble||0.4)-(S.calligWobble||0.4)*0.5;
       angle+=wobble*S.turb*2;
       let sz=Math.max(1,pressure*maxPressure);
       let n=p.noise(px*S.noiseScale,py*S.noiseScale,t);
@@ -3246,9 +3251,9 @@ function drawWireTerrain(p,t){
   // Rebuild heightmap if resolution changed
   if(wtW!==Math.floor(W/res)+1||wtH!==Math.floor(H/res)+1) initWireTerrain(p,W,H);
   // Camera orbit angle driven by speed
-  let camAngle=t*S.speed*40;
-  let camAlt=0.35+Math.sin(t*S.speed*15)*.12; // 0..1 altitude
-  let camDist=1.8;
+  let camAngle=t*S.speed*(S.terrainCamSpeed||4)*10;
+  let camAlt=0.35+Math.sin(t*S.speed*15)*.12;
+  let camDist=S.terrainCamDist||1.8;
   // 3D projection helper: isometric-style with camera orbit
   let cosA=Math.cos(camAngle),sinA=Math.sin(camAngle);
   let cosE=Math.cos(camAlt*Math.PI*.5),sinE=Math.sin(camAlt*Math.PI*.5);
@@ -3269,8 +3274,9 @@ function drawWireTerrain(p,t){
   let roughness=0.5+S.wave*.008;
   for(let row=0;row<wtH;row++) for(let col=0;col<wtW;col++){
     let x=col/(wtW-1),y=row/(wtH-1);
-    let n=p.noise(x*3*roughness+t*.3,y*3*roughness+t*.2);
-    n+=0.5*p.noise(x*6*roughness+t*.2,y*6*roughness+t*.15);
+  let hScale=(S.terrainHeight||0.6);
+  let n=p.noise(x*3*roughness+t*.3,y*3*roughness+t*.2);
+  n+=0.5*p.noise(x*6*roughness+t*.2,y*6*roughness+t*.15);
     n/=1.5;
     wtHeightmap[row*wtW+col]=n;
   }
@@ -3286,10 +3292,10 @@ function drawWireTerrain(p,t){
     let h11=wtHeightmap[(row+1)*wtW+col+1];
     let gx0=(col/(wtW-1))*2-1,gy0=(row/(wtH-1))*2-1;
     let gx1=((col+1)/(wtW-1))*2-1,gy1=((row+1)/(wtH-1))*2-1;
-    let p00=project(gx0,gy0,h00*.6);
-    let p10=project(gx1,gy0,h10*.6);
-    let p01=project(gx0,gy1,h01*.6);
-    let p11=project(gx1,gy1,h11*.6);
+    let p00=project(gx0,gy0,h00*hScale);
+    let p10=project(gx1,gy0,h10*hScale);
+    let p01=project(gx0,gy1,h01*hScale);
+    let p11=project(gx1,gy1,h11*hScale);
     let avgH=(h00+h10+h01+h11)/4;
     let ci=Math.floor(avgH*S.palette.length)%S.palette.length;
     let col2=S.palette[ci];
@@ -5242,7 +5248,7 @@ function drawMagnetic(p,t){
     magneticPoles.forEach(function(pole,i){
       let dist=Math.sqrt((pole.x-cx2)*(pole.x-cx2)+(pole.y-cy2)*(pole.y-cy2));
       let baseAngle=Math.atan2(pole.y-cy2,pole.x-cx2);
-      let rotAngle=baseAngle+angle*(i%2===0?1:-1)*.015;
+      let rotAngle=baseAngle+angle*(i%2===0?1:-1)*(S.magRotSpeed||0.015);
       pole.x=cx2+Math.cos(rotAngle)*dist;
       pole.y=cy2+Math.sin(rotAngle)*dist;
     });
@@ -5260,7 +5266,7 @@ function drawMagnetic(p,t){
     return {bx:fx/mag,by:fy/mag,mag};
   }
   // Seed field lines from positive poles at many angles
-  let nLines=Math.floor(8+S.density*24);
+  let nLines=S.magLines||Math.floor(8+S.density*24);
   let stepSize=Math.max(2,S.spacing*.4);
   let maxSteps=Math.floor(Math.min(W,H)/stepSize*2.5);
   CTX.save();
@@ -6102,7 +6108,8 @@ const PARAM_REGISTRY = {
     { id:'bloomRotMult', label:'Rotation chaos', min:1, max:12, step:1, def:4,  scale:1    },
   ],
   matrix: [
-    { id:'matrixTrail', label:'Trail length', min:3,  max:30,  step:1,  def:10,  scale:1    },
+    { id:'matrixTrail', label:'Trail length', min:3, max:30, step:1, def:10, scale:1,
+      extra: function(){ window._st.ri(); } },
   ],
   drift: [
     { id:'driftScale',  label:'Drift blob size', min:1, max:20, step:1, def:5,  scale:0.001 },
@@ -6134,7 +6141,9 @@ const PARAM_REGISTRY = {
       extra: function(){ fsPolygons=[]; } },
   ],
   orbit: [
-    { id:'orbitCenters', label:'Center count', min:1, max:6,   step:1,  def:2,   scale:1   },
+    { id:'orbitCenters', label:'Center count', min:1, max:6, step:1, def:2, scale:1,
+      extra: function(){ window._st.ri(); } },
+],
   ],
   shatter: [
     { id:'shatterForce', label:'Explosion',   min:50,  max:800, step:10, def:280, scale:1   },
@@ -6170,6 +6179,66 @@ const PARAM_REGISTRY = {
       extra: function(){ qtTree=null; } },
     { id:'qtThreshold', label:'Split threshold', min:5, max:95, step:5,  def:40,  scale:0.01 },
   ],
+
+// ── New wired entries ─────────────────────────────────────────────────────
+  wave: [
+    { id:'waveFreqX',  label:'Freq X',       min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'waveFreqY',  label:'Freq Y',       min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'waveAmpY',   label:'Amplitude Y',  min:0, max:20, step:1,  def:6,  scale:0.1 },
+  ],
+  ripple: [
+    { id:'rippleFreq',  label:'Ring density',  min:1, max:30, step:1,  def:10, scale:1   },
+    { id:'rippleSpeed', label:'Pulse speed',   min:1, max:20, step:1,  def:5,  scale:1   },
+  ],
+  warp: [
+    { id:'warpMult',    label:'Warp strength', min:1, max:20, step:1,  def:4,  scale:1   },
+  ],
+  tess: [
+    { id:'tessSpeed',   label:'Pulse speed',   min:1, max:20, step:1,  def:2,  scale:1   },
+  ],
+  fabric: [
+    { id:'fabricFreq1', label:'Wave freq 1',   min:1, max:20, step:1,  def:5,  scale:1   },
+    { id:'fabricFreq2', label:'Wave freq 2',   min:1, max:20, step:1,  def:3,  scale:1   },
+    { id:'fabricSpeed1',label:'Wave speed 1',  min:1, max:20, step:1,  def:2,  scale:1   },
+    { id:'fabricSpeed2',label:'Wave speed 2',  min:1, max:20, step:1,  def:15, scale:0.1 },
+    { id:'fabricNoiseSc',label:'Noise density',min:1, max:20, step:1,  def:3,  scale:0.001 },
+  ],
+  wireterrain: [
+    { id:'terrainHeight',   label:'Mountain height', min:1, max:20, step:1,  def:6,  scale:0.1  },
+    { id:'terrainCamDist',  label:'Camera distance', min:5, max:50, step:1,  def:18, scale:0.1  },
+    { id:'terrainCamSpeed', label:'Orbit speed',     min:0, max:20, step:1,  def:4,  scale:0.01 },
+  ],
+  topo: [
+    { id:'topoLevels',    label:'Contour levels', min:2,  max:24,  step:1, def:8,   scale:1    },
+    { id:'topoBandWidth', label:'Line thickness', min:1,  max:20,  step:1, def:6,   scale:0.01 },
+  ],
+  contour: [
+    { id:'contourSteps',  label:'Stroke steps',   min:1,  max:8,   step:1, def:2,   scale:1    },
+  ],
+  sand: [
+    { id:'sandDamping',   label:'Drag',           min:50, max:99,  step:1, def:92,  scale:0.01 },
+    { id:'sandForce',     label:'Flow force',     min:1,  max:20,  step:1, def:3,   scale:0.01 },
+    { id:'sandMaxAge',    label:'Particle life',  min:50, max:800, step:10, def:400, scale:1   },
+  ],
+  interference: [
+    { id:'interfSources', label:'Wave sources',   min:2,  max:8,   step:1, def:2,   scale:1,
+      extra: function(){ window._st.rd(); } },
+    { id:'interfSpeed',   label:'Wave speed',     min:1,  max:20,  step:1, def:3,   scale:1    },
+  ],
+  cellular: [
+    { id:'caStepRate',    label:'Evolution speed',min:1,  max:10,  step:1, def:3,   scale:1    },
+  ],
+  calligraphy: [
+    { id:'calligLenMult', label:'Stroke length',  min:1,  max:20,  step:1, def:5,   scale:0.2  },
+    { id:'calligWobble',  label:'Wobble',         min:0,  max:10,  step:1, def:4,   scale:0.1  },
+  ],
+  magnetic: [
+    { id:'magPoles',      label:'Pole count',     min:1,  max:8,   step:1, def:2,   scale:1,
+      extra: function(){ window._st.ri(); } },
+    { id:'magLines',      label:'Field lines',    min:4,  max:32,  step:2, def:8,   scale:1    },
+    { id:'magRotSpeed',   label:'Rotation speed', min:0,  max:20,  step:1, def:8,   scale:0.001 },
+  ],
+  
 };
 
 // ── Default values for new state properties ───────────────────────────────────
