@@ -7358,7 +7358,7 @@ document.getElementById('btnSignalCollapse').addEventListener('click', function(
   showToast('Signal collapse');
 });
   
-// ── PALETTE LISTENERS───────────────────────────────────────────────────────────────────
+// ── PALETTE LISTENERS ───────────────────────────────────────────────────────────────────
 document.getElementById('palGrid').addEventListener('click', function(e) {
   let b = e.target.closest('.pb');
   if (!b) return;
@@ -7389,60 +7389,42 @@ document.getElementById('bgRow').addEventListener('click', function(e) {
   window._st.rd();
 });
 
-
- // ── COLOR MAPPING LISTENERS ──────────────────────────────────────────────────────────────── 
-  document.getElementById('mapGrid').addEventListener('click', function(e) {
-  let b = e.target.closest('.cb');
-  if (!b) return;
-  // Update UI
-  document.querySelectorAll('#mapGrid .cb').forEach(el => el.classList.remove('active'));
-  b.classList.add('active');
-  // Update State
-  S.colorMapMode = b.dataset.map;
-  // Redraw
-  if (window._st) window._st.rd();
-});
-
-// ── RENDERING LISTENERS ──────────────────────────────────────────────────────────────── 
-const renderBody = document.getElementById('body-render');
-
-if (renderBody) {
-  // 1. Handle the Dropdown (Change event)
-  const bSelect = document.getElementById('blendSelect');
-  if (bSelect) {
-    bSelect.addEventListener('change', function() {
-      S.blendMode = this.value;
-      if (window._st) window._st.rd(); // Redraw
-    });
-  }
-  // 2. Handle the Buttons (Click event)
-renderBody.addEventListener('click', function(e) {
-  let b = e.target.closest('.cb');
-  if (!b) return;
-  let grid = b.parentElement;
-  grid.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  if (b.dataset.map) {
-    S.colorMapMode = b.dataset.map;
-    let stepsRow = document.getElementById('mapStepsRow');
-    if (stepsRow) {
-      stepsRow.style.display = (S.colorMapMode === 'stepped' || S.colorMapMode === 'scan') ? 'block' : 'none';
-    }
-  }
-  if (b.dataset.ntype) S.noiseType = b.dataset.ntype;
-  if (window._st) window._st.rd();
-});
-}
-  
-  
-// ── BLENDING LISTENERS ────────────────────────────────────────────────────────────────
-(function(){
-  var sel=document.getElementById('blendSelect');
-  if(sel) sel.addEventListener('change',function(){
-    S.blendMode=this.value;
-    window._st.rd();
+// ── RENDERING / BLENDING / MAPPING LISTENERS ──────────────────────────────────────────────────────────────── 
+// Blending dropdown — target by element ID directly, not by container
+const bSelect = document.getElementById('blendSelect');
+if (bSelect) {
+  bSelect.addEventListener('change', function() {
+    S.blendMode = this.value;
+    if (window._st) window._st.rd();
   });
-})();
+}
+
+// Noise type + color mapping — listen on the grids directly so
+// the container ID doesn't matter
+document.getElementById('noiseTypeGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b) return;
+  this.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  S.noiseType = b.dataset.ntype;
+  if (window._st) window._st.rd();
+});
+
+document.getElementById('mapGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('.cb');
+  if (!b) return;
+  this.querySelectorAll('.cb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  S.colorMapMode = b.dataset.map;
+  let stepsRow = document.getElementById('mapStepsRow');
+  if (stepsRow) {
+    stepsRow.style.display = (S.colorMapMode === 'stepped' || S.colorMapMode === 'scan') ? 'block' : 'none';
+  }
+  if (window._st) window._st.rd();
+});
+  
+  
+// ── COMPOSITION LISTENERS ?────────────────────────────────────────────────────────────────
 
 document.getElementById('btnComp').addEventListener('click',function(){
   S.compEnabled=!S.compEnabled;this.textContent=S.compEnabled?'On':'Off';this.classList.toggle('on',S.compEnabled);
