@@ -6717,6 +6717,37 @@ function rebuildModeUI(mode) {
       return;
     }
 
+    // ── Text input type ───────────────────────────────────────────────────
+    if (param.type === 'text') {
+      let row = document.createElement('div');
+      row.className = 'rw';
+      let lbl = document.createElement('div');
+      lbl.className = 'sl2';
+      lbl.style.marginTop = '.4rem';
+      lbl.textContent = param.label;
+      let input = document.createElement('input');
+      input.type = 'text';
+      input.id = 'mdp_' + param.id;
+      input.placeholder = 'Enter text…';
+      input.value = S[param.id] !== undefined ? S[param.id] : (param.def || '');
+      input.style.width = '100%';
+      input.style.background = 'var(--ink)';
+      input.style.border = '1px solid var(--stone)';
+      input.style.color = 'var(--pale)';
+      input.style.padding = '.32rem .5rem';
+      input.style.fontFamily = "'EB Garamond', serif";
+      input.style.fontSize = '.85rem';
+      input.addEventListener('change', function() {
+        S[param.id] = this.value;
+        if (param.extra) param.extra();
+        window._st.rd();
+      });
+      row.appendChild(lbl);
+      row.appendChild(input);
+      container.appendChild(row);
+      return;
+    }
+    
     // ── Range slider (default) ────────────────────────────────────────────
     let scale   = param.scale || 1;
     let stateVal = S[param.id] !== undefined ? S[param.id] : (param.def * scale);
@@ -6767,36 +6798,7 @@ function rebuildModeUI(mode) {
     container.appendChild(row);
   });
 
-// ── Text input type ───────────────────────────────────────────────────
-if (param.type === 'text') {
-  let row = document.createElement('div');
-  row.className = 'rw';
-  let lbl = document.createElement('div');
-  lbl.className = 'sl2';
-  lbl.style.marginTop = '.4rem';
-  lbl.textContent = param.label;
-  let input = document.createElement('input');
-  input.type = 'text';
-  input.id = 'mdp_' + param.id;
-  input.placeholder = 'Enter text…';
-  input.value = S[param.id] !== undefined ? S[param.id] : (param.def || '');
-  input.style.width = '100%';
-  input.style.background = 'var(--ink)';
-  input.style.border = '1px solid var(--stone)';
-  input.style.color = 'var(--pale)';
-  input.style.padding = '.32rem .5rem';
-  input.style.fontFamily = "'EB Garamond', serif";
-  input.style.fontSize = '.85rem';
-  input.addEventListener('change', function() {
-    S[param.id] = this.value;
-    if (param.extra) param.extra();
-    window._st.rd();
-  });
-  row.appendChild(lbl);
-  row.appendChild(input);
-  container.appendChild(row);
-  return;
-}
+
   
 }
   
