@@ -320,6 +320,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
         <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
         <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
+        <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
       </div>
     </div>
     
@@ -341,7 +342,7 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
-        <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
+
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
         <button class="mb" data-mode="tonaldensity" title="Tonal Density — phrase repeats creating ink-wash tones">Tonal Density</button>
         <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
@@ -5044,10 +5045,7 @@ function drawTypescale(p, t) {
   });
 }
 
-// ── MONOGRID (Asendorf) ───────────────────────────────────────────────────
-// Uniform repeating-text grid fills the canvas, then opaque palette-colored
-// rectangles are overlaid at various positions and scales.
-// Spacing = text cell size, Max Size = rect scale, Wave = rect drift speed.
+// ── MONOGRID (Asendorf) – Refactored 4/13/26 ──────────────────────────────
 function initMonogrid(W, H) {
   monogridBlocks = [];
   let count = S.mgBlockCount || 4;
@@ -5066,30 +5064,43 @@ function initMonogrid(W, H) {
 }
 function drawMonogrid(p, t) {
   if (!monogridBlocks.length) initMonogrid(p.width, p.height);
-
+  // ----- Mode parameters (safe defaults) -----
+  let mgUseSolidRects = S.mgUseSolidRects !== undefined ? S.mgUseSolidRects : false;
+  let mgAlpha         = S.mgAlpha !== undefined ? S.mgAlpha : 0.4;
+  let mgAnim          = S.mgAnim !== undefined ? S.mgAnim : true;
+  let mgStack         = S.mgStack !== undefined ? S.mgStack : false;
+  let mgTextSpd       = S.mgTextSpd !== undefined ? S.mgTextSpd : 30;
+  let mgWaveAmp       = S.mgWaveAmp !== undefined ? S.mgWaveAmp : 0.06;
+  let mgBlockCharScale = S.mgBlockCharScale !== undefined ? S.mgBlockCharScale : 1.1;
+  let mgEdgeNoiseScale = S.mgEdgeNoiseScale !== undefined ? S.mgEdgeNoiseScale : 0.05;
   let tokens  = S.chars && S.chars.length ? S.chars : ['·'];
   let sz      = Math.max(2, S.spacing * 0.85);
   let charW   = sz * 0.63;
   let charH   = sz * 1.05;
-  let tokIdx  = Math.floor(S.fc * S.speed * (S.mgTextSpd / 30) * 0.4) % tokens.length;
-  // ── Background text field with noise-driven diagonal pattern lines ─────────
+  // Text cycle speed — 0 = static, 100 = fast
+  let tokIdx  = Math.floor(S.fc * S.speed * (mgTextSpd / 30) * 0.4) % tokens.length;
+  // ── Background text field with noise‑driven diagonal pattern ─────────────
   for (let y = sz; y < p.height + sz; y += charH) {
     for (let x = 0; x < p.width + charW; x += charW) {
-      // Noise drives diagonal banding — creates the Webster line-pattern feel
-      let n  = p.noise(x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.4);
-      let n2 = p.noise(x * S.noiseScale * 3.5 + 20, y * S.noiseScale * 3.5, t * 0.7);
-      // Diagonal band: skip chars in dark bands to create stripe pattern
+      // Use sampleNoise for banding (respects noiseType, octaves)
+      let n  = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.4);
+      let n2 = sampleNoise(p, x * S.noiseScale * 3.5 + 20, y * S.noiseScale * 3.5, t * 0.7);
+      // Diagonal band skip
       let diagVal = ((x * 0.4 + y * 0.4) * S.noiseScale * 12 + t * 0.3) % 1.0;
       if (n2 > 0.7 && diagVal < 0.5) continue;
       let col = pickColor(p, x, y, t);
-      let ch = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      let ch  = tokens[(tokIdx + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
       dc(x, y, sz, 0, col, ch);
     }
   }
-  // ── Overlaid blocks made of block characters ───────────────────────────────
+  // ── Overlaid blocks (either solid rects or character blocks) ────────────
   let blockChars = ['█','▓','▒','░','▉','▊','▋','▌','▍','▎','▏'];
+  CTX.save();
+  if (mgStack) CTX.globalCompositeOperation = 'multiply';
+  CTX.globalAlpha = mgAlpha;
   monogridBlocks.forEach(function(b) {
-    if (S.playing && S.mgAnim) {
+    // Animate block drift
+    if (S.playing && mgAnim) {
       b.x += b.vx * S.speed * 60;
       b.y += b.vy * S.speed * 60;
       if (b.x + b.w < 0)  b.x = p.width;
@@ -5097,29 +5108,42 @@ function drawMonogrid(p, t) {
       if (b.y + b.h < 0)  b.y = p.height;
       if (b.y > p.height) b.y = -b.h;
     }
-    let waveOff = S.wave > 0 ? Math.sin(t + b.phase) * S.wave * 0.06 : 0;
+    let waveOff = S.wave > 0 ? Math.sin(t + b.phase) * S.wave * mgWaveAmp : 0;
     let bx = b.x + waveOff;
     let col = S.palette[b.palIdx % S.palette.length];
     if (S.accent !== 'none' && S.accentAmt > 0 &&
-        p.noise(b.x * 0.01, b.y * 0.01, t) > (1 - S.accentAmt)) col = S.accent;
-    // Draw the block using block characters cell by cell
-    let bSz  = sz * 1.1;
-    let bChW = bSz * 0.63;
-    let bChH = bSz * 1.05;
-    for (let cy = bx > 0 ? b.y : b.y; cy < b.y + b.h; cy += bChH) {
-      for (let cx = bx; cx < bx + b.w; cx += bChW) {
-        // Entropy: randomly skip cells to create "removed block" look
-        if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
-        // Pick block char — denser near center of block
-        let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
-        let bIdx = distFromEdge < bChW * 1.5
-          ? Math.floor(Math.random() * blockChars.length)          // edge: varied
-          : Math.floor(p.noise(cx * 0.05, cy * 0.05, t) * 3);     // interior: dense
-        let ch = blockChars[bIdx % blockChars.length];
-        dc(cx, cy, bSz, 0, col, ch);
+        sampleNoise(p, b.x * 0.01, b.y * 0.01, t) > (1 - S.accentAmt)) col = S.accent;
+    if (mgUseSolidRects) {
+      // ----- Solid rectangles (original version) -----
+      CTX.fillStyle = col;
+      CTX.fillRect(bx, b.y, b.w, b.h);
+    } else {
+      // ----- Character blocks (new version) -----
+      let bSz  = sz * mgBlockCharScale;
+      let bChW = bSz * 0.63;
+      let bChH = bSz * 1.05;
+      for (let cy = b.y; cy < b.y + b.h; cy += bChH) {
+        for (let cx = bx; cx < bx + b.w; cx += bChW) {
+          if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
+          // Edge / interior selection
+          let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
+          let bIdx;
+          if (distFromEdge < bChW * 1.5) {
+            bIdx = Math.floor(Math.random() * blockChars.length);
+          } else {
+            let noiseVal = sampleNoise(p, cx * mgEdgeNoiseScale, cy * mgEdgeNoiseScale, t);
+            bIdx = Math.floor(noiseVal * 3);
+          }
+          let ch = blockChars[bIdx % blockChars.length];
+          dc(cx, cy, bSz, 0, col, ch);
+        }
       }
     }
   });
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.restore();
+  _lastFill = '';
 }
   
 // ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
@@ -6491,7 +6515,18 @@ const PARAM_REGISTRY = {
   pipes: [
     { id: 'pipesSizeMult', label: 'Max size multiplier', min: 2, max: 12, step: 1, def: 6, scale: 1 },
   ],
-
+  monogrid: [
+    { id: 'mgBlockCount',      label: 'Block count',       min: 1,  max: 12, step: 1, def: 4,   scale: 1,
+      extra: function(){ monogridBlocks = []; } },
+    { id: 'mgAlpha',           label: 'Block opacity',     min: 5,  max: 100,step: 5, def: 40,  scale: 0.01 },
+    { id: 'mgTextSpd',         label: 'Text cycle speed',  min: 0,  max: 100,step: 5, def: 30,  scale: 1 },
+    { id: 'mgWaveAmp',         label: 'Wave amplitude',    min: 0,  max: 0.2,step: 0.01,def: 0.06,scale: 1 },
+    { id: 'mgBlockCharScale',  label: 'Block char size',   min: 0.5, max: 2,  step: 0.05,def: 1.1, scale: 1 },
+    { id: 'mgEdgeNoiseScale',  label: 'Edge noise scale',  min: 0.01,max: 0.2,step: 0.01,def: 0.05,scale: 1 },
+    { id: 'mgAnim',            label: 'Animate blocks',    type: 'toggle', def: true },
+    { id: 'mgStack',           label: 'Stack overlapping', type: 'toggle', def: false },
+    { id: 'mgUseSolidRects',   label: 'Solid rectangles',  type: 'toggle', def: false },
+  ],
   
   //to be refactored
   hatch: [
