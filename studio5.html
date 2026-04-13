@@ -327,6 +327,13 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="maze" title="Recursive-backtracker maze with shifting walls">Maze</button>
         <button class="mb" data-mode="geode" title="Rotated tiles scattered into organic blobs">Geode</button>
         <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
+        <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
+        <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
+        <button class="mb" data-mode="cascaderects" title="Nested character-outlined rectangles cascading">Cascade Rects</button>
+        <button class="mb" data-mode="diagonalfield" title="Dense diagonal character lanes with density bands">Diagonal Field</button>
+        <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
+        <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
+        <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
       </div>
     </div>
     
@@ -348,8 +355,6 @@ select option{background:var(--ink)}
       <div class="mg">
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
-        <button class="mb" data-mode="diagonalfield" title="Dense diagonal character lanes with density bands">Diagonal Field</button>
-        <button class="mb" data-mode="cascaderects" title="Nested character-outlined rectangles cascading">Cascade Rects</button>
         <button class="mb" data-mode="calligraphy" title="Pressure-sensitive stroke simulations">Calligr.</button>
       </div>
     </div>
@@ -360,8 +365,7 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
-        
-        <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
+
         <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
         <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
@@ -386,7 +390,6 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
         <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
         <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
-        
         <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
         <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
         <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
@@ -399,12 +402,9 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-bio" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="boids" title="Flocking agents following collective rules">Boids</button>
-        <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
-        <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
         <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
-        <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
-        <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
+        
       </div>
     </div>
   </div>
@@ -1831,23 +1831,24 @@ function pickColor(p, x, y, t) {
 function pcc(p,x,y,t){return {ch:pickChar(p,x,y,t),col:pickColor(p,x,y,t)};}
 
 // ── INIT HELPERS ─────────────────────────────────────────────────────────────
-function initRain(W,H){
-  rainDrops=[];
-  let c=Math.floor(W/S.spacing);
-  for(let i=0;i<c;i++) rainDrops.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:1+Math.random()*3,tl:4+Math.floor(Math.random()*14)});
-}
-  
-function initTess(W,H){
-  tessGrid=[];
-  let sp=S.spacing*2,c=Math.floor(W/sp),r=Math.floor(H/sp);
-  for(let i=0;i<r;i++) for(let j=0;j<c;j++) tessGrid.push({x:j*sp+sp/2,y:i*sp+sp/2,phase:Math.random()*Math.PI*2});
-}
-  
-function initMatrix(W,H){
-  matrixCols=[];
-  let c=Math.floor(W/S.spacing);
-  for(let i=0;i<c;i++) matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:5+Math.floor(Math.random()*16),glitch:Math.random()<.2});
-}
+// INIT RAIN (used by Rain1 and Rain2)
+function initRain(W, H) {
+  rainDrops = [];
+  let countMult = S.rainCountMult || 1.0;
+  let c = Math.floor(W / S.spacing * countMult);
+  let speedMin = S.rainSpeedMin || 1.0;
+  let speedMax = S.rainSpeedMax || 3.0;
+  let trailMin = S.rainTrailMin || 4;
+  let trailMax = S.rainTrailMax || 14;
+  for (let i = 0; i < c; i++) {
+    rainDrops.push({
+      x: i * S.spacing + S.spacing / 2,
+      y: Math.random() * -H,
+      speed: speedMin + Math.random() * (speedMax - speedMin),
+      tl: trailMin + Math.floor(Math.random() * (trailMax - trailMin + 1))
+    });
+  }
+}  
   
 function initShatter(W,H){
   shatterParts=[];
@@ -1857,13 +1858,7 @@ function initShatter(W,H){
     shatterParts.push({ox:x,oy:y,dist:Math.sqrt(dx*dx+dy*dy),angle:Math.atan2(dy,dx)});
   }
 }
-  
-function initLoops(W,H){
-  loopParticles=[];
-  let n=Math.floor(W*H/(S.spacing*S.spacing*4));
-  for(let i=0;i<n;i++) loopParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*200)});
-}
-  
+
 function initRecursive(W,H){
   recRects=[];
   subdivide(0,0,W,H,S.recursionDepth||Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
@@ -1879,66 +1874,7 @@ function subdivide(x,y,w,h,depth,cols){
   if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}
   else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}
 }
-  
-function initReactionDiffusion(W,H){
-  let res=Math.max(4,Math.floor(S.spacing*.8));
-  rdW=Math.floor(W/res)+1; rdH=Math.floor(H/res)+1;
-  rdGrid={A:new Float32Array(rdW*rdH),B:new Float32Array(rdW*rdH),
-          nA:new Float32Array(rdW*rdH),nB:new Float32Array(rdW*rdH),res:res};
-  for(let i=0;i<rdW*rdH;i++){rdGrid.A[i]=1;rdGrid.B[i]=0;}
-  // Seed center
-  let cx=Math.floor(rdW/2),cy=Math.floor(rdH/2),r=Math.floor(Math.min(rdW,rdH)*.08);
-  for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
-    if(dx*dx+dy*dy<=r*r){
-      let idx=(cy+dy)*rdW+(cx+dx);
-      if(idx>=0&&idx<rdW*rdH){rdGrid.A[idx]=0.5+Math.random()*0.1;rdGrid.B[idx]=0.25+Math.random()*0.1;}
-    }
-  }
-}
-  
-function initVoronoi(W,H){
-  voronoiSites=[];
-  let n=Math.max(6,Math.floor((W*H)/(S.spacing*S.spacing*80)));
-  for(let i=0;i<n;i++) voronoiSites.push({x:Math.random()*W,y:Math.random()*H,col:S.palette[i%S.palette.length],vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
-}
 
-function initMycelium(W, H) {
-  myceliumBranches = [];
-  let n = 8 + Math.floor(S.density * 10);  // more branches
-  for (let i = 0; i < n; i++) {
-    let startX = W / 2 + (Math.random() - 0.5) * W * 0.4;
-    let startY = H / 2 + (Math.random() - 0.5) * H * 0.4;
-    let angle = Math.random() * Math.PI * 2;
-    myceliumBranches.push({
-      x: startX,
-      y: startY,
-      angle: angle,
-      len: 0,
-      maxLen: (100 + Math.random() * 200) * S.mycLifespan,
-      speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
-      age: 0,
-      col: S.palette[i % S.palette.length],
-      children: 0,
-      maxChildren: S.mycBranch,
-      dead: false
-    });
-  }
-}
-
-function initSand(W,H){
-  sandParticles=[];
-  let n=Math.floor(W*H/(S.spacing*S.spacing*2));
-  for(let i=0;i<n;i++) sandParticles.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,age:Math.floor(Math.random()*300),col:S.palette[i%S.palette.length]});
-}
-
-function initCellular(W,H){
-  let res=Math.max(4,S.spacing);
-  caW=Math.floor(W/res)+1; caH=Math.floor(H/res)+1;
-  caGrid=new Uint8Array(caW*caH);
-  caNext=new Uint8Array(caW*caH);
-  for(let i=0;i<caW*caH;i++) caGrid[i]=Math.random()<.35?1:0;
-}
- 
   
 // ── WIREFRAME TERRAIN INIT ─────────────────────────────────────────────────────────────────
 function initWireTerrain(p,W,H){
@@ -2188,7 +2124,24 @@ function drawDrift(p, t) {
 }
 
 // ── TESSELATION 2.0 Refactored 4/13/26 ─────────────────────────────────────────────
-function drawTess(p, t) {
+  function initTess(W, H) {
+    tessGrid = [];
+    let spMult = S.tessSpacingMult || 2.0;
+    let sp = S.spacing * spMult;
+    let c = Math.floor(W / sp);
+    let r = Math.floor(H / sp);
+    for (let i = 0; i < r; i++) {
+      for (let j = 0; j < c; j++) {
+        tessGrid.push({
+          x: j * sp + sp / 2,
+          y: i * sp + sp / 2,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+  }
+  
+  function drawTess(p, t) {
   let tessSpeed = S.tessSpeed !== undefined ? S.tessSpeed : 2;
   tessGrid.forEach(function(cell) {
     // Use sampleNoise for density gate
@@ -2299,7 +2252,27 @@ function drawWebster(p, t) {
 }
   
 // ── MATRIX 2.0 Refactored 4/13/26 ───────────────────────────────────────────
-function drawMatrix(p, t) {
+  function initMatrix(W, H) {
+    matrixCols = [];
+    let countMult = S.matrixCountMult || 1.0;
+    let c = Math.floor(W / S.spacing * countMult);
+    let speedMin = S.matrixSpeedMin || 0.5;
+    let speedMax = S.matrixSpeedMax || 2.5;
+    let trailMin = S.matrixTrailMin || 5;
+    let trailMax = S.matrixTrailMax || 21;
+    let glitchInit = S.matrixGlitchInit || 0.2;
+    for (let i = 0; i < c; i++) {
+      matrixCols.push({
+        x: i * S.spacing + S.spacing / 2,
+        y: Math.random() * -H,
+        speed: speedMin + Math.random() * (speedMax - speedMin),
+        tl: trailMin + Math.floor(Math.random() * (trailMax - trailMin + 1)),
+        glitch: Math.random() < glitchInit
+      });
+    }
+  }
+  
+  function drawMatrix(p, t) {
   // Mode‑specific parameters
   let trailBase = S.matrixTrailBase !== undefined ? S.matrixTrailBase : 5;
   let trailRand = S.matrixTrailRand !== undefined ? S.matrixTrailRand : 16;
@@ -2645,6 +2618,21 @@ function drawFabric(p, t) {
 }
 
 // ── LOOPS 2.0 Refactored 4/13/26 ──────────────────────────────────────────── 
+function initLoops(W, H) {
+  loopParticles = [];
+  let countMult = S.loopCountMult || 1.0;
+  let n = Math.floor(W * H / (S.spacing * S.spacing * 4) * countMult);
+  for (let i = 0; i < n; i++) {
+    loopParticles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: 0,
+      vy: 0,
+      age: Math.floor(Math.random() * 200)
+    });
+  }
+}
+  
 function drawLoops(p, t) {
   if (!loopParticles.length) initLoops(p.width, p.height);
   let ns = S.noiseScale;
@@ -2900,6 +2888,36 @@ function drawPipes(p, t) {
 }
 
 // ── REACTION-DIFFUSION (Gray-Scott) 2.0 Refactored 4/13/26 ─────────────────────────────────
+function initReactionDiffusion(W, H) {
+  let resMult = S.reactResMult || 0.8;
+  let seedSizeMult = S.reactSeedSize || 0.08;
+  let res = Math.max(4, Math.floor(S.spacing * resMult));
+  rdW = Math.floor(W / res) + 1;
+  rdH = Math.floor(H / res) + 1;
+  rdGrid = {
+    A: new Float32Array(rdW * rdH),
+    B: new Float32Array(rdW * rdH),
+    nA: new Float32Array(rdW * rdH),
+    nB: new Float32Array(rdW * rdH),
+    res: res
+  };
+  for (let i = 0; i < rdW * rdH; i++) { rdGrid.A[i] = 1; rdGrid.B[i] = 0; }
+  let cx = Math.floor(rdW / 2), cy = Math.floor(rdH / 2);
+  let r = Math.floor(Math.min(rdW, rdH) * seedSizeMult);
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy <= r * r) {
+        let idx = (cy + dy) * rdW + (cx + dx);
+        if (idx >= 0 && idx < rdW * rdH) {
+          rdGrid.A[idx] = 0.5 + Math.random() * 0.1;
+          rdGrid.B[idx] = 0.25 + Math.random() * 0.1;
+        }
+      }
+    }
+  }
+}
+  
+  
 function drawReaction(p, t) {
   if (!rdGrid || rdGrid.res !== Math.max(4, Math.floor(S.spacing * 0.8))) initReactionDiffusion(p.width, p.height);
   let g = rdGrid, W = rdW, H = rdH;
@@ -3188,6 +3206,23 @@ function drawMondrian(p, t) {
 }
   
 // ── VORONOI 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────
+function initVoronoi(W, H) {
+  voronoiSites = [];
+  let countMult = S.vorSiteCount || 1.0;
+  let n = Math.max(6, Math.floor((W * H) / (S.spacing * S.spacing * 80) * countMult));
+  let speedMult = S.vorSpeedMult || 1.0;
+  for (let i = 0; i < n; i++) {
+    voronoiSites.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      col: S.palette[i % S.palette.length],
+      vx: (Math.random() - 0.5) * 0.4 * speedMult,
+      vy: (Math.random() - 0.5) * 0.4 * speedMult
+    });
+  }
+}
+  
+  
 function drawVoronoi(p, t) {
   if (!voronoiSites.length) initVoronoi(p.width, p.height);
   if (S.playing) {
@@ -3245,6 +3280,30 @@ function drawVoronoi(p, t) {
 }
 
 // ── MYCELIUM 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────  
+function initMycelium(W, H) {
+  myceliumBranches = [];
+  let initCount = S.mycInitCount || 12;
+  let startSpread = S.mycStartSpread || 0.4;
+  for (let i = 0; i < initCount; i++) {
+    let startX = W / 2 + (Math.random() - 0.5) * W * startSpread;
+    let startY = H / 2 + (Math.random() - 0.5) * H * startSpread;
+    let angle = Math.random() * Math.PI * 2;
+    myceliumBranches.push({
+      x: startX,
+      y: startY,
+      angle: angle,
+      len: 0,
+      maxLen: (100 + Math.random() * 200) * S.mycLifespan,
+      speed: S.mycSpeed * (0.8 + Math.random() * 0.8),
+      age: 0,
+      col: S.palette[i % S.palette.length],
+      children: 0,
+      maxChildren: S.mycBranch,
+      dead: false
+    });
+  }
+}
+  
 function drawMycelium(p, t) {
   if (!myceliumBranches.length) initMycelium(p.width, p.height);
   if (S.playing) {
@@ -3295,74 +3354,126 @@ function drawMycelium(p, t) {
   CTX.globalAlpha = 1;
 }
   
-// ── SAND DRIFT ──────────────────────────────────────────────────────
+// ── SAND DRIFT Refactored 4/13/26 ──────────────────────────────────────────────────────
 // Simulated sand/stipple diffusion — inspired by Inconvergent's sand technique
-function drawSand(p,t){
-  if(!sandParticles.length) initSand(p.width,p.height);
-  let ns=S.noiseScale;
-  sandParticles.forEach(function(pt){
-    if(S.playing){
-      // Flow field drives particles
-      let angle=p.noise(pt.x*ns,pt.y*ns,t*.5)*6.28*2;
-      pt.vx=pt.vx*(S.sandDamping||0.92)+Math.cos(angle)*S.wave*(S.sandForce||0.03);
-      pt.vy=pt.vy*(S.sandDamping||0.92)+Math.sin(angle)*S.wave*(S.sandForce||0.03);
-      // Add small random jitter (sand grain behavior)
-      pt.vx+=(Math.random()-.5)*.3;
-      pt.vy+=(Math.random()-.5)*.3;
-      pt.x+=pt.vx;pt.y+=pt.vy;pt.age++;
-      if(pt.x<0||pt.x>p.width||pt.y<0||pt.y>p.height||pt.age>(S.sandMaxAge||400)){
-        pt.x=Math.random()*p.width;pt.y=Math.random()*p.height;
-        pt.vx=0;pt.vy=0;pt.age=0;
-        pt.col=S.palette[Math.floor(Math.random()*S.palette.length)];
+function initSand(W, H) {
+  sandParticles = [];
+  let countMult = S.sandCountMult || 1.0;
+  let n = Math.floor(W * H / (S.spacing * S.spacing * 2) * countMult);
+  for (let i = 0; i < n; i++) {
+    sandParticles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: 0,
+      vy: 0,
+      age: Math.floor(Math.random() * 300),
+      col: S.palette[i % S.palette.length]
+    });
+  }
+}
+  
+function drawSand(p, t) {
+  if (!sandParticles.length) initSand(p.width, p.height);
+  let ns = S.noiseScale;
+  let damping   = S.sandDamping   !== undefined ? S.sandDamping   : 0.92;
+  let force     = S.sandForce     !== undefined ? S.sandForce     : 0.03;
+  let maxAge    = S.sandMaxAge    !== undefined ? S.sandMaxAge    : 400;
+  let alphaMin  = S.sandAlphaMin  !== undefined ? S.sandAlphaMin  : 0.15;
+  let alphaRange= S.sandAlphaRange!== undefined ? S.sandAlphaRange: 0.4;
+  let sizeMin   = S.sandSizeMin   !== undefined ? S.sandSizeMin   : 1.5;
+  let sizeRange = S.sandSizeRange !== undefined ? S.sandSizeRange : 6;
+  sandParticles.forEach(pt => {
+    if (S.playing) {
+      // Use sampleNoise for flow field
+      let angle = sampleNoise(p, pt.x * ns, pt.y * ns, t * 0.5) * Math.PI * 2;
+      pt.vx = pt.vx * damping + Math.cos(angle) * S.wave * force;
+      pt.vy = pt.vy * damping + Math.sin(angle) * S.wave * force;
+      pt.vx += (Math.random() - 0.5) * 0.3;
+      pt.vy += (Math.random() - 0.5) * 0.3;
+      pt.x += pt.vx;
+      pt.y += pt.vy;
+      pt.age++;
+      if (pt.x < 0 || pt.x > p.width || pt.y < 0 || pt.y > p.height || pt.age > maxAge) {
+        pt.x = Math.random() * p.width;
+        pt.y = Math.random() * p.height;
+        pt.vx = 0; pt.vy = 0; pt.age = 0;
+        pt.col = S.palette[Math.floor(Math.random() * S.palette.length)];
       }
     }
-    let n=p.noise(pt.x*ns,pt.y*ns,t);
-    if(n<S.density*.5) return;
-    // Sand: tiny characters, semi-transparent, accumulate
-    let alpha=.15+n*.4;
-    CTX.globalAlpha=alpha;
-    let sz=1.5+Math.random()*S.maxSize*.3;
-    dc(pt.x,pt.y,sz,0,pt.col,pickChar(p,pt.x,pt.y,t));
+    // Use sampleNoise for density gating
+    let n = sampleNoise(p, pt.x * ns, pt.y * ns, t);
+    if (n < S.density * 0.5) return;
+    let alpha = alphaMin + n * alphaRange;
+    CTX.globalAlpha = alpha;
+    let sz = sizeMin + Math.random() * sizeRange;
+    let ch = pickChar(p, pt.x, pt.y, t);
+    dc(pt.x, pt.y, sz, 0, pt.col, ch);
   });
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
 }
 
-// ── CELLULAR AUTOMATA ───────────────────────────────────────────────
+// ── CELLULAR AUTOMATA Refactored 4/13/26 ───────────────────────────────────────────────
 // Conway-style rules rendered as characters — life, death, emergence
-function drawCellular(p,t){
-  if(!caGrid) initCellular(p.width,p.height);
-  let res=Math.max(4,S.spacing);
-  if(caW!==Math.floor(p.width/res)+1||caH!==Math.floor(p.height/res)+1) initCellular(p.width,p.height);
-  // Update CA every N frames
-  if(S.playing&&S.fc%(S.caStepRate||3)===0){
-    for(let r=1;r<caH-1;r++) for(let c=1;c<caW-1;c++){
-      let i=r*caW+c;
-      let n=caGrid[(r-1)*caW+c-1]+caGrid[(r-1)*caW+c]+caGrid[(r-1)*caW+c+1]+
-            caGrid[r*caW+c-1]+caGrid[r*caW+c+1]+
-            caGrid[(r+1)*caW+c-1]+caGrid[(r+1)*caW+c]+caGrid[(r+1)*caW+c+1];
-      if(caGrid[i]===1) caNext[i]=(n===2||n===3)?1:0;
-      else caNext[i]=n===3?1:0;
-    }
-    let tmp=caGrid;caGrid=caNext;caNext=tmp;
+function initCellular(W, H) {
+  let resMult = S.caResMult || 1.0;
+  let res = Math.max(4, S.spacing * resMult);
+  caW = Math.floor(W / res) + 1;
+  caH = Math.floor(H / res) + 1;
+  caGrid = new Uint8Array(caW * caH);
+  caNext = new Uint8Array(caW * caH);
+  let initDensity = S.caInitDensity || 0.35;
+  for (let i = 0; i < caW * caH; i++) {
+    caGrid[i] = Math.random() < initDensity ? 1 : 0;
   }
-  // Render
-  for(let r=0;r<caH;r++) for(let c=0;c<caW;c++){
-    if(!caGrid[r*caW+c]) continue;
-    let x=c*res,y=r*res;
-    // Count neighbors for color
-    let n=0;
-    if(r>0&&c>0) n+=caGrid[(r-1)*caW+c-1];
-    if(r>0) n+=caGrid[(r-1)*caW+c];
-    if(r>0&&c<caW-1) n+=caGrid[(r-1)*caW+c+1];
-    if(c>0) n+=caGrid[r*caW+c-1];
-    if(c<caW-1) n+=caGrid[r*caW+c+1];
-    if(r<caH-1&&c>0) n+=caGrid[(r+1)*caW+c-1];
-    if(r<caH-1) n+=caGrid[(r+1)*caW+c];
-    if(r<caH-1&&c<caW-1) n+=caGrid[(r+1)*caW+c+1];
-    let col=S.palette[n%S.palette.length];
-    if(S.accent!=='none'&&n===3) col=S.accent;
-    let sz=p.map(n,0,8,S.maxSize*.3,S.maxSize);
-    dc(x,y,sz,0,col,pickChar(p,x,y,t));
+}
+
+function drawCellular(p, t) {
+  if (!caGrid) initCellular(p.width, p.height);
+  let res = Math.max(4, S.spacing * (S.caResMult || 1.0));
+  if (caW !== Math.floor(p.width / res) + 1 || caH !== Math.floor(p.height / res) + 1) {
+    initCellular(p.width, p.height);
+  }
+  let stepRate = S.caStepRate || 3;
+  let sizeMin  = S.caSizeMin  || 4;
+  let sizeMax  = S.caSizeMax  || 20;
+  // Update CA grid
+  if (S.playing && S.fc % stepRate === 0) {
+    for (let r = 1; r < caH - 1; r++) {
+      for (let c = 1; c < caW - 1; c++) {
+        let i = r * caW + c;
+        let n = caGrid[(r-1)*caW+c-1] + caGrid[(r-1)*caW+c] + caGrid[(r-1)*caW+c+1] +
+                caGrid[r*caW+c-1] + caGrid[r*caW+c+1] +
+                caGrid[(r+1)*caW+c-1] + caGrid[(r+1)*caW+c] + caGrid[(r+1)*caW+c+1];
+        if (caGrid[i] === 1) caNext[i] = (n === 2 || n === 3) ? 1 : 0;
+        else caNext[i] = (n === 3) ? 1 : 0;
+      }
+    }
+    let tmp = caGrid; caGrid = caNext; caNext = tmp;
+  }
+  // Render cells
+  for (let r = 0; r < caH; r++) {
+    for (let c = 0; c < caW; c++) {
+      if (!caGrid[r * caW + c]) continue;
+      let x = c * res;
+      let y = r * res;
+      // Count live neighbors for color variation
+      let nb = 0;
+      if (r>0 && c>0) nb += caGrid[(r-1)*caW+c-1];
+      if (r>0) nb += caGrid[(r-1)*caW+c];
+      if (r>0 && c<caW-1) nb += caGrid[(r-1)*caW+c+1];
+      if (c>0) nb += caGrid[r*caW+c-1];
+      if (c<caW-1) nb += caGrid[r*caW+c+1];
+      if (r<caH-1 && c>0) nb += caGrid[(r+1)*caW+c-1];
+      if (r<caH-1) nb += caGrid[(r+1)*caW+c];
+      if (r<caH-1 && c<caW-1) nb += caGrid[(r+1)*caW+c+1];
+      let col = S.palette[nb % S.palette.length];
+      if (S.accent !== 'none' && nb === 3) col = S.accent;
+      // Use sampleNoise to vary size smoothly
+      let nv = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      let sz = p.map(nv, 0, 1, sizeMin, sizeMax);
+      let ch = pickChar(p, x, y, t);
+      dc(x, y, sz, 0, col, ch);
+    }
   }
 }
 
@@ -6384,6 +6495,9 @@ const PARAM_REGISTRY = {
   ],
   tess: [
     { id: 'tessSpeed',  label: 'Pulse speed',   min: 1,  max: 20, step: 1, def: 2,  scale: 1 },
+    // Init parameters
+    { id:'tessSpacingMult',label:'Grid spacing mult', min:1, max:4, step:0.5, def:2.0, scale:1,
+      extra: function(){ if(window._st) initTess(window._st.w(), window._st.h()); } },
   ],
   drift: [
     { id: 'driftNoiseScale', label: 'Drift noise scale', min: 1,  max: 20, step: 1, def: 5,  scale: 0.001,
@@ -6402,11 +6516,23 @@ const PARAM_REGISTRY = {
     { id:'rainTrailWave',  label:'Wave trail boost',min:0,   max:1,   step:0.05,def:0.05,scale:1 },
     { id:'rainHeadSize',   label:'Head size mult',  min:0.5, max:1.2, step:0.05,def:0.8, scale:1 },
     { id:'rainTailSize',   label:'Tail size mult',  min:0.3, max:0.9, step:0.05,def:0.5, scale:1 },
-  ],
+    { id:'rainCountMult',  label:'Drop count mult', min:0.5, max:2,   step:0.1, def:1.0, scale:1,
+    extra: function(){ if(window._st) initRain(window._st.w(), window._st.h()); } },
+    { id:'rainSpeedMin',   label:'Min speed',       min:0.5, max:3,   step:0.1, def:1.0, scale:1 },
+    { id:'rainSpeedMax',   label:'Max speed',       min:1,   max:6,   step:0.5, def:3.0, scale:1 },
+    { id:'rainTrailMin',   label:'Min trail init',  min:2,   max:10,  step:1,   def:4,   scale:1 },
+    { id:'rainTrailMax',   label:'Max trail init',  min:5,   max:25,  step:2,   def:18,  scale:1 },
+    ],
   rain2: [
     { id:'rain2SpeedMult', label:'Fall speed',      min:100, max:500, step:10, def:250, scale:1 },
     { id:'rain2SizeVar',   label:'Size variation',  min:0,   max:1,   step:0.05,def:0.5, scale:1 },
-  ],
+    { id:'rainCountMult',  label:'Drop count mult', min:0.5, max:2,   step:0.1, def:1.0, scale:1,
+    extra: function(){ if(window._st) initRain(window._st.w(), window._st.h()); } },
+    { id:'rainSpeedMin',   label:'Min speed',       min:0.5, max:3,   step:0.1, def:1.0, scale:1 },
+    { id:'rainSpeedMax',   label:'Max speed',       min:1,   max:6,   step:0.5, def:3.0, scale:1 },
+    { id:'rainTrailMin',   label:'Min trail init',  min:2,   max:10,  step:1,   def:4,   scale:1 },
+    { id:'rainTrailMax',   label:'Max trail init',  min:5,   max:25,  step:2,   def:18,  scale:1 },
+    ],
   glitch: [
     { id: 'glitchRowHeightMult', label: 'Row height',      min: 1,   max: 3,   step: 0.1, def: 1.4, scale: 1 },
     { id: 'glitchDispFreq',      label: 'Wiggle freq',     min: 0.1, max: 2,   step: 0.1, def: 0.4, scale: 1 },
@@ -6467,6 +6593,14 @@ const PARAM_REGISTRY = {
     { id: 'matrixGlitchProb',   label: 'Glitch prob',       min: 0,  max: 0.5, step: 0.01,def: 0.2, scale: 1 },
     { id: 'matrixHeadSizeMult', label: 'Head size mult',    min: 0.5,max: 1.2, step: 0.05,def: 0.85,scale: 1 },
     { id: 'matrixTailSizeMult', label: 'Tail size mult',    min: 0.2,max: 1,   step: 0.05,def: 0.5, scale: 1 },
+      // Init parameters
+    { id:'matrixCountMult',    label:'Column count mult', min:0.5,max:2, step:0.1, def:1.0, scale:1,
+      extra: function(){ if(window._st) initMatrix(window._st.w(), window._st.h()); } },
+    { id:'matrixSpeedMin',     label:'Min speed',         min:0.2,max:2, step:0.1, def:0.5, scale:1 },
+    { id:'matrixSpeedMax',     label:'Max speed',         min:1,  max:5, step:0.5, def:2.5, scale:1 },
+    { id:'matrixTrailMin',     label:'Min trail init',    min:2,  max:10, step:1, def:5, scale:1 },
+    { id:'matrixTrailMax',     label:'Max trail init',    min:5,  max:30, step:2, def:21, scale:1 },
+    { id:'matrixGlitchInit',   label:'Glitch prob init',  min:0,  max:0.5, step:0.05, def:0.2, scale:1 },
   ],
   orbit: [
     { id: 'orbitCenters',       label: 'Center count',      min: 1,  max: 6,   step: 1, def: 2,   scale: 1 },
@@ -6565,6 +6699,9 @@ const PARAM_REGISTRY = {
     { id: 'loopMinSize',      label: 'Min char size',     min: 1,    max: 10,  step: 1, def: 2,    scale: 1 },
     { id: 'loopMaxSizeMult',  label: 'Max size mult',     min: 0.3,  max: 1.2, step: 0.05,def: 0.7,  scale: 1 },
     { id: 'loopAlphaRange',   label: 'Fade length',       min: 50,   max: 500, step: 10, def: 200,  scale: 1 },
+      // Init parameter
+    { id:'loopCountMult',    label:'Particle count mult', min:0.2,max:2, step:0.1, def:1.0, scale:1,
+      extra: function(){ if(window._st) initLoops(window._st.w(), window._st.h()); } },
   ],
   mycelium: [
     { id: 'mycSpeed',          label: 'Growth speed',    min: 0,   max: 50, step: 1, def: 10, scale: 0.1 },
@@ -6574,12 +6711,19 @@ const PARAM_REGISTRY = {
     { id: 'myceliumMinSize',   label: 'Min size',        min: 2,   max: 15, step: 1, def: 6,   scale: 1 },
     { id: 'myceliumAlphaBase', label: 'Alpha base',      min: 0.2, max: 1,  step: 0.05,def: 0.6,  scale: 1 },
     { id: 'myceliumAlphaRange',label: 'Alpha range',     min: 0,   max: 0.5,step: 0.05,def: 0.3,  scale: 1 },
+    { id:'mycInitCount',      label:'Initial branches',min:2,   max:30, step:1, def:12, scale:1,
+    extra: function(){ myceliumBranches = []; } },
+    { id:'mycStartSpread',    label:'Start spread',    min:0.1, max:0.8,step:0.05,def:0.4,scale:1 },
   ],
   voronoi: [
     { id: 'vorWire',        label: 'Wireframe edges', type: 'toggle', def: false },
     { id: 'vorWeight',      label: 'Wire weight',     min: 1,  max: 50, step: 1, def: 10, scale: 0.1 },
     { id: 'voronoiEdgeBoost', label: 'Edge boost',    min: 0,  max: 2,  step: 0.1, def: 0.5, scale: 1 },
     { id: 'voronoiMinSize', label: 'Min char size',   min: 1,  max: 10, step: 1, def: 2,   scale: 1 },
+      // Init parameters
+    { id:'vorSiteCount',   label:'Site count mult', min:0.5,max:2, step:0.1, def:1.0, scale:1,
+      extra: function(){ voronoiSites = []; } },
+    { id:'vorSpeedMult',   label:'Site speed mult', min:0,  max:2, step:0.1, def:1.0, scale:1 },
   ],
   reaction: [
     { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
@@ -6588,6 +6732,10 @@ const PARAM_REGISTRY = {
     { id: 'reactDiffB',   label: 'Diffusion B',  min: 0.2, max: 2,   step: 0.1, def: 0.5, scale: 1 },
     { id: 'reactSteps',   label: 'Sim steps',    min: 1,   max: 5,   step: 1, def: 2,   scale: 1 },
     { id: 'reactMinSize', label: 'Min char size',min: 1,   max: 10,  step: 1, def: 2,   scale: 1 },
+    // Init parameters
+    { id:'reactResMult', label:'Resolution mult', min:0.5, max:1.5, step:0.1, def:0.8, scale:1,
+      extra: function(){ rdGrid = null; } },
+    { id:'reactSeedSize',label:'Seed size mult',  min:0.02,max:0.2,step:0.02,def:0.08,scale:1 },
   ],
   pipes: [
     { id: 'pipesSizeMult', label: 'Max size multiplier', min: 2, max: 12, step: 1, def: 6, scale: 1 },
@@ -6669,6 +6817,29 @@ const PARAM_REGISTRY = {
     { id:'dfWaveAmp',      label:'Wave amplitude',  min:0,  max:0.3,step:0.02,def:0.12,scale:1 },
     { id:'dfAngleVar',     label:'Angle variation', min:0,  max:1,  step:0.1,def:0.6,scale:1 },
   ],
+  cellular: [
+    { id:'caStepRate',    label:'Evolution speed',min:1,  max:10,  step:1, def:3,   scale:1 },
+    // Init parameters
+    { id:'caResMult',     label:'Resolution mult',min:0.5,max:2, step:0.1, def:1.0, scale:1,
+      extra: function(){ caGrid = null; } },
+    { id:'caInitDensity', label:'Initial density',min:0.1,max:0.9,step:0.05,def:0.35,scale:1 },
+    // Draw parameters
+    { id:'caSizeMin',     label:'Min char size',  min:1,  max:15, step:1, def:4,   scale:1 },
+    { id:'caSizeMax',     label:'Max char size',  min:5,  max:40, step:2, def:20,  scale:1 },
+  ],
+  sand: [
+    { id:'sandDamping',   label:'Drag',           min:50, max:99,  step:1, def:92,  scale:0.01 },
+    { id:'sandForce',     label:'Flow force',     min:1,  max:20,  step:1, def:3,   scale:0.01 },
+    { id:'sandMaxAge',    label:'Particle life',  min:50, max:800, step:10, def:400, scale:1   },
+    // Init parameters
+    { id:'sandCountMult', label:'Particle count mult', min:0.5,max:2, step:0.1, def:1.0, scale:1,
+      extra: function(){ sandParticles = []; } },
+    // Draw parameters
+    { id:'sandAlphaMin',  label:'Min alpha',      min:0.05,max:0.5,step:0.05,def:0.15,scale:1 },
+    { id:'sandAlphaRange',label:'Alpha range',    min:0.1, max:0.6,step:0.05,def:0.4, scale:1 },
+    { id:'sandSizeMin',   label:'Min size (px)',  min:0.5, max:5,  step:0.5, def:1.5, scale:1 },
+    { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
+  ],
   
   //to be refactored
   hatch: [
@@ -6719,18 +6890,10 @@ const PARAM_REGISTRY = {
     { id:'terrainCamDist',  label:'Camera distance', min:5, max:50, step:1,  def:18, scale:0.1  },
     { id:'terrainCamSpeed', label:'Orbit speed',     min:0, max:20, step:1,  def:4,  scale:0.01 },
   ],
-  sand: [
-    { id:'sandDamping',   label:'Drag',           min:50, max:99,  step:1, def:92,  scale:0.01 },
-    { id:'sandForce',     label:'Flow force',     min:1,  max:20,  step:1, def:3,   scale:0.01 },
-    { id:'sandMaxAge',    label:'Particle life',  min:50, max:800, step:10, def:400, scale:1   },
-  ],
   interference: [
     { id:'interfSources', label:'Wave sources',   min:2,  max:8,   step:1, def:2,   scale:1,
       extra: function(){ window._st.rd(); } },
     { id:'interfSpeed',   label:'Wave speed',     min:1,  max:20,  step:1, def:3,   scale:1    },
-  ],
-  cellular: [
-    { id:'caStepRate',    label:'Evolution speed',min:1,  max:10,  step:1, def:3,   scale:1    },
   ],
   calligraphy: [
     { id:'calligLenMult', label:'Stroke length',  min:1,  max:20,  step:1, def:5,   scale:0.2  },
