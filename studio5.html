@@ -845,121 +845,6 @@ select option{background:var(--ink)}
         
       </div></div>
 
-
-
-      
-      
-            
-
-      
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('motion')"><span class="sl">Motion</span><span class="sec-arrow open" id="arr-motion">›</span></div>
-      <div class="sec-body collapsed" id="body-motion">
-        <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
-        <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
-        <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
-        <div class="rw"><div class="rl"><span class="rn">Jitter</span><span class="rv" id="vJitter">0</span></div><input type="range" id="sJitter" min="0" max="20" value="0"></div>
-      
-      </div></div>
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('field')"><span class="sl">Field</span><span class="sec-arrow open" id="arr-field">›</span></div>
-      <div class="sec-body collapsed" id="body-field">
-        <div class="rw"><div class="rl"><span class="rn">Density</span><span class="rv" id="vDens">5</span></div><input type="range" id="sDens" min="1" max="10" value="5" step="1" title="Character density — threshold for placing characters (higher = fewer chars)"></div>
-        <div class="rw"><div class="rl"><span class="rn">Spacing</span><span class="rv" id="vSpacing">12</span></div><input type="range" id="sSpacing" min="4" max="40" value="12" step="2" title="Grid spacing between characters in pixels"></div>
-        <div class="rw"><div class="rl"><span class="rn">Max size</span><span class="rv" id="vMaxSize">20</span></div><input type="range" id="sMaxSize" min="4" max="80" value="20" step="2" title="Maximum character font size in pixels"></div>
-        <div class="rw"><div class="rl"><span class="rn">Noise scale</span><span class="rv" id="vNoise">5</span></div><input type="range" id="sNoise" min="1" max="20" value="5" step="1" title="Noise field scale — lower = larger smooth blobs, higher = finer texture"></div>
-        <div class="rw"><div class="rl"><span class="rn">Char Variation</span><span class="rv" id="vCharNoise">0.08</span></div><input type="range" id="sCharNoise" min="1" max="100" value="8"><div class="hn">Controls how fast characters change across the field.</div>
-        <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
-        
-      </div>
-      </div></div>
-
-      <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
-      <div class="sec-body collapsed" id="body-entropy">
-        <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Entropy: replaces characters with random glitch symbols at this probability"></div>
-        <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Case glitch: randomly flips character case (uppercase ↔ lowercase)"></div>
-        <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Mirror chance: probability of flipping a character horizontally or vertically"></div>
-        <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
-        <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
-        <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
-        <div class="tr"><span class="tl">Signal Collapse</span><button class="tb" id="btnSignalCollapse" title="Trigger a scan-line glitch effect across the canvas">Fire</button></div>
-      </div></div>
-      
-<!-- RENDERING - Color Mapping, Noise, and Blending Controls -->
-<div class="sec">
-  <div class="sec-hd" onclick="toggleSec('render')">
-    <span class="sl">Rendering & Mapping</span>
-    <span class="sec-arrow" id="arr-render">›</span>
-  </div>
-  <div class="sec-body collapsed" id="body-render">
-
-    <div class="sl2" style="margin-bottom:.4rem">Canvas Blending</div>
-    <select id="blendSelect" title="Canvas blend mode">
-      <option value="source-over">Normal (default)</option>
-      <option value="screen">Screen — lighten, neon glow</option>
-      <option value="multiply">Multiply — darken, print-like</option>
-      <option value="overlay">Overlay — contrast boost</option>
-      <option value="hard-light">Hard Light — intense overlay</option>
-      <option value="soft-light">Soft Light — subtle dodge/burn</option>
-      <option value="color-dodge">Color Dodge — bright, luminous</option>
-      <option value="linear-dodge">Linear Dodge — Add</option>
-      <option value="color-burn">Color Burn — deep darken</option>
-      <option value="difference">Difference — psychedelic</option>
-      <option value="exclusion">Exclusion — lower contrast</option>
-      <option value="lighten">Lighten</option>
-      <option value="darken">Darken</option>
-      <option value="hue">Hue</option>
-      <option value="saturation">Saturation</option>
-      <option value="luminosity">Luminosity</option>
-      <option value="xor">XOR</option>
-    </select>
-
-    <div class="sl2">Noise Type</div>
-    <div class="cg" id="noiseTypeGrid">
-      <button class="cb active" data-ntype="perlin"    title="Classic smooth gradient noise">Perlin</button>
-      <button class="cb" data-ntype="simplex"          title="Rounded, less grid-banding than Perlin">Simplex</button>
-      <button class="cb" data-ntype="ridged"           title="Sharp bright ridges with dark valleys">Ridged</button>
-      <button class="cb" data-ntype="billow"           title="Soft rounded domes with dark cuts">Billow</button>
-      <button class="cb" data-ntype="cellular"         title="Worley cells — characters cluster at cell centers">Cellular</button>
-      <button class="cb" data-ntype="value"            title="Blockier than Perlin — hard grid interpolation">Value</button>
-      <button class="cb" data-ntype="marble"           title="Sine veining driven by turbulence">Marble</button>
-      <button class="cb" data-ntype="domainwarp"       title="Noise warps its own coordinates — swirly organic forms">Domain Warp</button>
-      <button class="cb" data-ntype="checker"          title="Animated hard-edge checkerboard cells">Checker</button>
-    </div>
-
-    <div class="sl2">Noise Detail (fBm)</div>
-    <div class="rw">
-      <div class="rl"><span class="rn">Octaves</span><span class="rv" id="vNoiseOct">1</span></div>
-      <input type="range" id="sNoiseOct" min="1" max="6" value="1" step="1" title="fBm octaves — layers of noise stacked at increasing frequencies. 1 = plain, 6 = maximum detail">
-    </div>
-    <div class="rw">
-      <div class="rl"><span class="rn">Falloff</span><span class="rv" id="vNoiseFall">0.5</span></div>
-      <input type="range" id="sNoiseFall" min="10" max="90" value="50" step="5" title="Amplitude falloff per octave — lower = sharper detail layers, higher = smoother blending">
-    </div>
-
-    <div class="sl2">Color Mapping</div>
-    <div class="cg" id="mapGrid">
-      <button class="cb active" data-map="noise"    title="Noise-driven organic color clouds">Noise</button>
-      <button class="cb" data-map="radial"          title="Concentric rings from center">Radial</button>
-      <button class="cb" data-map="angular"         title="Rotating pie-slice wheel">Angular</button>
-      <button class="cb" data-map="diamond"         title="Manhattan distance — diamond shapes">Diamond</button>
-      <button class="cb" data-map="tunnel"          title="Logarithmic zoom-tunnel rings">Tunnel</button>
-      <button class="cb" data-map="spiral"          title="Archimedes spiral — hypnotic spinning">Spiral</button>
-      <button class="cb" data-map="axial"           title="Bidirectional sine wave interference">Axial</button>
-      <button class="cb" data-map="plasma"          title="Demoscene plasma — rich multicolor interference">Plasma</button>
-      <button class="cb" data-map="scan"            title="Horizontal animated scanline bands">Scan</button>
-      <button class="cb" data-map="stepped"         title="Hard quantized color bands">Stepped</button>
-      <button class="cb" data-map="vortex"          title="Spiral + noise — organic spinning field">Vortex</button>
-      <button class="cb" data-map="mosaic"          title="Noise locked to grid tiles — color blocks">Mosaic</button>
-    </div>
-    <div class="rw" id="mapStepsRow" style="display:none">
-      <div class="rl"><span class="rn">Band count</span><span class="rv" id="vMapSteps">5</span></div>
-      <input type="range" id="sMapSteps" min="2" max="16" value="5" step="1" title="Number of color bands (Stepped and Scan modes)">
-    </div>
-    <p class="hn">Mapping determines how colors spread; Blend Mode determines how they stack.</p>
-
-  </div><!-- /body-render -->
-</div><!-- /sec -->
       
 <!-- COMPOSITION BLOCKS CONTROL -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
@@ -6590,7 +6475,8 @@ function toggleSec(id) {
   
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored'];
 const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles'];
-const ALL_SECS = ['presets', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
+const globalSubSecs = ['sub-motion', 'sub-field', 'sub-entropy', 'sub-render'];  
+const ALL_SECS = ['presets', 'userpresets', 'global', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...globalSubSecs, ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 [  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
@@ -8562,7 +8448,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
   'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
   'global', 'sub-motion', 'sub-field', 'sub-entropy', 'sub-render',
-  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', 'userpresets'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
