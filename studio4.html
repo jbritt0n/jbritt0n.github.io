@@ -817,8 +817,8 @@ select option{background:var(--ink)}
         <div class="tr"><span class="tl">Flip H</span><button class="tb" id="btnFlipH" title="Mirror all characters horizontally">Off</button></div>
         <div class="tr"><span class="tl">Flip V</span><button class="tb" id="btnFlipV" title="Mirror all characters vertically">Off</button></div>
         <div class="rw"><div class="rl"><span class="rn">Trail Persistence</span><span class="rv" id="vTrail">0</span></div><input type="range" id="sTrail" min="0" max="95" value="0" step="5" title="Trail persistence — how much of the previous frame remains (creates motion blur / smear effects)"></div>
+        <div class="tr"><span class="tl">Signal Collapse</span><button class="tb" id="btnSignalCollapse" title="Trigger a scan-line glitch effect across the canvas">Fire</button></div>
       </div></div>
-
       
 <!-- RENDERING - Color Mapping, Noise, and Blending Controls -->
 <div class="sec">
@@ -6368,14 +6368,26 @@ document.getElementById('btnVorWire').addEventListener('click', function() {
 });
 
   
-// ── FLIP TOGGLES ─────────────────────────────────────────────────────────────
+// ── BTN FLIP TOGGLES ─────────────────────────────────────────────────────────────
 document.getElementById('btnFlipH').addEventListener('click',function(){
   S.flipHMirror=!S.flipHMirror;this.textContent=S.flipHMirror?'On':'Off';this.classList.toggle('on',S.flipHMirror);window._st.rd();
 });
 document.getElementById('btnFlipV').addEventListener('click',function(){
   S.flipVMirror=!S.flipVMirror;this.textContent=S.flipVMirror?'On':'Off';this.classList.toggle('on',S.flipVMirror);window._st.rd();
 });
-
+  
+// ── SIGNAL COLLAPSE ───────────────────────────────────────────────────────────
+document.getElementById('btnSignalCollapse').addEventListener('click', function() {
+  S.signalCollapse = true;
+  S.signalStart = S.fc;
+  // Auto-disable after the 80-frame effect completes (~2.5s at 30fps)
+  if (!S.playing) {
+    S.playing = true;
+    window._st.p.loop();
+    document.getElementById('btnPlay').textContent = '⏸ Pause';
+  }
+  showToast('Signal collapse');
+});
   
 // ── PALETTE LISTENERS───────────────────────────────────────────────────────────────────
 document.getElementById('palGrid').addEventListener('click', function(e) {
