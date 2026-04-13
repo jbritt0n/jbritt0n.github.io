@@ -5073,8 +5073,14 @@ function drawMonogrid(p, t) {
   let mgWaveAmp       = S.mgWaveAmp !== undefined ? S.mgWaveAmp : 0.06;
   let mgBlockCharScale = S.mgBlockCharScale !== undefined ? S.mgBlockCharScale : 1.1;
   let mgEdgeNoiseScale = S.mgEdgeNoiseScale !== undefined ? S.mgEdgeNoiseScale : 0.05;
-  let tokens  = S.chars && S.chars.length ? S.chars : ['·'];
-  let sz      = Math.max(2, S.spacing * 0.85);
+  let tokens;
+    if (S.mgBackgroundText && S.mgBackgroundText.trim().length > 0) {
+      // Split the custom text into an array of characters (preserve spaces)
+      tokens = S.mgBackgroundText.split('');
+    } else {
+      tokens = S.chars && S.chars.length ? S.chars : ['·'];
+    }
+  let sz = Math.max(2, S.spacing * 0.85 * (S.mgTextSizeMult || 1));
   let charW   = sz * 0.63;
   let charH   = sz * 1.05;
   // Text cycle speed — 0 = static, 100 = fast
@@ -6005,6 +6011,8 @@ const DEFAULT_STATE = {
   overlayColor: '#e63946',           // Default color for new streams
   overlayEntropy: 0,                 // Glitch probability for overlay chars (0–1)
   overlayDistort: 0,                 // Horizontal jitter amplitude (pixels)
+  // ========== MODE-SPECIFIC CUSTOM TEXT ==========
+  mgBackgroundText: '',   // custom text for Monogrid background
   // ========== SHAPE OVERLAY ==========
   shapesEnabled: false,              // Enable drawing of custom shapes
   shapeDens: 6,                      // Character density inside shapes (1–10, higher = fewer)
@@ -6023,6 +6031,7 @@ const DEFAULT_STATE = {
   // ========== SIGNAL COLLAPSE (temporary effect) ==========
   signalCollapse: false,             // Trigger scan‑line collapse effect
   signalStart: 0,                    // Frame counter when effect started
+
 };
 
   
@@ -6530,6 +6539,8 @@ const PARAM_REGISTRY = {
     { id: 'mgAnim',            label: 'Animate blocks',    type: 'toggle', def: true },
     { id: 'mgStack',           label: 'Stack overlapping', type: 'toggle', def: false },
     { id: 'mgUseSolidRects',   label: 'Solid rectangles',  type: 'toggle', def: false },
+    { id: 'mgBackgroundText', label: 'Background text', type: 'text', def: '' },
+    { id: 'mgTextSizeMult', label: 'Text size mult', min: 0.5, max: 2, step: 0.05, def: 1, scale: 1 },
   ],
   
   //to be refactored
@@ -6710,16 +6721,12 @@ function rebuildModeUI(mode) {
     let sliderVal = Math.round(stateVal / scale);
     // Clamp to slider range
     sliderVal = Math.max(param.min, Math.min(param.max, sliderVal));
-
     let slId = 'mdp_' + param.id;
     let vId  = 'mdpv_' + param.id;
-
     let row = document.createElement('div');
     row.className = 'rw';
-
     let rl = document.createElement('div');
     rl.className = 'rl';
-
     let nameSpan = document.createElement('span');
     nameSpan.className = 'rn';
     nameSpan.textContent = param.label;
@@ -6728,7 +6735,6 @@ function rebuildModeUI(mode) {
       nameSpan.style.cursor = 'help';
       nameSpan.textContent += ' ⓘ';
     }
-
     let valSpan = document.createElement('span');
     valSpan.className = 'rv';
     valSpan.id = vId;
@@ -6736,11 +6742,9 @@ function rebuildModeUI(mode) {
     valSpan.textContent = scale < 0.01
       ? (stateVal).toFixed(4)
       : sliderVal;
-
     rl.appendChild(nameSpan);
     rl.appendChild(valSpan);
     row.appendChild(rl);
-
     let slider = document.createElement('input');
     slider.type  = 'range';
     slider.id    = slId;
@@ -6748,7 +6752,6 @@ function rebuildModeUI(mode) {
     slider.max   = param.max;
     slider.step  = param.step;
     slider.value = sliderVal;
-
     slider.addEventListener('input', function(){
       let v = parseFloat(this.value);
       let sv = v * scale;
@@ -6758,10 +6761,41 @@ function rebuildModeUI(mode) {
       if(param.extra) param.extra();
       window._st.rd();
     });
-
     row.appendChild(slider);
     container.appendChild(row);
   });
+
+// ── Text input type ───────────────────────────────────────────────────
+if (param.type === 'text') {
+  let row = document.createElement('div');
+  row.className = 'rw';
+  let lbl = document.createElement('div');
+  lbl.className = 'sl2';
+  lbl.style.marginTop = '.4rem';
+  lbl.textContent = param.label;
+  let input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'mdp_' + param.id;
+  input.placeholder = 'Enter text…';
+  input.value = S[param.id] !== undefined ? S[param.id] : (param.def || '');
+  input.style.width = '100%';
+  input.style.background = 'var(--ink)';
+  input.style.border = '1px solid var(--stone)';
+  input.style.color = 'var(--pale)';
+  input.style.padding = '.32rem .5rem';
+  input.style.fontFamily = "'EB Garamond', serif";
+  input.style.fontSize = '.85rem';
+  input.addEventListener('change', function() {
+    S[param.id] = this.value;
+    if (param.extra) param.extra();
+    window._st.rd();
+  });
+  row.appendChild(lbl);
+  row.appendChild(input);
+  container.appendChild(row);
+  return;
+}
+  
 }
   
   
