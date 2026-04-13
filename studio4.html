@@ -726,20 +726,13 @@ select option{background:var(--ink)}
           <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
           <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
         </div>
-        <div id="ctrl-voronoi" class="mode-ctrl">
-          <div class="sl2">Voronoi Style</div>
-          <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
-        </div>
+<div id="ctrl-voronoi" class="mode-ctrl">
+  <div class="sl2">Voronoi Style</div>
+  <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
+  <div class="rw"><div class="rl"><span class="rn">Wire weight</span><span class="rv" id="vVorWeight">1.0</span></div>
+  <input type="range" id="sVorWeight" min="1" max="50" value="10"></div>
+</div>
 
-      <!-- Voronoi Controls -->
-<div id="ctrl-magnetic" class="mode-ctrl">
-  <div class="sl2">Magnetic Parameters</div>
-      <div class="rw"><div class="rl">
-    <span class="rn">Wire Weight</span>
-    <span class="rv" id="vVorWeight">1.0</span>
-  </div>
-  <input type="range" id="sVorWeight" min="1" max="50" value="10">
-</div></div>
       
       <!-- Monogrid Controls -->
       <div id="ctrl-monogrid" class="mode-ctrl">
@@ -4566,7 +4559,7 @@ function drawDiagonalField(p, t) {
   // Diagonal angle — 45° base, turbulence modifies locally
   let baseAngle = Math.PI * 0.25 + S.charRotRad;
   for (let x = -p.height; x < p.width + p.height; x += sp) {
-    for (let y = 0; y < p.height; y += sz * 1.02) {
+  for (let y = -sp; y < p.height * 1.5; y += sz * 1.02) {
       // Diagonal coordinate
       let diagX = x + y;
       // Multi-frequency noise for the banding pattern
@@ -6235,16 +6228,8 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
   });
-//Voronoi wireframe
-const btnVorWire = document.getElementById('btnVorWire');
-if (btnVorWire) {
-  btnVorWire.addEventListener('click', function() {
-    S.vorWire = !S.vorWire; // Toggle the boolean
-    this.classList.toggle('active', S.vorWire);
-    if (window._st) window._st.rd(); // Trigger redraw
-  });
+
   
-}
   let activeCtrl = document.getElementById('ctrl-' + S.mode);
   if (activeCtrl) activeCtrl.classList.add('active');
   // 5. Re-initialize and redraw
@@ -6373,6 +6358,16 @@ document.getElementById('fontSelect').addEventListener('change', function() {
   }
 });
 
+
+// ── VORONOI WIREFRAME ─────────────────────────────────────────────────────────
+document.getElementById('btnVorWire').addEventListener('click', function() {
+  S.vorWire = !S.vorWire;
+  this.textContent = S.vorWire ? 'On' : 'Off';
+  this.classList.toggle('on', S.vorWire);
+  window._st.rd();
+});
+
+  
 // ── FLIP TOGGLES ─────────────────────────────────────────────────────────────
 document.getElementById('btnFlipH').addEventListener('click',function(){
   S.flipHMirror=!S.flipHMirror;this.textContent=S.flipHMirror?'On':'Off';this.classList.toggle('on',S.flipHMirror);window._st.rd();
