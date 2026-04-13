@@ -2276,8 +2276,7 @@ function drawMatrix(p,t){
     c.y+=c.speed*(S.speed*280+1);
     if(c.y>p.height+S.spacing*c.tl){c.y=-S.spacing*(1+Math.random()*5);c.speed=.5+Math.random()*2.5;c.glitch=Math.random()<.2;}
   });
-  let tl = S.matrixTrail ? Math.floor(S.matrixTrail * 0.5 + Math.random() * S.matrixTrail) : 5+Math.floor(Math.random()*16);
-  matrixCols.push({x:i*S.spacing+S.spacing/2,y:Math.random()*-H,speed:.5+Math.random()*2.5,tl:Math.max(2,tl),glitch:Math.random()<.2});
+  matrixCols.forEach(function(c,ci){
     for(let j=0;j<c.tl;j++){
       let ty=c.y-j*S.spacing;
       if(ty<0||ty>p.height) continue;
