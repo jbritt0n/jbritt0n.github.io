@@ -5862,11 +5862,17 @@ p.draw = function() {
   // FIXED: We now use a stable time increment (S.fc * 0.01) 
   // This ensures the noise field 't' moves even if the speed slider is being adjusted.
   let t = S.fc * S.speed;
-  // Clear canvas
+
+  // Clear canvas — trail persistence replaces full wipe with semi-transparent fill
   CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
   CTX.fillStyle = S.bg;
+  if (S.trailPersist > 0) {
+    CTX.globalAlpha = 1 - (S.trailPersist / 100);
+  } else {
+    CTX.globalAlpha = 1;
+  }
   CTX.fillRect(0, 0, W, H);
+  CTX.globalAlpha = 1; // Always restore full alpha before drawing characters
   // Signal collapse effect
   if (S.signalCollapse) {
     let elapsed = S.fc - S.signalStart;
