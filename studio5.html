@@ -5150,9 +5150,11 @@ function drawMonogrid(p, t) {
       let jx = (Math.random() - 0.5) * jitter;
       let jy = (Math.random() - 0.5) * jitter;
       dc(cx + jx, cy + jy, bSz, 0, col, ch);
+        }
+      }
     }
-  }
-}
+  });  // closes monogridBlocks.forEach
+}      // closes drawMonogrid function
   
 // ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
