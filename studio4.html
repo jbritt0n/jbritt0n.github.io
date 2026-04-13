@@ -6486,11 +6486,12 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   document.querySelectorAll('.mode-ctrl').forEach(ctrl => {
     ctrl.classList.remove('active');
   });
-
-  
   let activeCtrl = document.getElementById('ctrl-' + S.mode);
   if (activeCtrl) activeCtrl.classList.add('active');
-  // 5. Re-initialize and redraw
+  // 5. Re-initialize and redraw, adding mode-specific controls
+    rebuildModeUI(S.mode);
+  let sec = document.getElementById('mode-extra-sec');
+  if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
   if (window._st) {
     window._st.ri();
     window._st.rd();
