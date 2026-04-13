@@ -6967,15 +6967,6 @@ document.getElementById('fontSelect').addEventListener('change', function() {
   }
 });
 
-
-// ── VORONOI WIREFRAME ─────────────────────────────────────────────────────────
-document.getElementById('btnVorWire').addEventListener('click', function() {
-  S.vorWire = !S.vorWire;
-  this.textContent = S.vorWire ? 'On' : 'Off';
-  this.classList.toggle('on', S.vorWire);
-  window._st.rd();
-});
-
   
 // ── BTN FLIP TOGGLES ─────────────────────────────────────────────────────────────
 document.getElementById('btnFlipH').addEventListener('click',function(){
