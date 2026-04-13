@@ -5118,32 +5118,34 @@ function drawMonogrid(p, t) {
       CTX.fillStyle = col;
       CTX.fillRect(bx, b.y, b.w, b.h);
     } else {
-      // ----- Character blocks (new version) -----
-      let bSz  = sz * mgBlockCharScale;
-      let bChW = bSz * 0.63;
-      let bChH = bSz * 1.05;
-      for (let cy = b.y; cy < b.y + b.h; cy += bChH) {
-        for (let cx = bx; cx < bx + b.w; cx += bChW) {
-          if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
-          // Edge / interior selection
-          let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
-          let bIdx;
-          if (distFromEdge < bChW * 1.5) {
-            bIdx = Math.floor(Math.random() * blockChars.length);
-          } else {
-            let noiseVal = sampleNoise(p, cx * mgEdgeNoiseScale, cy * mgEdgeNoiseScale, t);
-            bIdx = Math.floor(noiseVal * 3);
-          }
-          let ch = blockChars[bIdx % blockChars.length];
-          dc(cx, cy, bSz, 0, col, ch);
-        }
+  // ----- Character blocks (new version) -----
+  let bSz  = sz * mgBlockCharScale;
+  let bChW = bSz * 0.63;
+  let bChH = bSz * 1.05;
+  let gapProb = S.mgBlockGapProb !== undefined ? S.mgBlockGapProb : 0;
+  let jitter  = S.mgBlockJitter  !== undefined ? S.mgBlockJitter  : 0;
+  for (let cy = b.y; cy < b.y + b.h; cy += bChH) {
+    for (let cx = bx; cx < bx + b.w; cx += bChW) {
+      // 1. Skip cell based on gap probability
+      if (gapProb > 0 && Math.random() < gapProb) continue;
+      // 2. Additional entropy skip (global glitch)
+      if (S.entropy > 0 && Math.random() < S.entropy * 0.6) continue;
+      // Edge / interior selection
+      let distFromEdge = Math.min(cx - bx, bx + b.w - cx, cy - b.y, b.y + b.h - cy);
+      let bIdx;
+      if (distFromEdge < bChW * 1.5) {
+        bIdx = Math.floor(Math.random() * blockChars.length);
+      } else {
+        let noiseVal = sampleNoise(p, cx * mgEdgeNoiseScale, cy * mgEdgeNoiseScale, t);
+        bIdx = Math.floor(noiseVal * 3);
       }
+      let ch = blockChars[bIdx % blockChars.length];
+      // Apply jitter (random offset)
+      let jx = (Math.random() - 0.5) * jitter;
+      let jy = (Math.random() - 0.5) * jitter;
+      dc(cx + jx, cy + jy, bSz, 0, col, ch);
     }
-  });
-  CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
-  CTX.restore();
-  _lastFill = '';
+  }
 }
   
 // ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
@@ -6523,6 +6525,8 @@ const PARAM_REGISTRY = {
     { id: 'mgWaveAmp',         label: 'Wave amplitude',    min: 0,  max: 0.2,step: 0.01,def: 0.06,scale: 1 },
     { id: 'mgBlockCharScale',  label: 'Block char size',   min: 0.5, max: 2,  step: 0.05,def: 1.1, scale: 1 },
     { id: 'mgEdgeNoiseScale',  label: 'Edge noise scale',  min: 0.01,max: 0.2,step: 0.01,def: 0.05,scale: 1 },
+    { id: 'mgBlockGapProb',    label: 'Block gap prob',    min: 0,   max: 1,   step: 0.02,def: 0,   scale: 1 },
+    { id: 'mgBlockJitter',     label: 'Block jitter (px)', min: 0,   max: 20,  step: 1,   def: 0,   scale: 1 },
     { id: 'mgAnim',            label: 'Animate blocks',    type: 'toggle', def: true },
     { id: 'mgStack',           label: 'Stack overlapping', type: 'toggle', def: false },
     { id: 'mgUseSolidRects',   label: 'Solid rectangles',  type: 'toggle', def: false },
