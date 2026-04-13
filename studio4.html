@@ -2108,7 +2108,7 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
-// ── BLOOM 2.0 - updated 4/10/26 ──────────────────────────────────────────────────
+// ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
   let sp  = S.spacing || 12;
   let ns  = S.noiseScale || 0.01;
@@ -2137,15 +2137,26 @@ function drawBloom(p, t) {
   }
 }
   
-function drawWave(p,t){
-  let sp=S.spacing;
-  for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let wx=Math.sin(y*S.turb*(S.waveFreqX||10)+t*2)*S.wave;
-    let wy=Math.cos(x*S.turb*(S.waveFreqY||10)+t*1.5)*S.wave*(S.waveAmpY||0.6);
-    let r=pcc(p,x,y,t);
-    dc(x+wx,y+wy,p.map(n,S.density,1,6,S.maxSize),0,r.col,r.ch);
+// ── WAVE 2.0 Refactored 4/13/26 ─────────────────────────────────────────────
+function drawWave(p, t) {
+  let sp = S.spacing;
+  let freqX = S.waveFreqX !== undefined ? S.waveFreqX : 10;
+  let freqY = S.waveFreqY !== undefined ? S.waveFreqY : 10;
+  let ampY  = S.waveAmpY !== undefined ? S.waveAmpY : 0.6;
+
+  for (let x = sp; x < p.width; x += sp) {
+    for (let y = sp; y < p.height; y += sp) {
+      // Use sampleNoise for density gate (respects noiseType, octaves, etc.)
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+
+      let wx = Math.sin(y * S.turb * freqX + t * 2) * S.wave;
+      let wy = Math.cos(x * S.turb * freqY + t * 1.5) * S.wave * ampY;
+
+      let r = pcc(p, x, y, t);               // colour + character
+      let sz = p.map(n, S.density, 1, 6, S.maxSize);
+      dc(x + wx, y + wy, sz, 0, r.col, r.ch);
+    }
   }
 }
   
@@ -2182,50 +2193,82 @@ function drawRain2(p,t){
   });
 }
   
-function drawVortex(p,t){
-  let cx=p.width/2,cy=p.height/2,maxR=Math.max(p.width,p.height)*.6;
-  for(let r=S.spacing;r<maxR;r+=S.spacing){
-    let count=Math.floor(6.28*r/S.spacing);
-    for(let i=0;i<count;i++){
-    let angle=(i/count)*6.28+(t*(maxR/r)*(S.vortexSpin||0.5));
-      let x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r;
-      let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-      if(n<S.density) continue;
-      let res=pcc(p,x,y,t);
-      dc(x,y,p.map(n,S.density,1,4,S.maxSize),angle,res.col,res.ch);
+// ── VORTEX 2.0 Refactored 4/13/26 ───────────────────────────────────────────
+function drawVortex(p, t) {
+  let cx = p.width / 2;
+  let cy = p.height / 2;
+  let maxR = Math.max(p.width, p.height) * 0.6;
+  let spin = S.vortexSpin !== undefined ? S.vortexSpin : 0.5;
+
+  for (let r = S.spacing; r < maxR; r += S.spacing) {
+    let count = Math.floor(6.28 * r / S.spacing);
+    for (let i = 0; i < count; i++) {
+      let angle = (i / count) * 6.28 + (t * (maxR / r) * spin);
+      let x = cx + Math.cos(angle) * r;
+      let y = cy + Math.sin(angle) * r;
+
+      // Use sampleNoise for density gate
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+
+      let res = pcc(p, x, y, t);
+      let sz = p.map(n, S.density, 1, 4, S.maxSize);
+      dc(x, y, sz, angle, res.col, res.ch);
     }
   }
 }
   
-function drawRipple(p,t){
-  let cx=p.width/2,cy=p.height/2;
-  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
-    let d=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
-    let ripple=Math.sin(d*S.turb*(S.rippleFreq||10)-t*(S.rippleSpeed||5))*S.wave;
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let res=pcc(p,x,y,t);
-    dc(x,y+ripple,S.maxSize,0,res.col,res.ch);
+// ── RIPPLE 2.0 Refactored 4/13/26 ───────────────────────────────────────────
+function drawRipple(p, t) {
+  let cx = p.width / 2;
+  let cy = p.height / 2;
+  let freq = S.rippleFreq !== undefined ? S.rippleFreq : 10;
+  let speed = S.rippleSpeed !== undefined ? S.rippleSpeed : 5;
+
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      let d = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+      let ripple = Math.sin(d * S.turb * freq - t * speed) * S.wave;
+      // Use sampleNoise for density gate
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      let res = pcc(p, x, y, t);
+      dc(x, y + ripple, S.maxSize, 0, res.col, res.ch);
+    }
   }
 }
-  
-function drawDrift(p,t){
-  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let ox=p.noise(x*.005,t)*S.wave*2,oy=p.noise(y*.005,t)*S.wave*2;
-    let res=pcc(p,x,y,t);
-    dc(x+ox,y+oy,S.maxSize,0,res.col,res.ch);
+
+// ── DRIFT 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+function drawDrift(p, t) {
+  // Mode‑specific parameters with safe defaults
+  let driftNoiseScale = S.driftNoiseScale !== undefined ? S.driftNoiseScale : 0.005;
+  let driftMult = S.driftMult !== undefined ? S.driftMult : 2;
+
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      // Use sampleNoise for density gate
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      // Use mode‑specific parameters for offset noise
+      let ox = p.noise(x * driftNoiseScale, t) * S.wave * driftMult;
+      let oy = p.noise(y * driftNoiseScale, t) * S.wave * driftMult;
+      let res = pcc(p, x, y, t);
+      dc(x + ox, y + oy, S.maxSize, 0, res.col, res.ch);
+    }
   }
 }
-  
-function drawTess(p,t){
-  tessGrid.forEach(function(cell){
-    let n=p.noise(cell.x*S.noiseScale,cell.y*S.noiseScale,t);
-    if(n<S.density) return;
-    let pulse=Math.sin(t*(S.tessSpeed||2)+cell.phase)*.5+.5;
-    let res=pcc(p,cell.x,cell.y,t);
-    dc(cell.x,cell.y,p.map(pulse,0,1,S.maxSize*.2,S.maxSize),t*.5+cell.phase,res.col,res.ch);
+
+// ── TESSELATION 2.0 Refactored 4/13/26 ─────────────────────────────────────────────
+function drawTess(p, t) {
+  let tessSpeed = S.tessSpeed !== undefined ? S.tessSpeed : 2;
+  tessGrid.forEach(function(cell) {
+    // Use sampleNoise for density gate
+    let n = sampleNoise(p, cell.x * S.noiseScale, cell.y * S.noiseScale, t);
+    if (n < S.density) return;
+    let pulse = Math.sin(t * tessSpeed + cell.phase) * 0.5 + 0.5;
+    let res = pcc(p, cell.x, cell.y, t);
+    let sz = p.map(pulse, 0, 1, S.maxSize * 0.2, S.maxSize);
+    dc(cell.x, cell.y, sz, t * 0.5 + cell.phase, res.col, res.ch);
   });
 }
   
