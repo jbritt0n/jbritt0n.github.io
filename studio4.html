@@ -288,10 +288,11 @@ select option{background:var(--ink)}
   </div>
 <div class="sec-body" id="body-mode">
   <div id="modeGrid">
-        <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-fluid')">
-      REFACTORED MODES<span class="sec-arrow" id="arr-mode-fluid">›</span>
+    
+    <div class="sl2" style="margin-top:0.5rem;" onclick="toggleSec('mode-refactored')">
+      REFACTORED MODES<span class="sec-arrow" id="arr-mode-refactored">›</span>
     </div>
-    <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
+    <div class="sec-body collapsed" id="body-mode-refactored" style="padding:0">
       <div class="mg">
         <button class="mb active" data-mode="bloom" title="Radiating character growth from the center">Bloom</button>
 
@@ -6056,14 +6057,14 @@ function toggleSec(id) {
   }
 }
   
-const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio'];
-const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic'];
+const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored];
+const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles'];
 const ALL_SECS = ['presets', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 [  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
-  'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
-  'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
+  'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored',
+  'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles',
   'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
