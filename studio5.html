@@ -321,6 +321,12 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
         <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
         <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
+        <button class="mb" data-mode="rain1" title="Vertical falling character streams">Rain</button>
+        <button class="mb" data-mode="rain2" title="Dense, heavy precipitation patterns">Rain 2</button>
+        <button class="mb" data-mode="tonaldensity" title="Tonal Density — phrase repeats creating ink-wash tones">Tonal Density</button>
+        <button class="mb" data-mode="maze" title="Recursive-backtracker maze with shifting walls">Maze</button>
+        <button class="mb" data-mode="geode" title="Rotated tiles scattered into organic blobs">Geode</button>
+        <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
       </div>
     </div>
     
@@ -329,8 +335,7 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
       <div class="mg">
-        <button class="mb" data-mode="rain1" title="Vertical falling character streams">Rain</button>
-        <button class="mb" data-mode="rain2" title="Dense, heavy precipitation patterns">Rain 2</button>
+
         <button class="mb" data-mode="spiro">✦ Spiro</button>
         <button class="mb" data-mode="interference" title="Overlapping wave patterns creating moiré">Interfere</button>
       </div>
@@ -342,10 +347,7 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
-
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
-        <button class="mb" data-mode="tonaldensity" title="Tonal Density — phrase repeats creating ink-wash tones">Tonal Density</button>
-        <button class="mb" data-mode="stripedrects" title="Solid and barcode rectangles on light ground">Stripe Rects</button>
         <button class="mb" data-mode="diagonalfield" title="Dense diagonal character lanes with density bands">Diagonal Field</button>
         <button class="mb" data-mode="cascaderects" title="Nested character-outlined rectangles cascading">Cascade Rects</button>
         <button class="mb" data-mode="calligraphy" title="Pressure-sensitive stroke simulations">Calligr.</button>
@@ -358,7 +360,7 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
-        <button class="mb" data-mode="maze" title="Recursive-backtracker maze with shifting walls">Maze</button>
+        
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
         <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
@@ -384,7 +386,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
         <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
         <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
-        <button class="mb" data-mode="geode" title="Rotated tiles scattered into organic blobs">Geode</button>
+        
         <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
         <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
         <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
@@ -2969,7 +2971,7 @@ function drawReaction(p, t) {
   }
 }
 
-// ── MAZE ─────────────────────────────────────────────────────────────────────
+// ── MAZE Refactored 4/13/26 ─────────────────────────────────────────────────────────────────────
 // Recursive-backtracker maze. Walls dissolve and regenerate over time.
 // Characters fill corridors; walls are CTX lines.
 
@@ -3000,23 +3002,21 @@ function buildMaze(cols, rows) {
   }
   return cells;
 }
+  
 function drawMaze(p, t) {
   let cw = Math.max(12, S.spacing * 2);
   let ch = Math.max(12, S.spacing * 2);
   let cols = Math.floor(p.width  / cw) + 1;
   let rows = Math.floor(p.height / ch) + 1;
-  // Rebuild when size changes or on regen
   if (!mazeGrid || mazeCols !== cols || mazeRows !== rows) {
     mazeCols = cols; mazeRows = rows;
     mazeGrid = buildMaze(cols, rows);
   }
-  // Shift: randomly remove a wall and carve a new passage every N frames
+  let shiftRate = S.mazeShiftRate || 15;
   if (S.playing) {
     mazeShiftTimer++;
-    let shiftRate = 15;
     if (mazeShiftTimer > shiftRate) {
       mazeShiftTimer = 0;
-      // Pick a random cell and knock out a random wall
       let c = Math.floor(Math.random() * cols);
       let r = Math.floor(Math.random() * rows);
       let dirs = ['N','E','S','W'];
@@ -3025,54 +3025,52 @@ function drawMaze(p, t) {
       let nr = r + (d1==='S'?1:d1==='N'?-1:0);
       let opp = {N:'S',S:'N',E:'W',W:'E'};
       if (nc>=0 && nc<cols && nr>=0 && nr<rows) {
-        mazeGrid[r * cols + c][d1]         = false;
-        mazeGrid[nr * cols + nc][opp[d1]]  = false;
-        // Optionally close a different wall elsewhere to keep it maze-like
+        mazeGrid[r * cols + c][d1] = false;
+        mazeGrid[nr * cols + nc][opp[d1]] = false;
         let rc2 = Math.floor(Math.random() * cols);
         let rr2 = Math.floor(Math.random() * rows);
-        let d2  = dirs[Math.floor(Math.random() * 4)];
+        let d2 = dirs[Math.floor(Math.random() * 4)];
         mazeGrid[rr2 * cols + rc2][d2] = true;
       }
     }
   }
-  // Draw walls
   let wallCol = S.palette[0];
   CTX.save();
   CTX.strokeStyle = wallCol;
-  CTX.lineWidth   = Math.max(1, S.maxSize * 0.06);
+  CTX.lineWidth   = Math.max(1, S.maxSize * (S.mazeWallWidth || 0.06));
   CTX.lineCap     = 'square';
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       let cell = mazeGrid[r * cols + c];
       let x = c * cw, y = r * ch;
-      // Draw only walls that are still closed
-      if (cell.N) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x + cw, y);      CTX.stroke(); }
-      if (cell.W) { CTX.beginPath(); CTX.moveTo(x, y);      CTX.lineTo(x, y + ch);      CTX.stroke(); }
-      // Draw S and E only at edges to avoid double-drawing
+      if (cell.N) { CTX.beginPath(); CTX.moveTo(x, y); CTX.lineTo(x + cw, y); CTX.stroke(); }
+      if (cell.W) { CTX.beginPath(); CTX.moveTo(x, y); CTX.lineTo(x, y + ch); CTX.stroke(); }
       if (r === rows-1 && cell.S) { CTX.beginPath(); CTX.moveTo(x, y+ch); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
       if (c === cols-1 && cell.E) { CTX.beginPath(); CTX.moveTo(x+cw, y); CTX.lineTo(x+cw, y+ch); CTX.stroke(); }
     }
   }
-  // Fill corridors (open passages) with characters
+  let charDensity = S.mazeCharDensity !== undefined ? S.mazeCharDensity : 0.7;
+  let charSizeMin = S.mazeCharSizeMin !== undefined ? S.mazeCharSizeMin : 0.3;
   if (S.chars && S.chars.length) {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         let cell = mazeGrid[r * cols + c];
         let openCount = (cell.N?0:1)+(cell.E?0:1)+(cell.S?0:1)+(cell.W?0:1);
-        if (openCount < 1) continue; // dead end — skip to keep visual clarity
+        if (openCount < 1) continue;
         let x = c * cw + cw * 0.5;
         let y = r * ch + ch * 0.5;
-        let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+        if (n > charDensity) continue;
         let col = pickColor(p, x, y, t);
         let ch2 = pickChar(p, x, y, t);
-        dc(x, y, p.map(n, 0, 1, S.maxSize * 0.3, S.maxSize * 0.8), 0, col, ch2);
+        let sz = p.map(n, 0, 1, S.maxSize * charSizeMin, S.maxSize * 0.8);
+        dc(x, y, sz, 0, col, ch2);
       }
     }
   }
   CTX.restore();
   _lastFill = '';
 }
-
 
 // ── UNKNOWN PLEASURES ─────────────────────────────────────────────────────────
 // Joy Division "Unknown Pleasures" — stacked horizontal lines with
@@ -4662,24 +4660,32 @@ function drawBrushContour(p, t) {
   _lastFill = '';
 }
 
-// ── GEODE (Lars Wander) ───────────────────────────────────────────────────
+// ── GEODE (Lars Wander) Refactored 4/13/26 ───────────────────────────────────────────────────
 // Small rotated tiles scatter into a noise-defined organic blob.
 // Each tile's color comes from palette; blob boundary breathes with time.
 // Spacing = tile size, Density = blob fill threshold, Wave = blob animation.
-
 function initGeode(W, H) {
   geodeTiles = [];
-  let step = Math.max(4, S.spacing);
+  // Read parameters with fallback defaults
+  let stepMult   = S.geodeStepMult   !== undefined ? S.geodeStepMult   : 1.0;
+  let rotRange   = S.geodeRotRange   !== undefined ? S.geodeRotRange   : 0.9;
+  let spinBase   = S.geodeSpinBase   !== undefined ? S.geodeSpinBase   : 0.022;
+  let wMin       = S.geodeWidthMin   !== undefined ? S.geodeWidthMin   : 0.42;
+  let wMax       = S.geodeWidthMax   !== undefined ? S.geodeWidthMax   : 0.7;
+  let hMin       = S.geodeHeightMin  !== undefined ? S.geodeHeightMin  : 0.42;
+  let hMax       = S.geodeHeightMax  !== undefined ? S.geodeHeightMax  : 0.95;
+  let palCount   = S.geodePalCount   !== undefined ? S.geodePalCount   : 6;
+  let step = Math.max(4, S.spacing * stepMult);
   for (let x = step * 0.5; x < W; x += step) {
     for (let y = step * 0.5; y < H; y += step) {
       geodeTiles.push({
         bx:     x,
         by:     y,
-        rot:    (Math.random() - 0.5) * 0.9,
-        spinV:  (Math.random() - 0.5) * 0.022,
-        tw:     step * (0.42 + Math.random() * 0.7),
-        th:     step * (0.42 + Math.random() * 0.95),
-        palIdx: Math.floor(Math.random() * 6),
+        rot:    (Math.random() - 0.5) * rotRange,
+        spinV:  (Math.random() - 0.5) * spinBase,
+        tw:     step * (wMin + Math.random() * (wMax - wMin)),
+        th:     step * (hMin + Math.random() * (hMax - hMin)),
+        palIdx: Math.floor(Math.random() * palCount),
         phase:  Math.random() * Math.PI * 2,
         phaseX: Math.random() * Math.PI * 2,
         phaseY: Math.random() * Math.PI * 2 + 1.3,
@@ -4691,30 +4697,30 @@ function initGeode(W, H) {
 
 function drawGeode(p, t) {
   if (!geodeTiles.length) initGeode(p.width, p.height);
-  let drift  = (S.geodeDrift  !== undefined ? S.geodeDrift  : 8);
-  let freq   = (S.geoVibFreq  !== undefined ? S.geoVibFreq  : 1.0) * 0.25;
-  let scale  = S.maxSize / 20;
-  geodeTiles.forEach(function(tile) {
-    // Each tile has independent slow noise-driven drift
-    let nx = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase);
-    let ny = p.noise(tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase + 77);
-    // Fast vibration layer — frequency controlled by slider
+  let drift  = S.geodeDrift !== undefined ? S.geodeDrift : 8;
+  let freq   = (S.geoVibFreq !== undefined ? S.geoVibFreq : 1.0) * 0.25;
+  let spinMult = S.geodeSpinMult !== undefined ? S.geodeSpinMult : 0.022;
+  let sizeScale = S.geodeSizeScale !== undefined ? S.geodeSizeScale : 1;
+  let scale = S.maxSize / 20 * sizeScale;
+  geodeTiles.forEach(tile => {
+    let nx = sampleNoise(p, tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase);
+    let ny = sampleNoise(p, tile.bx * 0.006, tile.by * 0.006, t * freq * 0.4 + tile.phase + 77);
     let vib = drift * 0.18;
-    let vx  = Math.sin(t * freq * 4.5 + tile.phaseX) * vib;
-    let vy  = Math.cos(t * freq * 3.8 + tile.phaseY) * vib;
+    let vx = Math.sin(t * freq * 4.5 + tile.phaseX) * vib;
+    let vy = Math.cos(t * freq * 3.8 + tile.phaseY) * vib;
     let x = tile.bx + (nx - 0.5) * drift * 2 + vx;
     let y = tile.by + (ny - 0.5) * drift * 2 + vy;
-    // Entropy: random teleport
     if (S.entropy > 0 && Math.random() < S.entropy * 0.03) {
       x += (Math.random() - 0.5) * S.entropy * 60;
       y += (Math.random() - 0.5) * S.entropy * 60;
     }
-    if (S.playing) tile.rot += tile.spinV * S.speed * 40;
+    if (S.playing) tile.rot += tile.spinV * S.speed * 40 * spinMult;
     let tw = tile.tw * scale;
     let th = tile.th * scale;
     let col = S.palette[tile.palIdx % S.palette.length];
     if (S.accent  !== 'none' && tile.rand < S.accentAmt  * 0.5) col = S.accent;
     if (S.accent2 !== 'none' && tile.rand > 1 - S.accentAmt2 * 0.5) col = S.accent2;
+
     CTX.save();
     CTX.translate(x, y);
     CTX.rotate(tile.rot);
@@ -5251,27 +5257,40 @@ function initBoids(W,H){
 // Works best with a pale background (paper, cream, f5f0ea).
 function initStripedRects(W, H) {
   stripedRects = [];
-  let cols = Math.floor(W / (S.spacing * 5)) + 2;
-  let rows = Math.floor(H / (S.spacing * 2.5)) + 2;
+  let colSpacing = S.srColSpacing !== undefined ? S.srColSpacing : 5;
+  let rowSpacing = S.srRowSpacing !== undefined ? S.srRowSpacing : 2.5;
+  let tallProb   = S.srTallProb !== undefined ? S.srTallProb : 0.72;
+  let widthMin   = S.srWidthMin !== undefined ? S.srWidthMin : 12;
+  let widthMax   = S.srWidthMax !== undefined ? S.srWidthMax : 48;
+  let heightMin  = S.srHeightMin !== undefined ? S.srHeightMin : 55;
+  let heightMax  = S.srHeightMax !== undefined ? S.srHeightMax : 190;
+  let initDensity = S.srInitDensity !== undefined ? S.srInitDensity : 0.75;
+  let stripeProb = S.srStripeProb !== undefined ? S.srStripeProb : 0.44;
+  let gapBase    = S.srGapBase !== undefined ? S.srGapBase : 3;
+  let cols = Math.floor(W / (S.spacing * colSpacing)) + 2;
+  let rows = Math.floor(H / (S.spacing * rowSpacing)) + 2;
   for (let ci = 0; ci < cols; ci++) {
     for (let ri = 0; ri < rows; ri++) {
-      // Generate all possible rects — density filters them live in draw
-      if (Math.random() > 0.75) continue;
+      if (Math.random() > initDensity) continue;
       let cx = (ci / cols) * W + (Math.random() - 0.5) * (W / cols) * 0.8;
       let cy = (ri / rows) * H + (Math.random() - 0.5) * (H / rows) * 0.6;
-      let tall = Math.random() < 0.72;
-      // Store BASE sizes — drawStripedRects will scale by S.maxSize
-      let bw = tall ? 12 + Math.random() * 48  : 40 + Math.random() * 90;
-      let bh = tall ? 55 + Math.random() * 190 : 12 + Math.random() * 38;
-      let isStriped = Math.random() < 0.44;
+      let tall = Math.random() < tallProb;
+      let bw = tall
+        ? widthMin + Math.random() * (widthMax - widthMin)
+        : heightMin + Math.random() * (heightMax - heightMin);   // note: swapped for horizontal
+      let bh = tall
+        ? heightMin + Math.random() * (heightMax - heightMin)
+        : widthMin + Math.random() * (widthMax - widthMin);
+      let isStriped = Math.random() < stripeProb;
       stripedRects.push({
-        x: cx - bw / 2, y: cy - bh / 2,
-        bw, bh,                                      // base dimensions
-        palIdx: Math.floor(Math.random() * 5),        // live palette index
+        x: cx - bw / 2,
+        y: cy - bh / 2,
+        bw, bh,
+        palIdx: Math.floor(Math.random() * 5),
         useAccent: isStriped && Math.random() < 0.4,
-        rand: Math.random(),                          // for live density filter
+        rand: Math.random(),
         type: isStriped ? 'striped' : 'solid',
-        gap: 2 + Math.floor(Math.random() * 5),
+        gap: gapBase + Math.floor(Math.random() * 5),
         lw:  1 + (Math.random() < 0.3 ? 1 : 0),
         vy:  (Math.random() - 0.5) * 0.5,
         phase: Math.random() * Math.PI * 2,
@@ -6417,6 +6436,40 @@ const PARAM_REGISTRY = {
     { id: 'websterBlockWobFreq',   label: 'Block wobble freq', min: 0.001, max: 0.05, step: 0.001, def: 0.01,  scale: 1 },
     { id: 'websterBlockWobAmp',    label: 'Block wobble amp',  min: 0,     max: 0.3,  step: 0.01,  def: 0.08,  scale: 1 },
   ],
+  stripedrects: [
+    { id:'srDensityGate',  label:'Density threshold',min:0, max:1, step:0.02, def:0.5, scale:1,
+      hint:'Higher = fewer rects (noise‑based)' },
+    { id:'srStripeProb',   label:'Striped prob',     min:0, max:1, step:0.05, def:0.44, scale:1 },
+    { id:'srWobbleAmp',    label:'Wave wobble',      min:0, max:0.2, step:0.01, def:0.04, scale:1 },
+    { id:'srGapBase',      label:'Stripe gap (px)',  min:1, max:10, step:0.5, def:3, scale:1 },
+    { id:'srLineWidth',    label:'Line width',       min:0.5,max:3,  step:0.1, def:1, scale:1 },
+    // New init‑time parameters:
+    { id:'srColSpacing',   label:'Column spacing',   min:2,  max:10, step:0.5, def:5,   scale:1,
+      hint:'Multiplier for spacing between columns' },
+    { id:'srRowSpacing',   label:'Row spacing',      min:1,  max:6,  step:0.5, def:2.5, scale:1,
+      hint:'Multiplier for spacing between rows' },
+    { id:'srTallProb',     label:'Tall rect prob',   min:0,  max:1,  step:0.05, def:0.72, scale:1 },
+    { id:'srWidthMin',     label:'Min width (px)',   min:5,  max:30, step:2, def:12,  scale:1 },
+    { id:'srWidthMax',     label:'Max width (px)',   min:20, max:100,step:5, def:48,  scale:1 },
+    { id:'srHeightMin',    label:'Min height (px)',  min:10, max:60, step:5, def:55,  scale:1 },
+    { id:'srHeightMax',    label:'Max height (px)',  min:30, max:250,step:10,def:190, scale:1 },
+    { id:'srInitDensity',  label:'Init density',     min:0.1,max:0.9,step:0.05,def:0.75,scale:1,
+      hint:'Probability of creating a rect in each grid cell' },
+  ],
+  tonaldensity: [
+    { id:'tdMinSize',      label:'Min size (px)',   min:1,  max:10, step:0.5, def:1.5, scale:1 },
+    { id:'tdSizeRange',    label:'Size range',     min:1,  max:40, step:1,   def:18,  scale:1 },
+    { id:'tdSpacingMult',  label:'Spacing tightness',min:0.5, max:3, step:0.1, def:0.75, scale:1 },
+    { id:'tdCycleSpeed',   label:'Text cycle',     min:0,  max:2,  step:0.1, def:0.5,  scale:1 },
+  ],
+  maze: [
+    { id:'mazeShiftRate',   label:'Shift rate',       min:5,  max:60, step:5, def:15, scale:1,
+      hint:'Frames between wall changes' },
+    { id:'mazeWallWidth',   label:'Wall thickness',   min:0.5,max:5,  step:0.1,def:1.5,scale:0.04,
+      hint:'Relative to maxSize' },
+    { id:'mazeCharDensity', label:'Char density',     min:0,  max:1,  step:0.05,def:0.7,scale:1 },
+    { id:'mazeCharSizeMin', label:'Char size min',    min:0.1,max:0.6,step:0.05,def:0.3,scale:1 },
+  ],
   matrix: [
     { id: 'matrixTrailBase',    label: 'Min trail length',  min: 2,  max: 15, step: 1, def: 5,  scale: 1 },
     { id: 'matrixTrailRand',    label: 'Max extra length',  min: 0,  max: 30, step: 1, def: 16, scale: 1 },
@@ -6565,6 +6618,25 @@ const PARAM_REGISTRY = {
     { id: 'mgBackgroundText', label: 'Background text', type: 'text', def: '' },
     { id: 'mgTextSizeMult', label: 'Text size mult', min: 0.5, max: 2, step: 0.05, def: 1, scale: 1 },
   ],
+  geode: [
+    // Animation parameters (already used in drawGeode)
+    { id:'geodeDrift',     label:'Drift amount',    min:0,  max:30, step:1, def:8, scale:1 },
+    { id:'geoVibFreq',     label:'Vibration freq',  min:0,  max:3,  step:0.1,def:1.0,scale:1 },
+    { id:'geodeSpinMult',  label:'Spin speed mult', min:0,  max:2,  step:0.1,def:1.0,scale:1 },
+    { id:'geodeSizeScale', label:'Size scale',      min:0.5,max:2,  step:0.1,def:1.0,scale:1 },
+    // Init‑time generation parameters
+    { id:'geodeStepMult',  label:'Grid density',    min:0.5,max:2,  step:0.1, def:1.0, scale:1,
+      hint:'Multiplier for tile spacing (smaller = more tiles)' },
+    { id:'geodeRotRange',  label:'Rotation range',  min:0,  max:2,  step:0.1, def:0.9, scale:1 },
+    { id:'geodeSpinBase',  label:'Spin base speed', min:0,  max:0.1,step:0.002,def:0.022,scale:1 },
+    { id:'geodeWidthMin',  label:'Min width mult',  min:0.1,max:1,  step:0.05, def:0.42, scale:1 },
+    { id:'geodeWidthMax',  label:'Max width mult',  min:0.2,max:1.5,step:0.05, def:0.7,  scale:1 },
+    { id:'geodeHeightMin', label:'Min height mult', min:0.1,max:1,  step:0.05, def:0.42, scale:1 },
+    { id:'geodeHeightMax', label:'Max height mult', min:0.2,max:1.5,step:0.05, def:0.95, scale:1 },
+    { id:'geodePalCount',  label:'Palette colors',  min:2,  max:12, step:1,   def:6,    scale:1,
+      hint:'Number of palette colors used per tile' },
+  ],
+
   
   //to be refactored
   hatch: [
