@@ -1938,39 +1938,7 @@ function initCellular(W,H){
   caNext=new Uint8Array(caW*caH);
   for(let i=0;i<caW*caH;i++) caGrid[i]=Math.random()<.35?1:0;
 }
-
-function initWorms(W, H) {
-  wormAgents = [];
-  let n = Math.floor(20 + S.density * 40);
-  for (let i = 0; i < n; i++) {
-    wormAgents.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      angle: Math.random() * Math.PI * 2,
-      col: S.palette[i % S.palette.length],
-      history: []
-    });
-  }
-}  
-
-function initFlowerspin(W, H) {
-  flowerspin = [];
-  let count = Math.max(7, Math.floor(S.density * 23)); // 1 to 5 creatures
-  for (let i = 0; i < count; i++) {
-    flowerspin.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      angle: Math.random() * Math.PI * 2,
-      phase: Math.random() * Math.PI * 2,
-      bodyLength: 40 + Math.random() * 60,   // pixels
-      bodyWidth: 20 + Math.random() * 30,
-      wiggle: 0.5 + Math.random() * 1.5,
-      col: S.palette[i % S.palette.length],
-      borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
-      pulse: 0
-    });
-  }
-}
+ 
   
 // ── WIREFRAME TERRAIN INIT ─────────────────────────────────────────────────────────────────
 function initWireTerrain(p,W,H){
@@ -3884,85 +3852,97 @@ function drawIsoContour(p,t){
   CTX.restore();
 }
   
-// ── WAVE FUNCTION COLLAPSE (WFC) ─────────────────────────────────────────────────────────
+// ── WAVE FUNCTION COLLAPSE (WFC) Refactored 4/13/26 ─────────────────────────────────────────────────────────
 function drawWFC(p, t) {
-  let tileSize = Math.max(16, S.spacing * 2);
+  let tileSizeMult = S.wfcTileSizeMult || 2.0;
+  let tileSize = Math.max(16, S.spacing * tileSizeMult);
   let cols = Math.ceil(p.width / tileSize);
   let rows = Math.ceil(p.height / tileSize);
-  // Tile glyphs – you can expand this list
-  const tileGlyphs = [
-    '┌', '┐', '└', '┘', '─', '│', '┼', '╌', '╎', '╴', '╶', '╱', '╲', '◢', '◣', '◤', '◥'
-  ];
+  const allGlyphs = ['┌','┐','└','┘','─','│','┼','╌','╎','╴','╶','╱','╲','◢','◣','◤','◥','▖','▗','▘','▙','▚','▛','▜','▝','▞','▟'];
+  let glyphCount = Math.min(allGlyphs.length, S.wfcGlyphCount || 17);
+  let tileGlyphs = allGlyphs.slice(0, glyphCount);
+  let waveAmp = S.wfcWaveAmp || 0.15;
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       let x = col * tileSize;
       let y = row * tileSize;
-      // Multi‑octave noise to create larger coherent regions
-      let n1 = p.noise(col * 0.15, row * 0.15, t * 0.08);
-      let n2 = p.noise(col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
+      let n1 = sampleNoise(p, col * 0.15, row * 0.15, t * 0.08);
+      let n2 = sampleNoise(p, col * 0.3 + 100, row * 0.3 + 100, t * 0.05);
       let idx = Math.floor((n1 + n2) * 0.5 * tileGlyphs.length) % tileGlyphs.length;
       let ch = tileGlyphs[idx];
       let colPal = S.palette[(col + row) % S.palette.length];
-      if (S.accent !== 'none' && p.noise(col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
+      if (S.accent !== 'none' && sampleNoise(p, col * 0.2, row * 0.2, t * 0.15) < S.accentAmt) {
         colPal = S.accent;
       }
       let sz = tileSize * 0.7;
       let cx = x + tileSize / 2;
       let cy = y + tileSize / 2;
-      // Optional small wave displacement
-      let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * 0.15;
-      let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * 0.15;
+      let wx = Math.sin(y * 0.02 + t * 1.5) * S.wave * waveAmp;
+      let wy = Math.cos(x * 0.02 + t * 1.2) * S.wave * waveAmp;
       dc(cx + wx, cy + wy, sz, 0, colPal, ch);
     }
   }
 }
 
   
-// ── flower spin ─────────────────────────────────────────────────────────
+// ── FLOWERS SPIN Refactored 4/13/26 ─────────────────────────────────────────────────────────
+function initFlowerspin(W, H) {
+  flowerspin = [];
+  let count = S.fsCount || 10;
+  let lenMin = S.fsBodyLenMin || 40;
+  let lenMax = S.fsBodyLenMax || 100;
+  let widMin = S.fsBodyWidMin || 20;
+  let widMax = S.fsBodyWidMax || 50;
+  for (let i = 0; i < count; i++) {
+    flowerspin.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      angle: Math.random() * Math.PI * 2,
+      phase: Math.random() * Math.PI * 2,
+      bodyLength: lenMin + Math.random() * (lenMax - lenMin),
+      bodyWidth:  widMin + Math.random() * (widMax - widMin),
+      wiggle: 0.5 + Math.random() * 1.5,
+      col: S.palette[i % S.palette.length],
+      borderCol: S.accent !== 'none' ? S.accent : '#ffffff',
+      pulse: 0
+    });
+  }
+}
+  
 function drawFlowerspin(p, t) {
   if (!flowerspin.length) initFlowerspin(p.width, p.height);
-
-  let wiggleAmp = S.wave * 0.15;        // how much they wiggle
-  let pulseAmp = S.turb * 0.02;         // how much they pulse
-  let speed = S.speed * 100;
-
+  let wiggleAmp = S.fsWiggleAmp !== undefined ? S.fsWiggleAmp : 1.0;
+  let pulseAmp  = S.fsPulseAmp  !== undefined ? S.fsPulseAmp  : 0.02;
+  let speedMult = S.fsSpeedMult !== undefined ? S.fsSpeedMult : 1.0;
   for (let i = 0; i < flowerspin.length; i++) {
     let td = flowerspin[i];
-
-    // Update position with Perlin noise (smooth wandering)
     if (S.playing) {
-      let angleNoise = p.noise(td.x * 0.01, td.y * 0.01, t * 0.2) * Math.PI * 2;
+      let angleNoise = sampleNoise(p, td.x * 0.01, td.y * 0.01, t * 0.2) * Math.PI * 2;
       td.angle = td.angle * 0.95 + angleNoise * 0.05;
-      td.x += Math.cos(td.angle) * speed * 0.5;
-      td.y += Math.sin(td.angle) * speed * 0.5;
-      // Wrap around edges
+      td.x += Math.cos(td.angle) * S.speed * 100 * speedMult;
+      td.y += Math.sin(td.angle) * S.speed * 100 * speedMult;
       if (td.x < -50) td.x = p.width + 50;
       if (td.x > p.width + 50) td.x = -50;
       if (td.y < -50) td.y = p.height + 50;
       if (td.y > p.height + 50) td.y = -50;
       td.phase += 0.02 * S.speed * 20;
     }
-    // Body dimensions with pulse
     let pulse = 1 + Math.sin(t * pulseAmp + td.phase) * 0.05;
     let w = td.bodyWidth * pulse;
     let h = td.bodyLength * pulse;
-    // Build a rounded polygon (an elongated ellipse with wiggly edges)
     let segments = 24;
     let points = [];
     for (let s = 0; s < segments; s++) {
       let angle = (s / segments) * Math.PI * 2;
-      // Wiggle: displace radius based on sine of angle and noise
       let wiggle = Math.sin(angle * 3 + t * wiggleAmp) * wiggleAmp * 8;
       let rx = (w / 2 + wiggle) * Math.cos(angle);
       let ry = (h / 2 + wiggle) * Math.sin(angle);
-      // Rotate the whole creature by its movement angle
       let cosA = Math.cos(td.angle);
       let sinA = Math.sin(td.angle);
       let x = td.x + rx * cosA - ry * sinA;
       let y = td.y + rx * sinA + ry * cosA;
       points.push({x, y});
     }
-    // Draw the blob body with a border
     CTX.save();
     CTX.beginPath();
     CTX.moveTo(points[0].x, points[0].y);
@@ -3970,15 +3950,11 @@ function drawFlowerspin(p, t) {
       CTX.lineTo(points[i].x, points[i].y);
     }
     CTX.closePath();
-    // Fill with semi‑transparent colour
     CTX.fillStyle = td.col;
     CTX.fill();
-    // Stroke the border
     CTX.strokeStyle = td.borderCol;
     CTX.lineWidth = Math.max(2, S.maxSize * 0.1);
     CTX.stroke();
-    // (Optional) draw characters inside the blob
-    // Sample points inside the bounding box
     let bbox = {
       minX: Math.min(...points.map(p => p.x)),
       maxX: Math.max(...points.map(p => p.x)),
@@ -3988,7 +3964,6 @@ function drawFlowerspin(p, t) {
     let step = Math.max(8, S.spacing);
     for (let x = bbox.minX; x <= bbox.maxX; x += step) {
       for (let y = bbox.minY; y <= bbox.maxY; y += step) {
-        // Check if point is inside the blob (simple polygon test)
         if (pointInPoly(x, y, points)) {
           let ch = pickChar(p, x, y, t);
           let sz = S.maxSize * 0.6;
@@ -4093,23 +4068,43 @@ function drawTesseract(p,t){
   _lastFont='';_lastFill='';
 }
   
-// ── WORMS ───────────────────────────────────────────────────────────────
+// ── WORMS Refactored 4/13/26 ───────────────────────────────────────────────────────────────
+  function initWorms(W, H) {
+    wormAgents = [];
+    let count = S.wormCount || 30;
+    for (let i = 0; i < count; i++) {
+      wormAgents.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        angle: Math.random() * Math.PI * 2,
+        col: S.palette[i % S.palette.length],
+        history: []
+      });
+    }
+  }
+  
+  
 function drawWorms(p, t) {
   if (!wormAgents.length) initWorms(p.width, p.height);
+  let historyLen = S.wormHistoryLen || 15;
+  let speedMult  = S.wormSpeedMult || 1.0;
+  let turnRate   = S.wormTurnRate || 0.5;
+  let sizeMin    = S.wormSizeMin || 2;
   wormAgents.forEach(w => {
     if (S.playing) {
-      w.angle += (p.noise(w.x * 0.01, w.y * 0.01, t * 0.1) - 0.5) * 0.5;
-      w.x += Math.cos(w.angle) * S.speed * 400;
-      w.y += Math.sin(w.angle) * S.speed * 400;
+      let n = sampleNoise(p, w.x * 0.01, w.y * 0.01, t * 0.1);
+      w.angle += (n - 0.5) * turnRate;
+      w.x += Math.cos(w.angle) * S.speed * 400 * speedMult;
+      w.y += Math.sin(w.angle) * S.speed * 400 * speedMult;
       if (w.x < 0) w.x = p.width;
       if (w.x > p.width) w.x = 0;
       if (w.y < 0) w.y = p.height;
       if (w.y > p.height) w.y = 0;
       w.history.push({ x: w.x, y: w.y });
-      if (w.history.length > 15) w.history.shift();
+      if (w.history.length > historyLen) w.history.shift();
     }
     w.history.forEach((pos, idx) => {
-      let sz = p.map(idx, 0, 15, 2, S.maxSize);
+      let sz = p.map(idx, 0, historyLen, sizeMin, S.maxSize);
       let angle = w.angle + Math.sin(idx) * 0.5;
       dc(pos.x, pos.y, sz, angle, w.col, pickChar(p, pos.x, pos.y, t));
     });
@@ -4731,72 +4726,67 @@ function drawGeode(p, t) {
   _lastFill = '';
 }
 
-// ── Cascade Rects ─────────────────────────────────────────────────────
-
-
+// ── CASCADE RECTS Refactored 4/13/26 ────────────────────────────────────────────────────
 function initCascadeRects(W, H) {
   cascadeRects = [];
-  let count = 4 + Math.floor(S.density * 8);
+  let count = S.crCount || 8;
+  let nestMin = S.crNestMin || 3;
+  let nestMax = S.crNestMax || 8;
+  let sizeMult = S.crSizeMult || 1.0;
+
   for (let i = 0; i < count; i++) {
-    // Each cascade starts at a random position and nests inward
     let startX = Math.random() * W * 0.6;
     let startY = Math.random() * H * 0.4;
-    let startW = W * (0.2 + Math.random() * 0.5);
-    let startH = H * (0.15 + Math.random() * 0.4);
-    let nestCount = 3 + Math.floor(Math.random() * 8);
+    let startW = W * (0.2 + Math.random() * 0.5) * sizeMult;
+    let startH = H * (0.15 + Math.random() * 0.4) * sizeMult;
+    let nestCount = nestMin + Math.floor(Math.random() * (nestMax - nestMin + 1));
     let palIdx = Math.floor(Math.random() * 6);
-    cascadeRects.push({ startX, startY, startW, startH, nestCount, palIdx,
+    cascadeRects.push({
+      startX, startY, startW, startH, nestCount, palIdx,
       phase: Math.random() * Math.PI * 2,
       driftX: (Math.random() - 0.5) * 0.3,
-      driftY: (Math.random() - 0.5) * 0.2 });
+      driftY: (Math.random() - 0.5) * 0.2
+    });
   }
 }
 
 function drawCascadeRects(p, t) {
   if (!cascadeRects.length) initCascadeRects(p.width, p.height);
-
   let tokens = S.chars && S.chars.length ? S.chars : ['·'];
-  let sz     = Math.max(3, S.spacing * 0.7);
-  let charW  = sz * 0.62;
-  cascadeRects.forEach(function(cascade, ci) {
-    // Slow drift
-    let driftX = S.wave > 0 ? Math.sin(t * 0.6 + cascade.phase) * S.wave * 0.12 : 0;
-    let driftY = S.wave > 0 ? Math.cos(t * 0.5 + cascade.phase) * S.wave * 0.08 : 0;
+  let charSize = S.crCharSize || 8;
+  let charW = charSize * 0.62;
+  let driftAmp = S.crDriftAmp || 0.12;
+  cascadeRects.forEach((cascade, ci) => {
+    let driftX = S.wave > 0 ? Math.sin(t * 0.6 + cascade.phase) * S.wave * driftAmp : 0;
+    let driftY = S.wave > 0 ? Math.cos(t * 0.5 + cascade.phase) * S.wave * driftAmp * 0.7 : 0;
     for (let ni = 0; ni < cascade.nestCount; ni++) {
       let shrink = ni / cascade.nestCount;
-      // Each nested level shifts diagonally and shrinks
       let rx = cascade.startX + shrink * cascade.startW * 0.35 + driftX;
       let ry = cascade.startY + shrink * cascade.startH * 0.35 + driftY;
       let rw = cascade.startW * (1 - shrink * 0.65);
       let rh = cascade.startH * (1 - shrink * 0.65);
-      if (rw < sz * 2 || rh < sz * 2) break;
+      if (rw < charSize * 2 || rh < charSize * 2) break;
       let col = S.palette[(cascade.palIdx + ni) % S.palette.length];
       if (S.accent !== 'none' && S.accentAmt > 0 && ni === 0) col = S.accent;
-      // Entropy: randomly skip a level
       if (S.entropy > 0 && Math.random() < S.entropy * 0.3) continue;
-      // Draw the rectangle outline using characters
-      // Top and bottom edges
       let tokBase = Math.floor(S.fc * S.speed * 0.3 + ci * 13 + ni * 7);
       for (let x = rx; x < rx + rw; x += charW) {
         let ch = tokens[(tokBase + Math.floor(x / charW)) % tokens.length];
-        // Entropy jitter
-        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
-        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
-        dc(x + jx, ry + jy,        sz, 0, col, ch);
-        dc(x + jx, ry + rh + jy,   sz, 0, col, ch);
+        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*charSize*2 : 0;
+        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*charSize*2 : 0;
+        dc(x + jx, ry + jy,      charSize, 0, col, ch);
+        dc(x + jx, ry + rh + jy, charSize, 0, col, ch);
       }
-      // Left and right edges
-      for (let y = ry + sz; y < ry + rh; y += sz * 1.05) {
-        let ch = tokens[(tokBase + Math.floor(y / sz)) % tokens.length];
-        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
-        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*sz*2 : 0;
-        dc(rx + jx,        y + jy, sz, 0, col, ch);
-        dc(rx + rw + jx,   y + jy, sz, 0, col, ch);
+      for (let y = ry + charSize; y < ry + rh; y += charSize * 1.05) {
+        let ch = tokens[(tokBase + Math.floor(y / charSize)) % tokens.length];
+        let jx = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*charSize*2 : 0;
+        let jy = S.entropy > 0 && Math.random() < S.entropy * 0.2 ? (Math.random()-0.5)*charSize*2 : 0;
+        dc(rx + jx,      y + jy, charSize, 0, col, ch);
+        dc(rx + rw + jx, y + jy, charSize, 0, col, ch);
       }
     }
   });
 }
-
 
 // ── Still Forms (Clyfford Still) ─────────────────────────────────────────────────────
 
@@ -4983,32 +4973,32 @@ function drawScatterDots(p, t) {
 
 
   
-// ── Diagonal Fields ─────────────────────────────────────────────────────
+// ── DIAGONAL FIELD Refactored 4/13/26 ─────────────────────────────────────────────────────
 function drawDiagonalField(p, t) {
-  let sp   = Math.max(2, S.spacing * 0.6);
-  let sz   = Math.max(3, S.maxSize * 0.55);
-  // Diagonal angle — 45° base, turbulence modifies locally
-  let baseAngle = Math.PI * 0.25 + S.charRotRad;
+  let spMult   = S.dfSpacingMult || 0.6;
+  let sizeMult = S.dfSizeMult || 0.55;
+  let sp = Math.max(2, S.spacing * spMult);
+  let sz = Math.max(3, S.maxSize * sizeMult);
+  let densityGate = S.dfDensityGate || 0.85;
+  let waveAmp = S.dfWaveAmp || 0.12;
+  let angleVar = S.dfAngleVar || 0.6;
+  let baseAngleDeg = S.dfAngleBase || 45;
+  let baseAngle = baseAngleDeg * Math.PI / 180 + S.charRotRad;
   for (let x = -p.height; x < p.width + p.height; x += sp) {
-  for (let y = -sp; y < p.height * 1.5; y += sz * 1.02) {
-      // Diagonal coordinate
+    for (let y = -sp; y < p.height * 1.5; y += sz * 1.02) {
       let diagX = x + y;
-      // Multi-frequency noise for the banding pattern
-      let n1 = p.noise(diagX * S.noiseScale * 0.6, y * S.noiseScale * 0.3, t * 0.5);
-      let n2 = p.noise(diagX * S.noiseScale * 2.2 + 50, y * S.noiseScale * 1.8, t * 0.8) * 0.4;
+      let n1 = sampleNoise(p, diagX * S.noiseScale * 0.6, y * S.noiseScale * 0.3, t * 0.5);
+      let n2 = sampleNoise(p, diagX * S.noiseScale * 2.2 + 50, y * S.noiseScale * 1.8, t * 0.8) * 0.4;
       let nv = (n1 + n2) / 1.4;
-      if (nv < S.density * 0.85) continue;
-      // Screen coordinates from diagonal space
+      if (nv < S.density * densityGate) continue;
       let sx = x + Math.cos(baseAngle) * y;
-      let sy =     Math.sin(baseAngle) * y;
-      // Additional wave distortion
-      let wx = S.wave > 0 ? Math.sin(y * S.turb * 6 + t * 2) * S.wave * 0.12 : 0;
+      let sy = Math.sin(baseAngle) * y;
+      let wx = S.wave > 0 ? Math.sin(y * S.turb * 6 + t * 2) * S.wave * waveAmp : 0;
       if (sx + wx < -sz || sx + wx > p.width + sz) continue;
-      // Local angle variation — creates the "shifting lane" look
-      let localAngle = baseAngle + p.noise(sx * S.noiseScale * 1.5, sy * S.noiseScale * 1.5, t * 0.3) * 0.6 - 0.3;
+      let localAngle = baseAngle + sampleNoise(p, sx * S.noiseScale * 1.5, sy * S.noiseScale * 1.5, t * 0.3) * angleVar - angleVar * 0.5;
       let col = pickColor(p, sx, sy, t);
       let ch  = pickChar(p, sx + t * 30, sy, t);
-      dc(sx + wx, sy, p.map(nv, S.density * 0.85, 1, sz * 0.3, sz), localAngle, col, ch);
+      dc(sx + wx, sy, p.map(nv, S.density * densityGate, 1, sz * 0.3, sz), localAngle, col, ch);
     }
   }
 }
@@ -6636,7 +6626,49 @@ const PARAM_REGISTRY = {
     { id:'geodePalCount',  label:'Palette colors',  min:2,  max:12, step:1,   def:6,    scale:1,
       hint:'Number of palette colors used per tile' },
   ],
-
+  worms: [
+    { id:'wormCount',      label:'Worm count',      min:5,  max:100, step:5, def:30, scale:1,
+      extra: function(){ initWorms(window._st.w(), window._st.h()); } },
+    { id:'wormHistoryLen', label:'Trail length',    min:5,  max:40,  step:1, def:15, scale:1 },
+    { id:'wormSpeedMult',  label:'Speed mult',      min:0.1,max:3,   step:0.1,def:1.0,scale:1 },
+    { id:'wormTurnRate',   label:'Turn rate',       min:0.1,max:2,   step:0.1,def:0.5,scale:1 },
+    { id:'wormSizeMin',    label:'Min size (px)',   min:1,  max:10,  step:1, def:2,   scale:1 },
+  ],
+  flowerspin: [
+    { id:'fsCount',        label:'Creature count',  min:3,  max:30, step:1, def:10, scale:1,
+      extra: function(){ initFlowerspin(window._st.w(), window._st.h()); } },
+    { id:'fsBodyLenMin',   label:'Min body length', min:20, max:100,step:5, def:40, scale:1 },
+    { id:'fsBodyLenMax',   label:'Max body length', min:40, max:200,step:10,def:100,scale:1 },
+    { id:'fsBodyWidMin',   label:'Min body width',  min:10, max:50, step:5, def:20, scale:1 },
+    { id:'fsBodyWidMax',   label:'Max body width',  min:20, max:80, step:5, def:50, scale:1 },
+    { id:'fsWiggleAmp',    label:'Wiggle amount',   min:0,  max:3,  step:0.1,def:1.0,scale:1 },
+    { id:'fsPulseAmp',     label:'Pulse amount',    min:0,  max:0.1,step:0.005,def:0.02,scale:1 },
+    { id:'fsSpeedMult',    label:'Move speed',      min:0.2,max:3,  step:0.1,def:1.0,scale:1 },
+  ],
+  wfc: [
+    { id:'wfcTileSizeMult',label:'Tile size mult',  min:1,  max:4,  step:0.5,def:2.0,scale:1 },
+    { id:'wfcWaveAmp',     label:'Wave displacement',min:0, max:0.5,step:0.02,def:0.15,scale:1 },
+    { id:'wfcGlyphCount',  label:'Glyph variety',   min:4,  max:20, step:1, def:17, scale:1,
+      hint:'Number of tile glyphs to use' },
+  ],
+  cascaderects: [
+    { id:'crCount',        label:'Cascade count',   min:2,  max:20, step:1, def:8, scale:1,
+      extra: function(){ cascadeRects = []; } },
+    { id:'crNestMin',      label:'Min nests',       min:2,  max:6,  step:1, def:3, scale:1 },
+    { id:'crNestMax',      label:'Max nests',       min:3,  max:12, step:1, def:8, scale:1 },
+    { id:'crSizeMult',     label:'Size multiplier', min:0.5,max:2,  step:0.1,def:1.0,scale:1 },
+    { id:'crCharSize',     label:'Char size',       min:2,  max:20, step:1, def:8, scale:1 },
+    { id:'crDriftAmp',     label:'Drift amount',    min:0,  max:0.5,step:0.02,def:0.12,scale:1 },
+  ],
+  diagonalfield: [
+    { id:'dfAngleBase',    label:'Base angle (deg)', min:0,  max:90, step:5, def:45, scale:1,
+      hint:'Converts to radians internally' },
+    { id:'dfSpacingMult',  label:'Spacing mult',    min:0.3,max:1.5,step:0.1,def:0.6,scale:1 },
+    { id:'dfSizeMult',     label:'Size mult',       min:0.3,max:1.2,step:0.05,def:0.55,scale:1 },
+    { id:'dfDensityGate',  label:'Density gate',    min:0.2,max:1,  step:0.05,def:0.85,scale:1 },
+    { id:'dfWaveAmp',      label:'Wave amplitude',  min:0,  max:0.3,step:0.02,def:0.12,scale:1 },
+    { id:'dfAngleVar',     label:'Angle variation', min:0,  max:1,  step:0.1,def:0.6,scale:1 },
+  ],
   
   //to be refactored
   hatch: [
