@@ -2282,53 +2282,99 @@ function drawTess(p, t) {
   });
 }
   
-function drawWarp(p,t){
-  for(let x=0;x<p.width;x+=S.spacing) for(let y=0;y<p.height;y+=S.spacing){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let warp=p.noise(x*.002,y*.002,t)*S.wave*(S.warpMult||4);
-    let res=pcc(p,x,y,t);
-    dc(x+warp,y+warp,S.maxSize,0,res.col,res.ch);
-  }
-}
-  
-function drawGlitch(p,t){
-  let sp=S.spacing,nS=Math.floor(p.height/(sp*1.4));
-  for(let si=0;si<nS;si++){
-    let sy=si*sp*1.4,disp=Math.sin(si*.4+t*4)*S.wave*.6;
-    if(Math.random()<S.entropy*.3) disp+=(Math.random()-.5)*p.width*.35;
-    let rD=disp+Math.sin(t*6)*4,bD=disp-Math.sin(t*6)*4;
-    for(let x=sp;x<p.width-sp;x+=sp) for(let y=sy;y<sy+sp*1.4;y+=sp){
-      if(y>=p.height) continue;
-      let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-      if(n<S.density) continue;
-      let ch=pickChar(p,x,y,t),sz=4+Math.random()*(S.maxSize*.65-4);
-      let fstr=(sz|0)+'px '+S.fontStack;
-      if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-      CTX.globalAlpha=.35;CTX.fillStyle='#ff3250';CTX.fillText(ch,x+rD,y);
-      CTX.fillStyle='#3278ff';CTX.fillText(ch,x+bD,y);
-      CTX.globalAlpha=1;CTX.fillStyle=pickColor(p,x,y,t);CTX.fillText(ch,x+disp,y);
-      _lastFill='';
+// ── WARP 2.0 Refactored 4/13/26 ─────────────────────────────────────────────
+function drawWarp(p, t) {
+  let warpMult = S.warpMult !== undefined ? S.warpMult : 4;
+  let warpNoiseScale = S.warpNoiseScale !== undefined ? S.warpNoiseScale : 0.002;
+
+  for (let x = 0; x < p.width; x += S.spacing) {
+    for (let y = 0; y < p.height; y += S.spacing) {
+      // Density gate using sampleNoise
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+
+      // Warp offset uses raw p.noise (geometric distortion)
+      let warp = p.noise(x * warpNoiseScale, y * warpNoiseScale, t) * S.wave * warpMult;
+      let res = pcc(p, x, y, t);
+      dc(x + warp, y + warp, S.maxSize, 0, res.col, res.ch);
     }
   }
-  CTX.globalAlpha=1;
 }
-  
-function drawWebster(p,t){
-  let sp=S.spacing;
-  for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
-    if(Math.random()>(1-S.density*.1)) continue;
-    let wx=Math.sin(y*.008+t)*S.wave*.12,wy=Math.cos(x*.008+t*.7)*S.wave*.08;
-    let res=pcc(p,x,y,t);
-    dc(x+wx,y+wy,S.maxSize*.25+Math.random()*S.maxSize*.35,0,res.col,res.ch);
+
+// ── GLITCH 2.0 Refactored 4/13/26 ───────────────────────────────────────────
+function drawGlitch(p, t) {
+  let sp = S.spacing;
+  let rowHeightMult = S.glitchRowHeightMult !== undefined ? S.glitchRowHeightMult : 1.4;
+  let nS = Math.floor(p.height / (sp * rowHeightMult));
+  let dispFreq = S.glitchDispFreq !== undefined ? S.glitchDispFreq : 0.4;
+  let dispSpeed = S.glitchDispSpeed !== undefined ? S.glitchDispSpeed : 4;
+  let dispAmp = S.glitchDispAmp !== undefined ? S.glitchDispAmp : 0.6;
+  let rgbSpeed = S.glitchRGBSpeed !== undefined ? S.glitchRGBSpeed : 6;
+  let minSize = S.glitchMinSize !== undefined ? S.glitchMinSize : 4;
+  let maxSizeMult = S.glitchMaxSizeMult !== undefined ? S.glitchMaxSizeMult : 0.65;
+  for (let si = 0; si < nS; si++) {
+    let sy = si * sp * rowHeightMult;
+    let disp = Math.sin(si * dispFreq + t * dispSpeed) * S.wave * dispAmp;
+    if (Math.random() < S.entropy * 0.3) disp += (Math.random() - 0.5) * p.width * 0.35;
+    let rD = disp + Math.sin(t * rgbSpeed) * 4;
+    let bD = disp - Math.sin(t * rgbSpeed) * 4;
+    for (let x = sp; x < p.width - sp; x += sp) {
+      for (let y = sy; y < sy + sp * rowHeightMult; y += sp) {
+        if (y >= p.height) continue;
+        // Density gate using sampleNoise
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+        if (n < S.density) continue;
+        let ch = pickChar(p, x, y, t);
+        let sz = minSize + Math.random() * (S.maxSize * maxSizeMult - minSize);
+        let fstr = (sz | 0) + 'px ' + S.fontStack;
+        if (fstr !== _lastFont) { CTX.font = fstr; _lastFont = fstr; }
+        CTX.globalAlpha = 0.35;
+        CTX.fillStyle = '#ff3250';
+        CTX.fillText(ch, x + rD, y);
+        CTX.fillStyle = '#3278ff';
+        CTX.fillText(ch, x + bD, y);
+        CTX.globalAlpha = 1;
+        CTX.fillStyle = pickColor(p, x, y, t);
+        CTX.fillText(ch, x + disp, y);
+        _lastFill = '';
+      }
+    }
   }
-  compBlocks.forEach(function(b){
-    let wob=Math.sin(t+b.x*.01)*S.wave*.08;
-    for(let x=b.x;x<b.x+b.w;x+=sp*.7) for(let y=b.y;y<b.y+b.h;y+=sp*.55){
-      if(Math.random()>b.op) continue;
-      let ch=pickChar(p,x,y,t);
-      let sz=S.maxSize*.3+Math.random()*S.maxSize*.7;
-      dc(x+wob,y,sz,0,b.col,ch);
+  CTX.globalAlpha = 1;
+}
+
+// ── WEBSTER 2.0 Refactored 4/13/26 ───────────────────────────────────────────
+function drawWebster(p, t) {
+  let sp = S.spacing;
+  let noiseFreq = S.websterNoiseFreq !== undefined ? S.websterNoiseFreq : 0.008;
+  let waveXMult = S.websterWaveXMult !== undefined ? S.websterWaveXMult : 0.12;
+  let waveYMult = S.websterWaveYMult !== undefined ? S.websterWaveYMult : 0.08;
+  let waveYSpeed = S.websterWaveYSpeed !== undefined ? S.websterWaveYSpeed : 0.7;
+  let minSizeMult = S.websterMinSizeMult !== undefined ? S.websterMinSizeMult : 0.25;
+  let sizeRangeMult = S.websterSizeRangeMult !== undefined ? S.websterSizeRangeMult : 0.35;
+  // Background field characters
+  for (let x = sp; x < p.width; x += sp) {
+    for (let y = sp; y < p.height; y += sp) {
+      if (Math.random() > (1 - S.density * 0.1)) continue;
+      let wx = Math.sin(y * noiseFreq + t) * S.wave * waveXMult;
+      let wy = Math.cos(x * noiseFreq + t * waveYSpeed) * S.wave * waveYMult;
+      let res = pcc(p, x, y, t);
+      let sz = S.maxSize * minSizeMult + Math.random() * S.maxSize * sizeRangeMult;
+      dc(x + wx, y + wy, sz, 0, res.col, res.ch);
+    }
+  }
+  // Composition blocks overlay
+  let blockWobFreq = S.websterBlockWobFreq !== undefined ? S.websterBlockWobFreq : 0.01;
+  let blockWobAmp = S.websterBlockWobAmp !== undefined ? S.websterBlockWobAmp : 0.08;
+  compBlocks.forEach(function(b) {
+    let wob = Math.sin(t + b.x * blockWobFreq) * S.wave * blockWobAmp;
+    for (let x = b.x; x < b.x + b.w; x += sp * 0.7) {
+      for (let y = b.y; y < b.y + b.h; y += sp * 0.55) {
+        if (Math.random() > b.op) continue;
+        let ch = pickChar(p, x, y, t);
+        let sz = S.maxSize * 0.3 + Math.random() * S.maxSize * 0.7;
+        dc(x + wob, y, sz, 0, b.col, ch);
+      }
     }
   });
 }
