@@ -315,6 +315,11 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="loops" title="Recursive agent paths closing on themselves">Loops</button>
         <button class="mb" data-mode="recursive" title="recursive">Recursive</button>
         <button class="mb" data-mode="fabric" title="Woven thread physics and soft connections">Fabric</button>
+        <button class="mb" data-mode="mycelium" title="Fungal growth and branching network simulation">Mycelium</button>
+        <button class="mb" data-mode="topolines" title="Pure vector-style elevation lines">Topo Lines</button>
+        <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
+        <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
+        <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
       </div>
     </div>
     
@@ -335,7 +340,6 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-struct" style="padding:0">
       <div class="mg">
-
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
         <button class="mb" data-mode="monogrid" title="Asendorf — uniform text grid with opaque blocks">Monogrid</button>
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
@@ -359,7 +363,6 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
         <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
         <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
-        <button class="mb" data-mode="voronoi" title="Cellular regional partition math">Voronoi</button>
         <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
         <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
         <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
@@ -376,7 +379,6 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-topo" style="padding:0">
       <div class="mg">
-        <button class="mb" data-mode="topolines" title="Pure vector-style elevation lines">Topo Lines</button>
         <button class="mb" data-mode="isocontour" title="Pure isolines using marching squares">Iso Lines</button>
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
         <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
@@ -394,14 +396,11 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-bio" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="boids" title="Flocking agents following collective rules">Boids</button>
-        <button class="mb" data-mode="mycelium" title="Fungal growth and branching network simulation">Mycelium</button>
         <button class="mb" data-mode="worms" title="Autonomous agents leaving erratic trails">Worms</button>
-        <button class="mb" data-mode="reaction" title="Turing reaction-diffusion chemical patterns">Reaction</button>
         <button class="mb" data-mode="cellular" title="Elementary cellular automata (Life-like)">Cellular</button>
         <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
-        <button class="mb" data-mode="pipes" title="90-degree interlocking pipe growth">Pipes</button>
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
       </div>
     </div>
@@ -724,73 +723,7 @@ select option{background:var(--ink)}
 
       
       
-            <!-- Mode Specific Controls -->
-      
-
-  <div id="ctrl-magnetic" class="mode-ctrl">
-  <div class="sl2">Magnetic Parameters</div>
-    <div class="rw"><div class="rl"><span class="rn">Pole count</span><span class="rv" id="vMagPoles">2</span></div><input type="range" id="sMagPoles" min="1" max="8" value="2" step="1"></div>
-        </div>
-        <div id="ctrl-hatch" class="mode-ctrl">
-          <div class="sl2">Hatch Parameters</div>
-          <div class="rw"><div class="rl"><span class="rn">Angle</span><span class="rv" id="vHatchAngle">45</span></div><input type="range" id="sHatchAngle" min="0" max="180" value="45" step="5"></div>
-          <div class="rw"><div class="rl"><span class="rn">Curvature</span><span class="rv" id="vHatchCurve">5</span></div><input type="range" id="sHatchCurve" min="0" max="20" value="5" step="1"></div>
-        </div>
-<div id="ctrl-voronoi" class="mode-ctrl">
-  <div class="sl2">Voronoi Style</div>
-  <div class="tr"><span class="tl">Wireframe edges</span><button class="tb" id="btnVorWire">Off</button></div>
-  <div class="rw"><div class="rl"><span class="rn">Wire weight</span><span class="rv" id="vVorWeight">1.0</span></div>
-  <input type="range" id="sVorWeight" min="1" max="50" value="10"></div>
-</div>
-
-      
-      <!-- Monogrid Controls -->
-      <div id="ctrl-monogrid" class="mode-ctrl">
-  <div class="sl2">Monogrid</div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Block count</span><span class="rv" id="vMgBlocks">4</span></div>
-    <input type="range" id="sMgBlocks" min="1" max="12" value="4" step="1">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Block opacity</span><span class="rv" id="vMgAlpha">40</span></div>
-    <input type="range" id="sMgAlpha" min="5" max="100" value="40" step="5">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Text cycle speed</span><span class="rv" id="vMgTextSpd">30</span></div>
-    <input type="range" id="sMgTextSpd" min="0" max="100" value="30" step="5">
-  </div>
-  <div class="tr">
-    <span class="tl">Animate blocks</span>
-    <button class="tb" id="btnMgAnim">On</button>
-  </div>
-  <div class="tr">
-    <span class="tl">Stack overlapping</span>
-    <button class="tb" id="btnMgStack">Off</button>
-  </div>
-</div>
-
-      <!-- Geode Controls -->
-<div id="ctrl-geode" class="mode-ctrl">
-  <div class="sl2">Geode</div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Drift amount</span><span class="rv" id="vGeoDrift">8</span></div>
-    <input type="range" id="sGeoDrift" min="0" max="80" value="8" step="2">
-  </div>
-  <div class="rw">
-    <div class="rl"><span class="rn">Vibration frequency</span><span class="rv" id="vGeoFreq">10</span></div>
-    <input type="range" id="sGeoFreq" min="1" max="40" value="10" step="1">
-  </div>
-</div>
-      
-      <!-- Mycelium Controls -->
-<div id="ctrl-mycelium" class="mode-ctrl">
-  <div class="rw"><div class="rl"><span class="rn">Growth speed</span><span class="rv" id="vMycSpeed">1.0</span></div>
-  <input type="range" id="sMycSpeed" min="0" max="50" value="1" step="0.1"></div>
-  <div class="rw"><div class="rl"><span class="rn">Branching</span><span class="rv" id="vMycBranch">3</span></div>
-  <input type="range" id="sMycBranch" min="1" max="50" value="3" step="1"></div>
-  <div class="rw"><div class="rl"><span class="rn">Lifespan</span><span class="rv" id="vMycLifespan">1.0</span></div>
-  <input type="range" id="sMycLifespan" min="0.2" max="50" value="1.0" step="0.05"></div>
-</div>
+            
 
       
 
@@ -799,8 +732,7 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Speed</span><span class="rv" id="vSpeed">4</span></div><input type="range" id="sSpeed" min="0" max="20" value="4" step="1" title="Animation speed — how fast the pattern evolves over time"></div>
         <div class="rw"><div class="rl"><span class="rn">Wave amplitude</span><span class="rv" id="vWave">30</span></div><input type="range" id="sWave" min="0" max="100" value="30" step="2" title="Wave amplitude — controls displacement, mountain height, and oscillation strength"></div>
         <div class="rw"><div class="rl"><span class="rn">Turbulence</span><span class="rv" id="vTurb">5</span></div><input type="range" id="sTurb" min="1" max="20" value="5" step="1" title="Turbulence frequency — how tightly the wave distortions repeat"></div>
-        <div class="rw"><div class="rl"><span class="rn">Jitter</span><span class="rv" id="vJitter">0</span></div><input type="range" id="sJitter" min="0" max="20" value="0">
-</div>
+        <div class="rw"><div class="rl"><span class="rn">Jitter</span><span class="rv" id="vJitter">0</span></div><input type="range" id="sJitter" min="0" max="20" value="0"></div>
       
       </div></div>
 
@@ -813,11 +745,8 @@ select option{background:var(--ink)}
         <div class="rw"><div class="rl"><span class="rn">Char Variation</span><span class="rv" id="vCharNoise">0.08</span></div><input type="range" id="sCharNoise" min="1" max="100" value="8"><div class="hn">Controls how fast characters change across the field.</div>
         <div class="rw"><div class="rl"><span class="rn">Rotation</span><span class="rv" id="vRot">0</span></div><input type="range" id="sRot" min="0" max="360" value="0" step="5" title="Global character rotation offset in degrees"></div>
         
-
-          
-        </div>
       </div>
-      </div>
+      </div></div>
 
       <div class="sec"><div class="sec-hd" onclick="toggleSec('entropy')"><span class="sl">Entropy &amp; Glitch</span><span class="sec-arrow open" id="arr-entropy">›</span></div>
       <div class="sec-body collapsed" id="body-entropy">
@@ -2899,99 +2828,125 @@ function getPaletteColors() {
     return activePalette;
 }
   
-// ── TOPO LINES ──────────────────────────────────────────────────  
-function drawTopoLines(p,t){
-  let W=p.width,H=p.height;
-  let res=Math.max(6,S.spacing*.9);
-  let cols=Math.floor(W/res)+2,rows=Math.floor(H/res)+2;
-  let nLevels=4+Math.floor(S.density*4),ns=S.noiseScale;
-  let field=new Float32Array(cols*rows);
-  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-    let x=c*res,y=r*res;
-    let n=p.noise(x*ns,y*ns,t*.12);
-    n+=.5*p.noise(x*ns*2.1,y*ns*2.1,t*.08+10);n/=1.5;
-    if(S.wave>0){let wx=Math.sin(y*S.turb*4+t*2)*S.wave*.003;n+=p.noise((x+wx*W)*ns,y*ns,t*.1+20)*.3;n/=1.3;}
-    field[r*cols+c]=Math.min(1,Math.max(0,n));
+// ── TOPO LINES 2.0 Refactored 4/13/26 ──────────────────────────────────────────────────  
+function drawTopoLines(p, t) {
+  let W = p.width, H = p.height;
+  let res = Math.max(6, S.spacing * 0.9);
+  let cols = Math.floor(W / res) + 2;
+  let rows = Math.floor(H / res) + 2;
+  let nLevels = S.topoLinesLevels !== undefined ? S.topoLinesLevels : 4 + Math.floor(S.density * 4);
+  let ns = S.noiseScale;
+  let lineWidthBase = S.topoLinesWidthBase !== undefined ? S.topoLinesWidthBase : 0.8;
+  let lineWidthDensity = S.topoLinesWidthDensity !== undefined ? S.topoLinesWidthDensity : 0.4;
+  let field = new Float32Array(cols * rows);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let x = c * res, y = r * res;
+      let n = sampleNoise(p, x * ns, y * ns, t * 0.12);
+      n += 0.5 * sampleNoise(p, x * ns * 2.1, y * ns * 2.1, t * 0.08 + 10);
+      n /= 1.5;
+      if (S.wave > 0) {
+        let wx = Math.sin(y * S.turb * 4 + t * 2) * S.wave * 0.003;
+        n += sampleNoise(p, (x + wx * W) * ns, y * ns, t * 0.1 + 20) * 0.3;
+        n /= 1.3;
+      }
+      field[r * cols + c] = Math.min(1, Math.max(0, n));
+    }
   }
-  CTX.save();CTX.lineWidth=.8+S.density*.4;CTX.lineCap='round';
-  let lerp=(v1,v2,th)=>(th-v1)/(v2-v1+1e-6);
-  for(let lv=1;lv<=nLevels;lv++){
-    let th=lv/(nLevels+1);
-    let col=S.palette[lv%S.palette.length];
-    if(S.accent!=='none'&&S.accentAmt>.1&&lv===1) col=S.accent;
-    if(S.accent2!=='none'&&S.accentAmt2>.1&&lv===nLevels) col=S.accent2;
-    CTX.strokeStyle=col;CTX.globalAlpha=.5+(lv/nLevels)*.45;CTX.beginPath();
-    for(let r=0;r<rows-1;r++) for(let c=0;c<cols-1;c++){
-      let a=field[r*cols+c],b=field[r*cols+c+1],d=field[(r+1)*cols+c],e=field[(r+1)*cols+c+1];
-      let x0=c*res,y0=r*res,pts=[];
-      if((a<th)!==(b<th)) pts.push({x:x0+lerp(a,b,th)*res,y:y0});
-      if((b<th)!==(e<th)) pts.push({x:x0+res,y:y0+lerp(b,e,th)*res});
-      if((d<th)!==(e<th)) pts.push({x:x0+lerp(d,e,th)*res,y:y0+res});
-      if((a<th)!==(d<th)) pts.push({x:x0,y:y0+lerp(a,d,th)*res});
-      if(pts.length>=2){CTX.moveTo(pts[0].x,pts[0].y);CTX.lineTo(pts[1].x,pts[1].y);}
-      if(pts.length===4){CTX.moveTo(pts[2].x,pts[2].y);CTX.lineTo(pts[3].x,pts[3].y);}
+  CTX.save();
+  CTX.lineWidth = lineWidthBase + S.density * lineWidthDensity;
+  CTX.lineCap = 'round';
+  let lerp = (v1, v2, th) => (th - v1) / (v2 - v1 + 1e-6);
+  for (let lv = 1; lv <= nLevels; lv++) {
+    let th = lv / (nLevels + 1);
+    let col = S.palette[lv % S.palette.length];
+    if (S.accent !== 'none' && S.accentAmt > 0.1 && lv === 1) col = S.accent;
+    if (S.accent2 !== 'none' && S.accentAmt2 > 0.1 && lv === nLevels) col = S.accent2;
+    CTX.strokeStyle = col;
+    CTX.globalAlpha = 0.5 + (lv / nLevels) * 0.45;
+    CTX.beginPath();
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        let a = field[r * cols + c];
+        let b = field[r * cols + c + 1];
+        let d = field[(r + 1) * cols + c];
+        let e = field[(r + 1) * cols + c + 1];
+        let x0 = c * res, y0 = r * res;
+        let pts = [];
+        if ((a < th) !== (b < th)) pts.push({ x: x0 + lerp(a, b, th) * res, y: y0 });
+        if ((b < th) !== (e < th)) pts.push({ x: x0 + res, y: y0 + lerp(b, e, th) * res });
+        if ((d < th) !== (e < th)) pts.push({ x: x0 + lerp(d, e, th) * res, y: y0 + res });
+        if ((a < th) !== (d < th)) pts.push({ x: x0, y: y0 + lerp(a, d, th) * res });
+        if (pts.length >= 2) { CTX.moveTo(pts[0].x, pts[0].y); CTX.lineTo(pts[1].x, pts[1].y); }
+        if (pts.length === 4) { CTX.moveTo(pts[2].x, pts[2].y); CTX.lineTo(pts[3].x, pts[3].y); }
+      }
     }
     CTX.stroke();
   }
-  CTX.globalAlpha=1;CTX.restore();
+  CTX.globalAlpha = 1;
+  CTX.restore();
 }
 
-// ── Pipes ──────────────────────────────────────────────────  
-function drawPipes(p,t){
-  let pipeChars=['─','│','┼','╬','╋','┤','├','┴','┬','┘','└','┐','┌','╔','╗','╚','╝','╠','╣','╦','╩','═','║','|','—'];
-  let sp=S.spacing;
-  for(let x=sp;x<p.width-sp;x+=sp) for(let y=sp;y<p.height-sp;y+=sp){
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    let gx=p.noise((x+2)*S.noiseScale,y*S.noiseScale,t)-p.noise((x-2)*S.noiseScale,y*S.noiseScale,t);
-    let gy=p.noise(x*S.noiseScale,(y+2)*S.noiseScale,t)-p.noise(x*S.noiseScale,(y-2)*S.noiseScale,t);
-    let angle=Math.atan2(gy,gx);
-    let sector=Math.round(angle/(Math.PI/4))&7;
-    let pipeMap=[0,4,1,4,0,4,1,4];
-    let ch=pipeChars[pipeMap[sector]||0];
-    if(Math.random()<.15) ch=pipeChars[2+Math.floor(Math.random()*7)];
-    let sz=p.map(n,S.density,1,6,S.maxSize);
-    let res=pcc(p,x,y,t);
-    dc(x,y,sz,0,res.col,ch);
+// ── PIPES 2.0 Refactored 4/13/26 ──────────────────────────────────────────────────  
+function drawPipes(p, t) {
+  let pipeChars = ['─','│','┼','╬','╋','┤','├','┴','┬','┘','└','┐','┌','╔','╗','╚','╝','╠','╣','╦','╩','═','║','|','—'];
+  let sp = S.spacing;
+  let sizeMult = S.pipesSizeMult !== undefined ? S.pipesSizeMult : 6;
+  for (let x = sp; x < p.width - sp; x += sp) {
+    for (let y = sp; y < p.height - sp; y += sp) {
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      let gx = sampleNoise(p, (x + 2) * S.noiseScale, y * S.noiseScale, t) - sampleNoise(p, (x - 2) * S.noiseScale, y * S.noiseScale, t);
+      let gy = sampleNoise(p, x * S.noiseScale, (y + 2) * S.noiseScale, t) - sampleNoise(p, x * S.noiseScale, (y - 2) * S.noiseScale, t);
+      let angle = Math.atan2(gy, gx);
+      let sector = Math.round(angle / (Math.PI / 4)) & 7;
+      let pipeMap = [0, 4, 1, 4, 0, 4, 1, 4];
+      let ch = pipeChars[pipeMap[sector] || 0];
+      if (Math.random() < 0.15) ch = pipeChars[2 + Math.floor(Math.random() * 7)];
+      let sz = p.map(n, S.density, 1, sizeMult, S.maxSize);
+      let res = pcc(p, x, y, t);
+      dc(x, y, sz, 0, res.col, ch);
+    }
   }
 }
 
-// ── REACTION-DIFFUSION (Gray-Scott) ─────────────────────────────────
-// Simulates Turing morphogenesis — spots/stripes emerge from chemical reactions
-function drawReaction(p,t){
-  if(!rdGrid||rdGrid.res!==Math.max(4,Math.floor(S.spacing*.8))) initReactionDiffusion(p.width,p.height);
-  let g=rdGrid,W=rdW,H=rdH;
-  // Gray-Scott parameters (feed/kill tuned for spots)
+// ── REACTION-DIFFUSION (Gray-Scott) 2.0 Refactored 4/13/26 ─────────────────────────────────
+function drawReaction(p, t) {
+  if (!rdGrid || rdGrid.res !== Math.max(4, Math.floor(S.spacing * 0.8))) initReactionDiffusion(p.width, p.height);
+  let g = rdGrid, W = rdW, H = rdH;
   let feed = S.reactFeed !== undefined ? S.reactFeed : 0.035;
   let kill = S.reactKill !== undefined ? S.reactKill : 0.065;
-  let dA=1.0,dB=0.5;
-  // Simulate steps
-  let steps=S.playing?2:0;
-  for(let s=0;s<steps;s++){
-    for(let r=1;r<H-1;r++) for(let c=1;c<W-1;c++){
-      let i=r*W+c;
-      let A=g.A[i],B=g.B[i];
-      let lapA=g.A[i-W]+g.A[i+W]+g.A[i-1]+g.A[i+1]-4*A;
-      let lapB=g.B[i-W]+g.B[i+W]+g.B[i-1]+g.B[i+1]-4*B;
-      let ABB=A*B*B;
-      g.nA[i]=Math.max(0,Math.min(1,A+dA*lapA*.2-ABB+feed*(1-A)));
-      g.nB[i]=Math.max(0,Math.min(1,B+dB*lapB*.2+ABB-(kill+feed)*B));
+  let dA = S.reactDiffA !== undefined ? S.reactDiffA : 1.0;
+  let dB = S.reactDiffB !== undefined ? S.reactDiffB : 0.5;
+  let steps = S.playing ? (S.reactSteps || 2) : 0;
+  let minSize = S.reactMinSize !== undefined ? S.reactMinSize : 2;
+  for (let s = 0; s < steps; s++) {
+    for (let r = 1; r < H - 1; r++) {
+      for (let c = 1; c < W - 1; c++) {
+        let i = r * W + c;
+        let A = g.A[i], B = g.B[i];
+        let lapA = g.A[i - W] + g.A[i + W] + g.A[i - 1] + g.A[i + 1] - 4 * A;
+        let lapB = g.B[i - W] + g.B[i + W] + g.B[i - 1] + g.B[i + 1] - 4 * B;
+        let ABB = A * B * B;
+        g.nA[i] = Math.max(0, Math.min(1, A + dA * lapA * 0.2 - ABB + feed * (1 - A)));
+        g.nB[i] = Math.max(0, Math.min(1, B + dB * lapB * 0.2 + ABB - (kill + feed) * B));
+      }
     }
-    // Swap buffers
-    let tmp=g.A;g.A=g.nA;g.nA=tmp;
-    tmp=g.B;g.B=g.nB;g.nB=tmp;
+    let tmp = g.A; g.A = g.nA; g.nA = tmp;
+    tmp = g.B; g.B = g.nB; g.nB = tmp;
   }
-  // Render
-  let res=g.res;
-  for(let r=0;r<H;r++) for(let c=0;c<W;c++){
-    let v=g.A[r*W+c]-g.B[r*W+c];
-    if(v<.2) continue;
-    let x=c*res,y=r*res;
-    let ci=Math.floor(v*S.palette.length);
-    let col=S.palette[ci%S.palette.length];
-    if(S.accent!=='none'&&v>.7) col=S.accent;
-    let sz=p.map(v,.2,1,2,S.maxSize);
-    dc(x,y,sz,0,col,pickChar(p,x,y,t));
+  let res = g.res;
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      let v = g.A[r * W + c] - g.B[r * W + c];
+      if (v < 0.2) continue;
+      let x = c * res, y = r * res;
+      let ci = Math.floor(v * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && v > 0.7) col = S.accent;
+      let sz = p.map(v, 0.2, 1, minSize, S.maxSize);
+      dc(x, y, sz, 0, col, pickChar(p, x, y, t));
+    }
   }
 }
 
@@ -3247,104 +3202,114 @@ function drawMondrian(p, t) {
   _lastFill = '';
 }
   
-// ── VORONOI ─────────────────────────────────────────────────────────
-// Living Voronoi diagram — cells drift and breathe
-function drawVoronoi(p,t){
-  if(!voronoiSites.length) initVoronoi(p.width,p.height);
-  // Animate sites
-  if(S.playing){
-    voronoiSites.forEach(function(s){
-      s.x+=s.vx*(S.speed*80+.2);s.y+=s.vy*(S.speed*80+.2);
-      if(s.x<0||s.x>p.width) s.vx*=-1;
-      if(s.y<0||s.y>p.height) s.vy*=-1;
-      // Noise drift
-      s.vx+=p.noise(s.x*.003,s.y*.003,t)*.04-.02;
-      s.vy+=p.noise(s.x*.003+10,s.y*.003+10,t)*.04-.02;
-      s.vx=Math.max(-.8,Math.min(.8,s.vx));
-      s.vy=Math.max(-.8,Math.min(.8,s.vy));
+// ── VORONOI 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────
+function drawVoronoi(p, t) {
+  if (!voronoiSites.length) initVoronoi(p.width, p.height);
+  if (S.playing) {
+    voronoiSites.forEach(function(s) {
+      s.x += s.vx * (S.speed * 80 + 0.2);
+      s.y += s.vy * (S.speed * 80 + 0.2);
+      if (s.x < 0 || s.x > p.width) s.vx *= -1;
+      if (s.y < 0 || s.y > p.height) s.vy *= -1;
+      s.vx += sampleNoise(p, s.x * 0.003, s.y * 0.003, t) * 0.04 - 0.02;
+      s.vy += sampleNoise(p, s.x * 0.003 + 10, s.y * 0.003 + 10, t) * 0.04 - 0.02;
+      s.vx = Math.max(-0.8, Math.min(0.8, s.vx));
+      s.vy = Math.max(-0.8, Math.min(0.8, s.vy));
     });
   }
-  let sp=S.spacing;
-  for(let x=sp;x<p.width;x+=sp) for(let y=sp;y<p.height;y+=sp){
-    // Find nearest site
-    let minD=Infinity,nearIdx=0;
-    for(let i=0;i<voronoiSites.length;i++){
-      let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;
-      let d=dx*dx+dy*dy;
-      if(d<minD){minD=d;nearIdx=i;}
+  let sp = S.spacing;
+  let edgeBoost = S.voronoiEdgeBoost !== undefined ? S.voronoiEdgeBoost : 0.5;
+  let minSize = S.voronoiMinSize !== undefined ? S.voronoiMinSize : 2;
+  let wireWeight = (S.vorWeight !== undefined) ? S.vorWeight : 1.0;
+
+  for (let x = sp; x < p.width; x += sp) {
+    for (let y = sp; y < p.height; y += sp) {
+      let minD = Infinity, nearIdx = 0;
+      for (let i = 0; i < voronoiSites.length; i++) {
+        let dx = x - voronoiSites[i].x, dy = y - voronoiSites[i].y;
+        let d = dx * dx + dy * dy;
+        if (d < minD) { minD = d; nearIdx = i; }
+      }
+      let site = voronoiSites[nearIdx];
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
+      if (n < S.density) continue;
+      let min2 = Infinity;
+      for (let i = 0; i < voronoiSites.length; i++) {
+        if (i === nearIdx) continue;
+        let dx = x - voronoiSites[i].x, dy = y - voronoiSites[i].y;
+        let d = dx * dx + dy * dy;
+        if (d < min2) min2 = d;
+      }
+      let edgeFactor = 1 - Math.min(1, (Math.sqrt(min2) - Math.sqrt(minD)) / sp);
+      let sz = p.map(n, S.density, 1, minSize, S.maxSize) * (1 + edgeFactor * edgeBoost);
+      let col = site.col;
+      if (S.accent !== 'none' && edgeFactor > 0.6) col = S.accent;
+      if (S.vorWire && edgeFactor > 0.8) {
+        CTX.save();
+        CTX.strokeStyle = col;
+        CTX.lineWidth = wireWeight;
+        CTX.beginPath();
+        CTX.rect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+        CTX.stroke();
+        CTX.restore();
+      } else {
+        dc(x, y, sz, 0, col, pickChar(p, x, y, t));
+      }
     }
-    let site=voronoiSites[nearIdx];
-    let n=p.noise(x*S.noiseScale,y*S.noiseScale,t);
-    if(n<S.density) continue;
-    // Edge detection: find 2nd nearest
-    let min2=Infinity;
-    for(let i=0;i<voronoiSites.length;i++){
-      if(i===nearIdx) continue;
-      let dx=x-voronoiSites[i].x,dy=y-voronoiSites[i].y;
-      let d=dx*dx+dy*dy;if(d<min2) min2=d;
-    }
-    let edgeFactor=1-Math.min(1,(Math.sqrt(min2)-Math.sqrt(minD))/sp);
-    let sz=p.map(n,S.density,1,2,S.maxSize)*(1+edgeFactor*.5);
-    let col=site.col;
-    if(S.accent!=='none'&&edgeFactor>.6) col=S.accent;
-    dc(x,y,sz,0,col,pickChar(p,x,y,t));
   }
 }
 
+// ── MYCELIUM 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────  
 function drawMycelium(p, t) {
   if (!myceliumBranches.length) initMycelium(p.width, p.height);
   if (S.playing) {
     let newBranches = [];
     myceliumBranches.forEach(function(b) {
-      b.angle += (p.noise(b.x * 0.008, b.y * 0.008, t * 0.3) - 0.5) * 0.8 + S.wave * 0.005;
+      b.angle += (sampleNoise(p, b.x * 0.008, b.y * 0.008, t * 0.3) - 0.5) * 0.8 + S.wave * 0.005;
       b.x += Math.cos(b.angle) * b.speed;
       b.y += Math.sin(b.angle) * b.speed;
       b.len += b.speed;
       b.age++;
-    if (b.len > 20 + Math.random() * 300 && b.children < b.maxChildren && Math.random() < 0.22) {
-      b.children++;
-      newBranches.push({
-        x: b.x, y: b.y,
-        angle: b.angle + (Math.random() - 0.5) * 1.2,
-        len: 0,
-        maxLen: b.maxLen * 10,
-        speed: b.speed * 0.9,
-        age: 0,
-        col: S.palette[Math.floor(Math.random() * S.palette.length)],
-        children: 0,
-        maxChildren: 10
-      });
-    }
-      if (b.x < -100 || b.x > p.width + 100 || b.y < -100 || b.y > p.height + 100 || b.len > b.maxLen) {
-        b.dead = true;
-        }
+      let branchProb = S.myceliumBranchProb !== undefined ? S.myceliumBranchProb : 0.22;
+      if (b.len > 20 + Math.random() * 300 && b.children < b.maxChildren && Math.random() < branchProb) {
+        b.children++;
+        newBranches.push({
+          x: b.x, y: b.y,
+          angle: b.angle + (Math.random() - 0.5) * 1.2,
+          len: 0,
+          maxLen: b.maxLen * 10,
+          speed: b.speed * 0.9,
+          age: 0,
+          col: S.palette[Math.floor(Math.random() * S.palette.length)],
+          children: 0,
+          maxChildren: 20
+        });
+      }
+      if (b.x < -100 || b.x > p.width + 100 || b.y < -100 || b.y > p.height + 100 || b.len > b.maxLen) b.dead = true;
     });
     myceliumBranches = myceliumBranches.filter(b => !b.dead);
     myceliumBranches = myceliumBranches.concat(newBranches);
     if (myceliumBranches.length < 5) initMycelium(p.width, p.height);
     if (myceliumBranches.length > 400) myceliumBranches.splice(0, 50);
   }
-  // Debug: log branch count once every 60 frames
-  if (S.fc % 60 === 0) console.log("Mycelium branches:", myceliumBranches.length);
+  let minSize = S.myceliumMinSize !== undefined ? S.myceliumMinSize : 6;
+  let alphaBase = S.myceliumAlphaBase !== undefined ? S.myceliumAlphaBase : 0.6;
+  let alphaRange = S.myceliumAlphaRange !== undefined ? S.myceliumAlphaRange : 0.3;
   myceliumBranches.forEach(function(b) {
-    // Size: never smaller than 6px, never larger than S.maxSize
-    let sz = Math.max(6, Math.min(S.maxSize, p.map(b.len / b.maxLen, 0, 1, 8, S.maxSize)));
-    // Alpha: always at least 0.6, fades slightly at the end of life
-    let alpha = 0.6 + 0.3 * (1 - b.len / b.maxLen);
+    let sz = Math.max(minSize, Math.min(S.maxSize, p.map(b.len / b.maxLen, 0, 1, minSize, S.maxSize)));
+    let alpha = alphaBase + alphaRange * (1 - b.len / b.maxLen);
     CTX.globalAlpha = alpha;
-    // Draw a bright dot (use accent colour for contrast)
     CTX.fillStyle = S.accent !== 'none' ? S.accent : b.col;
     CTX.beginPath();
     CTX.arc(b.x, b.y, sz * 0.4, 0, Math.PI * 2);
     CTX.fill();
-    // Draw the character (with fallback)
     let ch = pickChar(p, b.x, b.y, t);
-    if (!ch || ch === '') ch = '●';  // fallback
+    if (!ch || ch === '') ch = '●';
     dc(b.x, b.y, sz, b.angle, b.col, ch);
   });
   CTX.globalAlpha = 1;
 }
-
+  
 // ── SAND DRIFT ──────────────────────────────────────────────────────
 // Simulated sand/stipple diffusion — inspired by Inconvergent's sand technique
 function drawSand(p,t){
@@ -6459,6 +6424,11 @@ const PARAM_REGISTRY = {
     { id: 'topoMinSize',      label: 'Min stroke size',   min: 1,  max: 10, step: 1, def: 2,   scale: 1 },
     { id: 'topoMaxSizeMult',  label: 'Max size mult',     min: 0.3,max: 1.2,step: 0.05,def: 0.9, scale: 1 },
   ],
+  topolines: [
+    { id: 'topoLinesLevels',      label: 'Contour levels',    min: 2,  max: 24, step: 1, def: 8,   scale: 1 },
+    { id: 'topoLinesWidthBase',   label: 'Base line width',   min: 0.2, max: 2,  step: 0.1, def: 0.8, scale: 1 },
+    { id: 'topoLinesWidthDensity',label: 'Width density',     min: 0,   max: 1,  step: 0.05,def: 0.4, scale: 1 },
+  ],
   recursive: [
     { id: 'recursiveMinDensity',    label: 'Min density',       min: 0.05, max: 0.5, step: 0.02, def: 0.25, scale: 1 },
     { id: 'recursiveDensityScale',  label: 'Density scale',     min: 0,    max: 0.2, step: 0.01, def: 0.07, scale: 1 },
@@ -6495,19 +6465,35 @@ const PARAM_REGISTRY = {
     { id: 'loopMaxSizeMult',  label: 'Max size mult',     min: 0.3,  max: 1.2, step: 0.05,def: 0.7,  scale: 1 },
     { id: 'loopAlphaRange',   label: 'Fade length',       min: 50,   max: 500, step: 10, def: 200,  scale: 1 },
   ],
-
+  mycelium: [
+    { id: 'mycSpeed',          label: 'Growth speed',    min: 0,   max: 50, step: 1, def: 10, scale: 0.1 },
+    { id: 'mycBranch',         label: 'Branching',       min: 1,   max: 8,  step: 1, def: 3,   scale: 1 },
+    { id: 'mycLifespan',       label: 'Lifespan',        min: 0.2, max: 5,  step: 0.1,def: 1.0, scale: 1 },
+    { id: 'myceliumBranchProb',label: 'Branch prob',     min: 0.05,max: 0.6,step: 0.05,def: 0.22,scale: 1 },
+    { id: 'myceliumMinSize',   label: 'Min size',        min: 2,   max: 15, step: 1, def: 6,   scale: 1 },
+    { id: 'myceliumAlphaBase', label: 'Alpha base',      min: 0.2, max: 1,  step: 0.05,def: 0.6,  scale: 1 },
+    { id: 'myceliumAlphaRange',label: 'Alpha range',     min: 0,   max: 0.5,step: 0.05,def: 0.3,  scale: 1 },
+  ],
+  voronoi: [
+    { id: 'vorWire',        label: 'Wireframe edges', type: 'toggle', def: false },
+    { id: 'vorWeight',      label: 'Wire weight',     min: 1,  max: 50, step: 1, def: 10, scale: 0.1 },
+    { id: 'voronoiEdgeBoost', label: 'Edge boost',    min: 0,  max: 2,  step: 0.1, def: 0.5, scale: 1 },
+    { id: 'voronoiMinSize', label: 'Min char size',   min: 1,  max: 10, step: 1, def: 2,   scale: 1 },
+  ],
+  reaction: [
+    { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
+    { id: 'reactKill',    label: 'Kill rate',    min: 10, max: 100, step: 1, def: 65, scale: 0.001 },
+    { id: 'reactDiffA',   label: 'Diffusion A',  min: 0.2, max: 2,   step: 0.1, def: 1.0, scale: 1 },
+    { id: 'reactDiffB',   label: 'Diffusion B',  min: 0.2, max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'reactSteps',   label: 'Sim steps',    min: 1,   max: 5,   step: 1, def: 2,   scale: 1 },
+    { id: 'reactMinSize', label: 'Min char size',min: 1,   max: 10,  step: 1, def: 2,   scale: 1 },
+  ],
+  pipes: [
+    { id: 'pipesSizeMult', label: 'Max size multiplier', min: 2, max: 12, step: 1, def: 6, scale: 1 },
+  ],
 
   
   //to be refactored
-  reaction: [
-    { id:'reactFeed',  label:'Feed rate',    min:10,  max:100, step:1,  def:35,  scale:0.001 },
-    { id:'reactKill',  label:'Kill rate',    min:10,  max:100, step:1,  def:65,  scale:0.001 },
-    { id:'reactOscillate', label:'Oscillate', type:'toggle', def:false },
-  ],
-  mycelium: [
-    { id:'mycSpeed',  label:'Growth speed',  min:0,   max:50,  step:1,  def:10,  scale:0.1  },
-    { id:'mycBranch', label:'Branching',     min:1,   max:8,   step:1,  def:3,   scale:1    },
-  ],
   hatch: [
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
     { id:'hatchCurve', label:'Curvature',    min:0,   max:20,  step:1,  def:5,   scale:1    },
@@ -6515,9 +6501,6 @@ const PARAM_REGISTRY = {
   magnetic: [
     { id:'magPoles',   label:'Pole count',   min:1,   max:8,   step:1,  def:2,   scale:1,
       extra: function(){ window._st.ri(); } },
-  ],
-  voronoi: [
-    { id:'vorWire',    label:'Wireframe edges', type:'toggle', def:false },
   ],
   boids: [
     { id:'boidSep',    label:'Separation',   min:0,   max:100, step:2,  def:15,  scale:0.01 },
