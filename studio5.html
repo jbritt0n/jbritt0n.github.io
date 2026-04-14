@@ -3557,15 +3557,15 @@ let mouseAngle = 0;
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
   // ── Parameters ───────────────────────────────────────────────────────────
-  let strokeCount   = Math.max(1, Math.floor(S.calligCount     ?? 5));
-  let minLen        = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
-  let maxLen        = (S.calligMaxLen    ?? 0.7) * Math.min(W, H);
-  let baseWidth     = Math.max(3, (S.calligWidth    ?? 0.8) * S.maxSize);
-  let taper         = S.calligTaper      ?? 0.7;
-  let bleed         = S.calligBleed      ?? 0.5;
-  let fibers        = Math.max(1, Math.floor(S.calligFibers ?? 6));
-  let growSpeed     = S.calligGrow       ?? 0.4;
-  let inkOpacity    = S.calligInk        ?? 0.85;
+  let strokeCount   = Math.max(1, Math.floor(S.calligCount     ?? 8));
+  let minLen        = (S.calligMinLen    ?? 0.4) * Math.min(W, H);
+  let maxLen        = (S.calligMaxLen    ?? 0.9) * Math.min(W, H);
+  let baseWidth     = Math.max(3, (S.calligWidth    ?? 1.2) * S.maxSize);
+  let taper         = S.calligTaper      ?? 0.5;
+  let bleed         = S.calligBleed      ?? 0.6;
+  let fibers        = Math.max(1, Math.floor(S.calligFibers ?? 8));
+  let growSpeed     = S.calligGrow       ?? 0.6;
+  let inkOpacity    = S.calligInk        ?? 0.9;
   let charMode      = S.calligCharMode   ?? true;
   let charSet       = S.calligCharSet    ?? 'eternal';
   let drips         = S.calligDrips      ?? true;
@@ -3573,12 +3573,11 @@ function drawCalligraphy(p, t) {
   let continuous    = S.calligContinuous ?? true;
   let followMouse   = S.calligFollowMouse?? false;
   let paperGrain    = S.calligPaperGrain ?? true;
-  let splatterAmt   = S.calligSplatter   ?? 0.2;
-  let interactive   = S.calligInteractive ?? false;  // NEW
+  let splatterAmt   = S.calligSplatter   ?? 0.3;
+  let interactive   = S.calligInteractive ?? false;
 
   // ── Interactive Drawing Mode ──────────────────────────────────────────────
   if (interactive) {
-    // Only spawn strokes while mouse is pressed and moving
     if (isDrawing && p.mouseIsPressed) {
       let dx = p.mouseX - lastMouseX;
       let dy = p.mouseY - lastMouseY;
@@ -3586,7 +3585,6 @@ function drawCalligraphy(p, t) {
       if (dist > 5) {
         mouseVelocity = Math.min(2.5, dist / 10);
         mouseAngle = Math.atan2(dy, dx);
-        // Spawn a short stroke in the direction of movement
         let len = p.constrain(dist * 1.5, minLen * 0.3, maxLen);
         let newStroke = _spawnInteractiveStroke(p, lastMouseX, lastMouseY, p.mouseX, p.mouseY, len, baseWidth, charMode, charSet);
         if (newStroke) calligStrokes.push(newStroke);
@@ -3594,64 +3592,50 @@ function drawCalligraphy(p, t) {
         lastMouseY = p.mouseY;
       }
     } else {
-      // Reset last position when not drawing
       lastMouseX = p.mouseX;
       lastMouseY = p.mouseY;
     }
-    // Cap total strokes to prevent overload
     if (calligStrokes.length > 30) calligStrokes = calligStrokes.slice(-20);
   } else {
-    // Automatic spawning (original behaviour)
+    // Automatic spawning
     if (S.playing) {
       while (calligStrokes.length < strokeCount) {
         let newStroke = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse);
         if (newStroke) calligStrokes.push(newStroke);
       }
     }
-
+  }
   CTX.save();
-  // Use multiply blend for richer ink layering
+  // Use multiply blend for richer ink layering (or follow global blend)
   CTX.globalCompositeOperation = 'multiply';
-
   for (let i = calligStrokes.length - 1; i >= 0; i--) {
     let st = calligStrokes[i];
     let age = S.fc - st.birth;
-    let lifeRatio = age / st.lifespan;
     let isDead = age > st.lifespan + st.fadeOut;
-
     if (isDead) {
       calligStrokes.splice(i, 1);
       continue;
     }
-
-    // Determine visible portion (grow animation)
     let drawProgress = Math.min(1, (age * growSpeed) / 10);
     let visiblePts = st.pts.filter(pt => pt.prog <= drawProgress);
     if (visiblePts.length < 2) continue;
-
-    // Compute dynamic pressure based on progress and speed
+    // Compute dynamic pressure
     for (let j = 0; j < visiblePts.length; j++) {
       let pt = visiblePts[j];
-      // Pressure from progress (bell curve) and speed (slower = thicker)
       let progressFactor = Math.sin(pt.prog * Math.PI);
       let speedFactor = Math.pow(1 / (pt.speed || 1), 0.5);
       let rawPressure = progressFactor * speedFactor;
       let pressure = Math.pow(rawPressure, 1 / Math.max(0.1, taper));
       pt.w = st.baseWidth * pressure;
     }
-
-    // Fade alpha based on age (ease-out)
     let alpha = inkOpacity;
     if (age > st.lifespan) {
       alpha *= 1 - Math.pow((age - st.lifespan) / st.fadeOut, 2);
     }
     alpha = Math.max(0, Math.min(1, alpha));
-
-    // Render the stroke with sumi-e texture
     _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha, drips, pooling, splatterAmt, t);
   }
-
-  // ── Paper grain overlay ───────────────────────────────────────────────────
+  // Paper grain overlay
   if (paperGrain) {
     CTX.globalCompositeOperation = 'overlay';
     CTX.globalAlpha = 0.12;
@@ -3665,22 +3649,15 @@ function drawCalligraphy(p, t) {
       }
     }
   }
-
   CTX.restore();
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
 }
-
-
-
-  
 // ── Spawn a new stroke ───────────────────────────────────────────────────────
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
   let pts = [];
   let col = pickColor(p, p.random(W), p.random(H), 0);
   let ox, oy, angle, len;
-
-  // Determine origin: follow mouse or random
   if (followMouse && p.mouseX > 0 && p.mouseX < W && p.mouseY > 0 && p.mouseY < H) {
     ox = p.mouseX;
     oy = p.mouseY;
@@ -3691,13 +3668,10 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
     angle = p.random(Math.PI * 2);
   }
   len = p.random(minLen, maxLen);
-
   if (charMode) {
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
     let strokeIdx = Math.floor(p.random(strokes.length));
     let rawPts = strokes[strokeIdx];
-
-    // Compute cumulative distance for normalized progress and speed
     let cumDist = 0;
     let dists = [0];
     for (let i = 1; i < rawPts.length; i++) {
@@ -3707,34 +3681,27 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
       dists.push(cumDist);
     }
     let normDists = dists.map(d => d / cumDist);
-
-    // Transform to screen space
     let margin = 0.15 * Math.min(W, H);
     ox = p.constrain(ox, margin, W - margin);
     oy = p.constrain(oy, margin, H - margin);
     let scale = len / Math.max(0.5, cumDist);
-
     pts = rawPts.map((pt, i) => ({
       x: ox + (pt.x - 0.5) * scale,
       y: oy + (pt.y - 0.5) * scale,
       prog: normDists[i],
-      speed: 1.0  // will be updated after smoothing
+      speed: 1.0
     }));
     pts = _applyChaikin(pts, 3);
-
-    // Compute speed after smoothing (inverse of local spacing)
+    let avgLen = len / (pts.length - 1);
     for (let i = 1; i < pts.length; i++) {
       let dx = pts[i].x - pts[i-1].x;
       let dy = pts[i].y - pts[i-1].y;
       let segLen = Math.sqrt(dx*dx + dy*dy);
-      let avgLen = len / (pts.length - 1);
       pts[i].speed = Math.min(2.5, Math.max(0.4, avgLen / (segLen + 0.001)));
     }
     pts[0].speed = pts[1].speed;
   } else {
-    // Random organic line
     pts = _genLinePoints(p, ox, oy, len, angle, 0.25);
-    // Compute speed similarly
     let avgLen = len / (pts.length - 1);
     for (let i = 1; i < pts.length; i++) {
       let dx = pts[i].x - pts[i-1].x;
@@ -3744,9 +3711,7 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
     }
     pts[0].speed = pts[1].speed;
   }
-
   if (!pts || pts.length < 2) return null;
-
   return {
     pts: pts,
     col: col,
@@ -3756,17 +3721,14 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
     baseWidth: baseWidth
   };
 }
-
 // ── Interactive stroke ───────────────────────────────────────────────────────
 function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet) {
   let col = pickColor(p, x1, y1, 0);
   let angle = Math.atan2(y2 - y1, x2 - x1);
   let pts;
-
   if (charMode) {
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
     let rawPts = strokes[Math.floor(p.random(strokes.length))];
-    // Compute cumulative distance for normalized progress
     let cumDist = 0;
     let dists = [0];
     for (let i = 1; i < rawPts.length; i++) {
@@ -3790,7 +3752,6 @@ function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, ch
       };
     });
     pts = _applyChaikin(pts, 2);
-    // Compute speed after smoothing
     let avgLen = len / (pts.length - 1);
     for (let i = 1; i < pts.length; i++) {
       let dx = pts[i].x - pts[i-1].x;
@@ -3802,7 +3763,6 @@ function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, ch
   } else {
     pts = _genLinePoints(p, x1, y1, len, angle, 0.15);
   }
-
   if (!pts || pts.length < 2) return null;
   return {
     pts: pts,
@@ -3813,29 +3773,29 @@ function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, ch
     baseWidth: baseWidth * (0.8 + mouseVelocity * 0.4)
   };
 }
-
-  
 // ── Expanded Character Paths ─────────────────────────────────────────────────
 const CHARACTER_PATHS = {
   'eternal': [ // 永
-    [{x:0.5, y:0.1}, {x:0.55, y:0.2}], // Dot
-    [{x:0.2, y:0.3}, {x:0.8, y:0.3}], // Top bar
-    [{x:0.5, y:0.3}, {x:0.5, y:0.8}, {x:0.4, y:0.75}], // Vertical hook
-    [{x:0.5, y:0.45}, {x:0.25, y:0.6}], // Left sweep
-    [{x:0.5, y:0.5}, {x:0.75, y:0.7}]  // Right sweep
+    [{x:0.5, y:0.1}, {x:0.55, y:0.2}],
+    [{x:0.2, y:0.3}, {x:0.8, y:0.3}],
+    [{x:0.5, y:0.3}, {x:0.5, y:0.8}, {x:0.4, y:0.75}],
+    [{x:0.5, y:0.45}, {x:0.25, y:0.6}],
+    [{x:0.5, y:0.5}, {x:0.75, y:0.7}]
   ],
   'mountain': [ // 山
-    [{x:0.5, y:0.2}, {x:0.5, y:0.8}], // Center
-    [{x:0.2, y:0.4}, {x:0.2, y:0.8}, {x:0.8, y:0.8}, {x:0.8, y:0.4}] // Base
+    [{x:0.5, y:0.2}, {x:0.5, y:0.8}],
+    [{x:0.2, y:0.4}, {x:0.2, y:0.8}, {x:0.8, y:0.8}, {x:0.8, y:0.4}]
   ],
-  'wind': [ // 風 (Simplified)
-    [{x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.7, y:0.85}], // Outer
-    [{x:0.4, y:0.4}, {x:0.6, y:0.4}], [{x:0.5, y:0.4}, {x:0.5, y:0.7}] // Inner
+  'wind': [ // 風
+    [{x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.7, y:0.85}],
+    [{x:0.4, y:0.4}, {x:0.6, y:0.4}],
+    [{x:0.5, y:0.4}, {x:0.5, y:0.7}]
   ],
   'heart': [ // 心
-    [{x:0.2, y:0.5}, {x:0.25, y:0.6}], // Left dot
-    [{x:0.4, y:0.8}, {x:0.7, y:0.8}, {x:0.85, y:0.4}], // Main curve
-    [{x:0.5, y:0.4}, {x:0.55, y:0.5}], [{x:0.75, y:0.3}, {x:0.8, y:0.4}] // Top dots
+    [{x:0.2, y:0.5}, {x:0.25, y:0.6}],
+    [{x:0.4, y:0.8}, {x:0.7, y:0.8}, {x:0.85, y:0.4}],
+    [{x:0.5, y:0.4}, {x:0.55, y:0.5}],
+    [{x:0.75, y:0.3}, {x:0.8, y:0.4}]
   ],
   'bamboo': [ // 竹
     [{x:0.3, y:0.2}, {x:0.3, y:0.8}],
@@ -3857,12 +3817,10 @@ const CHARACTER_PATHS = {
     [{x:0.8, y:0.2}, {x:0.8, y:0.8}]
   ]
 };
-
-// ── Sumi‑e Renderer with Drips, Splatters, and Pooling ───────────────────────
+// ── Sumi‑e Renderer ─────────────────────────────────────────────────────────
 function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
   if (pts.length < 2) return;
-
-  // 1. AIGUMA (Wet Edge / Bleed)
+  // 1. AIGUMA (Wet Edge)
   if (bleed > 0) {
     CTX.beginPath();
     CTX.strokeStyle = col;
@@ -3875,27 +3833,22 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     CTX.stroke();
     CTX.filter = 'none';
   }
-
-  // 2. HIHAKU (Flying White / Dry Brush)
+  // 2. HIHAKU (Dry Brush)
   for (let f = 0; f < fibers; f++) {
     let fOff = (f / fibers - 0.5) * 1.8;
     CTX.beginPath();
     for (let i = 0; i < pts.length; i++) {
       let pt = pts[i];
-      // Enhanced dryness with multi‑octave noise
       let dryness = p.noise(pt.x * 0.04, pt.y * 0.04, f * 2) * 0.6
                   + p.noise(pt.x * 0.12, pt.y * 0.12, f * 3) * 0.4;
-      // Dryer toward ends
       dryness *= 1 - Math.abs(pt.prog - 0.5) * 0.3;
       if (dryness < 0.25) {
         CTX.stroke(); CTX.beginPath(); continue;
       }
-
       let next = pts[i+1] || pt;
       let ang = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI/2;
       let x = pt.x + Math.cos(ang) * fOff * pt.w * 0.5;
       let y = pt.y + Math.sin(ang) * fOff * pt.w * 0.5;
-
       i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
       CTX.lineWidth = pt.w * (0.08 + dryness * 0.25);
       CTX.globalAlpha = baseAlpha * dryness * 0.8;
@@ -3903,7 +3856,6 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     }
     CTX.stroke();
   }
-
   // 3. KASURI (Dark Core)
   CTX.beginPath();
   CTX.globalAlpha = baseAlpha * 0.75;
@@ -3912,8 +3864,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
   }
   CTX.stroke();
-
-  // 4. Ink pooling at start and end
+  // 4. Ink pooling
   if (pooling) {
     [0, pts.length-1].forEach(idx => {
       let pt = pts[idx];
@@ -3924,8 +3875,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       CTX.fill();
     });
   }
-
-  // 5. Random splatters during drawing
+  // 5. Splatters
   if (splatterAmt > 0 && Math.random() < splatterAmt * 0.15) {
     for (let s = 0; s < Math.floor(splatterAmt * 8); s++) {
       let idx = Math.floor(p.noise(s * 17) * (pts.length - 1));
@@ -3942,8 +3892,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       CTX.fill();
     }
   }
-
-  // 6. Drips (falling ink)
+  // 6. Drips
   if (drips && Math.random() < 0.15) {
     let pt = pts[pts.length-1];
     for (let d = 0; d < 3; d++) {
@@ -3956,7 +3905,6 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     }
   }
 }
-
 // ── Chaikin Smoothing ────────────────────────────────────────────────────────
 function _applyChaikin(pts, iterations) {
   if (iterations === 0 || pts.length < 3) return pts;
@@ -3969,7 +3917,6 @@ function _applyChaikin(pts, iterations) {
   newPts.push(pts[pts.length-1]);
   return _applyChaikin(newPts, iterations - 1);
 }
-
 // ── Generate random organic line ─────────────────────────────────────────────
 function _genLinePoints(p, ox, oy, len, angle, wobble) {
   let pts = [];
@@ -3986,7 +3933,6 @@ function _genLinePoints(p, ox, oy, len, angle, wobble) {
   }
   return _applyChaikin(pts, 2);
 }
-
 
 
 
