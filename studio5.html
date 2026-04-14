@@ -860,8 +860,12 @@ select option{background:var(--ink)}
     <span class="sl"> Calligraphy</span>
     <span class="sec-arrow open" id="arr-calligraphy">›</span>
   </div>
+  
   <div class="sec-body" id="body-calligraphy">
-
+<div class="tr" style="margin-bottom:0.8rem">
+  <span class="tl">Enable Calligraphy</span>
+  <button class="tb" id="btnCalligraphyEnable">Off</button>
+</div>
     <!-- Sub‑mode selector -->
     <div class="sl2">Mode</div>
     <div class="cg" id="calligSubModeRow">
@@ -7586,6 +7590,9 @@ const DEFAULT_STATE = {
   shapeSides: 7,                     // Number of sides for polygon shape (3–16)
   shapeText: '',                     // Default custom text for new shapes
   // ========== CALLIGRAPHY MODE ==========
+  calligraphyEnabled: false,          // master enable/disable
+  previousMode: 'bloom',              // store the mode that was active before enabling calligraphy
+  previousBg: '#0d0c0a',              // store the background before enabling calligraphy
   calligSubMode: 'character',          // 'random', 'character', 'interactive', 'composition'
   calligComposition: 'bamboo_branch',  // composition key
   calligCharSet: 'eternal',            // character set key
@@ -7717,6 +7724,9 @@ function rd() {
  // ── drawScene ────────────────────────────────────────────────── 
   function drawScene(p, t) {
     if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
+  if (S.calligraphyEnabled && S.mode === 'calligraphy') {
+    drawCalligraphy(p, t);
+  } else {
     switch (S.mode) {
       case 'bloom': drawBloom(p, t); break;
       case 'wave': drawWave(p, t); break;
@@ -9665,6 +9675,69 @@ function initCalligraphySection() {
 
 // Call this after DOM is ready
 document.addEventListener('DOMContentLoaded', initCalligraphySection);
+
+
+// ── CALLIGRAPHY ENABLE/DISABLE TOGGLE ──────────────────────────────────────
+let calligraphyToggle = document.getElementById('btnCalligraphyEnable');
+if (calligraphyToggle) {
+  // Set initial state
+  calligraphyToggle.textContent = S.calligraphyEnabled ? 'On' : 'Off';
+  calligraphyToggle.classList.toggle('on', S.calligraphyEnabled);
+
+  calligraphyToggle.addEventListener('click', function() {
+    S.calligraphyEnabled = !S.calligraphyEnabled;
+    this.textContent = S.calligraphyEnabled ? 'On' : 'Off';
+    this.classList.toggle('on', S.calligraphyEnabled);
+
+    if (S.calligraphyEnabled) {
+      // Store current mode and background before overriding
+      S.previousMode = S.mode;
+      S.previousBg = S.bg;
+      // Switch to calligraphy mode
+      S.mode = 'calligraphy';
+      // Set paper background (warm ivory)
+      S.bg = '#f2ede6';
+      // Update UI background active state
+      document.querySelectorAll('#body-calligraphy .cb, #body-calligraphy input, #body-calligraphy select, #body-calligraphy .tb')  .forEach(el => el.disabled = false);
+      document.querySelectorAll('[data-bg]').forEach(el => {
+        el.classList.toggle('active', el.dataset.bg === S.bg);
+      });
+      // Ensure ink buffer exists
+      _ensureInkBuffer(window._st.w(), window._st.h());
+      // If interactive sub‑mode, set up pointer handlers
+      if (S.calligSubMode === 'interactive') {
+        setupCalligraphyInteraction(window._st.p);
+        showBrushCursor(true);
+        if (!S.playing) {
+          S.playing = true;
+          window._st.p.loop();
+          let playBtn = document.getElementById('btnPlay');
+          if (playBtn) playBtn.textContent = '⏸ Pause';
+        }
+      } else {
+        showBrushCursor(false);
+      }
+      // Redraw
+      window._st.rd();
+      showToast('Calligraphy enabled – paper background');
+    } else {
+      // Restore previous mode and background
+      S.mode = S.previousMode;
+      S.bg = S.previousBg;
+      // Update UI background active state
+      document.querySelectorAll('#body-calligraphy .cb, #body-calligraphy input, #body-calligraphy select, #body-calligraphy .tb')  .forEach(el => el.disabled = true);
+      document.querySelectorAll('[data-bg]').forEach(el => {
+        el.classList.toggle('active', el.dataset.bg === S.bg);
+      });
+      // Hide brush cursor
+      showBrushCursor(false);
+      // Redraw
+      window._st.rd();
+      showToast('Calligraphy disabled – restored previous mode');
+    }
+  });
+}
+
   
 
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
