@@ -3547,201 +3547,223 @@ function drawInterference(p,t){
 }
 
 
-// ── CALLIGRAPHY v2 updated 4/13/26 ──────────────────────────────────────────────────────────
-// Brush stroke simulation: fiber texture, pressure curves, humanized wobble,
-// paper bleed, enso arcs, ink blotches. Inspired by ShaderToy brush experiments.
-
+// ── CALLIGRAPHY v3 – Bold sumi‑e strokes with ink bleed and animated drawing ─────────
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
 
-  // ── Parameters ──────────────────────────────────────────────────────────
-  let mode       = Math.round(S.calligMode      ?? 0);   // 0=lines 1=arcs 2=mixed
-  let wobble     = S.calligWobble   ?? 0.35;
-  let fibers     = Math.max(1, Math.round(S.calligFibers  ?? 3));
-  let bleed      = S.calligBleed    ?? 0.4;
-  let taper      = S.calligTaper    ?? 0.8;
-  let lenMult    = S.calligLen      ?? 1.0;
-  let thick      = S.calligThick    ?? 1.0;
-  let blotchAmt  = S.calligBlotch   ?? 0;
-  let inkDensity = S.calligInk      ?? 0.7;
-  let showChars  = S.calligChars    ?? false;
-  let angleMode  = Math.round(S.calligAngleMode ?? 0);   // 0=noise 1=horiz 2=radial
-  let nStrokes  = Math.max(2, Math.floor(W / (S.spacing * 4)) + 2);
-  let baseWidth = Math.max(3, S.maxSize * 0.45 * thick);
-  let stepDist  = Math.max(2, S.spacing * 0.5);
+  // ── Parameters (all from S with defaults) ─────────────────────────────────
+  let strokeCount  = Math.max(2, Math.floor(S.calligCount     ?? 5));
+  let minLength    = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
+  let maxLength    = (S.calligMaxLen    ?? 0.7) * Math.min(W, H);
+  let baseWidth    = Math.max(5, (S.calligWidth    ?? 0.8) * S.maxSize);
+  let taper        = S.calligTaper      ?? 0.7;        // 0=constant, 1=sharp point
+  let wobble       = S.calligWobble     ?? 0.25;       // path irregularity
+  let bleed        = S.calligBleed      ?? 0.5;
+  let fibers       = Math.max(1, Math.floor(S.calligFibers ?? 4));
+  let splatter     = S.calligSplatter   ?? 0.2;
+  let grow         = S.calligGrow       ?? 0.0;        // 0=full stroke, 1=draw over time
+  let angleBias    = S.calligAngleBias  ?? 0.5;        // 0=random, 1=horizontal/vertical
+  let arcProb      = S.calligArcProb    ?? 0.3;        // probability of enso arc
+  let inkOpacity   = S.calligInk        ?? 0.85;
+
   CTX.save();
-  CTX.lineCap  = 'round';
-  CTX.lineJoin = 'round';
-  for (let si = 0; si < nStrokes; si++) {
-    // Origin
-    let ox = p.noise(si * 0.18 + 10,  t * 0.04) * W;
-    let oy = p.noise(si * 0.29 + 20,  t * 0.04) * H;
+  CTX.lineCap   = 'round';
+  CTX.lineJoin  = 'round';
+
+  for (let si = 0; si < strokeCount; si++) {
+    // Use deterministic seed per stroke so animation is stable
+    let seedX = si * 127.3 + 100;
+    let seedY = si * 231.7 + 200;
+
+    // Choose stroke type: line or arc
+    let isArc = p.noise(si * 0.43 + 300, t * 0.02) < arcProb;
+
+    // Origin – biased toward center but with random offset
+    let ox = p.width  * (0.3 + 0.4 * p.noise(seedX, t * 0.01));
+    let oy = p.height * (0.3 + 0.4 * p.noise(seedY, t * 0.01));
+
     // Length
-    let strokeLen = (50 + p.noise(si * 0.5 + 30, t * 0.05) * 180) * lenMult;
-    // Angle
-    let angle;
-    switch (angleMode) {
-      case 1:  angle = 0; break;
-      case 2:  angle = Math.atan2(oy - H/2, ox - W/2); break;
-      default: angle = p.noise(ox * S.noiseScale * 0.5,
-                               oy * S.noiseScale * 0.5, t * 0.2) * Math.PI * 2;
+    let len = minLength + p.noise(seedX + 10, seedY + 20, t * 0.01) * (maxLength - minLength);
+
+    // Base angle – influenced by angleBias to prefer horizontal/vertical
+    let baseAngle;
+    if (angleBias > 0.8) {
+      // Strong bias: mostly horizontal or vertical
+      baseAngle = (p.noise(si * 1.7) > 0.5 ? 0 : Math.PI/2) + (p.noise(si*2.1)-0.5)*0.5;
+    } else {
+      baseAngle = p.noise(seedX * 0.01, seedY * 0.01, t * 0.05) * Math.PI * 2;
     }
-    let col   = pickColor(p, ox, oy, t);
-    let isArc = (mode === 1) || (mode === 2 && p.noise(si * 91.3 + 77, 0.5) > 0.5);
-    let pts = isArc
-      ? _calligArcPts(p, t, si, ox, oy, strokeLen, stepDist, wobble)
-      : _calligLinePts(p, t, si, ox, oy, angle, strokeLen, stepDist, wobble);
+
+    // Generate waypoints (line or arc)
+    let pts;
+    if (isArc) {
+      pts = _genArcPoints(p, t, si, ox, oy, len, baseAngle, wobble);
+    } else {
+      pts = _genLinePoints(p, t, si, ox, oy, len, baseAngle, wobble);
+    }
     if (!pts || pts.length < 2) continue;
-    // Assign pressure-based width per waypoint
+
+    // Compute pressure (width) for each point – thickest in middle
     for (let i = 0; i < pts.length; i++) {
-      let pr = Math.sin(pts[i].prog * Math.PI);
-      pts[i].w = Math.max(0.5, baseWidth * Math.pow(pr, 1.0 / Math.max(0.1, taper)));
+      let prog = pts[i].prog;
+      // Smooth bell curve: sin(pi * prog) ^ (1/taper)
+      let pressure = Math.pow(Math.sin(prog * Math.PI), 1 / Math.max(0.1, taper));
+      pts[i].w = baseWidth * pressure;
     }
-    _calligRender(p, t, pts, col, baseWidth, fibers, bleed, inkDensity);
-    // Optional character scatter along stroke path
-    if (showChars && S.chars && S.chars.length) {
-      let charStep = Math.max(3, Math.floor(pts.length / 5));
-      for (let i = 0; i < pts.length; i += charStep) {
-        if (Math.random() > 0.6) continue;
-        let pt = pts[i];
-        dc(pt.x, pt.y, Math.max(4, pt.w * 0.8), angle, col, pickChar(p, pt.x, pt.y, t));
-      }
+
+    // Apply "grow" animation: trim points based on time
+    let visiblePts = pts;
+    if (grow > 0) {
+      let growPhase = (t * 0.3 * grow) % 1.0;
+      let cutoff = growPhase;
+      // Keep points up to cutoff, plus a small overlap
+      visiblePts = pts.filter(pt => pt.prog <= cutoff + 0.05);
+      if (visiblePts.length < 2) continue;
+    }
+
+    let col = pickColor(p, ox, oy, t);
+
+    // Render the stroke with three passes
+    _renderCalligStroke(p, visiblePts, col, bleed, fibers, inkOpacity);
+
+    // Ink splatters at stroke ends and occasionally along the path
+    if (splatter > 0) {
+      _addInkSplatters(p, t, visiblePts, col, baseWidth, splatter, si);
     }
   }
 
-  // ── Ink blotches ─────────────────────────────────────────────────────────
-  if (blotchAmt > 0) {
-    let nb = Math.ceil(blotchAmt * nStrokes * 0.6);
-    for (let bi = 0; bi < nb; bi++) {
-      let bx   = p.noise(bi * 173.1 + 500, t * 0.02) * W;
-      let by   = p.noise(bi * 217.7 + 600, t * 0.02) * H;
-      let br   = baseWidth * (0.2 + p.noise(bi * 0.6 + 700, t * 0.05) * 0.5);
-      let bcol = pickColor(p, bx, by, t);
-      for (let oi = 0; oi < 4; oi++) {
-        let ox2 = (p.noise(bi * 17 + oi * 3 + 800, t * 0.05) - 0.5) * br;
-        let oy2 = (p.noise(bi * 19 + oi * 3 + 900, t * 0.05) - 0.5) * br;
-        let r2  = br * (0.4 + p.noise(bi * 23 + oi + 1000, t * 0.05) * 0.5);
-        CTX.globalAlpha = 0.12 + p.noise(bi * 0.3 + oi, t) * 0.3;
-        CTX.fillStyle   = bcol;
-        CTX.beginPath();
-        CTX.arc(bx + ox2, by + oy2, Math.max(1, r2), 0, Math.PI * 2);
-        CTX.fill();
-      }
-    }
-  }
   CTX.restore();
   CTX.globalAlpha = 1;
 }
 
-// ── Line waypoints — noise-driven angle drift + perpendicular wobble ─────────
-function _calligLinePts(p, t, si, sx, sy, angle, strokeLen, stepDist, wobble) {
+// ── Generate line points with noise‑driven curvature ─────────────────────────
+function _genLinePoints(p, t, si, sx, sy, len, baseAngle, wobble) {
   let pts = [];
-  let cx = sx, cy = sy;
-  let curAngle = angle;
-  let steps = Math.max(3, Math.floor(strokeLen / stepDist));
+  let step = Math.max(3, len / 40);
+  let steps = Math.max(5, Math.floor(len / step));
+  let x = sx, y = sy;
+  let angle = baseAngle;
   for (let i = 0; i <= steps; i++) {
     let prog = i / steps;
-    // Perpendicular humanization — mimics wrist deviation
-    let wn = (p.noise(cx * 0.015 + si * 5.1, cy * 0.015 + t * 0.35) - 0.5)
-             * wobble * stepDist * 2.5;
-    let wx = Math.cos(curAngle + Math.PI * 0.5) * wn;
-    let wy = Math.sin(curAngle + Math.PI * 0.5) * wn;
-    // Slow angle drift — like a brush following the wrist arc
-    curAngle += (p.noise(cx * 0.008 + si * 3.3, cy * 0.008 + t * 0.18) - 0.5)
-                * 0.18 * wobble;
-    pts.push({ x: cx + wx, y: cy + wy, prog, w: 1 });
-    cx += Math.cos(curAngle) * stepDist;
-    cy += Math.sin(curAngle) * stepDist;
+    // Curvature drift – changes direction gradually
+    let drift = (p.noise(x * 0.02 + si * 7.1, y * 0.02 + t * 0.1) - 0.5) * wobble * 0.8;
+    angle += drift;
+    // Perpendicular wobble (like hand tremor)
+    let perp = angle + Math.PI/2;
+    let wob = (p.noise(x * 0.05 + si * 13.3, y * 0.05 + t * 0.2) - 0.5) * wobble * step * 1.2;
+    let px = x + Math.cos(perp) * wob;
+    let py = y + Math.sin(perp) * wob;
+    pts.push({ x: px, y: py, prog });
+    // Advance
+    x += Math.cos(angle) * step;
+    y += Math.sin(angle) * step;
   }
   return pts;
 }
 
-// ── Arc / enso waypoints — partial circle with radius humanization ────────────
-function _calligArcPts(p, t, si, sx, sy, strokeLen, stepDist, wobble) {
-  let radius     = strokeLen * (0.25 + p.noise(si * 0.41 + 200, t * 0.04) * 0.25);
-  let startAngle = p.noise(si * 0.69 + 300, t * 0.04) * Math.PI * 2;
-  let sweep      = (0.35 + p.noise(si * 0.33 + 400, t * 0.04) * 0.55) * Math.PI * 2;
-  // Center is inferred from start point so stroke begins at (sx, sy)
-  let arcCx = sx - Math.cos(startAngle) * radius;
-  let arcCy = sy - Math.sin(startAngle) * radius;
-  let steps = Math.max(4, Math.floor(sweep * radius / stepDist));
-  let pts   = [];
+// ── Generate arc points (partial circle with radius variation) ────────────────
+function _genArcPoints(p, t, si, sx, sy, len, baseAngle, wobble) {
+  let radius = len * (0.3 + 0.3 * p.noise(si * 0.71 + 400, t * 0.02));
+  let sweep = (0.6 + 0.5 * p.noise(si * 0.89 + 500, t * 0.02)) * Math.PI * 1.5;
+  let startAngle = baseAngle - sweep * 0.5;
+  // Place center so that start point is near (sx, sy)
+  let cx = sx - Math.cos(startAngle) * radius;
+  let cy = sy - Math.sin(startAngle) * radius;
+  let steps = Math.max(12, Math.floor(sweep * radius / 6));
+  let pts = [];
   for (let i = 0; i <= steps; i++) {
     let prog = i / steps;
-    let a    = startAngle + sweep * prog;
-    // Humanize radius — twist / drift matching Brush Experiment 3
-    let rWobble = (p.noise(a * 2.5 + si * 7, t * 0.25) - 0.5) * wobble * radius * 0.12;
-    let r       = radius + rWobble;
-    pts.push({ x: arcCx + Math.cos(a) * r, y: arcCy + Math.sin(a) * r, prog, w: 1 });
+    let a = startAngle + sweep * prog;
+    // Radius variation
+    let rWob = (p.noise(a * 1.8 + si * 11, t * 0.15) - 0.5) * wobble * radius * 0.15;
+    let r = radius + rWob;
+    pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, prog });
   }
   return pts;
 }
 
-// ── Three-pass stroke renderer ───────────────────────────────────────────────
-// Pass 1: Paper bleed (wide, near-transparent halo)
-// Pass 2: Fiber strands (offset parallel paths with noise-modulated alpha/dropout)
-// Pass 3: Core stroke (per-segment, variable width, ink-density alpha)
-function _calligRender(p, t, pts, col, maxWidth, fibers, bleed, inkDensity) {
-  let n = pts.length;
-  if (n < 2) return;
-  CTX.strokeStyle = col;
-  // ── Pass 1: Paper bleed ──────────────────────────────────────────────────
+// ── Three‑pass stroke renderer: bleed → fibers → core ────────────────────────
+function _renderCalligStroke(p, pts, col, bleed, fibers, inkOpacity) {
+  if (pts.length < 2) return;
+
+  // Pass 1: Paper bleed (wide, very faint)
   if (bleed > 0.05) {
-    for (let pass = 0; pass < 2; pass++) {
-      CTX.globalAlpha = 0.05 * bleed * (2 - pass * 0.5);
-      CTX.lineWidth   = maxWidth * (1.4 + pass * 0.6);
-      CTX.beginPath();
-      CTX.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < n; i++) CTX.lineTo(pts[i].x, pts[i].y);
-      CTX.stroke();
-    }
+    CTX.globalAlpha = 0.04 * bleed;
+    CTX.lineWidth   = pts[0].w * 2.2;
+    CTX.strokeStyle = col;
+    CTX.beginPath();
+    CTX.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) CTX.lineTo(pts[i].x, pts[i].y);
+    CTX.stroke();
   }
 
-  // ── Pass 2: Fiber strands ────────────────────────────────────────────────
-  // Each fiber is a parallel path at a fixed perpendicular offset.
-  // Three noise octaves (high/med/low freq) modulate alpha per segment,
-  // matching the three-term noise sum in the ShaderToy brush shaders.
+  // Pass 2: Fiber strands – multiple offset lines with noise dropout
   for (let f = 0; f < fibers; f++) {
-    let normOff = fibers > 1 ? ((f / (fibers - 1)) - 0.5) * 2 : 0; // -1 to 1
-    for (let i = 1; i < n; i++) {
+    let normOff = fibers > 1 ? ((f / (fibers - 1)) - 0.5) * 1.6 : 0;
+    for (let i = 1; i < pts.length; i++) {
       let prev = pts[i-1], curr = pts[i];
-      // Perpendicular unit vector at this segment
       let dx = curr.x - prev.x, dy = curr.y - prev.y;
       let len = Math.sqrt(dx*dx + dy*dy) || 1;
-      let px  = -dy / len, py = dx / len;
-      // Lateral fiber offset — scales with local stroke width
-      let midW  = (prev.w + curr.w) * 0.5;
-      let fOff  = normOff * midW * 0.45;
-      // Three-frequency fiber noise — high, medium, low (from shaders)
-      let fnHigh = p.noise(prev.x * 0.14 + f * 6.7,  prev.y * 0.14);          // fiber strands
-      let fnMed  = p.noise(prev.x * 0.05 + f * 11.3, prev.y * 0.05 + t * 0.2);// brush texture
-      let fnLow  = p.noise(prev.x * 0.02 + f * 3.1,  prev.y * 0.02 + t * 0.1);// broad variation
-      let fAlpha = (fnHigh * 0.45 + fnMed * 0.35 + fnLow * 0.2)
-                  * inkDensity
-                  * (1 - Math.abs(normOff) * 0.55); // fade toward edges
-      // Taper: fibers fade out near stroke start and end
-      fAlpha *= Math.min(prev.prog * 8, (1 - prev.prog) * 8, 1);
-      // Random dropout — produces fibrous fraying (key visual from shaders)
-      if (Math.random() > (0.25 + fnMed * 0.65)) continue;
-      CTX.globalAlpha = Math.max(0, Math.min(0.85, fAlpha));
-      CTX.lineWidth   = Math.max(0.3, midW * 0.2);
+      let px = -dy / len, py = dx / len;
+      let midW = (prev.w + curr.w) * 0.5;
+      let offset = normOff * midW * 0.4;
+      // Noise modulation for fiber opacity
+      let fn = p.noise(prev.x * 0.03 + f * 7.2, prev.y * 0.03, p.frameCount * 0.01);
+      let alpha = (0.3 + fn * 0.5) * inkOpacity * (1 - Math.abs(normOff) * 0.4);
+      // Taper at ends
+      alpha *= Math.min(prev.prog * 6, (1 - prev.prog) * 6, 1);
+      if (alpha < 0.02) continue;
+      CTX.globalAlpha = alpha;
+      CTX.lineWidth   = Math.max(0.4, midW * 0.25);
+      CTX.strokeStyle = col;
       CTX.beginPath();
-      CTX.moveTo(prev.x + px * fOff, prev.y + py * fOff);
-      CTX.lineTo(curr.x + px * fOff, curr.y + py * fOff);
+      CTX.moveTo(prev.x + px * offset, prev.y + py * offset);
+      CTX.lineTo(curr.x + px * offset, curr.y + py * offset);
       CTX.stroke();
     }
   }
-  // ── Pass 3: Core stroke — per-segment for variable pressure width ─────────
-  for (let i = 1; i < n; i++) {
+
+  // Pass 3: Core stroke – variable width per segment
+  for (let i = 1; i < pts.length; i++) {
     let prev = pts[i-1], curr = pts[i];
-    // Ink flow variation — modulates opacity slightly along stroke
-    let inkN = p.noise(prev.x * 0.025 + 100, prev.y * 0.025 + t * 0.12);
-    CTX.globalAlpha = Math.max(0.2, Math.min(0.92, (0.55 + inkN * 0.35) * inkDensity));
-    CTX.lineWidth   = Math.max(0.5, (prev.w + curr.w) * 0.5);
+    let midW = (prev.w + curr.w) * 0.5;
+    CTX.globalAlpha = inkOpacity * 0.9;
+    CTX.lineWidth   = midW;
+    CTX.strokeStyle = col;
     CTX.beginPath();
     CTX.moveTo(prev.x, prev.y);
     CTX.lineTo(curr.x, curr.y);
     CTX.stroke();
+  }
+}
+
+// ── Ink splatters – random dots near stroke ends and along path ──────────────
+function _addInkSplatters(p, t, pts, col, baseWidth, splatter, seed) {
+  let count = Math.floor(splatter * 8);
+  for (let c = 0; c < count; c++) {
+    // Pick a point near the start or end
+    let idx = c < count/2 ? 0 : pts.length - 1;
+    let pt = pts[Math.min(idx, pts.length-1)];
+    let angle = p.noise(seed * 10 + c, t * 0.1) * Math.PI * 2;
+    let dist = baseWidth * (0.5 + p.noise(seed + c*2) * 2);
+    let sx = pt.x + Math.cos(angle) * dist;
+    let sy = pt.y + Math.sin(angle) * dist;
+    let sz = baseWidth * 0.15 * (0.5 + p.noise(seed*3+c) * 1.5);
+    CTX.globalAlpha = 0.3 + p.noise(seed*5+c) * 0.5;
+    CTX.fillStyle = col;
+    CTX.beginPath();
+    CTX.arc(sx, sy, Math.max(1, sz), 0, Math.PI*2);
+    CTX.fill();
+    // Tiny satellite dots
+    for (let s = 0; s < 3; s++) {
+      if (p.noise(seed+c*7+s) > 0.5) continue;
+      let a2 = angle + (p.noise(seed+c*11+s)-0.5) * 1.5;
+      let d2 = dist * (0.7 + p.noise(seed+c*13+s)*1.2);
+      let sz2 = sz * 0.4;
+      CTX.beginPath();
+      CTX.arc(sx + Math.cos(a2)*d2, sy + Math.sin(a2)*d2, sz2, 0, Math.PI*2);
+      CTX.fill();
+    }
   }
 }
 
@@ -7042,22 +7064,23 @@ const PARAM_REGISTRY = {
     { id:'sandSizeMin',   label:'Min size (px)',  min:0.5, max:5,  step:0.5, def:1.5, scale:1 },
     { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
   ],
-    calligraphy: [
-    { id:'calligMode',      label:'Stroke type',
-      min:0, max:2,   step:1,  def:0,   scale:1,
-      hint:'0 = flowing lines  ·  1 = arcs / enso  ·  2 = mixed' },
-    { id:'calligAngleMode', label:'Angle source',
-      min:0, max:2,   step:1,  def:0,   scale:1,
-      hint:'0 = noise flow field  ·  1 = horizontal  ·  2 = radial' },
-    { id:'calligWobble',    label:'Wobble',          min:0,  max:100, step:2,  def:35,  scale:0.01 },
-    { id:'calligFibers',    label:'Fiber strands',   min:1,  max:8,   step:1,  def:3,   scale:1    },
-    { id:'calligBleed',     label:'Paper bleed',     min:0,  max:100, step:2,  def:40,  scale:0.01 },
-    { id:'calligTaper',     label:'Taper',           min:10, max:200, step:5,  def:80,  scale:0.01 },
-    { id:'calligLen',       label:'Stroke length',   min:10, max:300, step:5,  def:100, scale:0.01 },
-    { id:'calligThick',     label:'Thickness',       min:10, max:300, step:5,  def:100, scale:0.01 },
-    { id:'calligInk',       label:'Ink density',     min:10, max:100, step:2,  def:70,  scale:0.01 },
-    { id:'calligBlotch',    label:'Ink blotches',    min:0,  max:100, step:2,  def:0,   scale:0.01 },
-    { id:'calligChars',     label:'Scatter chars',   type:'toggle',   def:false },
+  calligraphy: [
+    { id:'calligCount',     label:'Stroke count',      min:1,  max:12, step:1, def:5,   scale:1 },
+    { id:'calligMinLen',    label:'Min length',        min:0.1, max:0.8, step:0.05, def:0.3, scale:1 },
+    { id:'calligMaxLen',    label:'Max length',        min:0.2, max:1.2, step:0.05, def:0.7, scale:1 },
+    { id:'calligWidth',     label:'Base width',        min:0.3, max:2.0, step:0.1, def:0.8, scale:1 },
+    { id:'calligTaper',     label:'Taper',             min:0.1, max:1.5, step:0.05, def:0.7, scale:1,
+      hint:'How quickly stroke thins at ends (lower = more constant)' },
+    { id:'calligWobble',    label:'Wobble',            min:0,   max:0.8, step:0.05, def:0.25, scale:1 },
+    { id:'calligBleed',     label:'Ink bleed',         min:0,   max:1.2, step:0.1, def:0.5, scale:1 },
+    { id:'calligFibers',    label:'Fiber strands',     min:1,   max:8,  step:1, def:4,   scale:1 },
+    { id:'calligSplatter',  label:'Splatter',          min:0,   max:0.8, step:0.05, def:0.2, scale:1 },
+    { id:'calligGrow',      label:'Draw animation',    min:0,   max:1.5, step:0.1, def:0.0, scale:1,
+      hint:'0 = full stroke, >0 = stroke grows over time' },
+    { id:'calligAngleBias', label:'Angle bias',        min:0,   max:1,  step:0.1, def:0.5, scale:1,
+      hint:'0 = random, 1 = mostly horizontal/vertical' },
+    { id:'calligArcProb',   label:'Arc probability',   min:0,   max:1,  step:0.1, def:0.3, scale:1 },
+    { id:'calligInk',       label:'Ink opacity',       min:0.2, max:1,  step:0.05, def:0.85, scale:1 },
   ],
   //to be refactored
   hatch: [
