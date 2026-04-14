@@ -129,12 +129,18 @@ select option{background:var(--ink)}
   
 #gc.calligraphy-interactive {cursor: none;}
 .drawing-mode {cursor: url('/cursor/cursor.cur'), auto;}
-#brushCursor {position: absolute;pointer-events: none; /* Crucial: allows clicks to pass through to the canvas */
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+#brushCursor {
+  position: fixed;
+  pointer-events: none;
   display: none;
-  z-index: 9999;}
+  z-index: 9999;
+  border: 2px solid rgba(200, 100, 50, 0.8);
+  border-radius: 50%;
+  background: rgba(200, 100, 50, 0.15);
+  box-shadow: 0 0 8px rgba(200, 100, 50, 0.4);
+  transform: translate(-50%, -50%);
+  transition: width 0.05s ease, height 0.05s ease;
+}
   
 </style>
 </head>
@@ -3590,6 +3596,18 @@ function _ensureInkBuffer(W, H) {
   }
 }
 
+function setDrawingCursor(enable) {
+  let canvas = document.getElementById('gc');
+  if (!canvas) return;
+  if (enable) {
+    canvas.classList.add('drawing-mode');
+    // Also ensure no inline cursor style overrides it
+    canvas.style.cursor = '';
+  } else {
+    canvas.classList.remove('drawing-mode');
+  }
+}
+  
 function clearInkBuffer() {
   if (_inkCTX && _inkCanvas) {
     let bg = S.bg || '#f2ede6';
@@ -3646,7 +3664,7 @@ function drawCalligraphy(p, t) {
   let grain       = S.calligPaperGrain ?? true;
   let interactive = S.calligInteractive ?? false;
 
-  // ── Auto-spawn ───────────────────────────────────────────────────────────────
+  // Auto-spawn
   if (!interactive && S.playing) {
     let interval = Math.max(6, Math.round(80 / strokeCount));
     if (_calligClock % interval === 0) {
@@ -3655,7 +3673,7 @@ function drawCalligraphy(p, t) {
   }
   if (interactive && calligStrokes.length > 60) calligStrokes = calligStrokes.slice(-50);
 
-  // ── Render growing strokes to ink buffer ─────────────────────────────────────
+  // Render growing strokes to ink buffer
   let light   = _bgIsLight(S.bg);
   let origCTX = CTX;
   CTX = _inkCTX;
@@ -3667,15 +3685,13 @@ function drawCalligraphy(p, t) {
   for (let i = calligStrokes.length - 1; i >= 0; i--) {
     let st  = calligStrokes[i];
     let age = _calligClock - st.birth;
-    if (age < 0) continue; // staggered births
+    if (age < 0) continue;
     if (age > st.lifespan + st.fadeOut) { calligStrokes.splice(i, 1); continue; }
 
-    // Grow-in: 0→1 over ~10 ticks at default speed
     let drawProg    = Math.min(1, age * growSpeed * 0.2);
     let visiblePts  = st.pts.filter(pt => pt.prog <= drawProg);
     if (visiblePts.length < 2) continue;
 
-    // Pressure widths
     for (let j = 0; j < visiblePts.length; j++) {
       let pt = visiblePts[j];
       let pf = Math.sin(pt.prog * Math.PI);
@@ -3693,7 +3709,7 @@ function drawCalligraphy(p, t) {
   _inkCTX.restore();
   CTX = origCTX;
 
-  // ── Composite ink + grain to main canvas ─────────────────────────────────────
+  // Composite ink + grain to main canvas
   CTX.save();
   CTX.globalAlpha = 1;
   CTX.globalCompositeOperation = 'source-over';
@@ -3704,9 +3720,37 @@ function drawCalligraphy(p, t) {
     CTX.globalAlpha = 0.35;
     CTX.drawImage(_grainCanvas, 0, 0);
   }
+
+  // --- Hanko seal (red stamp) ---
+  if (S.mode === 'calligraphy') {
+    CTX.globalCompositeOperation = 'source-over';
+    CTX.globalAlpha = 0.85;
+    let stampSize = Math.min(48, W * 0.08, H * 0.08);
+    let stampX = 20;
+    let stampY = H - stampSize - 20;
+    // Stamp background (red square with slightly rounded corners)
+    CTX.fillStyle = '#C11B1B';
+    CTX.shadowBlur = 0;
+    CTX.beginPath();
+    CTX.rect(stampX, stampY, stampSize, stampSize);
+    CTX.fill();
+    // Subtle rotation for authenticity
+    CTX.save();
+    CTX.translate(stampX + stampSize/2, stampY + stampSize/2);
+    CTX.rotate(-0.08);
+    CTX.fillStyle = '#FFF8F0';
+    CTX.font = `bold ${stampSize * 0.5}px "Noto Serif SC", "KaiTi", "华文楷书", serif`;
+    CTX.textAlign = 'center';
+    CTX.textBaseline = 'middle';
+    CTX.fillText('乔纳森', 0, 0);
+    CTX.restore();
+    CTX.shadowBlur = 0;
+    CTX.globalAlpha = 1;
+  }
+
   CTX.restore();
 
-  // ── Brush cursor size update (position set by pointer event) ─────────────────
+  // Brush cursor size update (position set by pointer event)
   _calligCursor = _calligCursor || document.getElementById('brushCursor');
   if (_calligCursor) {
     if (interactive && S.mode === 'calligraphy') {
@@ -3842,7 +3886,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   pts = _applyChaikin(pts, 2);
   _assignSpeeds(pts, dist * 1.5);
 
-  // Pressure-width assignment (immediate, no grow animation)
+  // Pressure-width assignment
   let eff = baseWidth * (0.5 + 1.0 / (mouseVelocity * 0.5 + 1));
   for (let j = 0; j < pts.length; j++) {
     let pf = Math.sin(pts[j].prog * Math.PI);
@@ -3878,6 +3922,7 @@ function _renderDot(p, x, y, size) {
   _inkCTX.fill();
   _inkCTX.restore();
   CTX = origCTX;
+  window._st.rd(); // force redraw
 }
 
 // ── Force-redraw: clear and respawn a full batch immediately ───────────────────
@@ -3912,14 +3957,15 @@ function setupCalligraphyInteraction(p) {
     canvas.removeEventListener('mouseleave',    h.leave);
   }
   canvas.style.touchAction = 'none';
+  canvas.style.cursor = 'none'; // hide default cursor, show custom
 
   function getPos(e) {
     let r = canvas.getBoundingClientRect();
     return {
       x:  (e.clientX - r.left) * (canvas.width  / r.width),
       y:  (e.clientY - r.top)  * (canvas.height / r.height),
-      vx: e.clientX - r.left,   // viewport coords for cursor div
-      vy: e.clientY - r.top
+      vx: e.clientX,
+      vy: e.clientY
     };
   }
 
@@ -3930,7 +3976,7 @@ function setupCalligraphyInteraction(p) {
       _calligCursor.style.display = 'block';
       _calligCursor.style.left    = vx + 'px';
       _calligCursor.style.top     = vy + 'px';
-      let cs = Math.max(8, (S.calligWidth ?? 2) * S.maxSize);
+      let cs = Math.max(8, (S.calligWidth ?? 2) * (S.maxSize / 20) * 1.2);
       _calligCursor.style.width   = cs + 'px';
       _calligCursor.style.height  = cs + 'px';
     } else {
@@ -3948,6 +3994,7 @@ function setupCalligraphyInteraction(p) {
     updateCursor(pos.vx, pos.vy);
     if (S.calligTapDot) {
       _renderDot(p, pos.x, pos.y, Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
+      window._st.rd(); // immediate redraw
     }
   };
 
@@ -3958,6 +4005,7 @@ function setupCalligraphyInteraction(p) {
     e.preventDefault();
     _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
     lastMouseX = pos.x; lastMouseY = pos.y;
+    window._st.rd(); // force redraw after each stroke segment
   };
 
   const onUp    = function() { isDrawing = false; };
@@ -3990,45 +4038,114 @@ function initBrushCursor() {
 // ── CHARACTER_PATHS ────────────────────────────────────────────────────────────
 const CHARACTER_PATHS = {
   'eternal': [
-    [{x:0.5,y:0.1},{x:0.52,y:0.16},{x:0.55,y:0.2}],
-    [{x:0.2,y:0.3},{x:0.5,y:0.28},{x:0.8,y:0.3}],
-    [{x:0.5,y:0.3},{x:0.5,y:0.55},{x:0.48,y:0.75},{x:0.4,y:0.8}],
-    [{x:0.5,y:0.45},{x:0.38,y:0.52},{x:0.25,y:0.62}],
-    [{x:0.5,y:0.5},{x:0.63,y:0.6},{x:0.75,y:0.72}]
+    [{x:0.48,y:0.12},{x:0.52,y:0.18},{x:0.55,y:0.24},{x:0.56,y:0.32},{x:0.54,y:0.38}],
+    [{x:0.18,y:0.28},{x:0.32,y:0.26},{x:0.48,y:0.24},{x:0.65,y:0.26},{x:0.82,y:0.28}],
+    [{x:0.48,y:0.28},{x:0.5,y:0.42},{x:0.51,y:0.56},{x:0.49,y:0.7},{x:0.42,y:0.82},{x:0.35,y:0.86}],
+    [{x:0.5,y:0.44},{x:0.4,y:0.5},{x:0.28,y:0.6},{x:0.22,y:0.68}],
+    [{x:0.5,y:0.48},{x:0.62,y:0.58},{x:0.72,y:0.68},{x:0.78,y:0.76}],
+    [{x:0.48,y:0.62},{x:0.52,y:0.66},{x:0.56,y:0.7}]
+  ],
+  'dragon': [
+    [{x:0.25,y:0.2},{x:0.32,y:0.18},{x:0.4,y:0.22},{x:0.45,y:0.28},{x:0.48,y:0.36}],
+    [{x:0.48,y:0.36},{x:0.52,y:0.44},{x:0.58,y:0.5},{x:0.66,y:0.52},{x:0.74,y:0.5}],
+    [{x:0.74,y:0.5},{x:0.78,y:0.46},{x:0.8,y:0.4}],
+    [{x:0.3,y:0.42},{x:0.38,y:0.44},{x:0.46,y:0.48},{x:0.54,y:0.52},{x:0.62,y:0.56}],
+    [{x:0.62,y:0.56},{x:0.64,y:0.64},{x:0.62,y:0.72},{x:0.56,y:0.78},{x:0.48,y:0.82}],
+    [{x:0.22,y:0.58},{x:0.3,y:0.6},{x:0.38,y:0.64},{x:0.44,y:0.68}],
+    [{x:0.44,y:0.68},{x:0.46,y:0.76},{x:0.44,y:0.82},{x:0.38,y:0.86}],
+    [{x:0.52,y:0.78},{x:0.58,y:0.8},{x:0.66,y:0.78},{x:0.72,y:0.74}]
   ],
   'mountain': [
-    [{x:0.5,y:0.18},{x:0.5,y:0.5},{x:0.5,y:0.82}],
-    [{x:0.2,y:0.42},{x:0.2,y:0.65},{x:0.35,y:0.82},{x:0.65,y:0.82},{x:0.8,y:0.65},{x:0.8,y:0.42}]
+    [{x:0.5,y:0.15},{x:0.5,y:0.35},{x:0.5,y:0.55},{x:0.5,y:0.75},{x:0.5,y:0.88}],
+    [{x:0.18,y:0.42},{x:0.24,y:0.52},{x:0.32,y:0.62},{x:0.42,y:0.72},{x:0.5,y:0.78}],
+    [{x:0.82,y:0.42},{x:0.76,y:0.52},{x:0.68,y:0.62},{x:0.58,y:0.72},{x:0.5,y:0.78}],
+    [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.74}],
+    [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.74}]
   ],
-  'wind': [
-    [{x:0.2,y:0.22},{x:0.5,y:0.2},{x:0.8,y:0.22},{x:0.8,y:0.5},{x:0.78,y:0.8},{x:0.7,y:0.86}],
-    [{x:0.38,y:0.42},{x:0.5,y:0.4},{x:0.62,y:0.42}],
-    [{x:0.5,y:0.42},{x:0.5,y:0.58},{x:0.48,y:0.72}]
+  'water': [
+    [{x:0.22,y:0.28},{x:0.3,y:0.34},{x:0.38,y:0.38},{x:0.46,y:0.36},{x:0.52,y:0.32}],
+    [{x:0.52,y:0.32},{x:0.58,y:0.38},{x:0.66,y:0.42},{x:0.74,y:0.4},{x:0.78,y:0.34}],
+    [{x:0.3,y:0.48},{x:0.38,y:0.54},{x:0.46,y:0.58},{x:0.54,y:0.56},{x:0.6,y:0.5}],
+    [{x:0.6,y:0.5},{x:0.66,y:0.54},{x:0.72,y:0.58},{x:0.78,y:0.56}],
+    [{x:0.38,y:0.66},{x:0.44,y:0.72},{x:0.5,y:0.76},{x:0.56,y:0.74},{x:0.6,y:0.68}],
+    [{x:0.6,y:0.68},{x:0.64,y:0.72},{x:0.68,y:0.76},{x:0.72,y:0.74}]
+  ],
+  'fire': [
+    [{x:0.5,y:0.18},{x:0.48,y:0.28},{x:0.44,y:0.4},{x:0.38,y:0.52},{x:0.32,y:0.62}],
+    [{x:0.5,y:0.18},{x:0.52,y:0.28},{x:0.56,y:0.4},{x:0.62,y:0.52},{x:0.68,y:0.62}],
+    [{x:0.5,y:0.18},{x:0.5,y:0.3},{x:0.5,y:0.44},{x:0.5,y:0.58},{x:0.5,y:0.72},{x:0.48,y:0.84}],
+    [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.72}],
+    [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.72}]
+  ],
+  'tree': [
+    [{x:0.5,y:0.12},{x:0.5,y:0.28},{x:0.5,y:0.44},{x:0.5,y:0.6},{x:0.5,y:0.76},{x:0.5,y:0.88}],
+    [{x:0.5,y:0.28},{x:0.4,y:0.34},{x:0.32,y:0.38},{x:0.26,y:0.4}],
+    [{x:0.5,y:0.28},{x:0.6,y:0.34},{x:0.68,y:0.38},{x:0.74,y:0.4}],
+    [{x:0.5,y:0.44},{x:0.42,y:0.5},{x:0.36,y:0.54},{x:0.32,y:0.56}],
+    [{x:0.5,y:0.44},{x:0.58,y:0.5},{x:0.64,y:0.54},{x:0.68,y:0.56}],
+    [{x:0.5,y:0.6},{x:0.44,y:0.64},{x:0.4,y:0.68}],
+    [{x:0.5,y:0.6},{x:0.56,y:0.64},{x:0.6,y:0.68}]
   ],
   'heart': [
-    [{x:0.2,y:0.52},{x:0.22,y:0.58},{x:0.25,y:0.62}],
-    [{x:0.38,y:0.78},{x:0.55,y:0.8},{x:0.7,y:0.8},{x:0.82,y:0.62},{x:0.85,y:0.42}],
-    [{x:0.5,y:0.38},{x:0.52,y:0.46},{x:0.55,y:0.52}],
-    [{x:0.74,y:0.28},{x:0.77,y:0.34},{x:0.8,y:0.42}]
+    [{x:0.2,y:0.5},{x:0.22,y:0.56},{x:0.26,y:0.62},{x:0.32,y:0.66},{x:0.38,y:0.68}],
+    [{x:0.38,y:0.68},{x:0.44,y:0.66},{x:0.48,y:0.62},{x:0.5,y:0.56},{x:0.5,y:0.48}],
+    [{x:0.5,y:0.48},{x:0.5,y:0.56},{x:0.52,y:0.62},{x:0.56,y:0.66},{x:0.62,y:0.68}],
+    [{x:0.62,y:0.68},{x:0.68,y:0.66},{x:0.74,y:0.62},{x:0.78,y:0.56},{x:0.8,y:0.5}],
+    [{x:0.2,y:0.5},{x:0.28,y:0.44},{x:0.38,y:0.4},{x:0.5,y:0.42},{x:0.62,y:0.4},{x:0.72,y:0.44},{x:0.8,y:0.5}],
+    [{x:0.38,y:0.68},{x:0.42,y:0.74},{x:0.46,y:0.78},{x:0.5,y:0.8}],
+    [{x:0.62,y:0.68},{x:0.58,y:0.74},{x:0.54,y:0.78},{x:0.5,y:0.8}]
   ],
   'bamboo': [
-    [{x:0.3,y:0.18},{x:0.3,y:0.5},{x:0.3,y:0.82}],
-    [{x:0.28,y:0.32},{x:0.38,y:0.3},{x:0.52,y:0.32}],
-    [{x:0.7,y:0.18},{x:0.7,y:0.5},{x:0.7,y:0.82}],
-    [{x:0.68,y:0.32},{x:0.78,y:0.3},{x:0.9,y:0.32}]
+    [{x:0.28,y:0.16},{x:0.28,y:0.34},{x:0.28,y:0.52},{x:0.28,y:0.7},{x:0.28,y:0.88}],
+    [{x:0.28,y:0.26},{x:0.38,y:0.24},{x:0.48,y:0.26}],
+    [{x:0.28,y:0.42},{x:0.38,y:0.4},{x:0.48,y:0.42}],
+    [{x:0.28,y:0.58},{x:0.38,y:0.56},{x:0.48,y:0.58}],
+    [{x:0.28,y:0.74},{x:0.38,y:0.72},{x:0.48,y:0.74}],
+    [{x:0.68,y:0.16},{x:0.68,y:0.34},{x:0.68,y:0.52},{x:0.68,y:0.7},{x:0.68,y:0.88}],
+    [{x:0.68,y:0.26},{x:0.78,y:0.24},{x:0.88,y:0.26}],
+    [{x:0.68,y:0.42},{x:0.78,y:0.4},{x:0.88,y:0.42}],
+    [{x:0.68,y:0.58},{x:0.78,y:0.56},{x:0.88,y:0.58}],
+    [{x:0.68,y:0.74},{x:0.78,y:0.72},{x:0.88,y:0.74}]
+  ],
+  'wind': [
+    [{x:0.18,y:0.22},{x:0.32,y:0.2},{x:0.48,y:0.22},{x:0.64,y:0.26},{x:0.78,y:0.32},{x:0.84,y:0.38}],
+    [{x:0.84,y:0.38},{x:0.82,y:0.46},{x:0.76,y:0.52},{x:0.68,y:0.56},{x:0.58,y:0.58}],
+    [{x:0.58,y:0.58},{x:0.62,y:0.66},{x:0.7,y:0.72},{x:0.78,y:0.76},{x:0.84,y:0.78}],
+    [{x:0.36,y:0.42},{x:0.44,y:0.44},{x:0.52,y:0.48},{x:0.58,y:0.54}],
+    [{x:0.58,y:0.54},{x:0.56,y:0.62},{x:0.5,y:0.68},{x:0.42,y:0.72},{x:0.34,y:0.74}],
+    [{x:0.48,y:0.32},{x:0.5,y:0.4},{x:0.5,y:0.48},{x:0.48,y:0.56}]
   ],
   'rain': [
-    [{x:0.2,y:0.22},{x:0.5,y:0.2},{x:0.8,y:0.22}],
-    [{x:0.2,y:0.36},{x:0.5,y:0.34},{x:0.8,y:0.36}],
-    [{x:0.5,y:0.36},{x:0.5,y:0.58},{x:0.5,y:0.82}],
-    [{x:0.3,y:0.5},{x:0.3,y:0.62}],
-    [{x:0.5,y:0.5},{x:0.5,y:0.62}],
-    [{x:0.7,y:0.5},{x:0.7,y:0.62}]
+    [{x:0.2,y:0.18},{x:0.36,y:0.2},{x:0.52,y:0.22},{x:0.68,y:0.2},{x:0.8,y:0.18}],
+    [{x:0.2,y:0.32},{x:0.36,y:0.34},{x:0.52,y:0.36},{x:0.68,y:0.34},{x:0.8,y:0.32}],
+    [{x:0.36,y:0.2},{x:0.36,y:0.34},{x:0.36,y:0.5},{x:0.36,y:0.68},{x:0.36,y:0.84}],
+    [{x:0.52,y:0.22},{x:0.52,y:0.36},{x:0.52,y:0.52},{x:0.52,y:0.7},{x:0.52,y:0.86}],
+    [{x:0.68,y:0.2},{x:0.68,y:0.34},{x:0.68,y:0.5},{x:0.68,y:0.68},{x:0.68,y:0.84}],
+    [{x:0.28,y:0.48},{x:0.28,y:0.6},{x:0.28,y:0.72}],
+    [{x:0.44,y:0.44},{x:0.44,y:0.56},{x:0.44,y:0.68}],
+    [{x:0.6,y:0.44},{x:0.6,y:0.56},{x:0.6,y:0.68}],
+    [{x:0.76,y:0.48},{x:0.76,y:0.6},{x:0.76,y:0.72}]
   ],
   'river': [
-    [{x:0.2,y:0.22},{x:0.18,y:0.5},{x:0.2,y:0.82}],
-    [{x:0.5,y:0.3},{x:0.5,y:0.5},{x:0.5,y:0.72}],
-    [{x:0.8,y:0.22},{x:0.82,y:0.5},{x:0.8,y:0.82}]
+    [{x:0.18,y:0.22},{x:0.16,y:0.38},{x:0.18,y:0.54},{x:0.2,y:0.7},{x:0.18,y:0.86}],
+    [{x:0.4,y:0.28},{x:0.38,y:0.44},{x:0.4,y:0.6},{x:0.42,y:0.76},{x:0.4,y:0.88}],
+    [{x:0.62,y:0.22},{x:0.64,y:0.38},{x:0.62,y:0.54},{x:0.6,y:0.7},{x:0.62,y:0.86}],
+    [{x:0.82,y:0.28},{x:0.84,y:0.44},{x:0.82,y:0.6},{x:0.8,y:0.76},{x:0.82,y:0.88}],
+    [{x:0.18,y:0.38},{x:0.3,y:0.4},{x:0.4,y:0.44}],
+    [{x:0.4,y:0.6},{x:0.5,y:0.62},{x:0.62,y:0.6}],
+    [{x:0.62,y:0.38},{x:0.72,y:0.4},{x:0.82,y:0.44}],
+    [{x:0.2,y:0.7},{x:0.3,y:0.72},{x:0.42,y:0.76}],
+    [{x:0.6,y:0.7},{x:0.7,y:0.72},{x:0.8,y:0.76}]
+  ],
+  'zen': [
+    [{x:0.2,y:0.3},{x:0.3,y:0.28},{x:0.4,y:0.32},{x:0.5,y:0.38},{x:0.6,y:0.36},{x:0.7,y:0.3},{x:0.8,y:0.28}],
+    [{x:0.2,y:0.5},{x:0.3,y:0.48},{x:0.4,y:0.52},{x:0.5,y:0.58},{x:0.6,y:0.56},{x:0.7,y:0.5},{x:0.8,y:0.48}],
+    [{x:0.2,y:0.7},{x:0.3,y:0.68},{x:0.4,y:0.72},{x:0.5,y:0.78},{x:0.6,y:0.76},{x:0.7,y:0.7},{x:0.8,y:0.68}],
+    [{x:0.35,y:0.2},{x:0.35,y:0.86}],
+    [{x:0.5,y:0.2},{x:0.5,y:0.86}],
+    [{x:0.65,y:0.2},{x:0.65,y:0.86}],
+    [{x:0.2,y:0.35},{x:0.8,y:0.35}],
+    [{x:0.2,y:0.65},{x:0.8,y:0.65}]
   ]
 };
 
@@ -7475,13 +7592,17 @@ const PARAM_REGISTRY = {
     { id:'calligTapDot',     label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
       extra: function() {
+        setDrawingCursor(S.calligInteractive);
         if (S.calligInteractive) {
-          showBrushCursor(true);
+          showBrushCursor(true);   // if you want the div cursor too – or remove this line
           if (!S.playing) {
             S.playing = true; window._st.p.loop();
             let btn = document.getElementById('btnPlay'); if (btn) btn.textContent = '⏸ Pause';
           }
-        } else { showBrushCursor(false); }
+          setupCalligraphyInteraction(window._st.p);
+        } else {
+          showBrushCursor(false);
+        }
       }
     },
     { id:'calligCharSet', label:'Character set', type:'select', options:[
