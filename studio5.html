@@ -111,7 +111,7 @@ select option{background:var(--ink)}
 .sh-list{font-size:.52rem;color:var(--dim);font-family:'Jost',sans-serif;letter-spacing:.08em;line-height:2.2}
 .sh-item{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .sh-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sh-item-lbl{flex:1;font-size:.52rem;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} 
 #toast{position:absolute;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--dark);border:1px solid var(--gold);color:var(--cream);font-family:'Jost',sans-serif;font-size:.51rem;letter-spacing:.14em;text-transform:uppercase;padding:.42rem 1.1rem;z-index:50;transition:transform .3s ease;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
 #panelBtn{display:none;position:absolute;bottom:.8rem;right:.8rem;z-index:10;background:rgba(26,25,23,.85);border:1px solid var(--stone);color:var(--pale);font-family:'Jost',sans-serif;font-size:.54rem;letter-spacing:.15em;text-transform:uppercase;padding:.4rem .9rem;cursor:pointer}
@@ -126,6 +126,7 @@ select option{background:var(--ink)}
   .sec-body{padding:.05rem 1.1rem .6rem}
   .mg{grid-template-columns:1fr 1fr 1fr 1fr}
   .mb{font-size:.43rem;padding:.32rem .1rem}
+#gc.calligraphy-interactive {cursor: none;} 
 }
 </style>
 </head>
@@ -147,6 +148,22 @@ select option{background:var(--ink)}
     <div id="kbHint">Space: play/pause · R: regen · S: save</div>
     <button id="panelBtn" onclick="togglePanel()">⊕ Controls</button>
     <div id="toast"></div>
+
+    <!-- brushCursor canvas-wrap -->
+    <div id="brushCursor" style="
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+      filter: blur(1px);
+      pointer-events: none;
+      z-index: 1000;
+      transform: translate(-50%, -50%);
+      display: none;
+    "></div>
+  </div> <!-- closes canvas-wrap -->
+  
   </div>
   <div id="panel">
     <div class="ph">
@@ -3693,14 +3710,19 @@ function drawCalligraphy(p, t) {
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
 }
-
-// ── push interactive strokes ───────────────────
+// ── Push interactive strokes ───────────────────
 function _pushInteractiveStroke(p, x1, y1, x2, y2) {
+  // Ensure ink buffer exists
+  if (!_inkCanvas || !_inkCTX) {
+    _ensureInkBuffer(p.width, p.height);
+  }
+
   let minLen    = (S.calligMinLen ?? 0.4) * Math.min(p.width, p.height);
   let maxLen    = (S.calligMaxLen ?? 0.9) * Math.min(p.width, p.height);
   let baseWidth = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
   let charMode  = S.calligCharMode ?? true;
   let charSet   = S.calligCharSet  ?? 'eternal';
+
   let dx = x2 - x1, dy = y2 - y1;
   let dist = Math.sqrt(dx*dx + dy*dy);
   if (dist < 2) return;
@@ -3708,24 +3730,29 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   mouseVelocity = Math.min(2.5, dist / 10);
   mouseAngle    = Math.atan2(dy, dx);
   let len = Math.max(minLen * 0.15, Math.min(maxLen, dist * 2.0));
+
   let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet);
   if (s) {
-    s.interactive = true;   // <-- immediate full reveal flag
-    s.lifespan = 9999;      // persist until cleared
+    s.interactive = true;
+    s.lifespan = 9999;
     s.fadeOut  = 0;
     calligStrokes.push(s);
-    // Immediately bake onto ink buffer (don't wait for draw frame)
+
+    // Immediately bake onto ink buffer
     if (_inkCTX && _inkCanvas) {
       let bgIsLight = (function() {
         let h = S.bg || '#0d0c0a';
-        let r = parseInt(h.slice(1,3),16)||0, g = parseInt(h.slice(3,5),16)||0, b = parseInt(h.slice(5,7),16)||0;
+        let r = parseInt(h.slice(1,3),16)||0,
+            g = parseInt(h.slice(3,5),16)||0,
+            b = parseInt(h.slice(5,7),16)||0;
         return (r + g + b) > 382;
       })();
       let origCTX = CTX;
       CTX = _inkCTX;
       _inkCTX.save();
       _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
-      // Compute widths
+
+      // Compute widths for all points
       for (let j = 0; j < s.pts.length; j++) {
         let pt = s.pts[j];
         let progressFactor = Math.sin(pt.prog * Math.PI);
@@ -3738,12 +3765,12 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
                    S.calligSplatter ?? 0.3, 0);
       _inkCTX.restore();
       CTX = origCTX;
-      // Remove from array immediately — it's baked
+
+      // Remove from array – it's already baked into the buffer
       calligStrokes.pop();
     }
   }
 }
-
 // ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
@@ -3821,6 +3848,45 @@ function setupCalligraphyInteraction(p) {
   canvas.style.touchAction = 'none';
 }
 
+// ── BRUSH CURSOR ─────────────────────────────────────────────────
+let brushCursor = null;
+let cursorVisible = false;
+
+function initBrushCursor() {
+  brushCursor = document.getElementById('brushCursor');
+  if (!brushCursor) return;
+  const canvas = document.getElementById('gc');
+  if (!canvas) return;
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!cursorVisible) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    brushCursor.style.left = x + 'px';
+    brushCursor.style.top = y + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (brushCursor) brushCursor.style.display = 'none';
+    cursorVisible = false;
+  });
+}
+
+function showBrushCursor(show) {
+  const canvas = document.getElementById('gc');
+  if (!brushCursor || !canvas) return;
+  if (show) {
+    canvas.classList.add('calligraphy-interactive');
+    brushCursor.style.display = 'block';
+    cursorVisible = true;
+  } else {
+    canvas.classList.remove('calligraphy-interactive');
+    brushCursor.style.display = 'none';
+    cursorVisible = false;
+  }
+}
+  
 function _spawnDotStroke(p, x, y, size) {
   let col = pickColor(p, x, y, 0);
   let pts = [];
@@ -3830,6 +3896,45 @@ function _spawnDotStroke(p, x, y, size) {
   }
   return { pts, col, birth: _calligClock, lifespan: 200, fadeOut: 60, baseWidth: size };
 }
+
+// ── Brush Cursor ───────────────────────────────────────────────────────  
+let brushCursor = null;
+let cursorVisible = false;
+
+function initBrushCursor() {
+  brushCursor = document.getElementById('brushCursor');
+  if (!brushCursor) return;
+  const canvas = document.getElementById('gc');
+  if (!canvas) return;
+
+  // Move cursor with mouse
+  canvas.addEventListener('mousemove', (e) => {
+    if (!cursorVisible) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    brushCursor.style.left = x + 'px';
+    brushCursor.style.top = y + 'px';
+  });
+
+  // Hide when leaving canvas
+  canvas.addEventListener('mouseleave', () => {
+    if (brushCursor) brushCursor.style.display = 'none';
+    cursorVisible = false;
+  });
+}
+
+function showBrushCursor(show) {
+  if (!brushCursor) return;
+  if (show) {
+    brushCursor.style.display = 'block';
+    cursorVisible = true;
+  } else {
+    brushCursor.style.display = 'none';
+    cursorVisible = false;
+  }
+}
+
   
 // ── Spawn a new stroke ───────────────────────────────────────────────────────
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
@@ -6962,6 +7067,7 @@ p.setup = function() {
   updateCornerLabels();
   ri();
   setupCalligraphyInteraction(p); // Set up interactive calligraphy listeners and pass p
+  initBrushCursor();
   setTimeout(() => {
     p.loop();
     let btn = document.getElementById('btnPlay');
@@ -7468,9 +7574,10 @@ const PARAM_REGISTRY = {
     { id:'calligContinuous',label:'Continuous spawn',  type:'toggle', def:true },
     { id:'calligFollowMouse',label:'Follow mouse',     type:'toggle', def:false },
     { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
-      extra: function() {calligStrokes = [];
-        // Interactive mode must be playing to render strokes as they age
-        if (S.calligInteractive && !S.playing) {S.playing = true;window._st.p.loop();let btn = document.getElementById('btnPlay');if (btn) btn.textContent = '⏸ Pause';}}},
+    extra: function() {calligStrokes = [];if (S.calligInteractive && !S.playing) {S.playing = true;window._st.p.loop();
+      let btn = document.getElementById('btnPlay');if (btn) btn.textContent = '⏸ Pause';}
+    // Show or hide the brush cursor
+    if (S.calligInteractive && S.mode === 'calligraphy') {showBrushCursor(true);} else {showBrushCursor(false);}}},
     { id:'calligClear', label:'Clear all ink', type:'button', action: function() {clearInkBuffer(); showToast('Ink cleared');}},
     { id:'calligTapDot',      label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligPaperGrain',label:'Paper grain',       type:'toggle', def:true },
@@ -7826,9 +7933,10 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   // 5. Re-initialize and redraw, adding mode-specific controls
     rebuildModeUI(S.mode);
   
-  // enable interaction in calligraphy mode
+// enable interaction in calligraphy mode
 if (S.mode === 'calligraphy') {
   clearInkBuffer();  // fresh paper on mode entry
+  _ensureInkBuffer(window._st.w(), window._st.h());
   if (!S.playing) {
     S.playing = true;
     window._st.p.loop();
@@ -7836,16 +7944,11 @@ if (S.mode === 'calligraphy') {
     if (btn) btn.textContent = '⏸ Pause';
   }
   setupCalligraphyInteraction(window._st.p);
+  // Show brush cursor if interactive mode is already on
+  if (S.calligInteractive) showBrushCursor(true);
+  else showBrushCursor(false);
   showToast('Calligraphy — draw on canvas');
 }
-  // ClearInk
-  document.getElementById('btnClearInk').addEventListener('click', function() {
-    clearInkBuffer(); // This clears the persistent offscreen stroke buffer
-    if (window._st) {
-      window._st.rd(); // Re-draw to show the empty canvas
-    }
-    showToast('Ink cleared');
-  });
   // mode parameter registry
   let sec = document.getElementById('mode-extra-sec');
   if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
