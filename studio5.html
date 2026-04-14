@@ -3549,10 +3549,13 @@ function drawInterference(p,t){
 
 // ── CALLIGRAPHY v3 4/13/26 ────────────────────────────────────────────────────────
 let calligStrokes = [];
+let isDrawing = false;
+let lastMouseX = 0, lastMouseY = 0;
+let mouseVelocity = 0;
+let mouseAngle = 0;  
 
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
-
   // ── Parameters ───────────────────────────────────────────────────────────
   let strokeCount   = Math.max(1, Math.floor(S.calligCount     ?? 5));
   let minLen        = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
@@ -3571,14 +3574,40 @@ function drawCalligraphy(p, t) {
   let followMouse   = S.calligFollowMouse?? false;
   let paperGrain    = S.calligPaperGrain ?? true;
   let splatterAmt   = S.calligSplatter   ?? 0.2;
+  let interactive   = S.calligInteractive ?? false;  // NEW
 
-  // ── Spawn new strokes ─────────────────────────────────────────────────────
-  if (S.playing) {
-    while (calligStrokes.length < strokeCount) {
-      let newStroke = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse);
-      if (newStroke) calligStrokes.push(newStroke);
+  // ── Interactive Drawing Mode ──────────────────────────────────────────────
+  if (interactive) {
+    // Only spawn strokes while mouse is pressed and moving
+    if (isDrawing && p.mouseIsPressed) {
+      let dx = p.mouseX - lastMouseX;
+      let dy = p.mouseY - lastMouseY;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 5) {
+        mouseVelocity = Math.min(2.5, dist / 10);
+        mouseAngle = Math.atan2(dy, dx);
+        // Spawn a short stroke in the direction of movement
+        let len = p.constrain(dist * 1.5, minLen * 0.3, maxLen);
+        let newStroke = _spawnInteractiveStroke(p, lastMouseX, lastMouseY, p.mouseX, p.mouseY, len, baseWidth, charMode, charSet);
+        if (newStroke) calligStrokes.push(newStroke);
+        lastMouseX = p.mouseX;
+        lastMouseY = p.mouseY;
+      }
+    } else {
+      // Reset last position when not drawing
+      lastMouseX = p.mouseX;
+      lastMouseY = p.mouseY;
     }
-    // Continuous spawning: remove old ones automatically via age check later
+    // Cap total strokes to prevent overload
+    if (calligStrokes.length > 30) calligStrokes = calligStrokes.slice(-20);
+  } else {
+    // Automatic spawning (original behaviour)
+    if (S.playing) {
+      while (calligStrokes.length < strokeCount) {
+        let newStroke = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse);
+        if (newStroke) calligStrokes.push(newStroke);
+      }
+    }
   }
 
   CTX.save();
@@ -3643,6 +3672,9 @@ function drawCalligraphy(p, t) {
   CTX.globalAlpha = 1;
 }
 
+
+
+  
 // ── Spawn a new stroke ───────────────────────────────────────────────────────
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
   let pts = [];
@@ -3726,6 +3758,47 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
   };
 }
 
+// ── Interactive stroke ───────────────────────────────────────────────────────
+function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet) {
+  let col = pickColor(p, x1, y1, 0);
+  let angle = Math.atan2(y2 - y1, x2 - x1);
+  let pts;
+  if (charMode) {
+    // For interactive, use a small random character stroke scaled to the movement
+    let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
+    let rawPts = strokes[Math.floor(p.random(strokes.length))];
+    // Scale and rotate raw points to match the drag direction and length
+    let scale = len / 0.8; // rough scaling
+    pts = rawPts.map((pt, i) => {
+      let dx = pt.x - 0.5;
+      let dy = pt.y - 0.5;
+      // Rotate by movement angle
+      let rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+      let ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+      return {
+        x: x1 + rx * scale,
+        y: y1 + ry * scale,
+        prog: i / (rawPts.length - 1),
+        speed: 1.0
+      };
+    });
+    pts = _applyChaikin(pts, 2);
+  } else {
+    // Simple line between points with wobble
+    pts = _genLinePoints(p, x1, y1, len, angle, 0.15);
+  }
+  if (!pts || pts.length < 2) return null;
+  return {
+    pts: pts,
+    col: col,
+    birth: S.fc,
+    lifespan: 300,
+    fadeOut: 80,
+    baseWidth: baseWidth * (0.8 + mouseVelocity * 0.4) // wider with faster movement
+  };
+}
+
+  
 // ── Expanded Character Paths ─────────────────────────────────────────────────
 const CHARACTER_PATHS = {
   'eternal': [ // 永
@@ -6712,12 +6785,77 @@ p.setup = function() {
   p.pixelDensity(1);
   updateCornerLabels();
   ri();
+  setupCalligraphyInteraction(); // Set up interactive calligraphy listeners
   setTimeout(() => {
     p.loop();
     let btn = document.getElementById('btnPlay');
     if (btn) btn.textContent = '⏸ Pause';
   }, 50);
   }; // closes p.setup
+
+
+  
+// ── CALLIGRAPHY Interactive Drawing Event Handlers for Sumi-e ─────────────────────────────────────
+function setupCalligraphyInteraction() {
+  let canvasWrap = document.getElementById('canvas-wrap');
+  if (!canvasWrap) return;
+  let canvas = document.getElementById('gc');
+  if (!canvas) return;
+  const handlePointerDown = (e) => {
+    if (!S.calligInteractive) return;
+    e.preventDefault();
+    let rect = canvas.getBoundingClientRect();
+    let scaleX = canvas.width / rect.width;
+    let scaleY = canvas.height / rect.height;
+    let x = (e.clientX - rect.left) * scaleX;
+    let y = (e.clientY - rect.top) * scaleY;
+    isDrawing = true;
+    lastMouseX = x;
+    lastMouseY = y;
+    // Spawn a dot on tap
+    if (S.calligTapDot) {
+      let dotStroke = _spawnDotStroke(x, y, S.maxSize * 0.5);
+      if (dotStroke) calligStrokes.push(dotStroke);
+    }
+  };
+  const handlePointerMove = (e) => {
+    if (!S.calligInteractive || !isDrawing) return;
+    e.preventDefault();
+    let rect = canvas.getBoundingClientRect();
+    let scaleX = canvas.width / rect.width;
+    let scaleY = canvas.height / rect.height;
+    let x = (e.clientX - rect.left) * scaleX;
+    let y = (e.clientY - rect.top) * scaleY;
+    // The actual stroke spawning is handled in drawCalligraphy using p.mouseX/Y
+    // Just update the p5 mouse position (p5 does this automatically)
+  };
+  const handlePointerUp = (e) => {
+    isDrawing = false;
+  };
+  canvas.addEventListener('pointerdown', handlePointerDown);
+  canvas.addEventListener('pointermove', handlePointerMove);
+  canvas.addEventListener('pointerup', handlePointerUp);
+  canvas.addEventListener('pointerleave', handlePointerUp);
+  // Prevent default touch actions
+  canvas.style.touchAction = 'none';
+}
+// Helper for tap dot
+function _spawnDotStroke(x, y, size) {
+  let col = pickColor(p, x, y, 0);
+  let pts = [];
+  for (let i = 0; i <= 4; i++) {
+    pts.push({ x: x + (i-2)*0.5, y: y + (i-2)*0.5, prog: i/4, speed: 1.0 });
+  }
+  return {
+    pts: pts,
+    col: col,
+    birth: S.fc,
+    lifespan: 200,
+    fadeOut: 60,
+    baseWidth: size
+  };
+}
+
   
 // ── P.Draw ────────────────────────────────────────────────── 
 p.draw = function() {
@@ -7213,6 +7351,10 @@ const PARAM_REGISTRY = {
     { id:'calligPooling',   label:'End pooling',       type:'toggle', def:true },
     { id:'calligContinuous',label:'Continuous spawn',  type:'toggle', def:true },
     { id:'calligFollowMouse',label:'Follow mouse',     type:'toggle', def:false },
+    { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false },
+    { id:'calligClear', label:'Clear all ink', type:'button', action: function() {
+    calligStrokes = [];showToast('Ink cleared');} },
+    { id:'calligTapDot',      label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligPaperGrain',label:'Paper grain',       type:'toggle', def:true },
     { id:'calligCharMode',  label:'Draw characters',   type:'toggle', def:true },
     { id:'calligCharSet',   label:'Character',         type:'select', options:[
@@ -7408,6 +7550,23 @@ function rebuildModeUI(mode) {
       });
       row.appendChild(lbl);
       row.appendChild(input);
+      container.appendChild(row);
+      return;
+    }
+
+   // ── Button type ───────────────────────────────────────────────────────
+    if (param.type === 'button') {
+      let row = document.createElement('div');
+      row.className = 'rw';
+      let btn = document.createElement('button');
+      btn.className = 'ca';
+      btn.textContent = param.label;
+      btn.style.width = '100%';
+      btn.style.padding = '.4rem 0';
+      btn.addEventListener('click', function() {
+        if (param.action) param.action();
+      });
+      row.appendChild(btn);
       container.appendChild(row);
       return;
     }
