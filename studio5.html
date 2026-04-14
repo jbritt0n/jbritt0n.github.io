@@ -126,8 +126,9 @@ select option{background:var(--ink)}
   .sec-body{padding:.05rem 1.1rem .6rem}
   .mg{grid-template-columns:1fr 1fr 1fr 1fr}
   .mb{font-size:.43rem;padding:.32rem .1rem}
-#gc.calligraphy-interactive {cursor: none;} 
 }
+  #gc.calligraphy-interactive {cursor: none;}
+  
 </style>
 </head>
 <body>
@@ -3896,45 +3897,6 @@ function _spawnDotStroke(p, x, y, size) {
   }
   return { pts, col, birth: _calligClock, lifespan: 200, fadeOut: 60, baseWidth: size };
 }
-
-// ── Brush Cursor ───────────────────────────────────────────────────────  
-let brushCursor = null;
-let cursorVisible = false;
-
-function initBrushCursor() {
-  brushCursor = document.getElementById('brushCursor');
-  if (!brushCursor) return;
-  const canvas = document.getElementById('gc');
-  if (!canvas) return;
-
-  // Move cursor with mouse
-  canvas.addEventListener('mousemove', (e) => {
-    if (!cursorVisible) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    brushCursor.style.left = x + 'px';
-    brushCursor.style.top = y + 'px';
-  });
-
-  // Hide when leaving canvas
-  canvas.addEventListener('mouseleave', () => {
-    if (brushCursor) brushCursor.style.display = 'none';
-    cursorVisible = false;
-  });
-}
-
-function showBrushCursor(show) {
-  if (!brushCursor) return;
-  if (show) {
-    brushCursor.style.display = 'block';
-    cursorVisible = true;
-  } else {
-    brushCursor.style.display = 'none';
-    cursorVisible = false;
-  }
-}
-
   
 // ── Spawn a new stroke ───────────────────────────────────────────────────────
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
