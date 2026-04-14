@@ -3772,6 +3772,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
     }
   }
 }
+  
 // ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
@@ -3779,7 +3780,6 @@ function setupCalligraphyInteraction(p) {
   
   canvas.style.touchAction = 'none';
   canvas.style.userSelect = 'none';
-  
   // Remove any previously attached handlers cleanly
   if (canvas._calligHandlers) {
     canvas.removeEventListener('pointerdown',  canvas._calligHandlers.down);
@@ -3787,23 +3787,6 @@ function setupCalligraphyInteraction(p) {
     canvas.removeEventListener('pointerup',    canvas._calligHandlers.up);
     canvas.removeEventListener('pointerleave', canvas._calligHandlers.up);
   }
-  // Add listeners
-  canvas.addEventListener('pointerdown', (e) => {
-    isDrawing = true;
-    lastMouseX = e.offsetX;
-    lastMouseY = e.offsetY;
-    // ... rest of your stroke start logic
-  });
-
-  canvas.addEventListener('pointermove', (e) => {
-    if (!isDrawing) return;
-    // Calculate velocity/pressure for calligraphic effect
-    const x = e.offsetX;
-    const y = e.offsetY;
-    // ... rest of your stroke drawing logic
-  });
-
-  canvas.addEventListener('pointerup', () => isDrawing = false);
   function getCanvasXY(e) {
     let rect   = canvas.getBoundingClientRect();
     let scaleX = canvas.width  / rect.width;
@@ -3832,8 +3815,6 @@ function setupCalligraphyInteraction(p) {
     if (!S.calligInteractive || !isDrawing) return;
     e.preventDefault();
     let { x, y } = getCanvasXY(e);
-    // FIX: spawn stroke segment HERE with accurate scaled coords,
-    // not inside drawCalligraphy which uses p.mouseX (unreliable after preventDefault)
     _pushInteractiveStroke(p, lastMouseX, lastMouseY, x, y);
     lastMouseX = x;
     lastMouseY = y;
@@ -3846,9 +3827,8 @@ function setupCalligraphyInteraction(p) {
   canvas.addEventListener('pointermove',  onMove);
   canvas.addEventListener('pointerup',    onUp);
   canvas.addEventListener('pointerleave', onUp);
-  canvas.style.touchAction = 'none';
 }
-
+  
 // ── BRUSH CURSOR ─────────────────────────────────────────────────
 let brushCursor = null;
 let cursorVisible = false;
