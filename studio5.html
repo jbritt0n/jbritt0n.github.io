@@ -3721,31 +3721,72 @@ function drawCalligraphy(p, t) {
     CTX.drawImage(_grainCanvas, 0, 0);
   }
 
-  // --- Hanko seal (red stamp) ---
+// ── HANKO SEAL (RED STAMP) ────────────────────────────────────────────────────────────
   if (S.mode === 'calligraphy') {
-    CTX.globalCompositeOperation = 'source-over';
-    CTX.globalAlpha = 0.85;
-    let stampSize = Math.min(48, W * 0.08, H * 0.08);
-    let stampX = 20;
-    let stampY = H - stampSize - 20;
-    // Stamp background (red square with slightly rounded corners)
-    CTX.fillStyle = '#C11B1B';
-    CTX.shadowBlur = 0;
-    CTX.beginPath();
-    CTX.rect(stampX, stampY, stampSize, stampSize);
-    CTX.fill();
-    // Subtle rotation for authenticity
     CTX.save();
-    CTX.translate(stampX + stampSize/2, stampY + stampSize/2);
-    CTX.rotate(-0.08);
-    CTX.fillStyle = '#FFF8F0';
-    CTX.font = `bold ${stampSize * 0.5}px "Noto Serif SC", "KaiTi", "华文楷书", serif`;
+    // Set stamp dimensions - making it rectangular for a vertical stack
+    let stampW = Math.min(32, W * 0.05); 
+    let stampH = stampW * 2.2; // Tall rectangle
+    let stampX = 30;
+    let stampY = H - stampH - 30;
+    // 1. Draw Organic/Weathered Red Background
+    CTX.fillStyle = '#b22222'; // Deeper cinnabar red
+    CTX.globalAlpha = 0.9;
+    // Create a "rough" carved edge using small line segments and noise
+    CTX.beginPath();
+    let steps = 12; // points per side
+    let jitter = 1.2; // how much the stone is "chipped"
+    // Top Edge
+    for(let i=0; i<=steps; i++) {
+      let x = stampX + (i/steps) * stampW;
+      let y = stampY + (p.noise(x*0.1, stampY*0.1) - 0.5) * jitter;
+      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
+    }
+    // Right Edge
+    for(let i=0; i<=steps; i++) {
+      let y = stampY + (i/steps) * stampH;
+      let x = stampX + stampW + (p.noise((stampX+stampW)*0.1, y*0.1) - 0.5) * jitter;
+      CTX.lineTo(x, y);
+    }
+    // Bottom Edge
+    for(let i=steps; i>=0; i--) {
+      let x = stampX + (i/steps) * stampW;
+      let y = stampY + stampH + (p.noise(x*0.1, (stampY+stampH)*0.1) - 0.5) * jitter;
+      CTX.lineTo(x, y);
+    }
+    // Left Edge
+    for(let i=steps; i>=0; i--) {
+      let y = stampY + (i/steps) * stampH;
+      let x = stampX + (p.noise(stampX*0.1, y*0.1) - 0.5) * jitter;
+      CTX.lineTo(x, y);
+    }
+    CTX.closePath();
+    CTX.fill();
+    // 2. Stylized Text (Stacked)
+    CTX.translate(stampX + stampW/2, stampY + stampH/2);
+    CTX.rotate((p.noise(t*0.1) - 0.5) * 0.02 - 0.03); // Very slight tilt
+    // Use a high-contrast off-white for the "cut" area
+    CTX.fillStyle = '#fffaf0'; 
+    // "Zhuanshu" (Seal Script) is ideal, but "Ma Shan Zheng" or "Noto Serif SC" are great fallbacks
+    CTX.font = `bold ${stampW * 0.65}px "Ma Shan Zheng", "Noto Serif SC", serif`;
     CTX.textAlign = 'center';
     CTX.textBaseline = 'middle';
-    CTX.fillText('乔纳森', 0, 0);
+    // Split characters for vertical stacking
+    let chars = ['乔', '纳', '森'];
+    let spacing = stampH * 0.28;
+    chars.forEach((char, i) => {
+      let yOff = (i - 1) * spacing;
+      // Draw character
+      CTX.fillText(char, 0, yOff);
+      // Optional: Second pass with 'lighter' composite to simulate paper fiber showing through
+      CTX.globalCompositeOperation = 'lighter';
+      CTX.globalAlpha = 0.1;
+      CTX.fillText(char, 0.5, yOff + 0.5);
+      CTX.globalCompositeOperation = 'source-over';
+      CTX.globalAlpha = 0.9;
+    });
+
     CTX.restore();
-    CTX.shadowBlur = 0;
-    CTX.globalAlpha = 1;
   }
 
   CTX.restore();
@@ -3945,7 +3986,10 @@ function calligRedraw(p) {
 // NOTE: never use canvas.replaceWith — it detaches p5's canvas and breaks CTX
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
-  if (!canvas) return;
+  if (!canvas) {
+    console.error('Canvas not found');
+    return;
+  }
 
   // Clean up previous handlers
   if (canvas._calligHandlers) {
@@ -3955,17 +3999,26 @@ function setupCalligraphyInteraction(p) {
     canvas.removeEventListener('pointerup',     h.up);
     canvas.removeEventListener('pointercancel', h.up);
     canvas.removeEventListener('mouseleave',    h.leave);
+    canvas.removeEventListener('mousedown',     h.mouseDown);
+    canvas.removeEventListener('mousemove',     h.mouseMove);
+    canvas.removeEventListener('mouseup',       h.mouseUp);
   }
+
+  // Ensure canvas can receive pointer events
   canvas.style.touchAction = 'none';
-  canvas.style.cursor = 'none'; // hide default cursor, show custom
+  canvas.style.pointerEvents = 'auto';   // crucial
 
   function getPos(e) {
     let r = canvas.getBoundingClientRect();
+    let scaleX = canvas.width / r.width;
+    let scaleY = canvas.height / r.height;
+    let clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+    let clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
     return {
-      x:  (e.clientX - r.left) * (canvas.width  / r.width),
-      y:  (e.clientY - r.top)  * (canvas.height / r.height),
-      vx: e.clientX,
-      vy: e.clientY
+      x: (clientX - r.left) * scaleX,
+      y: (clientY - r.top) * scaleY,
+      vx: clientX,
+      vy: clientY
     };
   }
 
@@ -3974,59 +4027,115 @@ function setupCalligraphyInteraction(p) {
     if (!_calligCursor) return;
     if (S.calligInteractive && S.mode === 'calligraphy') {
       _calligCursor.style.display = 'block';
-      _calligCursor.style.left    = vx + 'px';
-      _calligCursor.style.top     = vy + 'px';
+      _calligCursor.style.left = vx + 'px';
+      _calligCursor.style.top = vy + 'px';
       let cs = Math.max(8, (S.calligWidth ?? 2) * (S.maxSize / 20) * 1.2);
-      _calligCursor.style.width   = cs + 'px';
-      _calligCursor.style.height  = cs + 'px';
+      _calligCursor.style.width = cs + 'px';
+      _calligCursor.style.height = cs + 'px';
     } else {
       _calligCursor.style.display = 'none';
     }
   }
 
-  const onDown = function(e) {
+  const onPointerDown = function(e) {
+    console.log('Pointer down', S.calligInteractive, S.mode);
     if (!S.calligInteractive || S.mode !== 'calligraphy') return;
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     let pos = getPos(e);
-    isDrawing  = true;
-    lastMouseX = pos.x; lastMouseY = pos.y;
+    isDrawing = true;
+    lastMouseX = pos.x;
+    lastMouseY = pos.y;
     updateCursor(pos.vx, pos.vy);
     if (S.calligTapDot) {
       _renderDot(p, pos.x, pos.y, Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
-      window._st.rd(); // immediate redraw
+      window._st.rd();
     }
   };
 
-  const onMove = function(e) {
-    let pos = getPos(e);
-    updateCursor(pos.vx, pos.vy);
+  const onPointerMove = function(e) {
     if (!isDrawing || !S.calligInteractive || S.mode !== 'calligraphy') return;
     e.preventDefault();
-    _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
-    lastMouseX = pos.x; lastMouseY = pos.y;
-    window._st.rd(); // force redraw after each stroke segment
+    let pos = getPos(e);
+    updateCursor(pos.vx, pos.vy);
+    if (lastMouseX !== undefined && lastMouseY !== undefined) {
+      _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
+      lastMouseX = pos.x;
+      lastMouseY = pos.y;
+      window._st.rd();
+    }
   };
-
-  const onUp    = function() { isDrawing = false; };
-  const onLeave = function() {
+  const onPointerUp = function(e) {
+    isDrawing = false;
+  };
+  const onMouseLeave = function(e) {
     _calligCursor = _calligCursor || document.getElementById('brushCursor');
     if (_calligCursor) _calligCursor.style.display = 'none';
+    isDrawing = false;
+  };
+  // Also support mouse events for older browsers
+  const onMouseDown = function(e) {
+    if (!S.calligInteractive || S.mode !== 'calligraphy') return;
+    e.preventDefault();
+    let pos = getPos(e);
+    isDrawing = true;
+    lastMouseX = pos.x;
+    lastMouseY = pos.y;
+    updateCursor(pos.vx, pos.vy);
+    if (S.calligTapDot) {
+      _renderDot(p, pos.x, pos.y, Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
+      window._st.rd();
+    }
+  };
+  const onMouseMove = function(e) {
+    if (!isDrawing || !S.calligInteractive || S.mode !== 'calligraphy') return;
+    e.preventDefault();
+    let pos = getPos(e);
+    updateCursor(pos.vx, pos.vy);
+    if (lastMouseX !== undefined && lastMouseY !== undefined) {
+      _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
+      lastMouseX = pos.x;
+      lastMouseY = pos.y;
+      window._st.rd();
+    }
+  };
+  const onMouseUp = function(e) {
+    isDrawing = false;
+  };
+  canvas._calligHandlers = {
+    down: onPointerDown, move: onPointerMove, up: onPointerUp, leave: onMouseLeave,
+    mouseDown: onMouseDown, mouseMove: onMouseMove, mouseUp: onMouseUp
   };
 
-  canvas._calligHandlers = { down: onDown, move: onMove, up: onUp, leave: onLeave };
-  canvas.addEventListener('pointerdown',   onDown);
-  canvas.addEventListener('pointermove',   onMove);
-  canvas.addEventListener('pointerup',     onUp);
-  canvas.addEventListener('pointercancel', onUp);
-  canvas.addEventListener('mouseleave',    onLeave);
+  canvas.addEventListener('pointerdown',   onPointerDown);
+  canvas.addEventListener('pointermove',   onPointerMove);
+  canvas.addEventListener('pointerup',     onPointerUp);
+  canvas.addEventListener('pointercancel', onPointerUp);
+  canvas.addEventListener('mouseleave',    onMouseLeave);
+  canvas.addEventListener('mousedown',     onMouseDown);
+  canvas.addEventListener('mousemove',     onMouseMove);
+  canvas.addEventListener('mouseup',       onMouseUp);
+
+  console.log('Calligraphy interaction handlers attached');
 }
 
+
+// ── Show Brush Cursor ────────────────────────────────────────────────────────────  
 function showBrushCursor(show) {
   _calligCursor = _calligCursor || document.getElementById('brushCursor');
-  if (_calligCursor) _calligCursor.style.display = show ? 'block' : 'none';
+  if (_calligCursor) {
+    _calligCursor.style.display = show ? 'block' : 'none';
+  }
   let canvas = document.getElementById('gc');
-  if (canvas) canvas.classList.toggle('calligraphy-interactive', show);
+  if (canvas) {
+    if (show && S.mode === 'calligraphy' && S.calligInteractive) {
+      canvas.classList.add('drawing-mode');
+      canvas.style.cursor = 'none'; // hide default cursor, show our div
+    } else {
+      canvas.classList.remove('drawing-mode');
+      canvas.style.cursor = '';
+    }
+  }
 }
 
 function initBrushCursor() {
@@ -7592,17 +7701,32 @@ const PARAM_REGISTRY = {
     { id:'calligTapDot',     label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
       extra: function() {
-        setDrawingCursor(S.calligInteractive);
+        // First, ensure mode is calligraphy
+        if (S.calligInteractive && S.mode !== 'calligraphy') {
+          // Auto-switch mode if needed (optional)
+          S.mode = 'calligraphy';
+          document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
+          let mb = document.querySelector('[data-mode="calligraphy"]');
+          if (mb) mb.classList.add('active');
+          document.getElementById('modeLabel').textContent = 'Calligr.';
+        }
         if (S.calligInteractive) {
-          showBrushCursor(true);   // if you want the div cursor too – or remove this line
-          if (!S.playing) {
-            S.playing = true; window._st.p.loop();
-            let btn = document.getElementById('btnPlay'); if (btn) btn.textContent = '⏸ Pause';
+          // Ensure ink buffer exists
+          if (window._st) {
+            _ensureInkBuffer(window._st.w(), window._st.h());
           }
           setupCalligraphyInteraction(window._st.p);
+          showBrushCursor(true);
+          if (!S.playing) {
+            S.playing = true;
+            window._st.p.loop();
+            let btn = document.getElementById('btnPlay');
+            if (btn) btn.textContent = '⏸ Pause';
+          }
         } else {
           showBrushCursor(false);
         }
+        window._st.rd();
       }
     },
     { id:'calligCharSet', label:'Character set', type:'select', options:[
