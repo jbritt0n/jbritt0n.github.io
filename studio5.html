@@ -6702,6 +6702,8 @@ new p5(function(p){
     if (typeof setupCalligraphyInteraction === 'function') {
       setupCalligraphyInteraction(p);
   }
+    } // <-- CLOSE resize FUNCTION
+  
   // ── Function RI - reinitialize ─────────────────────────────────────────────────────────────────
   function ri() {
     if (!p) return;
@@ -6851,7 +6853,8 @@ function rd() {
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
     }
-  }
+  } //closes drawscene
+    
 // ── P.Setup ────────────────────────────────────────────────── 
 p.setup = function() {
   let wrap = document.getElementById('canvas-wrap');
