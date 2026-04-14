@@ -3759,6 +3759,23 @@ function setupCalligraphyInteraction(p) {
     canvas.removeEventListener('pointerup',    canvas._calligHandlers.up);
     canvas.removeEventListener('pointerleave', canvas._calligHandlers.up);
   }
+  // Add listeners
+  canvas.addEventListener('pointerdown', (e) => {
+    isDrawing = true;
+    lastMouseX = e.offsetX;
+    lastMouseY = e.offsetY;
+    // ... rest of your stroke start logic
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!isDrawing) return;
+    // Calculate velocity/pressure for calligraphic effect
+    const x = e.offsetX;
+    const y = e.offsetY;
+    // ... rest of your stroke drawing logic
+  });
+
+  canvas.addEventListener('pointerup', () => isDrawing = false);
   function getCanvasXY(e) {
     let rect   = canvas.getBoundingClientRect();
     let scaleX = canvas.width  / rect.width;
@@ -7821,7 +7838,14 @@ if (S.mode === 'calligraphy') {
   setupCalligraphyInteraction(window._st.p);
   showToast('Calligraphy — draw on canvas');
 }
-
+  // ClearInk
+  document.getElementById('btnClearInk').addEventListener('click', function() {
+    clearInkBuffer(); // This clears the persistent offscreen stroke buffer
+    if (window._st) {
+      window._st.rd(); // Re-draw to show the empty canvas
+    }
+    showToast('Ink cleared');
+  });
   // mode parameter registry
   let sec = document.getElementById('mode-extra-sec');
   if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
