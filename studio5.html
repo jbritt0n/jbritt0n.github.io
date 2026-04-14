@@ -158,18 +158,7 @@ select option{background:var(--ink)}
     <div id="toast"></div>
 
     <!-- BRUSHCURSOR -->
-    <div id="brushCursor" style="
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
-      filter: blur(1px);
-      pointer-events: none;
-      z-index: 1000;
-      transform: translate(-50%, -50%);
-      display: none;
-    "></div>
+    <div id="brushCursor" style="position: fixed; pointer-events: none; display: none; z-index: 9999; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%);"></div>
     
     <!-- PANEL -->
   </div> <div id="panel">
@@ -3779,7 +3768,41 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
     CTX = origCTX;
   }
 }
+// ── BRUSH CURSOR INITIALIZATION ─────────────────────────────────────────────
+// This resolves the ReferenceError by defining the function called at line 6771
+function initBrushCursor() {
+  cursor = document.getElementById('brushCursor');
+  if (!cursor) return;
+  
+  const canvas = document.getElementById('gc');
+  if (!canvas) return;
 
+  // Track visibility to prevent ghosting when not in calligraphy mode
+  canvas.addEventListener('mousemove', (e) => {
+    if (S.mode !== 'calligraphy' || !S.calligInteractive) {
+      cursor.style.display = 'none';
+      return;
+    }
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    cursor.style.display = 'block';
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    
+    // Scale the cursor based on your current settings
+    let s = (S.calligWidth ?? 1.2) * S.maxSize;
+    cursor.style.width = s + 'px';
+    cursor.style.height = s + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (cursor) cursor.style.display = 'none';
+  });
+}
+// ── Calligraphy Interaction ─────────────────────────────────────────────  
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
   if (!canvas) return;
