@@ -3684,6 +3684,21 @@ function drawCalligraphy(p, t) {
   _inkCTX.restore();
   CTX = origCTX;  // restore main CTX
 
+  // ── Update Brush Cursor ──────────────────────────────────────────────────────
+  let cursor = document.getElementById('brushCursor');
+  if (cursor) {
+    if (S.calligInteractive && S.mode === 'calligraphy') {
+      cursor.style.display = 'block';
+      cursor.style.left = p.mouseX + 'px';
+      cursor.style.top = p.mouseY + 'px';
+      let s = (S.calligWidth ?? 1.2) * S.maxSize;
+      cursor.style.width = s + 'px';
+      cursor.style.height = s + 'px';
+    } else {
+      cursor.style.display = 'none';
+    }
+}
+  
   // ── Composite ink buffer onto main canvas ──────────────────────────────────
   CTX.save();
   CTX.globalCompositeOperation = 'source-over';
@@ -3776,56 +3791,41 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
   if (!canvas) return;
-  
-  canvas.style.touchAction = 'none';
-  canvas.style.userSelect = 'none';
-  // Remove any previously attached handlers cleanly
-  if (canvas._calligHandlers) {
-    canvas.removeEventListener('pointerdown',  canvas._calligHandlers.down);
-    canvas.removeEventListener('pointermove',  canvas._calligHandlers.move);
-    canvas.removeEventListener('pointerup',    canvas._calligHandlers.up);
-    canvas.removeEventListener('pointerleave', canvas._calligHandlers.up);
-  }
-  function getCanvasXY(e) {
-    let rect   = canvas.getBoundingClientRect();
-    let scaleX = canvas.width  / rect.width;
-    let scaleY = canvas.height / rect.height;
+
+  // Clean up old listeners
+  canvas.replaceWith(canvas.cloneNode(true));
+  canvas = document.getElementById('gc');
+
+  const getPos = (e) => {
+    let rect = canvas.getBoundingClientRect();
+    // This maps the CSS mouse position to the actual canvas internal resolution
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top)  * scaleY
+      x: (e.clientX - rect.left) * (p.width / rect.width),
+      y: (e.clientY - rect.top) * (p.height / rect.height)
     };
-  }
-  const onDown = (e) => {
-    // Only capture when calligraphy interactive is active
+  };
+
+  canvas.addEventListener('pointerdown', (e) => {
     if (!S.calligInteractive || S.mode !== 'calligraphy') return;
-    e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);  // keep tracking even if pointer leaves
-    let { x, y } = getCanvasXY(e);
-    isDrawing  = true;
-    lastMouseX = x;
-    lastMouseY = y;
-    // Spawn a tap-dot on initial press
-    if (S.calligTapDot) {
-      let s = _spawnDotStroke(p, x, y, S.maxSize * 0.5);
-      if (s) calligStrokes.push(s);
-    }
-  };
-  const onMove = (e) => {
-    if (!S.calligInteractive || !isDrawing) return;
-    e.preventDefault();
-    let { x, y } = getCanvasXY(e);
-    _pushInteractiveStroke(p, lastMouseX, lastMouseY, x, y);
-    lastMouseX = x;
-    lastMouseY = y;
-  };
-  const onUp = (e) => {
-    isDrawing = false;
-  };
-  canvas._calligHandlers = { down: onDown, move: onMove, up: onUp };
-  canvas.addEventListener('pointerdown',  onDown);
-  canvas.addEventListener('pointermove',  onMove);
-  canvas.addEventListener('pointerup',    onUp);
-  canvas.addEventListener('pointerleave', onUp);
+    isDrawing = true;
+    let pos = getPos(e);
+    lastMouseX = pos.x;
+    lastMouseY = pos.y;
+    
+    // Initial ink drop
+    let s = _spawnDotStroke(p, pos.x, pos.y, (S.calligWidth ?? 1.2) * S.maxSize);
+    if (s) calligStrokes.push(s);
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!isDrawing || !S.calligInteractive) return;
+    let pos = getPos(e);
+    _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
+    lastMouseX = pos.x;
+    lastMouseY = pos.y;
+  });
+
+  window.addEventListener('pointerup', () => { isDrawing = false; });
 }
   
 // ── BRUSH CURSOR ─────────────────────────────────────────────────
@@ -3947,12 +3947,22 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
 }
 // ── Interactive stroke ───────────────────────────────────────────────────────
 function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet) {
+  // 1. Setup basic properties
   let col = pickColor(p, x1, y1, 0);
   let angle = Math.atan2(y2 - y1, x2 - x1);
-  let pts;
+  let pts = [];
+
   if (charMode) {
+    // 2. Get the character path
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
     let rawPts = strokes[Math.floor(p.random(strokes.length))];
+    // 3. Calculate the actual center of THIS specific stroke segment
+    // This prevents the "spawning in the center/wrong place" bug
+    let avgX = 0, avgY = 0;
+    rawPts.forEach(pt => { avgX += pt.x; avgY += pt.y; });
+    avgX /= rawPts.length;
+    avgY /= rawPts.length;
+    // 4. Calculate Path Length for normalization
     let cumDist = 0;
     let dists = [0];
     for (let i = 1; i < rawPts.length; i++) {
@@ -3961,42 +3971,64 @@ function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, ch
       cumDist += Math.sqrt(dx*dx + dy*dy);
       dists.push(cumDist);
     }
-    let normDists = dists.map(d => d / cumDist);
-    let scale = len / Math.max(0.5, cumDist);
+    // 5. Scale and Rotate relative to the mouse position
+    // We use a minimum scale to ensure it never collapses into a "dot"
+    let scale = Math.max(20, len) / Math.max(0.1, cumDist);
     pts = rawPts.map((pt, i) => {
-      let dx = pt.x - 0.5;
-      let dy = pt.y - 0.5;
-      let rx = dx * Math.cos(angle) - dy * Math.sin(angle);
-      let ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+      // Local offset from its own center
+      let lX = pt.x - avgX;
+      let lY = pt.y - avgY;
+      // Rotate the segment to align with drag direction
+      let rX = lX * Math.cos(angle) - lY * Math.sin(angle);
+      let rY = lX * Math.sin(angle) + lY * Math.cos(angle);
       return {
-        x: x1 + rx * scale,
-        y: y1 + ry * scale,
-        prog: normDists[i],
-        speed: 1.0
+        x: x1 + rX * scale,
+        y: y1 + rY * scale,
+        prog: dists[i] / (cumDist || 1),
+        speed: Math.max(0.5, mouseVelocity)
       };
     });
+    // 6. Smooth the path
     pts = _applyChaikin(pts, 2);
-    let avgLen = len / (pts.length - 1);
+    // Calculate internal point speeds for pressure tapering
     for (let i = 1; i < pts.length; i++) {
-      let dx = pts[i].x - pts[i-1].x;
-      let dy = pts[i].y - pts[i-1].y;
-      let segLen = Math.sqrt(dx*dx + dy*dy);
-      pts[i].speed = Math.min(2.5, Math.max(0.4, avgLen / (segLen + 0.001)));
+      let d = Math.sqrt(Math.pow(pts[i].x - pts[i-1].x, 2) + Math.pow(pts[i].y - pts[i-1].y, 2));
+      pts[i].speed = Math.min(3, 10 / (d + 1));
     }
-    pts[0].speed = pts[1].speed;
+    if(pts[0]) pts[0].speed = pts[1] ? pts[1].speed : 1;
   } else {
+    // Standard organic line mode
     pts = _genLinePoints(p, x1, y1, len, angle, 0.15);
   }
   if (!pts || pts.length < 2) return null;
+  // 7. Return the stroke object with a custom lifespan
   return {
     pts: pts,
     col: col,
-    birth: _calligClock,
-    lifespan: 300,
-    fadeOut: 80,
-    baseWidth: baseWidth * (0.8 + mouseVelocity * 0.4)
+    birth: _calligClock, // Uses the independent calligraphy clock
+    lifespan: 250 + Math.random() * 100,
+    fadeOut: 100,
+    // Width reacts to mouse speed: fast = thin, slow = thick
+    baseWidth: baseWidth * (0.4 + (1 / (mouseVelocity + 0.5))) 
   };
 }
+  
+// ── Update Brush Cursor position ─────────────────────────────────────────────────
+let cursor = document.getElementById('brushCursor');
+if (cursor) {
+  if (S.calligInteractive && S.mode === 'calligraphy') {
+    cursor.style.display = 'block';
+    cursor.style.left = p.mouseX + 'px';
+    cursor.style.top = p.mouseY + 'px';
+    // Dynamic size based on settings
+    let s = (S.calligWidth ?? 1.2) * S.maxSize;
+    cursor.style.width = s + 'px';
+    cursor.style.height = s + 'px';
+  } else {
+    cursor.style.display = 'none';
+  }
+}
+  
 // ── Expanded Character Paths ─────────────────────────────────────────────────
 const CHARACTER_PATHS = {
   'eternal': [ // 永
