@@ -3686,7 +3686,10 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
   if (!canvas) return;
-
+  
+  canvas.style.touchAction = 'none';
+  canvas.style.userSelect = 'none';
+  
   // Remove any previously attached handlers cleanly
   if (canvas._calligHandlers) {
     canvas.removeEventListener('pointerdown',  canvas._calligHandlers.down);
@@ -6862,6 +6865,10 @@ p.setup = function() {
   H = wrap.offsetHeight;
   let cnv = p.createCanvas(W, H);
   cnv.parent('canvas-wrap');
+  
+  cnv.elt.addEventListener('touchstart', (e) => e.preventDefault()); //prevent p5 from interfering with mouse in calligraphy mode
+  cnv.elt.style.touchAction = 'none';                                //prevent p5 from interfering with mouse in calligraphy mode
+  
   CTX = p.drawingContext;
   // CRITICAL: Load defaults into S BEFORE doing anything else
   if (typeof S === 'undefined') window.S = {};
@@ -7740,8 +7747,12 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
     rebuildModeUI(S.mode);
   // enable interaction in calligraphy mode
 if (S.mode === 'calligraphy') {
+  S.trailPersist = 0; // turn off trail persist for calligraphy mode
+  document.getElementById('sTrail').value = 0;
+  document.getElementById('vTrail').textContent = '0';
   // Automatically turn on interactive mode for better UX
-  S.calligInteractive = true;
+    S.calligInteractive = true;
+  setupCalligraphyInteraction(window._st.p);   // re‑attach handlers
   // Update the UI toggle button
   let interactiveBtn = document.getElementById('mdp_calligInteractive');
   if (interactiveBtn) {
