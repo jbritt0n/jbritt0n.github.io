@@ -4437,7 +4437,7 @@ const SUMIE_COMPOSITIONS = {
       ]
     }
   ]
-}
+},
   
   'bamboo_branch': {
     segments: [
@@ -4482,7 +4482,7 @@ const SUMIE_COMPOSITIONS = {
         ]
       }
     ]
-  }
+  },
   // 梅 Plum Blossom (winter)
   'plum_blossom': {
     segments: [
@@ -4784,55 +4784,6 @@ function _spawnSumieComposition(p, compKey, ox, oy, scale) {
   lastStrokeBirthTime = _calligClock;
 }
 
-function _updateCompositionSequence(p) {
-  if (!activeComposition) return;
-  if (currentSegmentIndex >= activeComposition.segments.length) {
-    activeComposition = null; // composition finished
-    return;
-  }
-  let interStrokeDelay = Math.max(5, Math.floor(15 / (S.speed * 100 + 0.5)));
-  if (_calligClock - lastStrokeBirthTime >= interStrokeDelay) {
-    let segment = activeComposition.segments[currentSegmentIndex];
-    let strokePts = segment.strokes[currentStrokeIndex];
-    let T = activeComposition.transform;
-    // Store original settings
-    let origWidth = S.calligWidth;
-    let origTaper = S.calligTaper;
-    let origWobble = S.calligWobble; // you may have this; if not, add default 0.5
-    S.calligWidth = segment.behavior.w;
-    S.calligTaper = segment.behavior.taper;
-    if (typeof S.calligWobble === 'undefined') S.calligWobble = 0.5;
-    S.calligWobble = segment.behavior.wobble;
-    // Transform points
-    let cumDist = 0, dists = [0];
-    for (let i = 1; i < strokePts.length; i++) {
-      cumDist += Math.hypot(strokePts[i].x - strokePts[i-1].x, strokePts[i].y - strokePts[i-1].y);
-      dists.push(cumDist);
-    }
-    let pts = strokePts.map((pt, i) => ({
-      x: T.ox + (pt.x - 0.5) * T.scale,
-      y: T.oy + (pt.y - 0.5) * T.scale,
-      prog: dists[i] / (cumDist || 1),
-      speed: 1.0
-    }));
-    pts = _applyChaikin(pts, 3);
-    let baseWidth = Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20));
-    let col = pickColor(p, T.ox, T.oy, 0);
-    calligStrokes.push({
-      pts, col, birth: _calligClock, lifespan: 500, fadeOut: 150, baseWidth
-    });
-    // Restore settings
-    S.calligWidth = origWidth;
-    S.calligTaper = origTaper;
-    S.calligWobble = origWobble;
-    lastStrokeBirthTime = _calligClock;
-    currentStrokeIndex++;
-    if (currentStrokeIndex >= segment.strokes.length) {
-      currentSegmentIndex++;
-      currentStrokeIndex = 0;
-    }
-  }
-}
   
 // ── Geometric helpers ─────────────────────────────────────────────────────────
 function _applyChaikin(pts, iterations) {
