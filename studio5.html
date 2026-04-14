@@ -3672,33 +3672,21 @@ function drawCalligraphy(p, t) {
   let grain      = S.calligPaperGrain ?? true;
 
   // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
-  if (S.playing && subMode !== 'interactive') {
-
-    if (subMode === 'composition') {
-      // Spawn a new composition when the previous one has finished
-      if (!calligActiveComp && _calligClock % 80 === 0) {
-        let compKey = S.calligComposition || 'bamboo_branch';
-        _spawnSumieComposition(
-          p, compKey,
-          p.random(W * 0.2, W * 0.8),
-          p.random(H * 0.2, H * 0.8),
-          Math.min(W, H) * 0.5
-        );
-      }
-      // Tick through the active composition stroke-by-stroke
-      if (calligActiveComp) {
-        _updateCompositionSequence(p);
-      }
-
-    } else {
-      // 'random' or 'character' — periodic stroke spawning
-      let interval = Math.max(6, Math.round(80 / count));
-      if (_calligClock % interval === 0) {
-        _spawnCharacter(p, W, H, minLen, maxLen, baseWidth,
-                        subMode === 'character', charSet);
-      }
+  if (!interactive && S.playing) {
+  if (subMode === 'composition') {
+    // Only spawn a new composition when none is active, and wait a bit between finished ones
+    if (!calligActiveComp && _calligClock % 180 === 0) {
+      let compKey = S.calligComposition || 'bamboo_branch';
+      // Scale to ~75% of the smaller canvas dimension – fills most of the canvas
+      let scale = Math.min(W, H) * 0.75;
+      _spawnSumieComposition(p, compKey,
+        W / 2, H / 2, scale);
+    }
+    if (calligActiveComp) {
+      _updateCompositionSequence(p);
     }
   }
+}
 
   // ── Render growing stroke queue → ink buffer ──────────────────────────────
   let light   = _bgIsLight(S.bg);
@@ -3820,7 +3808,6 @@ function _drawHanko(p, t, W, H) {
     );
     CTX.fill();
   }
-
   // ── 3. Carve the name glyphs (removes red ink) ──────────────────────────
   CTX.globalCompositeOperation = 'destination-out';
   CTX.globalAlpha  = 1.0;
@@ -3832,7 +3819,6 @@ function _drawHanko(p, t, W, H) {
     let jx    = (p.noise(i, t * 0.01) - 0.5) * 0.8;
     CTX.fillText(ch, stampX + stampW / 2 + jx, charY);
   });
-
   // ── 4. Subtle multiply pass — ink soaking into paper fibers ─────────────
   CTX.globalCompositeOperation = 'multiply';
   CTX.globalAlpha = 0.1;
@@ -3893,9 +3879,12 @@ function initBrushCursor() {}
 // Spawns the root composition record (module-level state, not inside drawCalligraphy).
 function _spawnSumieComposition(p, compKey, ox, oy, scale) {
   let comp = SUMIE_COMPOSITIONS[compKey];
-  if (!comp) { console.warn('[calligraphy] Unknown composition:', compKey); return; }
+  if (!comp) { console.warn('Unknown composition:', compKey); return; }
+  // Cancel any existing composition to prevent overlapping
+  calligActiveComp = null;
+  calligStrokes = calligStrokes.filter(s => s.lifespan > 0); // optional: keep old strokes?
   calligActiveComp = {
-    key:      compKey,
+    key: compKey,
     segments: comp.segments,
     transform: { ox, oy, scale }
   };
@@ -3920,14 +3909,18 @@ function _updateCompositionSequence(p) {
   let seg    = calligActiveComp.segments[calligSegIdx];
   let rawPts = seg.strokes[calligStrokeIdx];
   let beh    = seg.behavior;
-
+  // Store original settings
+  let origWidth = S.calligWidth;
+  let origTaper = S.calligTaper;
+  let origWobble = S.calligWobble;
   // Temporarily override style settings for this segment
   let saved = { w: S.calligWidth, taper: S.calligTaper, wobble: S.calligWobble };
-  S.calligWidth  = beh.w;
-  S.calligTaper  = beh.taper;
-  S.calligWobble = beh.wobble;
+  // Multiply user’s current values by the segment’s behavior factors
+  S.calligWidth  = origWidth * (segment.behavior.w || 1);
+  S.calligTaper  = origTaper * (segment.behavior.taper || 1);
+  S.calligWobble = origWobble * (segment.behavior.wobble || 1);
 
-  let baseWidth = Math.max(3, beh.w * (S.maxSize / 20));
+  let baseWidth = Math.max(3, S.calligWidth * (S.maxSize / 20));
 
   // Cumulative distances along the raw path
   let cumDist = 0, dists = [0];
@@ -3955,11 +3948,11 @@ function _updateCompositionSequence(p) {
     fadeOut:  150,
     baseWidth
   });
-
-  // Restore settings
-  S.calligWidth  = saved.w;
-  S.calligTaper  = saved.taper;
-  S.calligWobble = saved.wobble;
+  
+  // Restore
+  S.calligWidth  = origWidth;
+  S.calligTaper  = origTaper;
+  S.calligWobble = origWobble;
 
   // Advance sequence
   calligLastBirth = _calligClock;
@@ -4129,13 +4122,14 @@ function calligRedraw(p) {
   let count   = Math.max(1, Math.floor(S.calligCount ?? 5));
   let charSet = S.calligCharSet  ?? 'eternal';
 
-  if (subMode === 'composition') {
-    let compKey = S.calligComposition || 'bamboo_branch';
-    _spawnSumieComposition(p, compKey,
-      p.random(W * 0.2, W * 0.8),
-      p.random(H * 0.2, H * 0.8),
-      Math.min(W, H) * 0.5
-    );
+if (subMode === 'composition') {
+  clearInkBuffer();
+  let compKey = S.calligComposition || 'bamboo_branch';
+  let scale = Math.min(W, H) * 0.75;
+  _spawnSumieComposition(p, compKey, W/2, H/2, scale);
+} else {
+  // existing single‑stroke spawning
+}
   } else {
     for (let i = 0; i < count; i++) {
       _spawnCharacter(p, W, H, minLen, maxLen, bw, subMode === 'character', charSet);
