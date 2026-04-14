@@ -3752,22 +3752,29 @@ function drawCalligraphy(p, t) {
   let splatter   = S.calligSplatter   ?? 0.2;
   let grain      = S.calligPaperGrain ?? true;
 
-  // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
+    // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
   if (!interactive && S.playing) {
-  if (subMode === 'composition') {
-    // Only spawn a new composition when none is active, and wait a bit between finished ones
-    if (!calligActiveComp && _calligClock % 180 === 0) {
-      let compKey = S.calligComposition || 'bamboo_branch';
-      // Scale to ~75% of the smaller canvas dimension – fills most of the canvas
-      let scale = Math.min(W, H) * 0.75;
-      _spawnSumieComposition(p, compKey,
-        W / 2, H / 2, scale);
-    }
-    if (calligActiveComp) {
-      _updateCompositionSequence(p);
+    if (subMode === 'composition') {
+      // Only spawn a new composition when none is active, and wait a bit between finished ones
+      if (!calligActiveComp && _calligClock % 180 === 0) {
+        let compKey = S.calligComposition || 'bamboo_branch';
+        // Scale to ~75% of the smaller canvas dimension – fills most of the canvas
+        let scale = Math.min(W, H) * 0.75;
+        _spawnSumieComposition(p, compKey,
+          W / 2, H / 2, scale);
+      }
+      if (calligActiveComp) {
+        _updateCompositionSequence(p);
+      }
+    } else {
+      // 'random' or 'character' — periodic stroke spawning
+      let interval = Math.max(6, Math.round(80 / count));
+      if (_calligClock % interval === 0) {
+        let useChars = (subMode === 'character');
+        _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, useChars, charSet);
+      }
     }
   }
-}
 
   // ── Render growing stroke queue → ink buffer ──────────────────────────────
   let light   = _bgIsLight(S.bg);
