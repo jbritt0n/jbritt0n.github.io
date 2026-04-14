@@ -4191,30 +4191,26 @@ function calligRedraw(p) {
   if (!p || !p.width) p = window._st && window._st.p;
   if (!p) return;
   clearInkBuffer();
-  let W       = p.width, H = p.height;
-  let subMode = S.calligSubMode  ?? 'character';
-  let minLen  = (S.calligMinLen  ?? 0.3) * Math.min(W, H);
-  let maxLen  = (S.calligMaxLen  ?? 0.8) * Math.min(W, H);
-  let bw      = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let count   = Math.max(1, Math.floor(S.calligCount ?? 5));
-  let charSet = S.calligCharSet  ?? 'eternal';
+  let W = p.width, H = p.height;
+  let subMode = S.calligSubMode ?? 'character';
+  let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
+  let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
+  let bw = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let count = Math.max(1, Math.floor(S.calligCount ?? 5));
+  let charSet = S.calligCharSet ?? 'eternal';
 
-if (subMode === 'composition') {
-  clearInkBuffer();
-  let compKey = S.calligComposition || 'bamboo_branch';
-  let scale = Math.min(W, H) * 0.75;
-  _spawnSumieComposition(p, compKey, W/2, H/2, scale);
-} else {
-  // existing single‑stroke spawning
-}
+  if (subMode === 'composition') {
+    let compKey = S.calligComposition || 'bamboo_branch';
+    let scale = Math.min(W, H) * 0.75;
+    _spawnSumieComposition(p, compKey, W / 2, H / 2, scale);
   } else {
+    // 'random' or 'character' — spawn individual strokes
     for (let i = 0; i < count; i++) {
       _spawnCharacter(p, W, H, minLen, maxLen, bw, subMode === 'character', charSet);
     }
   }
   if (typeof showToast === 'function') showToast('Redrawn');
 }
-
 
 // ── Pointer event setup ────────────────────────────────────────────────────────
 // Uses Pointer Events API only (covers mouse, touch, and stylus uniformly).
