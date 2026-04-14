@@ -3548,7 +3548,6 @@ function drawInterference(p,t){
 
 
 // ── CALLIGRAPHY v3 4/13/26 ────────────────────────────────────────────────────────
-// ── CALLIGRAPHY ────────────────────────────────────────────────────────────
 let calligStrokes = [];
 let isDrawing = false;
 let lastMouseX = 0, lastMouseY = 0;
@@ -3908,7 +3907,7 @@ const CHARACTER_PATHS = {
 // ── Sumi‑e Renderer ─────────────────────────────────────────────────────────
 function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
   if (pts.length < 2) return;
-  // 1. AIGUMA (Wet Edge)
+  //  AIGUMA (Wet Edge)
   if (bleed > 0) {
     CTX.beginPath();
     CTX.strokeStyle = col;
@@ -3921,7 +3920,30 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     CTX.stroke();
     CTX.filter = 'none';
   }
-  // 2. HIHAKU (Dry Brush)
+  //  KATAGUMA (Split-Ink Fibers)
+  for (let f = 0; f < fibers; f++) {
+    let fOff = (f / fibers - 0.5) * 1.8;
+    CTX.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      let pt = pts[i];
+      // "Flying White" (Dryness) increases at the end of strokes
+      let dryness = p.noise(pt.x * 0.05, pt.y * 0.05, f) * (1.1 - pt.prog * 0.4);
+      if (dryness < 0.2) { CTX.stroke(); CTX.beginPath(); continue; }
+
+      let next = pts[i+1] || pt;
+      let ang = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI/2;
+      let x = pt.x + Math.cos(ang) * fOff * pt.w;
+      let y = pt.y + Math.sin(ang) * fOff * pt.w;
+
+      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
+      CTX.lineWidth = pt.w * (0.05 + dryness * 0.2);
+      // Split ink: outer fibers are lighter/dryer
+      CTX.globalAlpha = baseAlpha * dryness * (1.2 - Math.abs(fOff));
+      CTX.strokeStyle = col;
+    }
+    CTX.stroke();
+  }
+  //  HIHAKU (Dry Brush)
   for (let f = 0; f < fibers; f++) {
     let fOff = (f / fibers - 0.5) * 1.8;
     CTX.beginPath();
@@ -3944,7 +3966,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     }
     CTX.stroke();
   }
-  // 3. KASURI (Dark Core)
+  //  KASURI (Dark Core)
   CTX.beginPath();
   CTX.globalAlpha = baseAlpha * 0.75;
   for (let i = 0; i < pts.length; i++) {
@@ -3952,7 +3974,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
     i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
   }
   CTX.stroke();
-  // 4. Ink pooling
+  //  Ink pooling
   if (pooling) {
     [0, pts.length-1].forEach(idx => {
       let pt = pts[idx];
@@ -3963,7 +3985,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       CTX.fill();
     });
   }
-  // 5. Splatters
+  //  Splatters
   if (splatterAmt > 0 && Math.random() < splatterAmt * 0.15) {
     for (let s = 0; s < Math.floor(splatterAmt * 8); s++) {
       let idx = Math.floor(p.noise(s * 17) * (pts.length - 1));
@@ -3980,7 +4002,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       CTX.fill();
     }
   }
-  // 6. Drips
+  //  Drips
   if (drips && Math.random() < 0.15) {
     let pt = pts[pts.length-1];
     for (let d = 0; d < 3; d++) {
