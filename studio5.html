@@ -3731,7 +3731,6 @@ function _calligRender(p, t, pts, col, maxWidth, fibers, bleed, inkDensity) {
       CTX.stroke();
     }
   }
-
   // ── Pass 3: Core stroke — per-segment for variable pressure width ─────────
   for (let i = 1; i < n; i++) {
     let prev = pts[i-1], curr = pts[i];
@@ -3746,6 +3745,7 @@ function _calligRender(p, t, pts, col, maxWidth, fibers, bleed, inkDensity) {
   }
 }
 
+  
 // ── LISSAJOUS ───────────────────────────────────────────────────────
 // Parametric Lissajous figures — characters trace harmonic curves
 function drawLissajous(p,t){
@@ -7064,10 +7064,6 @@ const PARAM_REGISTRY = {
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
     { id:'hatchCurve', label:'Curvature',    min:0,   max:20,  step:1,  def:5,   scale:1    },
   ],
-  magnetic: [
-    { id:'magPoles',   label:'Pole count',   min:1,   max:8,   step:1,  def:2,   scale:1,
-      extra: function(){ window._st.ri(); } },
-  ],
   boids: [
     { id:'boidSep',    label:'Separation',   min:0,   max:100, step:2,  def:15,  scale:0.01 },
     { id:'boidAln',    label:'Alignment',    min:0,   max:100, step:2,  def:6,   scale:0.001 },
@@ -7112,10 +7108,6 @@ const PARAM_REGISTRY = {
     { id:'interfSources', label:'Wave sources',   min:2,  max:8,   step:1, def:2,   scale:1,
       extra: function(){ window._st.rd(); } },
     { id:'interfSpeed',   label:'Wave speed',     min:1,  max:20,  step:1, def:3,   scale:1    },
-  ],
-  calligraphy: [
-    { id:'calligLenMult', label:'Stroke length',  min:1,  max:20,  step:1, def:5,   scale:0.2  },
-    { id:'calligWobble',  label:'Wobble',         min:0,  max:10,  step:1, def:4,   scale:0.1  },
   ],
   magnetic: [
     { id:'magPoles',      label:'Pole count',     min:1,  max:8,   step:1, def:2,   scale:1,
