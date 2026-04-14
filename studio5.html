@@ -125,10 +125,11 @@ select option{background:var(--ink)}
   .ph{padding:.65rem 1.1rem .5rem}
   .sec-body{padding:.05rem 1.1rem .6rem}
   .mg{grid-template-columns:1fr 1fr 1fr 1fr}
-  .mb{font-size:.43rem;padding:.32rem .1rem}
-}
-  #gc.calligraphy-interactive {cursor: none;}
+  .mb{font-size:.43rem;padding:.32rem .1rem}}
   
+#gc.calligraphy-interactive {cursor: none;}
+.drawing-mode {cursor: url('data:image/x-icon;base64,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'), auto;}
+
 </style>
 </head>
 <body>
@@ -3574,6 +3575,8 @@ let _calligClock = 0;
 // Offscreen ink buffer — persists between frames, never cleared by main loop
 let _inkCanvas = null;
 let _inkCTX = null;
+let _grainCanvas = null;
+let _grainCTX = null;  
 
 function _ensureInkBuffer(W, H) {
   if (!_inkCanvas || _inkCanvas.width !== W || _inkCanvas.height !== H) {
@@ -3705,26 +3708,42 @@ function drawCalligraphy(p, t) {
   CTX.globalAlpha = 1;
   CTX.drawImage(_inkCanvas, 0, 0);
   CTX.restore();
-
-  // ── Paper grain (draws on main CTX, redraws each frame) ───────────────────
-  if (paperGrain) {
-    CTX.save();
-    CTX.globalCompositeOperation = 'overlay';
-    CTX.globalAlpha = 0.10;
-    for (let x = 0; x < W; x += 3) {
-      for (let y = 0; y < H; y += 3) {
-        let n = p.noise(x * 0.015, y * 0.015, t * 0.05);
-        if (n > 0.7) {
-          CTX.fillStyle = n > 0.88 ? '#000' : '#fff';
-          CTX.fillRect(x, y, 1.5, 1.5);
+  
+  // ── Paper grain buffer ───────────────────
+  function _ensureGrainBuffer(p, W, H) {
+    if (!_grainCanvas || _grainCanvas.width !== W || _grainCanvas.height !== H) {
+      _grainCanvas = document.createElement('canvas');
+      _grainCanvas.width = W;
+      _grainCanvas.height = H;
+      _grainCTX = _grainCanvas.getContext('2d');
+  
+      _grainCTX.clearRect(0, 0, W, H);
+      
+      // Generate static noise once
+      for (let x = 0; x < W; x += 2) {
+        for (let y = 0; y < H; y += 2) {
+          let n = p.noise(x * 0.05, y * 0.05);
+          if (n > 0.6) {
+            // Use white for "grit" on dark paper, or black for light paper
+            _grainCTX.fillStyle = n > 0.8 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
+            _grainCTX.fillRect(x, y, 1, 1);
+          }
         }
       }
     }
+  }
+
+// ── Optimized Paper Grain ───────────────────
+  if (paperGrain) {
+    _ensureGrainBuffer(p, W, H);
+    CTX.save();
+    // 'screen' or 'lighter' makes the grain show up on dark backgrounds
+    // 'multiply' would be for light paper
+    CTX.globalCompositeOperation = 'screen'; 
+    CTX.drawImage(_grainCanvas, 0, 0);
     CTX.restore();
   }
-  CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
-}
+
 // ── Push interactive strokes ───────────────────
 function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   // Ensure ink buffer exists
@@ -3786,6 +3805,8 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
     }
   }
 }
+
+
   
 // ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
 function setupCalligraphyInteraction(p) {
@@ -3855,15 +3876,11 @@ function initBrushCursor() {
 
 function showBrushCursor(show) {
   const canvas = document.getElementById('gc');
-  if (!brushCursor || !canvas) return;
+  if (!canvas) return;
   if (show) {
-    canvas.classList.add('calligraphy-interactive');
-    brushCursor.style.display = 'block';
-    cursorVisible = true;
+    canvas.classList.add('drawing-mode');
   } else {
-    canvas.classList.remove('calligraphy-interactive');
-    brushCursor.style.display = 'none';
-    cursorVisible = false;
+    canvas.classList.remove('drawing-mode');
   }
 }
   
