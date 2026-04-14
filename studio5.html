@@ -9684,6 +9684,19 @@ if (calligraphyToggle) {
   calligraphyToggle.textContent = S.calligraphyEnabled ? 'On' : 'Off';
   calligraphyToggle.classList.toggle('on', S.calligraphyEnabled);
 
+  // Helper to disable/enable all calligraphy controls except the toggle button
+  function setCalligraphyControlsDisabled(disabled) {
+    document.querySelectorAll('#body-calligraphy .cb, #body-calligraphy input, #body-calligraphy select, #body-calligraphy .tb')
+      .forEach(el => {
+        if (el.id !== 'btnCalligraphyEnable') {
+          el.disabled = disabled;
+        }
+      });
+  }
+
+  // Initially disable controls if calligraphy is not enabled
+  setCalligraphyControlsDisabled(!S.calligraphyEnabled);
+
   calligraphyToggle.addEventListener('click', function() {
     S.calligraphyEnabled = !S.calligraphyEnabled;
     this.textContent = S.calligraphyEnabled ? 'On' : 'Off';
@@ -9697,8 +9710,9 @@ if (calligraphyToggle) {
       S.mode = 'calligraphy';
       // Set paper background (warm ivory)
       S.bg = '#f2ede6';
+      // Enable all calligraphy controls (except the toggle itself)
+      setCalligraphyControlsDisabled(false);
       // Update UI background active state
-      document.querySelectorAll('#body-calligraphy .cb, #body-calligraphy input, #body-calligraphy select, #body-calligraphy .tb')  .forEach(el => el.disabled = false);
       document.querySelectorAll('[data-bg]').forEach(el => {
         el.classList.toggle('active', el.dataset.bg === S.bg);
       });
@@ -9724,8 +9738,9 @@ if (calligraphyToggle) {
       // Restore previous mode and background
       S.mode = S.previousMode;
       S.bg = S.previousBg;
+      // Disable all calligraphy controls (except the toggle itself)
+      setCalligraphyControlsDisabled(true);
       // Update UI background active state
-      document.querySelectorAll('#body-calligraphy .cb, #body-calligraphy input, #body-calligraphy select, #body-calligraphy .tb')  .forEach(el => el.disabled = true);
       document.querySelectorAll('[data-bg]').forEach(el => {
         el.classList.toggle('active', el.dataset.bg === S.bg);
       });
