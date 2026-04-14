@@ -3548,12 +3548,9 @@ function drawInterference(p,t){
 
 
 // ── CALLIGRAPHY v3 4/13/26 ────────────────────────────────────────────────────────
-// ── Calligraphy State ────────────────────────────────────────────────────────
 let calligStrokes = [];
-
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
-
   // ── Parameters ───────────────────────────────────────────────────────────
   let strokeCount   = Math.max(1, Math.floor(S.calligCount     ?? 5));
   let minLen        = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
@@ -3566,7 +3563,6 @@ function drawCalligraphy(p, t) {
   let inkOpacity    = S.calligInk        ?? 0.85;
   let charMode      = S.calligCharMode   ?? true;
   let charSet       = S.calligCharSet    ?? 'eternal'; // options: 'eternal', 'mountain', 'wind', 'heart', 'river'
-
   if (S.playing) {
     while (calligStrokes.length < strokeCount) {
       let newStroke = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet);
@@ -3579,17 +3575,14 @@ function drawCalligraphy(p, t) {
     let st = calligStrokes[i];
     let age = S.fc - st.birth;
     if (age > st.lifespan + st.fadeOut) { calligStrokes.splice(i, 1); continue; }
-
     let drawProgress = Math.min(1, (age * growSpeed) / 10);
     let visiblePts = st.pts.filter(pt => pt.prog <= drawProgress);
     if (visiblePts.length < 2) continue;
-
     // Apply Pressure Profile (S-Curve)
     for (let pt of visiblePts) {
       let pressure = Math.pow(Math.sin(pt.prog * Math.PI), 1 / Math.max(0.1, taper));
       pt.w = st.baseWidth * pressure;
     }
-
     let alpha = age > st.lifespan ? inkOpacity * (1 - (age - st.lifespan) / st.fadeOut) : inkOpacity;
     _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha);
   }
@@ -3641,6 +3634,32 @@ function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSe
     // Random organic line logic...
     pts = _genLinePoints(p, p.random(W), p.random(H), p.random(minLen, maxLen), p.random(Math.PI*2), 0.2);
   }
+  // After generating raw points (rawPts), compute cumulative distances and angles
+let cumDist = 0;
+let dists = [0];
+for (let i = 1; i < rawPts.length; i++) {
+  let dx = rawPts[i].x - rawPts[i-1].x;
+  let dy = rawPts[i].y - rawPts[i-1].y;
+  cumDist += Math.sqrt(dx*dx + dy*dy);
+  dists.push(cumDist);
+}
+// Normalize distances to progress 0..1
+let normDists = dists.map(d => d / cumDist);
+// Store per-point normalized distance for later pressure mapping
+pts = rawPts.map((pt, i) => ({
+  ...pt,
+  prog: normDists[i],
+  speed: 1.0  // will compute later
+}));
+// After Chaikin smoothing, compute speed as inverse of local spacing
+for (let i = 1; i < pts.length; i++) {
+  let dx = pts[i].x - pts[i-1].x;
+  let dy = pts[i].y - pts[i-1].y;
+  let segLen = Math.sqrt(dx*dx + dy*dy);
+  // Speed is inversely proportional to segment length (relative to average)
+  let avgLen = cumDist / (pts.length-1);
+  pts[i].speed = Math.min(2, Math.max(0.3, avgLen / (segLen + 0.001)));
+}
   return { pts, col, birth: S.fc, lifespan: 400, fadeOut: 100, baseWidth };
 }
 // ── The Improved Sumi-e Renderer ─────────────────────────────────────────────
@@ -3679,7 +3698,6 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha) {
     }
     CTX.stroke();
   }
-
   // 3. KASURI (Dark Core)
   CTX.beginPath();
   CTX.globalAlpha = baseAlpha * 0.7;
@@ -3689,6 +3707,43 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha) {
   }
   CTX.stroke();
 }
+    // 4. Ink pooling at start and end (where brush lingers)
+  [0, pts.length-1].forEach(idx => {
+    let pt = pts[idx];
+    CTX.globalAlpha = baseAlpha * 0.15;
+    CTX.fillStyle = col;
+    CTX.beginPath();
+    CTX.arc(pt.x, pt.y, pt.w * 0.6, 0, Math.PI*2);
+    CTX.fill();
+  });
+  // 5. Random splatters along the stroke (during drawing)
+  if (Math.random() < S.calligSplatter * 0.1) {
+    for (let s = 0; s < 3; s++) {
+      let pt = pts[Math.floor(p.noise(s*10) * (pts.length-1))];
+      let angle = p.random(Math.PI*2);
+      let dist = pt.w * (0.5 + p.random() * 2);
+      let sx = pt.x + Math.cos(angle) * dist;
+      let sy = pt.y + Math.sin(angle) * dist;
+      let sz = pt.w * 0.1 * (0.5 + p.random() * 1.5);
+      CTX.globalAlpha = baseAlpha * 0.5;
+      CTX.fillStyle = col;
+      CTX.beginPath();
+      CTX.arc(sx, sy, Math.max(0.5, sz), 0, Math.PI*2);
+      CTX.fill();
+    }
+  }
+  // 6. Drips (falling down)
+  if (Math.random() < 0.1 && S.calligDrips) {
+    let pt = pts[pts.length-1];
+    for (let d = 0; d < 2; d++) {
+      let dropY = pt.y + d * pt.w * 2;
+      CTX.globalAlpha = baseAlpha * (0.4 - d*0.15);
+      CTX.fillStyle = col;
+      CTX.beginPath();
+      CTX.ellipse(pt.x, dropY, pt.w*0.2, pt.w*0.4, 0, 0, Math.PI*2);
+      CTX.fill();
+    }
+  }
 
 // ── Smoothing ────────────────────────────────────────────────────────────────
 function _applyChaikin(pts, iterations) {
