@@ -3578,6 +3578,10 @@ let lastMouseX    = 0, lastMouseY = 0;
 let mouseVelocity = 0;
 let _calligClock  = 0;    // independent tick counter
 let _calligCursor = null; // cached #brushCursor element
+let activeComposition = null;        // currently painting composition
+let currentSegmentIndex = 0;         // which segment (e.g., stalk, leaves)
+let currentStrokeIndex = 0;          // which stroke within the current segment
+let lastStrokeBirthTime = 0;         // frame counter when last stroke was added  
 
 // ── Ink buffer ─────────────────────────────────────────────────────────────────
 let _inkCanvas = null, _inkCTX = null;
@@ -3666,29 +3670,22 @@ function drawCalligraphy(p, t) {
 
   // Auto-spawn
   if (!interactive && S.playing) {
+  if (S.calligCompositionMode) {
+    // Start a new composition if none is active, using the selected composition
+    if (!activeComposition && _calligClock % 120 === 0 && Math.random() < 0.2) {
+      let compKey = S.calligComposition || 'bamboo_branch'; // fallback
+      let W = p.width, H = p.height;
+      _spawnSumieComposition(p, compKey, p.random(W*0.2, W*0.8), p.random(H*0.2, H*0.8), Math.min(W,H)*0.5);
+    }
+    _updateCompositionSequence(p);
+  } else {
+    // Original single‑stroke spawning
     let interval = Math.max(6, Math.round(80 / strokeCount));
     if (_calligClock % interval === 0) {
       _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet);
     }
   }
-  if (interactive && calligStrokes.length > 60) calligStrokes = calligStrokes.slice(-50);
-
-  // Sumi-e composition draw
-  if (activeComposition) {
-    _updateCompositionSequence(p);
-  } else {
-    // Logic for deciding whether to spawn a character vs. a full composition
-    if (S.playing && _calligClock % 120 === 0 && Math.random() < 0.2) { // 20% chance every 120 frames
-      let compKeys = Object.keys(SUMIE_COMPOSITIONS);
-      let key = compKeys[Math.floor(p.random(compKeys.length))];
-      let W = p.width, H = p.height;
-      // Spawn at random location, scaled appropriately
-      _spawnSumieComposition(p, key, p.random(W*0.2, W*0.8), p.random(H*0.2, H*0.8), Math.min(W,H)*0.5);
-    } else if (S.playing) {
-      // Current single-stroke/glyph logic
-      // while (calligStrokes.length < strokeCount) { ... }
-    }
-  }
+}
 
   
   // Render growing strokes to ink buffer
@@ -4358,34 +4355,107 @@ const CHARACTER_PATHS = {
 };
 
 const SUMIE_COMPOSITIONS = {
+  // 富士山 Mount Fuji (iconic peak with clouds and foreground)
+'mount_fuji': {
+  segments: [
+    {
+      name: 'distant_fuji',
+      behavior: { w: 2.0, taper: 0.3, wobble: 0.1 }, // smooth, confident stroke
+      strokes: [
+        // Classic sweeping arc for the mountain
+        [{x:0.2,y:0.45},{x:0.35,y:0.2},{x:0.5,y:0.15},{x:0.65,y:0.2},{x:0.8,y:0.45}],
+        // Subtle second pass for depth (lighter)
+        [{x:0.3,y:0.4},{x:0.4,y:0.25},{x:0.5,y:0.22},{x:0.6,y:0.25},{x:0.7,y:0.4}]
+      ]
+    },
+    {
+      name: 'snow_cap',
+      behavior: { w: 0.8, taper: 0.7, wobble: 0.2 }, // dry brush texture
+      strokes: [
+        [{x:0.4,y:0.25},{x:0.45,y:0.18},{x:0.5,y:0.15},{x:0.55,y:0.18},{x:0.6,y:0.25}],
+        [{x:0.42,y:0.22},{x:0.48,y:0.17},{x:0.52,y:0.17},{x:0.58,y:0.22}]
+      ]
+    },
+    {
+      name: 'mist_clouds',
+      behavior: { w: 1.2, taper: 0.5, wobble: 0.4 }, // soft, light strokes
+      strokes: [
+        [{x:0.15,y:0.5},{x:0.25,y:0.48},{x:0.35,y:0.52},{x:0.45,y:0.49}],
+        [{x:0.55,y:0.49},{x:0.65,y:0.52},{x:0.75,y:0.48},{x:0.85,y:0.5}],
+        [{x:0.2,y:0.55},{x:0.3,y:0.53},{x:0.4,y:0.56}],
+        [{x:0.6,y:0.56},{x:0.7,y:0.53},{x:0.8,y:0.55}]
+      ]
+    },
+    {
+      name: 'pine_trees_left',
+      behavior: { w: 1.0, taper: 0.8, wobble: 0.5 }, // jagged pine needles
+      strokes: [
+        // Trunk
+        [{x:0.12,y:0.65},{x:0.12,y:0.55},{x:0.12,y:0.45}],
+        // Branches and needles
+        [{x:0.12,y:0.55},{x:0.18,y:0.52}],[{x:0.12,y:0.55},{x:0.06,y:0.52}],
+        [{x:0.12,y:0.48},{x:0.18,y:0.46}],[{x:0.12,y:0.48},{x:0.06,y:0.46}],
+        [{x:0.12,y:0.58},{x:0.2,y:0.56}],[{x:0.12,y:0.58},{x:0.04,y:0.56}]
+      ]
+    },
+    {
+      name: 'pine_trees_right',
+      behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
+      strokes: [
+        [{x:0.88,y:0.7},{x:0.88,y:0.6},{x:0.88,y:0.5}],
+        [{x:0.88,y:0.6},{x:0.94,y:0.57}],[{x:0.88,y:0.6},{x:0.82,y:0.57}],
+        [{x:0.88,y:0.53},{x:0.94,y:0.51}],[{x:0.88,y:0.53},{x:0.82,y:0.51}],
+        [{x:0.88,y:0.63},{x:0.96,y:0.61}],[{x:0.88,y:0.63},{x:0.8,y:0.61}]
+      ]
+    },
+    {
+      name: 'foreground_rocks',
+      behavior: { w: 1.8, taper: 0.4, wobble: 0.3 },
+      strokes: [
+        [{x:0.1,y:0.85},{x:0.15,y:0.78},{x:0.22,y:0.8},{x:0.18,y:0.87},{x:0.1,y:0.85}],
+        [{x:0.75,y:0.88},{x:0.8,y:0.82},{x:0.87,y:0.84},{x:0.82,y:0.9},{x:0.75,y:0.88}],
+        [{x:0.3,y:0.9},{x:0.35,y:0.86},{x:0.42,y:0.88},{x:0.38,y:0.92}]
+      ]
+    },
+    {
+      name: 'water_reflection',
+      behavior: { w: 0.5, taper: 0.9, wobble: 0.2 }, // fine horizontal lines
+      strokes: [
+        [{x:0.35,y:0.92},{x:0.4,y:0.91},{x:0.45,y:0.92}],
+        [{x:0.5,y:0.93},{x:0.55,y:0.92},{x:0.6,y:0.93}],
+        [{x:0.4,y:0.96},{x:0.45,y:0.95},{x:0.5,y:0.96}],
+        [{x:0.55,y:0.97},{x:0.6,y:0.96},{x:0.65,y:0.97}]
+      ]
+    },
+    {
+      name: 'birds_distant',
+      behavior: { w: 0.3, taper: 1.0, wobble: 0.1 }, // tiny V-shaped strokes
+      strokes: [
+        [{x:0.3,y:0.28},{x:0.32,y:0.26},{x:0.34,y:0.28}],
+        [{x:0.6,y:0.32},{x:0.62,y:0.3},{x:0.64,y:0.32}],
+        [{x:0.4,y:0.22},{x:0.41,y:0.21},{x:0.42,y:0.22}]
+      ]
+    }
+  ]
+}
+  
   'bamboo_branch': {
-    // Compositions have logical segments that must be painted sequentially.
     segments: [
       {
         name: 'stalk',
-        behavior: { 
-          w: 2.2,    // Medium-wide stalk
-          taper: 0.1,// Very little taper (rigid)
-          wobble: 0.05 // Straight but textured
-        },
+        behavior: { w: 2.2, taper: 0.1, wobble: 0.05 },
         strokes: [
-          // Defines the rigid segments of the stalk
-          [{x:0.4, y:0.9}, {x:0.4, y:0.75}], 
+          [{x:0.4, y:0.9}, {x:0.4, y:0.75}],
           [{x:0.4, y:0.75}, {x:0.4, y:0.6}],
           [{x:0.4, y:0.6}, {x:0.4, y:0.45}]
         ]
       },
       {
         name: 'leaves',
-        behavior: { 
-          w: 0.8,     // Fine brush
-          taper: 0.9, // Sharp points
-          wobble: 0.3 // Very fluid and organic
-        },
+        behavior: { w: 0.8, taper: 0.9, wobble: 0.3 },
         strokes: [
-          // Fast flicks originating near the top nodes
-          [{x:0.4, y:0.6}, {x:0.6, y:0.5}], 
-          [{x:0.4, y:0.6}, {x:0.2, y:0.5}], 
+          [{x:0.4, y:0.6}, {x:0.6, y:0.5}],
+          [{x:0.4, y:0.6}, {x:0.2, y:0.5}],
           [{x:0.4, y:0.45}, {x:0.7, y:0.35}],
           [{x:0.4, y:0.45}, {x:0.1, y:0.35}]
         ]
@@ -4396,16 +4466,15 @@ const SUMIE_COMPOSITIONS = {
     segments: [
       {
         name: 'trunk',
-        behavior: { w: 3.5, taper: 0.3, wobble: 0.25 }, // Gnarled and rough
+        behavior: { w: 3.5, taper: 0.3, wobble: 0.25 },
         strokes: [
           [{x:0.5, y:0.9}, {x:0.4, y:0.7}, {x:0.6, y:0.5}, {x:0.4, y:0.3}]
         ]
       },
       {
         name: 'needles',
-        behavior: { w: 0.4, taper: 1.0, wobble: 0.6 }, // Sharp clusters
+        behavior: { w: 0.4, taper: 1.0, wobble: 0.6 },
         strokes: [
-          // Clustered flicks along the trunk
           [{x:0.6, y:0.5}, {x:0.75, y:0.5}],
           [{x:0.6, y:0.5}, {x:0.7, y:0.55}],
           [{x:0.4, y:0.3}, {x:0.55, y:0.3}],
@@ -4414,7 +4483,207 @@ const SUMIE_COMPOSITIONS = {
       }
     ]
   }
-};
+  // 梅 Plum Blossom (winter)
+  'plum_blossom': {
+    segments: [
+      {
+        name: 'trunk',
+        behavior: { w: 3.8, taper: 0.25, wobble: 0.4 }, // gnarled, rough
+        strokes: [
+          [{x:0.5,y:0.9}, {x:0.45,y:0.7}, {x:0.55,y:0.55}, {x:0.5,y:0.4}],
+          [{x:0.5,y:0.55}, {x:0.35,y:0.45}, {x:0.25,y:0.35}],
+          [{x:0.5,y:0.7}, {x:0.65,y:0.6}, {x:0.75,y:0.5}]
+        ]
+      },
+      {
+        name: 'branches',
+        behavior: { w: 1.2, taper: 0.7, wobble: 0.2 }, // thinner, more fluid
+        strokes: [
+          [{x:0.25,y:0.35}, {x:0.2,y:0.25}, {x:0.15,y:0.18}],
+          [{x:0.75,y:0.5}, {x:0.82,y:0.42}, {x:0.88,y:0.35}],
+          [{x:0.35,y:0.45}, {x:0.28,y:0.38}, {x:0.22,y:0.32}]
+        ]
+      },
+      {
+        name: 'blossoms',
+        behavior: { w: 0.5, taper: 1.0, wobble: 0.8 }, // sharp petal strokes
+        strokes: [
+          // Flower 1 near (0.25,0.35)
+          [{x:0.25,y:0.35},{x:0.22,y:0.28}], [{x:0.25,y:0.35},{x:0.3,y:0.3}],
+          [{x:0.25,y:0.35},{x:0.28,y:0.4}], [{x:0.25,y:0.35},{x:0.2,y:0.4}],
+          // Flower 2 near (0.75,0.5)
+          [{x:0.75,y:0.5},{x:0.72,y:0.43}], [{x:0.75,y:0.5},{x:0.8,y:0.45}],
+          [{x:0.75,y:0.5},{x:0.78,y:0.55}], [{x:0.75,y:0.5},{x:0.7,y:0.55}],
+          // Flower 3 near (0.5,0.4)
+          [{x:0.5,y:0.4},{x:0.47,y:0.33}], [{x:0.5,y:0.4},{x:0.55,y:0.35}],
+          [{x:0.5,y:0.4},{x:0.53,y:0.45}]
+        ]
+      }
+    ]
+  },
+
+  // 蘭 Orchid (elegant, flowing)
+  'orchid': {
+    segments: [
+      {
+        name: 'leaves',
+        behavior: { w: 1.5, taper: 0.85, wobble: 0.6 }, // long sweeping arcs
+        strokes: [
+          [{x:0.3,y:0.8},{x:0.2,y:0.55},{x:0.15,y:0.3},{x:0.25,y:0.15}],
+          [{x:0.45,y:0.85},{x:0.4,y:0.6},{x:0.45,y:0.35},{x:0.6,y:0.2}],
+          [{x:0.6,y:0.82},{x:0.65,y:0.58},{x:0.75,y:0.4},{x:0.85,y:0.25}],
+          [{x:0.35,y:0.78},{x:0.3,y:0.5},{x:0.35,y:0.28}]
+        ]
+      },
+      {
+        name: 'flower_stem',
+        behavior: { w: 0.7, taper: 0.3, wobble: 0.1 }, // thin, upright
+        strokes: [
+          [{x:0.5,y:0.45},{x:0.48,y:0.3},{x:0.45,y:0.18}]
+        ]
+      },
+      {
+        name: 'petals',
+        behavior: { w: 0.4, taper: 0.95, wobble: 0.5 }, // delicate
+        strokes: [
+          [{x:0.45,y:0.18},{x:0.38,y:0.12}], [{x:0.45,y:0.18},{x:0.5,y:0.1}],
+          [{x:0.45,y:0.18},{x:0.52,y:0.14}], [{x:0.45,y:0.18},{x:0.4,y:0.2}],
+          // Additional buds
+          [{x:0.48,y:0.3},{x:0.42,y:0.26}], [{x:0.48,y:0.3},{x:0.55,y:0.27}]
+        ]
+      }
+    ]
+  },
+
+  // 菊 Chrysanthemum (dense, many petals)
+  'chrysanthemum': {
+    segments: [
+      {
+        name: 'stems',
+        behavior: { w: 2.0, taper: 0.4, wobble: 0.2 },
+        strokes: [
+          [{x:0.5,y:0.85},{x:0.48,y:0.65},{x:0.52,y:0.45}],
+          [{x:0.52,y:0.45},{x:0.6,y:0.35}],
+          [{x:0.48,y:0.65},{x:0.38,y:0.55}]
+        ]
+      },
+      {
+        name: 'leaves',
+        behavior: { w: 1.2, taper: 0.7, wobble: 0.4 },
+        strokes: [
+          [{x:0.6,y:0.35},{x:0.68,y:0.38},{x:0.72,y:0.32},{x:0.66,y:0.28}],
+          [{x:0.38,y:0.55},{x:0.3,y:0.58},{x:0.26,y:0.52},{x:0.32,y:0.48}]
+        ]
+      },
+      {
+        name: 'flower_center',
+        behavior: { w: 1.0, taper: 0.5, wobble: 0.3 },
+        strokes: [
+          [{x:0.52,y:0.45},{x:0.5,y:0.43},{x:0.48,y:0.45},{x:0.5,y:0.47},{x:0.52,y:0.45}]
+        ]
+      },
+      {
+        name: 'petals_outer',
+        behavior: { w: 0.6, taper: 0.9, wobble: 0.7 },
+        strokes: [
+          [{x:0.5,y:0.45},{x:0.42,y:0.38}],[{x:0.5,y:0.45},{x:0.58,y:0.38}],
+          [{x:0.5,y:0.45},{x:0.62,y:0.48}],[{x:0.5,y:0.45},{x:0.58,y:0.55}],
+          [{x:0.5,y:0.45},{x:0.42,y:0.55}],[{x:0.5,y:0.45},{x:0.38,y:0.48}]
+        ]
+      },
+      {
+        name: 'petals_inner',
+        behavior: { w: 0.4, taper: 0.95, wobble: 0.8 },
+        strokes: [
+          [{x:0.5,y:0.45},{x:0.46,y:0.4}],[{x:0.5,y:0.45},{x:0.54,y:0.4}],
+          [{x:0.5,y:0.45},{x:0.56,y:0.47}],[{x:0.5,y:0.45},{x:0.54,y:0.52}],
+          [{x:0.5,y:0.45},{x:0.46,y:0.52}],[{x:0.5,y:0.45},{x:0.44,y:0.47}]
+        ]
+      }
+    ]
+  },
+
+  // 石 Rock / Stone (textured, with moss)
+  'rock': {
+    segments: [
+      {
+        name: 'outline',
+        behavior: { w: 2.5, taper: 0.2, wobble: 0.4 }, // rough, varied pressure
+        strokes: [
+          [{x:0.3,y:0.7},{x:0.25,y:0.55},{x:0.28,y:0.4},{x:0.38,y:0.3},
+           {x:0.5,y:0.25},{x:0.62,y:0.3},{x:0.72,y:0.4},{x:0.75,y:0.55},
+           {x:0.7,y:0.7},{x:0.6,y:0.75},{x:0.5,y:0.78},{x:0.4,y:0.75},{x:0.3,y:0.7}]
+        ]
+      },
+      {
+        name: 'cracks_and_creases',
+        behavior: { w: 1.0, taper: 0.6, wobble: 0.3 },
+        strokes: [
+          [{x:0.4,y:0.4},{x:0.45,y:0.5},{x:0.5,y:0.55}],
+          [{x:0.6,y:0.45},{x:0.55,y:0.52},{x:0.58,y:0.6}],
+          [{x:0.35,y:0.6},{x:0.42,y:0.62},{x:0.48,y:0.65}]
+        ]
+      },
+      {
+        name: 'moss_dots',
+        behavior: { w: 0.8, taper: 1.0, wobble: 0.2 }, // stippled dots
+        strokes: [
+          [{x:0.32,y:0.48},{x:0.34,y:0.47}], [{x:0.68,y:0.52},{x:0.7,y:0.51}],
+          [{x:0.45,y:0.3},{x:0.47,y:0.29}], [{x:0.55,y:0.32},{x:0.57,y:0.31}]
+        ]
+      }
+    ]
+  },
+
+  // 山水 Landscape (mountain + water + boat)
+  'landscape': {
+    segments: [
+      {
+        name: 'distant_mountains',
+        behavior: { w: 1.2, taper: 0.5, wobble: 0.1 }, // light, dry brush
+        strokes: [
+          [{x:0.1,y:0.5},{x:0.2,y:0.4},{x:0.3,y:0.45},{x:0.4,y:0.35},{x:0.5,y:0.4}],
+          [{x:0.5,y:0.4},{x:0.6,y:0.3},{x:0.7,y:0.35},{x:0.8,y:0.25},{x:0.9,y:0.3}]
+        ]
+      },
+      {
+        name: 'nearby_rocks',
+        behavior: { w: 2.2, taper: 0.3, wobble: 0.35 },
+        strokes: [
+          [{x:0.15,y:0.7},{x:0.2,y:0.6},{x:0.3,y:0.65},{x:0.25,y:0.75},{x:0.15,y:0.7}],
+          [{x:0.7,y:0.8},{x:0.75,y:0.7},{x:0.85,y:0.75},{x:0.8,y:0.85},{x:0.7,y:0.8}]
+        ]
+      },
+      {
+        name: 'water_ripples',
+        behavior: { w: 0.6, taper: 0.7, wobble: 0.2 },
+        strokes: [
+          [{x:0.2,y:0.82},{x:0.3,y:0.8},{x:0.4,y:0.83}],
+          [{x:0.5,y:0.85},{x:0.6,y:0.82},{x:0.7,y:0.84}],
+          [{x:0.35,y:0.88},{x:0.45,y:0.86},{x:0.55,y:0.89}]
+        ]
+      },
+      {
+        name: 'boat',
+        behavior: { w: 0.9, taper: 0.4, wobble: 0.1 },
+        strokes: [
+          [{x:0.45,y:0.78},{x:0.55,y:0.78},{x:0.6,y:0.8},{x:0.5,y:0.82},{x:0.4,y:0.8},{x:0.45,y:0.78}],
+          [{x:0.5,y:0.78},{x:0.5,y:0.72},{x:0.53,y:0.7}]
+        ]
+      },
+      {
+        name: 'fisherman',
+        behavior: { w: 0.4, taper: 0.9, wobble: 0.2 },
+        strokes: [
+          [{x:0.5,y:0.72},{x:0.5,y:0.68}], // figure
+          [{x:0.5,y:0.68},{x:0.48,y:0.65}], // pole
+          [{x:0.5,y:0.68},{x:0.52,y:0.66}]  // arm
+        ]
+      }
+    ]
+  }
+
+}; // closes Sumie paths
   
 // ── Sumi-e renderer ────────────────────────────────────────────────────────────
 function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
@@ -4499,6 +4768,72 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
   CTX.globalAlpha = 1;
 }
 
+ // helpers 
+function _spawnSumieComposition(p, compKey, ox, oy, scale) {
+  let comp = SUMIE_COMPOSITIONS[compKey];
+  if (!comp) return;
+  activeComposition = {
+    key: compKey,
+    segments: comp.segments,
+    transform: { ox, oy, scale },
+    currentSegmentIndex: 0,
+    currentStrokeIndex: 0
+  };
+  currentSegmentIndex = 0;
+  currentStrokeIndex = 0;
+  lastStrokeBirthTime = _calligClock;
+}
+
+function _updateCompositionSequence(p) {
+  if (!activeComposition) return;
+  if (currentSegmentIndex >= activeComposition.segments.length) {
+    activeComposition = null; // composition finished
+    return;
+  }
+  let interStrokeDelay = Math.max(5, Math.floor(15 / (S.speed * 100 + 0.5)));
+  if (_calligClock - lastStrokeBirthTime >= interStrokeDelay) {
+    let segment = activeComposition.segments[currentSegmentIndex];
+    let strokePts = segment.strokes[currentStrokeIndex];
+    let T = activeComposition.transform;
+    // Store original settings
+    let origWidth = S.calligWidth;
+    let origTaper = S.calligTaper;
+    let origWobble = S.calligWobble; // you may have this; if not, add default 0.5
+    S.calligWidth = segment.behavior.w;
+    S.calligTaper = segment.behavior.taper;
+    if (typeof S.calligWobble === 'undefined') S.calligWobble = 0.5;
+    S.calligWobble = segment.behavior.wobble;
+    // Transform points
+    let cumDist = 0, dists = [0];
+    for (let i = 1; i < strokePts.length; i++) {
+      cumDist += Math.hypot(strokePts[i].x - strokePts[i-1].x, strokePts[i].y - strokePts[i-1].y);
+      dists.push(cumDist);
+    }
+    let pts = strokePts.map((pt, i) => ({
+      x: T.ox + (pt.x - 0.5) * T.scale,
+      y: T.oy + (pt.y - 0.5) * T.scale,
+      prog: dists[i] / (cumDist || 1),
+      speed: 1.0
+    }));
+    pts = _applyChaikin(pts, 3);
+    let baseWidth = Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20));
+    let col = pickColor(p, T.ox, T.oy, 0);
+    calligStrokes.push({
+      pts, col, birth: _calligClock, lifespan: 500, fadeOut: 150, baseWidth
+    });
+    // Restore settings
+    S.calligWidth = origWidth;
+    S.calligTaper = origTaper;
+    S.calligWobble = origWobble;
+    lastStrokeBirthTime = _calligClock;
+    currentStrokeIndex++;
+    if (currentStrokeIndex >= segment.strokes.length) {
+      currentSegmentIndex++;
+      currentStrokeIndex = 0;
+    }
+  }
+}
+  
 // ── Geometric helpers ─────────────────────────────────────────────────────────
 function _applyChaikin(pts, iterations) {
   if (iterations === 0 || pts.length < 3) return pts;
@@ -7852,6 +8187,7 @@ const PARAM_REGISTRY = {
     { id:'calligGrow',       label:'Grow speed',      min:0.1, max:3.0, step:0.1,  def:0.5,  scale:1 },
     { id:'calligInk',        label:'Ink opacity',     min:0.2, max:1.0, step:0.05, def:0.9,  scale:1 },
     { id:'calligSplatter',   label:'Splatter',        min:0,   max:8.0, step:0.05, def:0.2,  scale:1 },
+    { id:'calligWobble', label:'Brush wobble', min:0, max:1, step:0.05, def:0.5, scale:1 },
     { id:'calligDrips',      label:'Ink drips',       type:'toggle', def:true },
     { id:'calligPooling',    label:'End pooling',     type:'toggle', def:true },
     { id:'calligPaperGrain', label:'Paper grain',     type:'toggle', def:true },
@@ -7897,6 +8233,23 @@ const PARAM_REGISTRY = {
         {value:'zen',      label:'☯ Zen'}
       ], def:'eternal',
       extra: function() { calligStrokes = []; }
+    },
+    { id:'calligCompositionMode', label:'Composition mode', type:'toggle', def:false,
+    extra: function() {
+      if (!S.calligCompositionMode) activeComposition = null;
+    }
+  },
+    { id:'calligComposition', label:'Composition', type:'select', options:[
+    { value:'mount_fuji',     label:'🗻 Mount Fuji' },  
+    { value:'bamboo_branch',  label:'🎋 Bamboo Branch' },
+    { value:'sumi_pine',      label:'🌲 Sumi Pine' },
+    { value:'plum_blossom',   label:'🌸 Plum Blossom' },
+    { value:'orchid',         label:'🌿 Orchid' },
+    { value:'chrysanthemum',  label:'🌼 Chrysanthemum' },
+    { value:'rock',           label:'🪨 Rock & Moss' },
+    { value:'landscape',      label:'🏞️ Mountain Landscape' }
+      ], def:'bamboo_branch',
+      extra: function() { activeComposition = null; }
     },
     { id:'calligRedrawBtn', label:'↺ Redraw strokes', type:'button',
       action: function() { calligRedraw(window._st && window._st.p); }
