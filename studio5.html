@@ -3679,6 +3679,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len,
                                    baseWidth, charMode, charSet);
   if (s) calligStrokes.push(s);
+  if (window._st) window._st.rd();
 }
 
 // ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
@@ -3944,7 +3945,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       let y = pt.y + Math.sin(ang) * fOff * pt.w;
 
       i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
-      CTX.lineWidth = pt.w * (0.05 + dryness * 0.2);
+      CTX.lineWidth = pt.w * (0.15 + dryness * 0.3);
       // Split ink: outer fibers are lighter/dryer
       CTX.globalAlpha = baseAlpha * dryness * (1.2 - Math.abs(fOff));
       CTX.strokeStyle = col;
@@ -3960,7 +3961,7 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
       let dryness = p.noise(pt.x * 0.04, pt.y * 0.04, f * 2) * 0.6
                   + p.noise(pt.x * 0.12, pt.y * 0.12, f * 3) * 0.4;
       dryness *= 1 - Math.abs(pt.prog - 0.5) * 0.3;
-      if (dryness < 0.25) {
+      if (dryness < 0.15) {
         CTX.stroke(); CTX.beginPath(); continue;
       }
       let next = pts[i+1] || pt;
@@ -3976,9 +3977,9 @@ function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, spl
   }
   //  KASURI (Dark Core)
   CTX.beginPath();
-  CTX.globalAlpha = baseAlpha * 0.75;
+  CTX.globalAlpha = baseAlpha * 0.85;
   for (let i = 0; i < pts.length; i++) {
-    CTX.lineWidth = pts[i].w * 0.35;
+    CTX.lineWidth = pts[i].w * 0.65;
     i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
   }
   CTX.stroke();
@@ -6697,6 +6698,9 @@ new p5(function(p){
     p.resizeCanvas(W,H);
     CTX=p.drawingContext;
     ri(); // ri calls rd internally
+
+    if (typeof setupCalligraphyInteraction === 'function') {
+      setupCalligraphyInteraction(p);
   }
   // ── Function RI - reinitialize ─────────────────────────────────────────────────────────────────
   function ri() {
@@ -7360,8 +7364,8 @@ const PARAM_REGISTRY = {
     { id:'calligCount',     label:'Stroke count',      min:1,  max:15, step:1, def:8,   scale:1 },   // more strokes
     { id:'calligMinLen',    label:'Min length',        min:0.1, max:0.8, step:0.05, def:0.4, scale:1 },
     { id:'calligMaxLen',    label:'Max length',        min:0.2, max:1.2, step:0.05, def:0.9, scale:1 },
-    { id:'calligWidth',     label:'Base width',        min:0.3, max:2.5, step:0.1, def:1.2, scale:1 }, // thicker
-    { id:'calligTaper',     label:'Taper',             min:0.1, max:1.5, step:0.05, def:0.5, scale:1 },
+    { id:'calligWidth',     label:'Base width',        min:0.3, max:8.0, step:0.1, def:2.5, scale:1 }, // thicker
+    { id:'calligTaper',     label:'Taper',             min:0.1, max:5.0, step:0.05, def:0.5, scale:1 },
     { id:'calligBleed',     label:'Ink bleed',         min:0,   max:1.2, step:0.1, def:0.6, scale:1 },
     { id:'calligFibers',    label:'Fiber strands',     min:1,   max:12, step:1, def:8,   scale:1 },
     { id:'calligSplatter',  label:'Splatter amount',   min:0,   max:1.0, step:0.05, def:0.3, scale:1 },
@@ -7731,6 +7735,18 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   if (activeCtrl) activeCtrl.classList.add('active');
   // 5. Re-initialize and redraw, adding mode-specific controls
     rebuildModeUI(S.mode);
+  // enable interaction in calligraphy mode
+if (S.mode === 'calligraphy') {
+  // Automatically turn on interactive mode for better UX
+  S.calligInteractive = true;
+  // Update the UI toggle button
+  let interactiveBtn = document.getElementById('mdp_calligInteractive');
+  if (interactiveBtn) {
+    interactiveBtn.textContent = 'On';
+    interactiveBtn.classList.add('on');
+  }
+  showToast('Calligraphy mode – draw on canvas');
+}
   let sec = document.getElementById('mode-extra-sec');
   if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
   if (window._st) {
