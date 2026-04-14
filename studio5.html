@@ -3566,66 +3566,65 @@ function drawInterference(p,t){
 }
 
 
-// ── CALLIGRAPHY v4 ────────────────────────────────────────────────────────────
-// Three subsystems:
-//   1. Offscreen ink buffer — accumulates strokes, never cleared by main loop
-//   2. Auto mode — complete characters spawn at intervals, strokes grow in sequence
-//   3. Interactive mode — pointer events render directly to ink buffer immediately
+// ── CALLIGRAPHY v5 ─────────────────────────────────────────────────────────────
+// Four sub-modes via S.calligSubMode:
+//   'random'      — abstract brush strokes, auto-generated
+//   'character'   — Chinese character paths (永, 龍, etc.), auto-generated
+//   'interactive' — user paints with brush cursor (pointer events)
+//   'composition' — sequential sumi-e scene compositions
+//
+// Root bugs fixed from v4:
+//   • _updateCompositionSequence() was a nested fn inside drawCalligraphy(),
+//     causing it to shadow itself and never properly execute.
+//   • drawCalligraphy() was never closed before helper definitions, corrupting
+//     the module's function-scope chain.
+//   • Duplicate pointer+mouse handlers conflicted on modern browsers.
+//   • Composition spawn gated behind Math.random() < 0.2 — nearly never fired.
+//   • Canvas CSS cursor was never set for interactive mode.
+//   • _updateBrushCursor() called inside drawCalligraphy but cursor div was
+//     only positioned by pointer events that weren't firing.
+// ──────────────────────────────────────────────────────────────────────────────
 
-let calligStrokes = [];   // auto-mode grow-in queue only
-let isDrawing     = false;
-let lastMouseX    = 0, lastMouseY = 0;
-let mouseVelocity = 0;
-let _calligClock  = 0;    // independent tick counter
-let _calligCursor = null; // cached #brushCursor element
-let activeComposition = null;        // currently painting composition
-let currentSegmentIndex = 0;         // which segment (e.g., stalk, leaves)
-let currentStrokeIndex = 0;          // which stroke within the current segment
-let lastStrokeBirthTime = 0;         // frame counter when last stroke was added  
+// ── Module-level state ─────────────────────────────────────────────────────────
+let calligStrokes       = [];
+let calligIsDrawing     = false;
+let calligLastX         = 0;
+let calligLastY         = 0;
+let calligMouseVelocity = 0;
+let calligMouseAngle    = 0;
+let _calligClock        = 0;
+let _calligCursor       = null;   // cached #brushCursor div
 
-// ── Ink buffer ─────────────────────────────────────────────────────────────────
-let _inkCanvas = null, _inkCTX = null;
+// Composition state (module-level, NOT inside any fn)
+let calligActiveComp = null;
+let calligSegIdx     = 0;
+let calligStrokeIdx  = 0;
+let calligLastBirth  = 0;
+
+// Offscreen ink buffers
+let _inkCanvas   = null;
+let _inkCTX      = null;
 let _grainCanvas = null;
 
+// ── Ink buffer helpers ─────────────────────────────────────────────────────────
 function _ensureInkBuffer(W, H) {
   if (!_inkCanvas || _inkCanvas.width !== W || _inkCanvas.height !== H) {
-    let prev      = _inkCanvas;
-    _inkCanvas    = document.createElement('canvas');
-    _inkCanvas.width = W; _inkCanvas.height = H;
-    _inkCTX       = _inkCanvas.getContext('2d');
-    let bg        = S.bg || '#f2ede6';
-    _inkCTX.fillStyle = bg;
+    let prev     = _inkCanvas;
+    _inkCanvas   = document.createElement('canvas');
+    _inkCanvas.width  = W;
+    _inkCanvas.height = H;
+    _inkCTX      = _inkCanvas.getContext('2d');
+    _inkCTX.fillStyle = S.bg || '#f2ede6';
     _inkCTX.fillRect(0, 0, W, H);
     if (prev) _inkCTX.drawImage(prev, 0, 0, W, H);
   }
 }
 
-function setDrawingCursor(enable) {
-  let canvas = document.getElementById('gc');
-  if (!canvas) return;
-  if (enable) {
-    canvas.classList.add('drawing-mode');
-    // Also ensure no inline cursor style overrides it
-    canvas.style.cursor = '';
-  } else {
-    canvas.classList.remove('drawing-mode');
-  }
-}
-  
-function clearInkBuffer() {
-  if (_inkCTX && _inkCanvas) {
-    let bg = S.bg || '#f2ede6';
-    _inkCTX.fillStyle = bg;
-    _inkCTX.fillRect(0, 0, _inkCanvas.width, _inkCanvas.height);
-  }
-  calligStrokes = [];
-  _calligClock  = 0;
-}
-
 function _ensureGrainBuffer(p, W, H) {
   if (!_grainCanvas || _grainCanvas.width !== W || _grainCanvas.height !== H) {
     _grainCanvas = document.createElement('canvas');
-    _grainCanvas.width = W; _grainCanvas.height = H;
+    _grainCanvas.width  = W;
+    _grainCanvas.height = H;
     let gx = _grainCanvas.getContext('2d');
     gx.clearRect(0, 0, W, H);
     for (let x = 0; x < W; x += 2) {
@@ -3640,55 +3639,79 @@ function _ensureGrainBuffer(p, W, H) {
   }
 }
 
-function _bgIsLight(hex) {
-  if (!hex || hex.length < 7) return false;
-  return (parseInt(hex.slice(1,3),16) + parseInt(hex.slice(3,5),16) + parseInt(hex.slice(5,7),16)) > 382;
+function clearInkBuffer() {
+  if (_inkCTX && _inkCanvas) {
+    _inkCTX.fillStyle = S.bg || '#f2ede6';
+    _inkCTX.fillRect(0, 0, _inkCanvas.width, _inkCanvas.height);
+  }
+  calligStrokes    = [];
+  calligActiveComp = null;
+  calligSegIdx     = 0;
+  calligStrokeIdx  = 0;
+  _calligClock     = 0;
 }
 
-// ── drawCalligraphy ────────────────────────────────────────────────────────────
+function _bgIsLight(hex) {
+  if (!hex || hex.length < 7) return true;
+  return (parseInt(hex.slice(1,3),16) +
+          parseInt(hex.slice(3,5),16) +
+          parseInt(hex.slice(5,7),16)) > 382;
+}
+
+// ── Main draw function ─────────────────────────────────────────────────────────
+// Called every frame by the p5 draw loop.
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
   _ensureInkBuffer(W, H);
   _calligClock++;
 
-  let strokeCount = Math.max(1, Math.floor(S.calligCount  ?? 5));
-  let minLen      = (S.calligMinLen  ?? 0.3) * Math.min(W, H);
-  let maxLen      = (S.calligMaxLen  ?? 0.8) * Math.min(W, H);
-  let baseWidth   = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let taper       = S.calligTaper    ?? 0.5;
-  let bleed       = S.calligBleed    ?? 0.5;
-  let fibers      = Math.max(1, Math.floor(S.calligFibers ?? 6));
-  let growSpeed   = Math.max(0.05, S.calligGrow  ?? 0.5);
-  let inkOpacity  = S.calligInk      ?? 0.9;
-  let charMode    = S.calligCharMode ?? true;
-  let charSet     = S.calligCharSet  ?? 'eternal';
-  let drips       = S.calligDrips    ?? true;
-  let pooling     = S.calligPooling  ?? true;
-  let splatter    = S.calligSplatter ?? 0.2;
-  let grain       = S.calligPaperGrain ?? true;
-  let interactive = S.calligInteractive ?? false;
+  // ── Read settings ────────────────────────────────────────────────────────
+  let subMode    = S.calligSubMode    ?? 'character'; // 'random'|'character'|'interactive'|'composition'
+  let count      = Math.max(1, Math.floor(S.calligCount   ?? 5));
+  let minLen     = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
+  let maxLen     = (S.calligMaxLen    ?? 0.8) * Math.min(W, H);
+  let baseWidth  = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let taper      = S.calligTaper      ?? 0.5;
+  let bleed      = S.calligBleed      ?? 0.5;
+  let fibers     = Math.max(1, Math.floor(S.calligFibers ?? 6));
+  let growSpeed  = Math.max(0.05, S.calligGrow   ?? 0.5);
+  let inkOpacity = S.calligInk        ?? 0.9;
+  let charSet    = S.calligCharSet    ?? 'eternal';
+  let drips      = S.calligDrips      ?? true;
+  let pooling    = S.calligPooling    ?? true;
+  let splatter   = S.calligSplatter   ?? 0.2;
+  let grain      = S.calligPaperGrain ?? true;
 
-  // Auto-spawn
-  if (!interactive && S.playing) {
-  if (S.calligCompositionMode) {
-    // Start a new composition if none is active, using the selected composition
-    if (!activeComposition && _calligClock % 120 === 0 && Math.random() < 0.2) {
-      let compKey = S.calligComposition || 'bamboo_branch'; // fallback
-      let W = p.width, H = p.height;
-      _spawnSumieComposition(p, compKey, p.random(W*0.2, W*0.8), p.random(H*0.2, H*0.8), Math.min(W,H)*0.5);
-    }
-    _updateCompositionSequence(p);
-  } else {
-    // Original single‑stroke spawning
-    let interval = Math.max(6, Math.round(80 / strokeCount));
-    if (_calligClock % interval === 0) {
-      _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet);
+  // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
+  if (S.playing && subMode !== 'interactive') {
+
+    if (subMode === 'composition') {
+      // Spawn a new composition when the previous one has finished
+      if (!calligActiveComp && _calligClock % 80 === 0) {
+        let compKey = S.calligComposition || 'bamboo_branch';
+        _spawnSumieComposition(
+          p, compKey,
+          p.random(W * 0.2, W * 0.8),
+          p.random(H * 0.2, H * 0.8),
+          Math.min(W, H) * 0.5
+        );
+      }
+      // Tick through the active composition stroke-by-stroke
+      if (calligActiveComp) {
+        _updateCompositionSequence(p);
+      }
+
+    } else {
+      // 'random' or 'character' — periodic stroke spawning
+      let interval = Math.max(6, Math.round(80 / count));
+      if (_calligClock % interval === 0) {
+        _spawnCharacter(p, W, H, minLen, maxLen, baseWidth,
+                        subMode === 'character', charSet);
+      }
     }
   }
-}
 
-  
-  // Render growing strokes to ink buffer
+  // ── Render growing stroke queue → ink buffer ──────────────────────────────
   let light   = _bgIsLight(S.bg);
   let origCTX = CTX;
   CTX = _inkCTX;
@@ -3703,28 +3726,33 @@ function drawCalligraphy(p, t) {
     if (age < 0) continue;
     if (age > st.lifespan + st.fadeOut) { calligStrokes.splice(i, 1); continue; }
 
-    let drawProg    = Math.min(1, age * growSpeed * 0.2);
-    let visiblePts  = st.pts.filter(pt => pt.prog <= drawProg);
+    let drawProg   = Math.min(1, age * growSpeed * 0.2);
+    let visiblePts = st.pts.filter(pt => pt.prog <= drawProg);
     if (visiblePts.length < 2) continue;
 
+    // Width per point
     for (let j = 0; j < visiblePts.length; j++) {
       let pt = visiblePts[j];
       let pf = Math.sin(pt.prog * Math.PI);
       let sf = Math.pow(1 / Math.max(0.1, pt.speed || 1), 0.4);
-      pt.w   = Math.max(0.5, st.baseWidth * Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
+      pt.w   = Math.max(0.5, st.baseWidth *
+                Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
     }
 
+    // Fade out
     let alpha = inkOpacity;
-    if (age > st.lifespan) alpha *= 1 - Math.pow((age - st.lifespan) / Math.max(1, st.fadeOut), 2);
+    if (age > st.lifespan) {
+      alpha *= 1 - Math.pow((age - st.lifespan) / Math.max(1, st.fadeOut), 2);
+    }
     alpha = Math.max(0, Math.min(1, alpha));
-
-    _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha, drips, pooling, splatter, t);
+    _renderSumiE(p, visiblePts, st.col, bleed, fibers,
+                 alpha, drips, pooling, splatter, t);
   }
 
   _inkCTX.restore();
   CTX = origCTX;
 
-  // Composite ink + grain to main canvas
+  // ── Composite: ink buffer + paper grain → main canvas ────────────────────
   CTX.save();
   CTX.globalAlpha = 1;
   CTX.globalCompositeOperation = 'source-over';
@@ -3735,28 +3763,39 @@ function drawCalligraphy(p, t) {
     CTX.globalAlpha = 0.35;
     CTX.drawImage(_grainCanvas, 0, 0);
   }
+  CTX.restore();
 
-// ── HANKO SEAL (PHYSICAL INK SIMULATION) ─────────────────────────────────────
-if (S.mode === 'calligraphy') {
+  // ── Hanko seal (bottom-left) ──────────────────────────────────────────────
+  _drawHanko(p, t, W, H);
+
+  // ── Brush cursor size sync (position set by pointer events) ──────────────
+  _syncBrushCursorSize(subMode);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// END of drawCalligraphy — all helpers below are module-level, not nested.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// ── Hanko seal renderer ────────────────────────────────────────────────────────
+function _drawHanko(p, t, W, H) {
+  if (S.mode !== 'calligraphy') return;
   CTX.save();
-  // 1. Layout & Proportions
-  // A traditional tall rectangular seal for a 3-character name
+
   let stampW = Math.min(34, W * 0.05);
-  let stampH = stampW * 2.4; 
+  let stampH = stampW * 2.4;
   let stampX = 35;
   let stampY = H - stampH - 35;
-  // Subtle rotation for the "hand-stamped" look
+
+  // Subtle "hand-stamped" tilt
   CTX.translate(stampX + stampW / 2, stampY + stampH / 2);
-  CTX.rotate(-0.02); 
+  CTX.rotate(-0.02);
   CTX.translate(-(stampX + stampW / 2), -(stampY + stampH / 2));
-  // 2. Draw the Weathered Stone Shape
-  // We use "destination-out" later, so we draw the red base first
-  CTX.fillStyle = '#b32222'; // Cinnabar Red
+
+  // ── 1. Draw the cinnabar stone with organic edges ───────────────────────
+  CTX.fillStyle  = '#b32222';
   CTX.globalAlpha = 0.9;
   CTX.beginPath();
-  let steps = 12;
-  let jitter = 1.2;
-  // Create organic, slightly "chipped" edges
+  let steps = 12, jitter = 1.2;
   for (let i = 0; i <= steps; i++) {
     let x = stampX + (i / steps) * stampW;
     let y = stampY + (p.noise(x * 0.1, stampY * 0.1) - 0.5) * jitter;
@@ -3779,126 +3818,167 @@ if (S.mode === 'calligraphy') {
   }
   CTX.closePath();
   CTX.fill();
-  // 3. Apply Ink "Break-up" (The Fading Effect)
-  // We use 'destination-out' with random noise to simulate ink not hitting the paper
+
+  // ── 2. Ink break-up — random voids where stamp didn't fully contact ─────
   CTX.globalCompositeOperation = 'destination-out';
   for (let i = 0; i < 40; i++) {
-    let rx = stampX + Math.random() * stampW;
-    let ry = stampY + Math.random() * stampH;
-    let rs = Math.random() * 2 + 1;
     CTX.globalAlpha = Math.random() * 0.4;
     CTX.beginPath();
-    CTX.arc(rx, ry, rs, 0, Math.PI * 2);
+    CTX.arc(
+      stampX + Math.random() * stampW,
+      stampY + Math.random() * stampH,
+      Math.random() * 2 + 1, 0, Math.PI * 2
+    );
     CTX.fill();
   }
-  // 4. Carve the Name (Transparent Mask)
-  // This removes the red ink where the characters are
-  CTX.globalAlpha = 1.0;
-  CTX.textAlign = 'center';
+
+  // ── 3. Carve the name glyphs (removes red ink) ──────────────────────────
+  CTX.globalCompositeOperation = 'destination-out';
+  CTX.globalAlpha  = 1.0;
+  CTX.textAlign    = 'center';
   CTX.textBaseline = 'middle';
-  // Using Ma Shan Zheng for that brushed/carved feel
   CTX.font = `bold ${stampW * 0.7}px "Ma Shan Zheng", "Noto Serif SC", serif`;
-  let chars = ['乔', '纳', '森'];
-  let spacing = stampH * 0.31;
-  chars.forEach((char, i) => {
-    let charY = stampY + (stampH * 0.18) + (i * spacing);
-    // Slight jitter per character for hand-carved imperfection
-    let jx = (p.noise(i, t * 0.01) - 0.5) * 0.8;
-    CTX.fillText(char, stampX + stampW / 2 + jx, charY);
+  ['乔', '纳', '森'].forEach((ch, i) => {
+    let charY = stampY + (stampH * 0.18) + (i * stampH * 0.31);
+    let jx    = (p.noise(i, t * 0.01) - 0.5) * 0.8;
+    CTX.fillText(ch, stampX + stampW / 2 + jx, charY);
   });
-  // 5. Restore Composite and add a very faint "Multiply" pass
-  // This makes the red ink feel like it's soaking INTO the paper fibers
+
+  // ── 4. Subtle multiply pass — ink soaking into paper fibers ─────────────
   CTX.globalCompositeOperation = 'multiply';
   CTX.globalAlpha = 0.1;
-  CTX.fillStyle = '#440000';
-  CTX.fill(); // Re-fills the stone shape with a tiny bit of darkening
+  CTX.fillStyle   = '#440000';
+  CTX.fillRect(stampX, stampY, stampW, stampH);
 
   CTX.restore();
 }
 
 
-  
-  // Brush cursor size update (position set by pointer event)
+// ── Brush cursor (div-based circle indicator) ──────────────────────────────────
+// Size is synced every frame; position is set by the pointer move handler.
+function _syncBrushCursorSize(subMode) {
   _calligCursor = _calligCursor || document.getElementById('brushCursor');
-  if (_calligCursor) {
-    if (interactive && S.mode === 'calligraphy') {
-      let cs = Math.max(8, (S.calligWidth ?? 2) * S.maxSize);
-      _calligCursor.style.width  = cs + 'px';
-      _calligCursor.style.height = cs + 'px';
-    } else {
-      _calligCursor.style.display = 'none';
-    }
-  }
-
-
-// ── Composition Sequence for Sumi-e Compositions ─────────────────
-function _updateCompositionSequence(p) {
-  // If we've finished all segments, the composition is complete
-  if (currentSegmentIndex >= activeComposition.segments.length) {
-    activeComposition = null; // Clean up the state
-    return;
-  }
-  // Define the gap between releasing individual strokes (e.g., paint one stroke every 15 frames)
-  let interStrokeDelay = 15; 
-  if (_calligClock - lastStrokeBirthTime >= interStrokeDelay) {
-    let currentSegment = activeComposition.segments[currentSegmentIndex];
-    let currentStroke = currentSegment.strokes[currentStrokeIndex];
-    let T = activeComposition.transform;
-    // A. Apply Behavior Overrides (IMPORTANT: mimic the picture's specific look)
-    // We override S (settings) temporarily so the generic renderer draws this stroke correctly.
-    const originalSParams = {
-      width: S.calligWidth,
-      taper: S.calligTaper,
-      wobble: S.calligWobble
-    };
-    // Apply specific behavior for this segment (e.g., 'stalk' vs 'leaf')
-    S.calligWidth = currentSegment.behavior.w;
-    S.calligTaper = currentSegment.behavior.taper;
-    S.calligWobble = currentSegment.behavior.wobble;
-    // B. Transform Normalized Points to Screen Space
-    let rawPts = currentStroke;
-    let baseWidth = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
-    // Compute normalized distances along the path for pressure calculation
-    let cumDist = 0; let dists = [0];
-    for (let i = 1; i < rawPts.length; i++) {
-      cumDist += Math.sqrt(Math.pow(rawPts[i].x-rawPts[i-1].x,2) + Math.pow(rawPts[i].y-rawPts[i-1].y,2));
-      dists.push(cumDist);
-    }
-    // Create the final point array applying offset and composition scale
-    let pts = rawPts.map((pt, i) => ({
-      x: T.ox + (pt.x - 0.5) * T.scale,
-      y: T.oy + (pt.y - 0.5) * T.scale,
-      prog: dists[i] / (cumDist || 1), // Standard progress along stroke
-      speed: 1.0 // Default speed; picture mode is less velocity-dependent
-    }));
-    // C. Smooth and Spawn
-    pts = _applyChaikin(pts, 3);
-    let s = { 
-      pts, 
-      col: pickColor(p, T.ox, T.oy, 0), 
-      birth: _calligClock, 
-      lifespan: 500, // Longer lifespan for composed pictures
-      fadeOut: 150, 
-      baseWidth 
-    };
-    calligStrokes.push(s);
-    // D. Restore generic settings immediately so the next random stroke uses them
-    S.calligWidth = originalSParams.width;
-    S.calligTaper = originalSParams.taper;
-    S.calligWobble = originalSParams.wobble;
-    // E. Advance Sequence State
-    lastStrokeBirthTime = _calligClock;
-    currentStrokeIndex++;
-    // If we finished all strokes in the current segment (e.g., done painting stalks)...
-    if (currentStrokeIndex >= currentSegment.strokes.length) {
-      currentSegmentIndex++; // Move to the next segment (e.g., start painting leaves)
-      currentStrokeIndex = 0; // Reset stroke index for the new segment
-    }
+  if (!_calligCursor) return;
+  let active = (subMode === 'interactive') && S.mode === 'calligraphy';
+  if (active) {
+    let cs = Math.max(8, (S.calligWidth ?? 2) * (S.maxSize / 20) * 1.2);
+    _calligCursor.style.width  = cs + 'px';
+    _calligCursor.style.height = cs + 'px';
+    // Visibility is toggled by pointer enter/leave; don't force-show here.
+  } else {
+    _calligCursor.style.display = 'none';
   }
 }
 
-  
-// ── Spawn a complete character (all strokes, staggered births) ─────────────────
+// Sets the CSS cursor on the canvas element and manages the div cursor visibility.
+function _refreshCanvasCursor() {
+  let canvas = document.getElementById('gc');
+  if (!canvas) return;
+  let interactive = (S.calligSubMode === 'interactive') && S.mode === 'calligraphy';
+  if (interactive) {
+    // Try the custom .cur file; fall back to crosshair
+    canvas.style.cursor = 'url(/cursor/cursor.cur) 16 16, crosshair';
+    canvas.classList.add('drawing-mode');
+  } else {
+    canvas.style.cursor = '';
+    canvas.classList.remove('drawing-mode');
+  }
+}
+
+// Public API — called when mode or subMode changes
+function showBrushCursor(show) {
+  _calligCursor = _calligCursor || document.getElementById('brushCursor');
+  if (_calligCursor) _calligCursor.style.display = show ? 'block' : 'none';
+  _refreshCanvasCursor();
+}
+
+// No-op stub kept for compatibility with existing p.setup() call sites
+function initBrushCursor() {}
+
+
+// ── Sumi-e composition sequencing ─────────────────────────────────────────────
+// Spawns the root composition record (module-level state, not inside drawCalligraphy).
+function _spawnSumieComposition(p, compKey, ox, oy, scale) {
+  let comp = SUMIE_COMPOSITIONS[compKey];
+  if (!comp) { console.warn('[calligraphy] Unknown composition:', compKey); return; }
+  calligActiveComp = {
+    key:      compKey,
+    segments: comp.segments,
+    transform: { ox, oy, scale }
+  };
+  calligSegIdx    = 0;
+  calligStrokeIdx = 0;
+  calligLastBirth = _calligClock;
+}
+
+// Releases one stroke every interStrokeDelay frames, advancing through segments.
+// Module-level function — was previously incorrectly nested inside drawCalligraphy.
+function _updateCompositionSequence(p) {
+  if (!calligActiveComp) return;
+  if (calligSegIdx >= calligActiveComp.segments.length) {
+    calligActiveComp = null;   // composition finished
+    return;
+  }
+
+  let interStrokeDelay = 15;
+  if (_calligClock - calligLastBirth < interStrokeDelay) return;
+
+  let T      = calligActiveComp.transform;
+  let seg    = calligActiveComp.segments[calligSegIdx];
+  let rawPts = seg.strokes[calligStrokeIdx];
+  let beh    = seg.behavior;
+
+  // Temporarily override style settings for this segment
+  let saved = { w: S.calligWidth, taper: S.calligTaper, wobble: S.calligWobble };
+  S.calligWidth  = beh.w;
+  S.calligTaper  = beh.taper;
+  S.calligWobble = beh.wobble;
+
+  let baseWidth = Math.max(3, beh.w * (S.maxSize / 20));
+
+  // Cumulative distances along the raw path
+  let cumDist = 0, dists = [0];
+  for (let i = 1; i < rawPts.length; i++) {
+    cumDist += Math.hypot(rawPts[i].x - rawPts[i-1].x, rawPts[i].y - rawPts[i-1].y);
+    dists.push(cumDist);
+  }
+
+  // Map normalised [0,1] coords → screen space via composition transform
+  let pts = rawPts.map((pt, i) => ({
+    x:     T.ox + (pt.x - 0.5) * T.scale,
+    y:     T.oy + (pt.y - 0.5) * T.scale,
+    prog:  cumDist > 0 ? dists[i] / cumDist : i / (rawPts.length - 1 || 1),
+    speed: 1.0
+  }));
+  pts = _densify(pts, 6);
+  pts = _applyChaikin(pts, 3);
+  _assignSpeeds(pts, T.scale);
+
+  calligStrokes.push({
+    pts,
+    col:      pickColor(p, T.ox, T.oy, 0),
+    birth:    _calligClock,
+    lifespan: 500,
+    fadeOut:  150,
+    baseWidth
+  });
+
+  // Restore settings
+  S.calligWidth  = saved.w;
+  S.calligTaper  = saved.taper;
+  S.calligWobble = saved.wobble;
+
+  // Advance sequence
+  calligLastBirth = _calligClock;
+  calligStrokeIdx++;
+  if (calligStrokeIdx >= seg.strokes.length) {
+    calligSegIdx++;
+    calligStrokeIdx = 0;
+  }
+}
+
+
+// ── Auto-spawn a full character (all strokes, staggered births) ────────────────
 function _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet) {
   let margin = 0.15 * Math.min(W, H);
   let ox     = p.random(margin, W - margin);
@@ -3908,25 +3988,30 @@ function _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet) 
 
   if (charMode) {
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
-    strokes.forEach(function(rawPts, si) {
+    strokes.forEach((rawPts, si) => {
       let s = _buildStroke(p, rawPts, ox, oy, len, col, baseWidth);
       if (!s) return;
-      s.birth    = _calligClock + si * 14; // sequential: one stroke every 14 ticks
+      s.birth    = _calligClock + si * 14;  // one stroke released every 14 ticks
       s.lifespan = 320 + Math.floor(p.random(80));
       s.fadeOut  = 100;
       calligStrokes.push(s);
     });
   } else {
+    // 'random' — single abstract line
     let angle = p.random(Math.PI * 2);
     let pts   = _genLinePoints(p, ox, oy, len, angle, 0.3);
     if (!pts || pts.length < 2) return;
     _assignSpeeds(pts, len);
-    calligStrokes.push({ pts, col, baseWidth, birth: _calligClock,
-      lifespan: 280 + Math.floor(p.random(80)), fadeOut: 100 });
+    calligStrokes.push({
+      pts, col, baseWidth,
+      birth:    _calligClock,
+      lifespan: 280 + Math.floor(p.random(80)),
+      fadeOut:  100
+    });
   }
 }
 
-// ── Build a stroke from a CHARACTER_PATHS raw point array ─────────────────────
+// Build a stroke from a CHARACTER_PATHS point array
 function _buildStroke(p, rawPts, ox, oy, len, col, baseWidth) {
   if (!rawPts || rawPts.length < 2) return null;
   let cumDist = 0, dists = [0];
@@ -3936,32 +4021,358 @@ function _buildStroke(p, rawPts, ox, oy, len, col, baseWidth) {
   }
   if (cumDist < 0.001) return null;
   let scale = len / cumDist;
-  let pts = rawPts.map((pt, i) => ({
-    x: ox + (pt.x - 0.5) * scale,
-    y: oy + (pt.y - 0.5) * scale,
-    prog: dists[i] / cumDist,
+  let pts   = rawPts.map((pt, i) => ({
+    x:     ox + (pt.x - 0.5) * scale,
+    y:     oy + (pt.y - 0.5) * scale,
+    prog:  dists[i] / cumDist,
     speed: 1.0
   }));
-  // Guarantee enough points for Chaikin and smooth prog distribution
   pts = _densify(pts, 6);
   pts = _applyChaikin(pts, 2);
   _assignSpeeds(pts, len);
   return { pts, col, baseWidth, birth: _calligClock };
 }
 
-// ── Interpolate extra points so 2-pt strokes work with Chaikin ────────────────
+
+// ── Interactive drawing ────────────────────────────────────────────────────────
+// Renders directly to the ink buffer on each pointer move segment.
+function _pushInteractiveStroke(p, x1, y1, x2, y2) {
+  let dist = Math.hypot(x2 - x1, y2 - y1);
+  if (dist < 1.5) return;
+
+  calligMouseVelocity = Math.min(3, dist / 8);
+  calligMouseAngle    = Math.atan2(y2 - y1, x2 - x1);
+
+  let baseWidth = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let col       = pickColor(p, x1, y1, 0);
+  let taper     = S.calligTaper ?? 0.5;
+
+  // Build point path — freehand line (charOnDraw = false) or character shape
+  let pts;
+  if (S.calligCharOnDraw) {
+    let strokes = CHARACTER_PATHS[S.calligCharSet ?? 'eternal'] || CHARACTER_PATHS['eternal'];
+    let rawPts  = strokes[Math.floor(p.random(strokes.length))];
+    let cumDist = 0, dists = [0];
+    for (let i = 1; i < rawPts.length; i++) {
+      cumDist += Math.hypot(rawPts[i].x - rawPts[i-1].x, rawPts[i].y - rawPts[i-1].y);
+      dists.push(cumDist);
+    }
+    let scale = Math.max(20, dist * 1.8) / Math.max(0.001, cumDist);
+    pts = rawPts.map((pt, i) => {
+      let lx = pt.x - 0.5, ly = pt.y - 0.5;
+      return {
+        x:     x1 + (lx * Math.cos(calligMouseAngle) - ly * Math.sin(calligMouseAngle)) * scale,
+        y:     y1 + (lx * Math.sin(calligMouseAngle) + ly * Math.cos(calligMouseAngle)) * scale,
+        prog:  dists[i] / Math.max(0.001, cumDist),
+        speed: Math.max(0.5, calligMouseVelocity)
+      };
+    });
+  } else {
+    pts = _genLinePoints(p, x1, y1, Math.max(20, dist * 1.5), calligMouseAngle, 0.12);
+  }
+
+  if (!pts || pts.length < 2) return;
+  pts = _densify(pts, 6);
+  pts = _applyChaikin(pts, 2);
+  _assignSpeeds(pts, dist * 1.5);
+
+  // Pressure-sensitive width
+  let eff = baseWidth * (0.5 + 1.0 / (calligMouseVelocity * 0.5 + 1));
+  for (let j = 0; j < pts.length; j++) {
+    let pf = Math.sin(pts[j].prog * Math.PI);
+    let sf = Math.pow(1 / Math.max(0.1, pts[j].speed || 1), 0.4);
+    pts[j].w = Math.max(0.5,
+      eff * Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
+  }
+
+  // Paint directly to the offscreen ink buffer (no grow-in delay)
+  _ensureInkBuffer(p.width, p.height);
+  let origCTX = CTX;
+  CTX = _inkCTX;
+  _inkCTX.save();
+  _inkCTX.globalCompositeOperation = _bgIsLight(S.bg) ? 'multiply' : 'source-over';
+  _inkCTX.lineCap  = 'round';
+  _inkCTX.lineJoin = 'round';
+  _renderSumiE(p, pts, col,
+    S.calligBleed    ?? 0.5,
+    Math.max(1, Math.floor(S.calligFibers ?? 6)),
+    S.calligInk      ?? 0.9,
+    S.calligDrips    ?? true,
+    S.calligPooling  ?? true,
+    S.calligSplatter ?? 0.2,
+    0
+  );
+  _inkCTX.restore();
+  CTX = origCTX;
+}
+
+// Tap dot — render a single ink blob directly to buffer
+function _renderDot(p, x, y, size) {
+  _ensureInkBuffer(p.width, p.height);
+  let origCTX = CTX;
+  CTX = _inkCTX;
+  _inkCTX.save();
+  _inkCTX.globalCompositeOperation = _bgIsLight(S.bg) ? 'multiply' : 'source-over';
+  _inkCTX.globalAlpha = S.calligInk ?? 0.9;
+  _inkCTX.fillStyle   = pickColor(p, x, y, 0);
+  _inkCTX.beginPath();
+  _inkCTX.arc(x, y, Math.max(1, size * 0.5), 0, Math.PI * 2);
+  _inkCTX.fill();
+  _inkCTX.restore();
+  CTX = origCTX;
+  if (window._st) window._st.rd();
+}
+
+// Force-clear and re-spawn a full batch immediately (e.g. on "Redraw" button)
+function calligRedraw(p) {
+  if (!p || !p.width) p = window._st && window._st.p;
+  if (!p) return;
+  clearInkBuffer();
+  let W       = p.width, H = p.height;
+  let subMode = S.calligSubMode  ?? 'character';
+  let minLen  = (S.calligMinLen  ?? 0.3) * Math.min(W, H);
+  let maxLen  = (S.calligMaxLen  ?? 0.8) * Math.min(W, H);
+  let bw      = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let count   = Math.max(1, Math.floor(S.calligCount ?? 5));
+  let charSet = S.calligCharSet  ?? 'eternal';
+
+  if (subMode === 'composition') {
+    let compKey = S.calligComposition || 'bamboo_branch';
+    _spawnSumieComposition(p, compKey,
+      p.random(W * 0.2, W * 0.8),
+      p.random(H * 0.2, H * 0.8),
+      Math.min(W, H) * 0.5
+    );
+  } else {
+    for (let i = 0; i < count; i++) {
+      _spawnCharacter(p, W, H, minLen, maxLen, bw, subMode === 'character', charSet);
+    }
+  }
+  if (typeof showToast === 'function') showToast('Redrawn');
+}
+
+
+// ── Pointer event setup ────────────────────────────────────────────────────────
+// Uses Pointer Events API only (covers mouse, touch, and stylus uniformly).
+// Must be called once when the calligraphy mode is activated.
+function setupCalligraphyInteraction(p) {
+  let canvas = document.getElementById('gc');
+  if (!canvas) { console.error('[calligraphy] Canvas #gc not found'); return; }
+
+  // Tear down previous handlers to prevent duplicates
+  if (canvas._calligHandlers) {
+    let h = canvas._calligHandlers;
+    canvas.removeEventListener('pointerdown',   h.down);
+    canvas.removeEventListener('pointermove',   h.move);
+    canvas.removeEventListener('pointerup',     h.up);
+    canvas.removeEventListener('pointercancel', h.cancel);
+    canvas.removeEventListener('mouseleave',    h.leave);
+  }
+
+  canvas.style.touchAction  = 'none';  // prevent scroll/zoom during drawing
+  canvas.style.pointerEvents = 'auto';
+
+  // Coordinate helper — maps viewport → canvas pixel space
+  function getPos(e) {
+    let r  = canvas.getBoundingClientRect();
+    let sx = canvas.width  / r.width;
+    let sy = canvas.height / r.height;
+    return {
+      x:  (e.clientX - r.left) * sx,
+      y:  (e.clientY - r.top)  * sy,
+      vx: e.clientX,   // viewport coords for positioning the cursor div
+      vy: e.clientY
+    };
+  }
+
+  function isActive() {
+    return S.calligSubMode === 'interactive' && S.mode === 'calligraphy';
+  }
+
+  // Move the div-based brush cursor to the pointer viewport position
+  function moveCursorDiv(vx, vy) {
+    _calligCursor = _calligCursor || document.getElementById('brushCursor');
+    if (!_calligCursor || !isActive()) return;
+    let cs = Math.max(8, (S.calligWidth ?? 2) * (S.maxSize / 20) * 1.2);
+    _calligCursor.style.display = 'block';
+    _calligCursor.style.left   = vx + 'px';
+    _calligCursor.style.top    = vy + 'px';
+    _calligCursor.style.width  = cs + 'px';
+    _calligCursor.style.height = cs + 'px';
+  }
+
+  const onDown = (e) => {
+    if (!isActive()) return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    let pos = getPos(e);
+    calligIsDrawing = true;
+    calligLastX     = pos.x;
+    calligLastY     = pos.y;
+    moveCursorDiv(pos.vx, pos.vy);
+    // Optional ink-drop on tap
+    if (S.calligTapDot) {
+      _renderDot(p, pos.x, pos.y,
+        Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
+    }
+  };
+
+  const onMove = (e) => {
+    if (!isActive()) return;
+    e.preventDefault();
+    let pos = getPos(e);
+    moveCursorDiv(pos.vx, pos.vy);
+    if (calligIsDrawing) {
+      _pushInteractiveStroke(p, calligLastX, calligLastY, pos.x, pos.y);
+      calligLastX = pos.x;
+      calligLastY = pos.y;
+      if (window._st) window._st.rd();
+    }
+  };
+
+  const onUp = (e) => {
+    calligIsDrawing = false;
+  };
+
+  const onCancel = (e) => {
+    calligIsDrawing = false;
+  };
+
+  const onLeave = (e) => {
+    calligIsDrawing = false;
+    _calligCursor = _calligCursor || document.getElementById('brushCursor');
+    if (_calligCursor) _calligCursor.style.display = 'none';
+  };
+
+  canvas.addEventListener('pointerdown',   onDown,   { passive: false });
+  canvas.addEventListener('pointermove',   onMove,   { passive: false });
+  canvas.addEventListener('pointerup',     onUp);
+  canvas.addEventListener('pointercancel', onCancel);
+  canvas.addEventListener('mouseleave',    onLeave);
+
+  canvas._calligHandlers = {
+    down: onDown, move: onMove, up: onUp, cancel: onCancel, leave: onLeave
+  };
+
+  _refreshCanvasCursor();
+  console.log('[calligraphy] Interaction ready — sub-mode:', S.calligSubMode ?? 'character');
+}
+
+
+// ── Sumi-e renderer ────────────────────────────────────────────────────────────
+function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
+  if (pts.length < 2) return;
+  CTX.strokeStyle = col;
+
+  // Pass 1 — AIGUMA: wet-edge bleed halo
+  if (bleed > 0) {
+    CTX.beginPath();
+    CTX.globalAlpha = baseAlpha * 0.07;
+    CTX.lineWidth   = (pts[0].w || 4) * (1 + bleed * 2.5);
+    CTX.filter      = `blur(${bleed * 5}px)`;
+    for (let i = 0; i < pts.length; i++) {
+      i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
+    }
+    CTX.stroke();
+    CTX.filter = 'none';
+  }
+
+  // Pass 2 — KATAGUMA: split-ink fiber texture
+  for (let f = 0; f < fibers; f++) {
+    let fOff = (f / fibers - 0.5) * 1.8;
+    CTX.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      let pt  = pts[i];
+      let dry = p.noise(pt.x * 0.05, pt.y * 0.05, f) * (1.1 - pt.prog * 0.4);
+      if (dry < 0.18) { CTX.stroke(); CTX.beginPath(); continue; }
+      let next = pts[i + 1] || pt;
+      let ang  = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI / 2;
+      let x    = pt.x + Math.cos(ang) * fOff * (pt.w || 2);
+      let y    = pt.y + Math.sin(ang) * fOff * (pt.w || 2);
+      CTX.lineWidth   = (pt.w || 2) * (0.12 + dry * 0.28);
+      CTX.globalAlpha = baseAlpha * dry * (1.2 - Math.abs(fOff));
+      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
+    }
+    CTX.stroke();
+  }
+
+  // Pass 3 — KASURI: solid dark core
+  CTX.beginPath();
+  CTX.globalAlpha = baseAlpha * 0.82;
+  for (let i = 0; i < pts.length; i++) {
+    CTX.lineWidth = (pts[i].w || 2) * 0.62;
+    i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
+  }
+  CTX.stroke();
+
+  // Ink pooling at stroke ends
+  if (pooling) {
+    [0, pts.length - 1].forEach(idx => {
+      let pt = pts[idx];
+      CTX.globalAlpha = baseAlpha * 0.18;
+      CTX.fillStyle   = col;
+      CTX.beginPath();
+      CTX.arc(pt.x, pt.y, (pt.w || 2) * 0.48, 0, Math.PI * 2);
+      CTX.fill();
+    });
+  }
+
+  // Drips
+  if (drips && Math.random() < 0.12) {
+    let pt = pts[pts.length - 1];
+    for (let d = 0; d < 3; d++) {
+      CTX.globalAlpha = baseAlpha * (0.45 - d * 0.1);
+      CTX.fillStyle   = col;
+      CTX.beginPath();
+      CTX.ellipse(
+        pt.x + (d * 1.5 - 1) * (pt.w || 2) * 0.1,
+        pt.y + d * (pt.w || 2) * 1.4,
+        (pt.w || 2) * 0.13,
+        (pt.w || 2) * 0.3,
+        0, 0, Math.PI * 2
+      );
+      CTX.fill();
+    }
+  }
+
+  // Splatter
+  if (splatterAmt > 0 && Math.random() < splatterAmt * 0.12) {
+    for (let s = 0; s < Math.floor(splatterAmt * 6); s++) {
+      let idx = Math.floor(p.noise(s * 17) * pts.length);
+      let pt  = pts[Math.min(idx, pts.length - 1)];
+      let ang = p.random(Math.PI * 2);
+      let d   = (pt.w || 2) * (0.5 + p.random() * 2.2);
+      CTX.globalAlpha = baseAlpha * 0.55;
+      CTX.fillStyle   = col;
+      CTX.beginPath();
+      CTX.arc(
+        pt.x + Math.cos(ang) * d,
+        pt.y + Math.sin(ang) * d,
+        Math.max(0.4, (pt.w || 2) * 0.07 * (0.5 + p.random() * 2)),
+        0, Math.PI * 2
+      );
+      CTX.fill();
+    }
+  }
+
+  CTX.globalAlpha = 1;
+}
+
+
+// ── Geometry helpers ───────────────────────────────────────────────────────────
+
 function _densify(pts, minCount) {
   if (pts.length >= minCount) return pts;
   let out = [pts[0]];
   for (let i = 0; i < pts.length - 1; i++) {
-    let a = pts[i], b = pts[i+1];
+    let a = pts[i], b = pts[i + 1];
     let steps = Math.ceil((minCount - pts.length) / (pts.length - 1)) + 1;
     for (let s = 1; s < steps; s++) {
       let k = s / steps;
       out.push({
-        x: a.x + (b.x - a.x) * k,
-        y: a.y + (b.y - a.y) * k,
-        prog: a.prog + (b.prog - a.prog) * k,
+        x:     a.x + (b.x - a.x) * k,
+        y:     a.y + (b.y - a.y) * k,
+        prog:  a.prog + (b.prog - a.prog) * k,
         speed: 1.0
       });
     }
@@ -3980,268 +4391,45 @@ function _assignSpeeds(pts, totalLen) {
   pts[0].speed = pts.length > 1 ? pts[1].speed : 1.0;
 }
 
-// ── Interactive: render directly to ink buffer, no grow-in delay ───────────────
-function _pushInteractiveStroke(p, x1, y1, x2, y2) {
-  let dist = Math.hypot(x2 - x1, y2 - y1);
-  if (dist < 1.5) return;
-
-  mouseVelocity = Math.min(3, dist / 8);
-  mouseAngle    = Math.atan2(y2 - y1, x2 - x1);
-
-  let baseWidth = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let col       = pickColor(p, x1, y1, 0);
-  let charMode  = S.calligCharMode ?? true;
-  let charSet   = S.calligCharSet  ?? 'eternal';
-  let taper     = S.calligTaper    ?? 0.5;
-
-  let pts;
-  if (charMode) {
-    let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
-    let rawPts  = strokes[Math.floor(p.random(strokes.length))];
-    let cumDist = 0, dists = [0];
-    for (let i = 1; i < rawPts.length; i++) {
-      cumDist += Math.hypot(rawPts[i].x - rawPts[i-1].x, rawPts[i].y - rawPts[i-1].y);
-      dists.push(cumDist);
-    }
-    let scale = Math.max(20, dist * 1.8) / Math.max(0.001, cumDist);
-    pts = rawPts.map((pt, i) => {
-      let lx = pt.x - 0.5, ly = pt.y - 0.5;
-      return {
-        x: x1 + (lx * Math.cos(mouseAngle) - ly * Math.sin(mouseAngle)) * scale,
-        y: y1 + (lx * Math.sin(mouseAngle) + ly * Math.cos(mouseAngle)) * scale,
-        prog: dists[i] / Math.max(0.001, cumDist),
-        speed: Math.max(0.5, mouseVelocity)
-      };
+function _applyChaikin(pts, iterations) {
+  if (iterations === 0 || pts.length < 3) return pts;
+  let out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    let a = pts[i], b = pts[i + 1];
+    out.push({
+      x: 0.75*a.x + 0.25*b.x, y: 0.75*a.y + 0.25*b.y,
+      prog: a.prog*0.75 + b.prog*0.25, speed: a.speed
     });
-  } else {
-    pts = _genLinePoints(p, x1, y1, Math.max(20, dist * 1.5), mouseAngle, 0.12);
+    out.push({
+      x: 0.25*a.x + 0.75*b.x, y: 0.25*a.y + 0.75*b.y,
+      prog: a.prog*0.25 + b.prog*0.75, speed: b.speed
+    });
   }
-  if (!pts || pts.length < 2) return;
-  pts = _densify(pts, 6);
-  pts = _applyChaikin(pts, 2);
-  _assignSpeeds(pts, dist * 1.5);
-
-  // Pressure-width assignment
-  let eff = baseWidth * (0.5 + 1.0 / (mouseVelocity * 0.5 + 1));
-  for (let j = 0; j < pts.length; j++) {
-    let pf = Math.sin(pts[j].prog * Math.PI);
-    let sf = Math.pow(1 / Math.max(0.1, pts[j].speed || 1), 0.4);
-    pts[j].w = Math.max(0.5, eff * Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
-  }
-
-  // Render directly to ink buffer
-  _ensureInkBuffer(p.width, p.height);
-  let origCTX = CTX;
-  CTX = _inkCTX;
-  _inkCTX.save();
-  _inkCTX.globalCompositeOperation = _bgIsLight(S.bg) ? 'multiply' : 'source-over';
-  _inkCTX.lineCap  = 'round';
-  _inkCTX.lineJoin = 'round';
-  _renderSumiE(p, pts, col, S.calligBleed ?? 0.5, Math.max(1, Math.floor(S.calligFibers ?? 6)),
-               S.calligInk ?? 0.9, S.calligDrips ?? true, S.calligPooling ?? true, S.calligSplatter ?? 0.2, 0);
-  _inkCTX.restore();
-  CTX = origCTX;
+  out.push(pts[pts.length - 1]);
+  return _applyChaikin(out, iterations - 1);
 }
 
-// ── Tap dot (render directly to ink buffer) ────────────────────────────────────
-function _renderDot(p, x, y, size) {
-  _ensureInkBuffer(p.width, p.height);
-  let origCTX = CTX;
-  CTX = _inkCTX;
-  _inkCTX.save();
-  _inkCTX.globalCompositeOperation = _bgIsLight(S.bg) ? 'multiply' : 'source-over';
-  _inkCTX.globalAlpha = S.calligInk ?? 0.9;
-  _inkCTX.fillStyle   = pickColor(p, x, y, 0);
-  _inkCTX.beginPath();
-  _inkCTX.arc(x, y, Math.max(1, size * 0.5), 0, Math.PI * 2);
-  _inkCTX.fill();
-  _inkCTX.restore();
-  CTX = origCTX;
-  window._st.rd(); // force redraw
+function _genLinePoints(p, ox, oy, len, angle, wobble) {
+  let pts = [], steps = 14;
+  for (let i = 0; i <= steps; i++) {
+    let prog = i / steps;
+    let n    = (p.noise(ox * 0.02 + prog * 3, oy * 0.02) - 0.5) * len * wobble;
+    pts.push({
+      x:     ox + Math.cos(angle) * len * prog + Math.cos(angle + Math.PI/2) * n,
+      y:     oy + Math.sin(angle) * len * prog + Math.sin(angle + Math.PI/2) * n,
+      prog,
+      speed: 1.0
+    });
+  }
+  return _applyChaikin(pts, 2);
 }
 
-// ── Force-redraw: clear and respawn a full batch immediately ───────────────────
-function calligRedraw(p) {
-  if (!p || !p.width) p = window._st && window._st.p;
-  if (!p) return;
-  clearInkBuffer();
-  let W = p.width, H = p.height;
-  let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
-  let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
-  let bw     = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let count  = Math.max(1, Math.floor(S.calligCount ?? 5));
-  for (let i = 0; i < count; i++) {
-    _spawnCharacter(p, W, H, minLen, maxLen, bw, S.calligCharMode ?? true, S.calligCharSet ?? 'eternal');
-  }
-  showToast('Redrawn');
-}
-
-// ── Pointer event handlers ─────────────────────────────────────────────────────
-// NOTE: never use canvas.replaceWith — it detaches p5's canvas and breaks CTX
-function setupCalligraphyInteraction(p) {
-  let canvas = document.getElementById('gc');
-  if (!canvas) {
-    console.error('Canvas not found');
-    return;
-  }
-
-  // Clean up previous handlers
-  if (canvas._calligHandlers) {
-    let h = canvas._calligHandlers;
-    canvas.removeEventListener('pointerdown',   h.down);
-    canvas.removeEventListener('pointermove',   h.move);
-    canvas.removeEventListener('pointerup',     h.up);
-    canvas.removeEventListener('pointercancel', h.up);
-    canvas.removeEventListener('mouseleave',    h.leave);
-    canvas.removeEventListener('mousedown',     h.mouseDown);
-    canvas.removeEventListener('mousemove',     h.mouseMove);
-    canvas.removeEventListener('mouseup',       h.mouseUp);
-  }
-
-  // Ensure canvas can receive pointer events
-  canvas.style.touchAction = 'none';
-  canvas.style.pointerEvents = 'auto';   // crucial
-
-  function getPos(e) {
-    let r = canvas.getBoundingClientRect();
-    let scaleX = canvas.width / r.width;
-    let scaleY = canvas.height / r.height;
-    let clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
-    let clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
-    return {
-      x: (clientX - r.left) * scaleX,
-      y: (clientY - r.top) * scaleY,
-      vx: clientX,
-      vy: clientY
-    };
-  }
-
-  function updateCursor(vx, vy) {
-    _calligCursor = _calligCursor || document.getElementById('brushCursor');
-    if (!_calligCursor) return;
-    if (S.calligInteractive && S.mode === 'calligraphy') {
-      _calligCursor.style.display = 'block';
-      _calligCursor.style.left = vx + 'px';
-      _calligCursor.style.top = vy + 'px';
-      let cs = Math.max(8, (S.calligWidth ?? 2) * (S.maxSize / 20) * 1.2);
-      _calligCursor.style.width = cs + 'px';
-      _calligCursor.style.height = cs + 'px';
-    } else {
-      _calligCursor.style.display = 'none';
-    }
-  }
-
-  const onPointerDown = function(e) {
-    console.log('Pointer down', S.calligInteractive, S.mode);
-    if (!S.calligInteractive || S.mode !== 'calligraphy') return;
-    e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
-    let pos = getPos(e);
-    isDrawing = true;
-    lastMouseX = pos.x;
-    lastMouseY = pos.y;
-    updateCursor(pos.vx, pos.vy);
-    if (S.calligTapDot) {
-      _renderDot(p, pos.x, pos.y, Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
-      window._st.rd();
-    }
-  };
-
-  const onPointerMove = function(e) {
-    if (!isDrawing || !S.calligInteractive || S.mode !== 'calligraphy') return;
-    e.preventDefault();
-    let pos = getPos(e);
-    updateCursor(pos.vx, pos.vy);
-    if (lastMouseX !== undefined && lastMouseY !== undefined) {
-      _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
-      lastMouseX = pos.x;
-      lastMouseY = pos.y;
-      window._st.rd();
-    }
-  };
-  const onPointerUp = function(e) {
-    isDrawing = false;
-  };
-  const onMouseLeave = function(e) {
-    _calligCursor = _calligCursor || document.getElementById('brushCursor');
-    if (_calligCursor) _calligCursor.style.display = 'none';
-    isDrawing = false;
-  };
-  // Also support mouse events for older browsers
-  const onMouseDown = function(e) {
-    if (!S.calligInteractive || S.mode !== 'calligraphy') return;
-    e.preventDefault();
-    let pos = getPos(e);
-    isDrawing = true;
-    lastMouseX = pos.x;
-    lastMouseY = pos.y;
-    updateCursor(pos.vx, pos.vy);
-    if (S.calligTapDot) {
-      _renderDot(p, pos.x, pos.y, Math.max(2, (S.calligWidth ?? 2) * (S.maxSize / 20)));
-      window._st.rd();
-    }
-  };
-  const onMouseMove = function(e) {
-    if (!isDrawing || !S.calligInteractive || S.mode !== 'calligraphy') return;
-    e.preventDefault();
-    let pos = getPos(e);
-    updateCursor(pos.vx, pos.vy);
-    if (lastMouseX !== undefined && lastMouseY !== undefined) {
-      _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
-      lastMouseX = pos.x;
-      lastMouseY = pos.y;
-      window._st.rd();
-    }
-  };
-  const onMouseUp = function(e) {
-    isDrawing = false;
-  };
-  canvas._calligHandlers = {
-    down: onPointerDown, move: onPointerMove, up: onPointerUp, leave: onMouseLeave,
-    mouseDown: onMouseDown, mouseMove: onMouseMove, mouseUp: onMouseUp
-  };
-
-  canvas.addEventListener('pointerdown',   onPointerDown);
-  canvas.addEventListener('pointermove',   onPointerMove);
-  canvas.addEventListener('pointerup',     onPointerUp);
-  canvas.addEventListener('pointercancel', onPointerUp);
-  canvas.addEventListener('mouseleave',    onMouseLeave);
-  canvas.addEventListener('mousedown',     onMouseDown);
-  canvas.addEventListener('mousemove',     onMouseMove);
-  canvas.addEventListener('mouseup',       onMouseUp);
-
-  console.log('Calligraphy interaction handlers attached');
-}
-
-
-// ── Show Brush Cursor ────────────────────────────────────────────────────────────  
-function showBrushCursor(show) {
-  _calligCursor = _calligCursor || document.getElementById('brushCursor');
-  if (_calligCursor) {
-    _calligCursor.style.display = show ? 'block' : 'none';
-  }
-  let canvas = document.getElementById('gc');
-  if (canvas) {
-    if (show && S.mode === 'calligraphy' && S.calligInteractive) {
-      canvas.classList.add('drawing-mode');
-      canvas.style.cursor = 'none'; // hide default cursor, show our div
-    } else {
-      canvas.classList.remove('drawing-mode');
-      canvas.style.cursor = '';
-    }
-  }
-}
-
-function initBrushCursor() {
-  // Cursor position and visibility is now handled entirely by the pointer event
-  // handlers in setupCalligraphyInteraction. This is kept as a no-op stub so
-  // the p.setup call doesn't throw.
-}
 
 // ── CHARACTER_PATHS ────────────────────────────────────────────────────────────
+// Normalised [0,1] coordinates; centred on 0.5, 0.5.
 const CHARACTER_PATHS = {
-  // Traditional / Classical
-  'eternal': [   // 永 (Eternity) – the eight strokes of calligraphy
+
+  'eternal': [   // 永 — the eight canonical calligraphy strokes
     [{x:0.48,y:0.12},{x:0.52,y:0.18},{x:0.55,y:0.24},{x:0.56,y:0.32},{x:0.54,y:0.38}],
     [{x:0.18,y:0.28},{x:0.32,y:0.26},{x:0.48,y:0.24},{x:0.65,y:0.26},{x:0.82,y:0.28}],
     [{x:0.48,y:0.28},{x:0.5,y:0.42},{x:0.51,y:0.56},{x:0.49,y:0.7},{x:0.42,y:0.82},{x:0.35,y:0.86}],
@@ -4249,7 +4437,8 @@ const CHARACTER_PATHS = {
     [{x:0.5,y:0.48},{x:0.62,y:0.58},{x:0.72,y:0.68},{x:0.78,y:0.76}],
     [{x:0.48,y:0.62},{x:0.52,y:0.66},{x:0.56,y:0.7}]
   ],
-  'dragon': [    // 龍 (Dragon) – complex, serpentine
+
+  'dragon': [    // 龍 — serpentine, complex
     [{x:0.25,y:0.2},{x:0.32,y:0.18},{x:0.4,y:0.22},{x:0.45,y:0.28},{x:0.48,y:0.36}],
     [{x:0.48,y:0.36},{x:0.52,y:0.44},{x:0.58,y:0.5},{x:0.66,y:0.52},{x:0.74,y:0.5}],
     [{x:0.74,y:0.5},{x:0.78,y:0.46},{x:0.8,y:0.4}],
@@ -4259,14 +4448,16 @@ const CHARACTER_PATHS = {
     [{x:0.44,y:0.68},{x:0.46,y:0.76},{x:0.44,y:0.82},{x:0.38,y:0.86}],
     [{x:0.52,y:0.78},{x:0.58,y:0.8},{x:0.66,y:0.78},{x:0.72,y:0.74}]
   ],
-  'mountain': [  // 山 (Mountain) – jagged peaks
+
+  'mountain': [  // 山
     [{x:0.5,y:0.15},{x:0.5,y:0.35},{x:0.5,y:0.55},{x:0.5,y:0.75},{x:0.5,y:0.88}],
     [{x:0.18,y:0.42},{x:0.24,y:0.52},{x:0.32,y:0.62},{x:0.42,y:0.72},{x:0.5,y:0.78}],
     [{x:0.82,y:0.42},{x:0.76,y:0.52},{x:0.68,y:0.62},{x:0.58,y:0.72},{x:0.5,y:0.78}],
     [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.74}],
     [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.74}]
   ],
-  'water': [     // 水 (Water) – flowing, curved
+
+  'water': [     // 水 — flowing curves
     [{x:0.22,y:0.28},{x:0.3,y:0.34},{x:0.38,y:0.38},{x:0.46,y:0.36},{x:0.52,y:0.32}],
     [{x:0.52,y:0.32},{x:0.58,y:0.38},{x:0.66,y:0.42},{x:0.74,y:0.4},{x:0.78,y:0.34}],
     [{x:0.3,y:0.48},{x:0.38,y:0.54},{x:0.46,y:0.58},{x:0.54,y:0.56},{x:0.6,y:0.5}],
@@ -4274,14 +4465,16 @@ const CHARACTER_PATHS = {
     [{x:0.38,y:0.66},{x:0.44,y:0.72},{x:0.5,y:0.76},{x:0.56,y:0.74},{x:0.6,y:0.68}],
     [{x:0.6,y:0.68},{x:0.64,y:0.72},{x:0.68,y:0.76},{x:0.72,y:0.74}]
   ],
-  'fire': [      // 火 (Fire) – rising flames
+
+  'fire': [      // 火 — rising flames
     [{x:0.5,y:0.18},{x:0.48,y:0.28},{x:0.44,y:0.4},{x:0.38,y:0.52},{x:0.32,y:0.62}],
     [{x:0.5,y:0.18},{x:0.52,y:0.28},{x:0.56,y:0.4},{x:0.62,y:0.52},{x:0.68,y:0.62}],
     [{x:0.5,y:0.18},{x:0.5,y:0.3},{x:0.5,y:0.44},{x:0.5,y:0.58},{x:0.5,y:0.72},{x:0.48,y:0.84}],
     [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.72}],
     [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.72}]
   ],
-  'tree': [      // 木 (Tree) – trunk with branches
+
+  'tree': [      // 木 — trunk with branches
     [{x:0.5,y:0.12},{x:0.5,y:0.28},{x:0.5,y:0.44},{x:0.5,y:0.6},{x:0.5,y:0.76},{x:0.5,y:0.88}],
     [{x:0.5,y:0.28},{x:0.4,y:0.34},{x:0.32,y:0.38},{x:0.26,y:0.4}],
     [{x:0.5,y:0.28},{x:0.6,y:0.34},{x:0.68,y:0.38},{x:0.74,y:0.4}],
@@ -4290,7 +4483,8 @@ const CHARACTER_PATHS = {
     [{x:0.5,y:0.6},{x:0.44,y:0.64},{x:0.4,y:0.68}],
     [{x:0.5,y:0.6},{x:0.56,y:0.64},{x:0.6,y:0.68}]
   ],
-  'heart': [     // 心 (Heart) – emotional, organic
+
+  'heart': [     // 心 — organic, three-dot form
     [{x:0.2,y:0.5},{x:0.22,y:0.56},{x:0.26,y:0.62},{x:0.32,y:0.66},{x:0.38,y:0.68}],
     [{x:0.38,y:0.68},{x:0.44,y:0.66},{x:0.48,y:0.62},{x:0.5,y:0.56},{x:0.5,y:0.48}],
     [{x:0.5,y:0.48},{x:0.5,y:0.56},{x:0.52,y:0.62},{x:0.56,y:0.66},{x:0.62,y:0.68}],
@@ -4299,7 +4493,8 @@ const CHARACTER_PATHS = {
     [{x:0.38,y:0.68},{x:0.42,y:0.74},{x:0.46,y:0.78},{x:0.5,y:0.8}],
     [{x:0.62,y:0.68},{x:0.58,y:0.74},{x:0.54,y:0.78},{x:0.5,y:0.8}]
   ],
-  'bamboo': [    // 竹 (Bamboo) – segmented stalks
+
+  'bamboo': [    // 竹 — segmented double stalk
     [{x:0.28,y:0.16},{x:0.28,y:0.34},{x:0.28,y:0.52},{x:0.28,y:0.7},{x:0.28,y:0.88}],
     [{x:0.28,y:0.26},{x:0.38,y:0.24},{x:0.48,y:0.26}],
     [{x:0.28,y:0.42},{x:0.38,y:0.4},{x:0.48,y:0.42}],
@@ -4311,7 +4506,8 @@ const CHARACTER_PATHS = {
     [{x:0.68,y:0.58},{x:0.78,y:0.56},{x:0.88,y:0.58}],
     [{x:0.68,y:0.74},{x:0.78,y:0.72},{x:0.88,y:0.74}]
   ],
-  'wind': [      // 風 (Wind) – swirling, dynamic
+
+  'wind': [      // 風 — swirling, dynamic
     [{x:0.18,y:0.22},{x:0.32,y:0.2},{x:0.48,y:0.22},{x:0.64,y:0.26},{x:0.78,y:0.32},{x:0.84,y:0.38}],
     [{x:0.84,y:0.38},{x:0.82,y:0.46},{x:0.76,y:0.52},{x:0.68,y:0.56},{x:0.58,y:0.58}],
     [{x:0.58,y:0.58},{x:0.62,y:0.66},{x:0.7,y:0.72},{x:0.78,y:0.76},{x:0.84,y:0.78}],
@@ -4319,7 +4515,8 @@ const CHARACTER_PATHS = {
     [{x:0.58,y:0.54},{x:0.56,y:0.62},{x:0.5,y:0.68},{x:0.42,y:0.72},{x:0.34,y:0.74}],
     [{x:0.48,y:0.32},{x:0.5,y:0.4},{x:0.5,y:0.48},{x:0.48,y:0.56}]
   ],
-  'rain': [      // 雨 (Rain) – vertical streaks
+
+  'rain': [      // 雨 — vertical streaks under horizontal beams
     [{x:0.2,y:0.18},{x:0.36,y:0.2},{x:0.52,y:0.22},{x:0.68,y:0.2},{x:0.8,y:0.18}],
     [{x:0.2,y:0.32},{x:0.36,y:0.34},{x:0.52,y:0.36},{x:0.68,y:0.34},{x:0.8,y:0.32}],
     [{x:0.36,y:0.2},{x:0.36,y:0.34},{x:0.36,y:0.5},{x:0.36,y:0.68},{x:0.36,y:0.84}],
@@ -4330,7 +4527,8 @@ const CHARACTER_PATHS = {
     [{x:0.6,y:0.44},{x:0.6,y:0.56},{x:0.6,y:0.68}],
     [{x:0.76,y:0.48},{x:0.76,y:0.6},{x:0.76,y:0.72}]
   ],
-  'river': [     // 川 (River) – meandering flow
+
+  'river': [     // 川 — meandering flow
     [{x:0.18,y:0.22},{x:0.16,y:0.38},{x:0.18,y:0.54},{x:0.2,y:0.7},{x:0.18,y:0.86}],
     [{x:0.4,y:0.28},{x:0.38,y:0.44},{x:0.4,y:0.6},{x:0.42,y:0.76},{x:0.4,y:0.88}],
     [{x:0.62,y:0.22},{x:0.64,y:0.38},{x:0.62,y:0.54},{x:0.6,y:0.7},{x:0.62,y:0.86}],
@@ -4341,7 +4539,8 @@ const CHARACTER_PATHS = {
     [{x:0.2,y:0.7},{x:0.3,y:0.72},{x:0.42,y:0.76}],
     [{x:0.6,y:0.7},{x:0.7,y:0.72},{x:0.8,y:0.76}]
   ],
-  'zen': [       // Abstract meditative strokes
+
+  'zen': [       // Abstract meditative grid
     [{x:0.2,y:0.3},{x:0.3,y:0.28},{x:0.4,y:0.32},{x:0.5,y:0.38},{x:0.6,y:0.36},{x:0.7,y:0.3},{x:0.8,y:0.28}],
     [{x:0.2,y:0.5},{x:0.3,y:0.48},{x:0.4,y:0.52},{x:0.5,y:0.58},{x:0.6,y:0.56},{x:0.7,y:0.5},{x:0.8,y:0.48}],
     [{x:0.2,y:0.7},{x:0.3,y:0.68},{x:0.4,y:0.72},{x:0.5,y:0.78},{x:0.6,y:0.76},{x:0.7,y:0.7},{x:0.8,y:0.68}],
@@ -4354,180 +4553,193 @@ const CHARACTER_PATHS = {
 
 };
 
+
+// ── SUMIE_COMPOSITIONS ─────────────────────────────────────────────────────────
+// Each composition has named segments, each with a behavior (style overrides)
+// and an array of strokes (arrays of normalised {x,y} points).
 const SUMIE_COMPOSITIONS = {
-  // 富士山 Mount Fuji (iconic peak with clouds and foreground)
-'mount_fuji': {
-  segments: [
-    {
-      name: 'distant_fuji',
-      behavior: { w: 2.0, taper: 0.3, wobble: 0.1 }, // smooth, confident stroke
-      strokes: [
-        // Classic sweeping arc for the mountain
-        [{x:0.2,y:0.45},{x:0.35,y:0.2},{x:0.5,y:0.15},{x:0.65,y:0.2},{x:0.8,y:0.45}],
-        // Subtle second pass for depth (lighter)
-        [{x:0.3,y:0.4},{x:0.4,y:0.25},{x:0.5,y:0.22},{x:0.6,y:0.25},{x:0.7,y:0.4}]
-      ]
-    },
-    {
-      name: 'snow_cap',
-      behavior: { w: 0.8, taper: 0.7, wobble: 0.2 }, // dry brush texture
-      strokes: [
-        [{x:0.4,y:0.25},{x:0.45,y:0.18},{x:0.5,y:0.15},{x:0.55,y:0.18},{x:0.6,y:0.25}],
-        [{x:0.42,y:0.22},{x:0.48,y:0.17},{x:0.52,y:0.17},{x:0.58,y:0.22}]
-      ]
-    },
-    {
-      name: 'mist_clouds',
-      behavior: { w: 1.2, taper: 0.5, wobble: 0.4 }, // soft, light strokes
-      strokes: [
-        [{x:0.15,y:0.5},{x:0.25,y:0.48},{x:0.35,y:0.52},{x:0.45,y:0.49}],
-        [{x:0.55,y:0.49},{x:0.65,y:0.52},{x:0.75,y:0.48},{x:0.85,y:0.5}],
-        [{x:0.2,y:0.55},{x:0.3,y:0.53},{x:0.4,y:0.56}],
-        [{x:0.6,y:0.56},{x:0.7,y:0.53},{x:0.8,y:0.55}]
-      ]
-    },
-    {
-      name: 'pine_trees_left',
-      behavior: { w: 1.0, taper: 0.8, wobble: 0.5 }, // jagged pine needles
-      strokes: [
-        // Trunk
-        [{x:0.12,y:0.65},{x:0.12,y:0.55},{x:0.12,y:0.45}],
-        // Branches and needles
-        [{x:0.12,y:0.55},{x:0.18,y:0.52}],[{x:0.12,y:0.55},{x:0.06,y:0.52}],
-        [{x:0.12,y:0.48},{x:0.18,y:0.46}],[{x:0.12,y:0.48},{x:0.06,y:0.46}],
-        [{x:0.12,y:0.58},{x:0.2,y:0.56}],[{x:0.12,y:0.58},{x:0.04,y:0.56}]
-      ]
-    },
-    {
-      name: 'pine_trees_right',
-      behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
-      strokes: [
-        [{x:0.88,y:0.7},{x:0.88,y:0.6},{x:0.88,y:0.5}],
-        [{x:0.88,y:0.6},{x:0.94,y:0.57}],[{x:0.88,y:0.6},{x:0.82,y:0.57}],
-        [{x:0.88,y:0.53},{x:0.94,y:0.51}],[{x:0.88,y:0.53},{x:0.82,y:0.51}],
-        [{x:0.88,y:0.63},{x:0.96,y:0.61}],[{x:0.88,y:0.63},{x:0.8,y:0.61}]
-      ]
-    },
-    {
-      name: 'foreground_rocks',
-      behavior: { w: 1.8, taper: 0.4, wobble: 0.3 },
-      strokes: [
-        [{x:0.1,y:0.85},{x:0.15,y:0.78},{x:0.22,y:0.8},{x:0.18,y:0.87},{x:0.1,y:0.85}],
-        [{x:0.75,y:0.88},{x:0.8,y:0.82},{x:0.87,y:0.84},{x:0.82,y:0.9},{x:0.75,y:0.88}],
-        [{x:0.3,y:0.9},{x:0.35,y:0.86},{x:0.42,y:0.88},{x:0.38,y:0.92}]
-      ]
-    },
-    {
-      name: 'water_reflection',
-      behavior: { w: 0.5, taper: 0.9, wobble: 0.2 }, // fine horizontal lines
-      strokes: [
-        [{x:0.35,y:0.92},{x:0.4,y:0.91},{x:0.45,y:0.92}],
-        [{x:0.5,y:0.93},{x:0.55,y:0.92},{x:0.6,y:0.93}],
-        [{x:0.4,y:0.96},{x:0.45,y:0.95},{x:0.5,y:0.96}],
-        [{x:0.55,y:0.97},{x:0.6,y:0.96},{x:0.65,y:0.97}]
-      ]
-    },
-    {
-      name: 'birds_distant',
-      behavior: { w: 0.3, taper: 1.0, wobble: 0.1 }, // tiny V-shaped strokes
-      strokes: [
-        [{x:0.3,y:0.28},{x:0.32,y:0.26},{x:0.34,y:0.28}],
-        [{x:0.6,y:0.32},{x:0.62,y:0.3},{x:0.64,y:0.32}],
-        [{x:0.4,y:0.22},{x:0.41,y:0.21},{x:0.42,y:0.22}]
-      ]
-    }
-  ]
-},
-  
+
+  // 富士山 — Mount Fuji with pines, mist, and water reflection
+  'mount_fuji': {
+    segments: [
+      {
+        name: 'distant_fuji',
+        behavior: { w: 2.0, taper: 0.3, wobble: 0.1 },
+        strokes: [
+          [{x:0.2,y:0.45},{x:0.35,y:0.2},{x:0.5,y:0.15},{x:0.65,y:0.2},{x:0.8,y:0.45}],
+          [{x:0.3,y:0.4},{x:0.4,y:0.25},{x:0.5,y:0.22},{x:0.6,y:0.25},{x:0.7,y:0.4}]
+        ]
+      },
+      {
+        name: 'snow_cap',
+        behavior: { w: 0.8, taper: 0.7, wobble: 0.2 },
+        strokes: [
+          [{x:0.4,y:0.25},{x:0.45,y:0.18},{x:0.5,y:0.15},{x:0.55,y:0.18},{x:0.6,y:0.25}],
+          [{x:0.42,y:0.22},{x:0.48,y:0.17},{x:0.52,y:0.17},{x:0.58,y:0.22}]
+        ]
+      },
+      {
+        name: 'mist_clouds',
+        behavior: { w: 1.2, taper: 0.5, wobble: 0.4 },
+        strokes: [
+          [{x:0.15,y:0.5},{x:0.25,y:0.48},{x:0.35,y:0.52},{x:0.45,y:0.49}],
+          [{x:0.55,y:0.49},{x:0.65,y:0.52},{x:0.75,y:0.48},{x:0.85,y:0.5}],
+          [{x:0.2,y:0.55},{x:0.3,y:0.53},{x:0.4,y:0.56}],
+          [{x:0.6,y:0.56},{x:0.7,y:0.53},{x:0.8,y:0.55}]
+        ]
+      },
+      {
+        name: 'pine_trees_left',
+        behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
+        strokes: [
+          [{x:0.12,y:0.65},{x:0.12,y:0.55},{x:0.12,y:0.45}],
+          [{x:0.12,y:0.55},{x:0.18,y:0.52}],
+          [{x:0.12,y:0.55},{x:0.06,y:0.52}],
+          [{x:0.12,y:0.48},{x:0.18,y:0.46}],
+          [{x:0.12,y:0.48},{x:0.06,y:0.46}],
+          [{x:0.12,y:0.58},{x:0.2,y:0.56}],
+          [{x:0.12,y:0.58},{x:0.04,y:0.56}]
+        ]
+      },
+      {
+        name: 'pine_trees_right',
+        behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
+        strokes: [
+          [{x:0.88,y:0.7},{x:0.88,y:0.6},{x:0.88,y:0.5}],
+          [{x:0.88,y:0.6},{x:0.94,y:0.57}],
+          [{x:0.88,y:0.6},{x:0.82,y:0.57}],
+          [{x:0.88,y:0.53},{x:0.94,y:0.51}],
+          [{x:0.88,y:0.53},{x:0.82,y:0.51}],
+          [{x:0.88,y:0.63},{x:0.96,y:0.61}],
+          [{x:0.88,y:0.63},{x:0.8,y:0.61}]
+        ]
+      },
+      {
+        name: 'foreground_rocks',
+        behavior: { w: 1.8, taper: 0.4, wobble: 0.3 },
+        strokes: [
+          [{x:0.1,y:0.85},{x:0.15,y:0.78},{x:0.22,y:0.8},{x:0.18,y:0.87},{x:0.1,y:0.85}],
+          [{x:0.75,y:0.88},{x:0.8,y:0.82},{x:0.87,y:0.84},{x:0.82,y:0.9},{x:0.75,y:0.88}],
+          [{x:0.3,y:0.9},{x:0.35,y:0.86},{x:0.42,y:0.88},{x:0.38,y:0.92}]
+        ]
+      },
+      {
+        name: 'water_reflection',
+        behavior: { w: 0.5, taper: 0.9, wobble: 0.2 },
+        strokes: [
+          [{x:0.35,y:0.92},{x:0.4,y:0.91},{x:0.45,y:0.92}],
+          [{x:0.5,y:0.93},{x:0.55,y:0.92},{x:0.6,y:0.93}],
+          [{x:0.4,y:0.96},{x:0.45,y:0.95},{x:0.5,y:0.96}],
+          [{x:0.55,y:0.97},{x:0.6,y:0.96},{x:0.65,y:0.97}]
+        ]
+      },
+      {
+        name: 'birds_distant',
+        behavior: { w: 0.3, taper: 1.0, wobble: 0.1 },
+        strokes: [
+          [{x:0.3,y:0.28},{x:0.32,y:0.26},{x:0.34,y:0.28}],
+          [{x:0.6,y:0.32},{x:0.62,y:0.3},{x:0.64,y:0.32}],
+          [{x:0.4,y:0.22},{x:0.41,y:0.21},{x:0.42,y:0.22}]
+        ]
+      }
+    ]
+  },
+
+  // 竹 — Bamboo branch
   'bamboo_branch': {
     segments: [
       {
         name: 'stalk',
         behavior: { w: 2.2, taper: 0.1, wobble: 0.05 },
         strokes: [
-          [{x:0.4, y:0.9}, {x:0.4, y:0.75}],
-          [{x:0.4, y:0.75}, {x:0.4, y:0.6}],
-          [{x:0.4, y:0.6}, {x:0.4, y:0.45}]
+          [{x:0.4,y:0.9},{x:0.4,y:0.75}],
+          [{x:0.4,y:0.75},{x:0.4,y:0.6}],
+          [{x:0.4,y:0.6},{x:0.4,y:0.45}]
         ]
       },
       {
         name: 'leaves',
         behavior: { w: 0.8, taper: 0.9, wobble: 0.3 },
         strokes: [
-          [{x:0.4, y:0.6}, {x:0.6, y:0.5}],
-          [{x:0.4, y:0.6}, {x:0.2, y:0.5}],
-          [{x:0.4, y:0.45}, {x:0.7, y:0.35}],
-          [{x:0.4, y:0.45}, {x:0.1, y:0.35}]
+          [{x:0.4,y:0.6},{x:0.6,y:0.5}],
+          [{x:0.4,y:0.6},{x:0.2,y:0.5}],
+          [{x:0.4,y:0.45},{x:0.7,y:0.35}],
+          [{x:0.4,y:0.45},{x:0.1,y:0.35}]
         ]
       }
     ]
   },
+
+  // 松 — Sumi pine
   'sumi_pine': {
     segments: [
       {
         name: 'trunk',
         behavior: { w: 3.5, taper: 0.3, wobble: 0.25 },
         strokes: [
-          [{x:0.5, y:0.9}, {x:0.4, y:0.7}, {x:0.6, y:0.5}, {x:0.4, y:0.3}]
+          [{x:0.5,y:0.9},{x:0.4,y:0.7},{x:0.6,y:0.5},{x:0.4,y:0.3}]
         ]
       },
       {
         name: 'needles',
         behavior: { w: 0.4, taper: 1.0, wobble: 0.6 },
         strokes: [
-          [{x:0.6, y:0.5}, {x:0.75, y:0.5}],
-          [{x:0.6, y:0.5}, {x:0.7, y:0.55}],
-          [{x:0.4, y:0.3}, {x:0.55, y:0.3}],
-          [{x:0.4, y:0.3}, {x:0.5, y:0.25}]
+          [{x:0.6,y:0.5},{x:0.75,y:0.5}],
+          [{x:0.6,y:0.5},{x:0.7,y:0.55}],
+          [{x:0.4,y:0.3},{x:0.55,y:0.3}],
+          [{x:0.4,y:0.3},{x:0.5,y:0.25}]
         ]
       }
     ]
   },
-  // 梅 Plum Blossom (winter)
+
+  // 梅 — Plum blossom
   'plum_blossom': {
     segments: [
       {
         name: 'trunk',
-        behavior: { w: 3.8, taper: 0.25, wobble: 0.4 }, // gnarled, rough
+        behavior: { w: 3.8, taper: 0.25, wobble: 0.4 },
         strokes: [
-          [{x:0.5,y:0.9}, {x:0.45,y:0.7}, {x:0.55,y:0.55}, {x:0.5,y:0.4}],
-          [{x:0.5,y:0.55}, {x:0.35,y:0.45}, {x:0.25,y:0.35}],
-          [{x:0.5,y:0.7}, {x:0.65,y:0.6}, {x:0.75,y:0.5}]
+          [{x:0.5,y:0.9},{x:0.45,y:0.7},{x:0.55,y:0.55},{x:0.5,y:0.4}],
+          [{x:0.5,y:0.55},{x:0.35,y:0.45},{x:0.25,y:0.35}],
+          [{x:0.5,y:0.7},{x:0.65,y:0.6},{x:0.75,y:0.5}]
         ]
       },
       {
         name: 'branches',
-        behavior: { w: 1.2, taper: 0.7, wobble: 0.2 }, // thinner, more fluid
+        behavior: { w: 1.2, taper: 0.7, wobble: 0.2 },
         strokes: [
-          [{x:0.25,y:0.35}, {x:0.2,y:0.25}, {x:0.15,y:0.18}],
-          [{x:0.75,y:0.5}, {x:0.82,y:0.42}, {x:0.88,y:0.35}],
-          [{x:0.35,y:0.45}, {x:0.28,y:0.38}, {x:0.22,y:0.32}]
+          [{x:0.25,y:0.35},{x:0.2,y:0.25},{x:0.15,y:0.18}],
+          [{x:0.75,y:0.5},{x:0.82,y:0.42},{x:0.88,y:0.35}],
+          [{x:0.35,y:0.45},{x:0.28,y:0.38},{x:0.22,y:0.32}]
         ]
       },
       {
         name: 'blossoms',
-        behavior: { w: 0.5, taper: 1.0, wobble: 0.8 }, // sharp petal strokes
+        behavior: { w: 0.5, taper: 1.0, wobble: 0.8 },
         strokes: [
-          // Flower 1 near (0.25,0.35)
-          [{x:0.25,y:0.35},{x:0.22,y:0.28}], [{x:0.25,y:0.35},{x:0.3,y:0.3}],
-          [{x:0.25,y:0.35},{x:0.28,y:0.4}], [{x:0.25,y:0.35},{x:0.2,y:0.4}],
-          // Flower 2 near (0.75,0.5)
-          [{x:0.75,y:0.5},{x:0.72,y:0.43}], [{x:0.75,y:0.5},{x:0.8,y:0.45}],
-          [{x:0.75,y:0.5},{x:0.78,y:0.55}], [{x:0.75,y:0.5},{x:0.7,y:0.55}],
-          // Flower 3 near (0.5,0.4)
-          [{x:0.5,y:0.4},{x:0.47,y:0.33}], [{x:0.5,y:0.4},{x:0.55,y:0.35}],
+          [{x:0.25,y:0.35},{x:0.22,y:0.28}],
+          [{x:0.25,y:0.35},{x:0.3,y:0.3}],
+          [{x:0.25,y:0.35},{x:0.28,y:0.4}],
+          [{x:0.25,y:0.35},{x:0.2,y:0.4}],
+          [{x:0.75,y:0.5},{x:0.72,y:0.43}],
+          [{x:0.75,y:0.5},{x:0.8,y:0.45}],
+          [{x:0.75,y:0.5},{x:0.78,y:0.55}],
+          [{x:0.75,y:0.5},{x:0.7,y:0.55}],
+          [{x:0.5,y:0.4},{x:0.47,y:0.33}],
+          [{x:0.5,y:0.4},{x:0.55,y:0.35}],
           [{x:0.5,y:0.4},{x:0.53,y:0.45}]
         ]
       }
     ]
   },
 
-  // 蘭 Orchid (elegant, flowing)
+  // 蘭 — Orchid
   'orchid': {
     segments: [
       {
         name: 'leaves',
-        behavior: { w: 1.5, taper: 0.85, wobble: 0.6 }, // long sweeping arcs
+        behavior: { w: 1.5, taper: 0.85, wobble: 0.6 },
         strokes: [
           [{x:0.3,y:0.8},{x:0.2,y:0.55},{x:0.15,y:0.3},{x:0.25,y:0.15}],
           [{x:0.45,y:0.85},{x:0.4,y:0.6},{x:0.45,y:0.35},{x:0.6,y:0.2}],
@@ -4537,25 +4749,27 @@ const SUMIE_COMPOSITIONS = {
       },
       {
         name: 'flower_stem',
-        behavior: { w: 0.7, taper: 0.3, wobble: 0.1 }, // thin, upright
+        behavior: { w: 0.7, taper: 0.3, wobble: 0.1 },
         strokes: [
           [{x:0.5,y:0.45},{x:0.48,y:0.3},{x:0.45,y:0.18}]
         ]
       },
       {
         name: 'petals',
-        behavior: { w: 0.4, taper: 0.95, wobble: 0.5 }, // delicate
+        behavior: { w: 0.4, taper: 0.95, wobble: 0.5 },
         strokes: [
-          [{x:0.45,y:0.18},{x:0.38,y:0.12}], [{x:0.45,y:0.18},{x:0.5,y:0.1}],
-          [{x:0.45,y:0.18},{x:0.52,y:0.14}], [{x:0.45,y:0.18},{x:0.4,y:0.2}],
-          // Additional buds
-          [{x:0.48,y:0.3},{x:0.42,y:0.26}], [{x:0.48,y:0.3},{x:0.55,y:0.27}]
+          [{x:0.45,y:0.18},{x:0.38,y:0.12}],
+          [{x:0.45,y:0.18},{x:0.5,y:0.1}],
+          [{x:0.45,y:0.18},{x:0.52,y:0.14}],
+          [{x:0.45,y:0.18},{x:0.4,y:0.2}],
+          [{x:0.48,y:0.3},{x:0.42,y:0.26}],
+          [{x:0.48,y:0.3},{x:0.55,y:0.27}]
         ]
       }
     ]
   },
 
-  // 菊 Chrysanthemum (dense, many petals)
+  // 菊 — Chrysanthemum
   'chrysanthemum': {
     segments: [
       {
@@ -4586,29 +4800,35 @@ const SUMIE_COMPOSITIONS = {
         name: 'petals_outer',
         behavior: { w: 0.6, taper: 0.9, wobble: 0.7 },
         strokes: [
-          [{x:0.5,y:0.45},{x:0.42,y:0.38}],[{x:0.5,y:0.45},{x:0.58,y:0.38}],
-          [{x:0.5,y:0.45},{x:0.62,y:0.48}],[{x:0.5,y:0.45},{x:0.58,y:0.55}],
-          [{x:0.5,y:0.45},{x:0.42,y:0.55}],[{x:0.5,y:0.45},{x:0.38,y:0.48}]
+          [{x:0.5,y:0.45},{x:0.42,y:0.38}],
+          [{x:0.5,y:0.45},{x:0.58,y:0.38}],
+          [{x:0.5,y:0.45},{x:0.62,y:0.48}],
+          [{x:0.5,y:0.45},{x:0.58,y:0.55}],
+          [{x:0.5,y:0.45},{x:0.42,y:0.55}],
+          [{x:0.5,y:0.45},{x:0.38,y:0.48}]
         ]
       },
       {
         name: 'petals_inner',
         behavior: { w: 0.4, taper: 0.95, wobble: 0.8 },
         strokes: [
-          [{x:0.5,y:0.45},{x:0.46,y:0.4}],[{x:0.5,y:0.45},{x:0.54,y:0.4}],
-          [{x:0.5,y:0.45},{x:0.56,y:0.47}],[{x:0.5,y:0.45},{x:0.54,y:0.52}],
-          [{x:0.5,y:0.45},{x:0.46,y:0.52}],[{x:0.5,y:0.45},{x:0.44,y:0.47}]
+          [{x:0.5,y:0.45},{x:0.46,y:0.4}],
+          [{x:0.5,y:0.45},{x:0.54,y:0.4}],
+          [{x:0.5,y:0.45},{x:0.56,y:0.47}],
+          [{x:0.5,y:0.45},{x:0.54,y:0.52}],
+          [{x:0.5,y:0.45},{x:0.46,y:0.52}],
+          [{x:0.5,y:0.45},{x:0.44,y:0.47}]
         ]
       }
     ]
   },
 
-  // 石 Rock / Stone (textured, with moss)
+  // 石 — Rock with moss
   'rock': {
     segments: [
       {
         name: 'outline',
-        behavior: { w: 2.5, taper: 0.2, wobble: 0.4 }, // rough, varied pressure
+        behavior: { w: 2.5, taper: 0.2, wobble: 0.4 },
         strokes: [
           [{x:0.3,y:0.7},{x:0.25,y:0.55},{x:0.28,y:0.4},{x:0.38,y:0.3},
            {x:0.5,y:0.25},{x:0.62,y:0.3},{x:0.72,y:0.4},{x:0.75,y:0.55},
@@ -4626,21 +4846,23 @@ const SUMIE_COMPOSITIONS = {
       },
       {
         name: 'moss_dots',
-        behavior: { w: 0.8, taper: 1.0, wobble: 0.2 }, // stippled dots
+        behavior: { w: 0.8, taper: 1.0, wobble: 0.2 },
         strokes: [
-          [{x:0.32,y:0.48},{x:0.34,y:0.47}], [{x:0.68,y:0.52},{x:0.7,y:0.51}],
-          [{x:0.45,y:0.3},{x:0.47,y:0.29}], [{x:0.55,y:0.32},{x:0.57,y:0.31}]
+          [{x:0.32,y:0.48},{x:0.34,y:0.47}],
+          [{x:0.68,y:0.52},{x:0.7,y:0.51}],
+          [{x:0.45,y:0.3},{x:0.47,y:0.29}],
+          [{x:0.55,y:0.32},{x:0.57,y:0.31}]
         ]
       }
     ]
   },
 
-  // 山水 Landscape (mountain + water + boat)
+  // 山水 — Landscape with mountain, rocks, boat, and fisherman
   'landscape': {
     segments: [
       {
         name: 'distant_mountains',
-        behavior: { w: 1.2, taper: 0.5, wobble: 0.1 }, // light, dry brush
+        behavior: { w: 1.2, taper: 0.5, wobble: 0.1 },
         strokes: [
           [{x:0.1,y:0.5},{x:0.2,y:0.4},{x:0.3,y:0.45},{x:0.4,y:0.35},{x:0.5,y:0.4}],
           [{x:0.5,y:0.4},{x:0.6,y:0.3},{x:0.7,y:0.35},{x:0.8,y:0.25},{x:0.9,y:0.3}]
@@ -4667,7 +4889,8 @@ const SUMIE_COMPOSITIONS = {
         name: 'boat',
         behavior: { w: 0.9, taper: 0.4, wobble: 0.1 },
         strokes: [
-          [{x:0.45,y:0.78},{x:0.55,y:0.78},{x:0.6,y:0.8},{x:0.5,y:0.82},{x:0.4,y:0.8},{x:0.45,y:0.78}],
+          [{x:0.45,y:0.78},{x:0.55,y:0.78},{x:0.6,y:0.8},
+           {x:0.5,y:0.82},{x:0.4,y:0.8},{x:0.45,y:0.78}],
           [{x:0.5,y:0.78},{x:0.5,y:0.72},{x:0.53,y:0.7}]
         ]
       },
@@ -4675,143 +4898,15 @@ const SUMIE_COMPOSITIONS = {
         name: 'fisherman',
         behavior: { w: 0.4, taper: 0.9, wobble: 0.2 },
         strokes: [
-          [{x:0.5,y:0.72},{x:0.5,y:0.68}], // figure
-          [{x:0.5,y:0.68},{x:0.48,y:0.65}], // pole
-          [{x:0.5,y:0.68},{x:0.52,y:0.66}]  // arm
+          [{x:0.5,y:0.72},{x:0.5,y:0.68}],
+          [{x:0.5,y:0.68},{x:0.48,y:0.65}],
+          [{x:0.5,y:0.68},{x:0.52,y:0.66}]
         ]
       }
     ]
   }
 
-}; // closes Sumie paths
-  
-// ── Sumi-e renderer ────────────────────────────────────────────────────────────
-function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
-  if (pts.length < 2) return;
-  CTX.strokeStyle = col;
-  // Pass 1 — AIGUMA (wet edge / bleed halo)
-  if (bleed > 0) {
-    CTX.beginPath();
-    CTX.globalAlpha = baseAlpha * 0.07;
-    CTX.lineWidth   = (pts[0].w || 4) * (1 + bleed * 2.5);
-    CTX.filter      = `blur(${bleed * 5}px)`;
-    for (let i = 0; i < pts.length; i++) {
-      i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
-    }
-    CTX.stroke();
-    CTX.filter = 'none';
-  }
-  // Pass 2 — KATAGUMA (split-ink fiber texture)
-  for (let f = 0; f < fibers; f++) {
-    let fOff = (f / fibers - 0.5) * 1.8;
-    CTX.beginPath();
-    for (let i = 0; i < pts.length; i++) {
-      let pt      = pts[i];
-      let dry     = p.noise(pt.x * 0.05, pt.y * 0.05, f) * (1.1 - pt.prog * 0.4);
-      if (dry < 0.18) { CTX.stroke(); CTX.beginPath(); continue; }
-      let next    = pts[i+1] || pt;
-      let ang     = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI / 2;
-      let x       = pt.x + Math.cos(ang) * fOff * (pt.w || 2);
-      let y       = pt.y + Math.sin(ang) * fOff * (pt.w || 2);
-      CTX.lineWidth   = (pt.w || 2) * (0.12 + dry * 0.28);
-      CTX.globalAlpha = baseAlpha * dry * (1.2 - Math.abs(fOff));
-      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
-    }
-    CTX.stroke();
-  }
-  // Pass 3 — KASURI (dark core)
-  CTX.beginPath();
-  CTX.globalAlpha = baseAlpha * 0.82;
-  for (let i = 0; i < pts.length; i++) {
-    CTX.lineWidth = (pts[i].w || 2) * 0.62;
-    i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
-  }
-  CTX.stroke();
-  // Ink pooling at ends
-  if (pooling) {
-    [0, pts.length - 1].forEach(idx => {
-      let pt = pts[idx];
-      CTX.globalAlpha = baseAlpha * 0.18;
-      CTX.fillStyle   = col;
-      CTX.beginPath();
-      CTX.arc(pt.x, pt.y, (pt.w || 2) * 0.48, 0, Math.PI * 2);
-      CTX.fill();
-    });
-  }
-  // Drips
-  if (drips && Math.random() < 0.12) {
-    let pt = pts[pts.length - 1];
-    for (let d = 0; d < 3; d++) {
-      CTX.globalAlpha = baseAlpha * (0.45 - d * 0.1);
-      CTX.fillStyle   = col;
-      CTX.beginPath();
-      CTX.ellipse(pt.x + (d * 1.5 - 1) * (pt.w || 2) * 0.1, pt.y + d * (pt.w || 2) * 1.4,
-                  (pt.w || 2) * 0.13, (pt.w || 2) * 0.3, 0, 0, Math.PI * 2);
-      CTX.fill();
-    }
-  }
-  // Splatter
-  if (splatterAmt > 0 && Math.random() < splatterAmt * 0.12) {
-    for (let s = 0; s < Math.floor(splatterAmt * 6); s++) {
-      let idx = Math.floor(p.noise(s * 17) * pts.length);
-      let pt  = pts[Math.min(idx, pts.length - 1)];
-      let ang = p.random(Math.PI * 2);
-      let d   = (pt.w || 2) * (0.5 + p.random() * 2.2);
-      CTX.globalAlpha = baseAlpha * 0.55;
-      CTX.fillStyle   = col;
-      CTX.beginPath();
-      CTX.arc(pt.x + Math.cos(ang) * d, pt.y + Math.sin(ang) * d,
-              Math.max(0.4, (pt.w || 2) * 0.07 * (0.5 + p.random() * 2)), 0, Math.PI * 2);
-      CTX.fill();
-    }
-  }
-  CTX.globalAlpha = 1;
-}
-
- // helpers 
-function _spawnSumieComposition(p, compKey, ox, oy, scale) {
-  let comp = SUMIE_COMPOSITIONS[compKey];
-  if (!comp) return;
-  activeComposition = {
-    key: compKey,
-    segments: comp.segments,
-    transform: { ox, oy, scale },
-    currentSegmentIndex: 0,
-    currentStrokeIndex: 0
-  };
-  currentSegmentIndex = 0;
-  currentStrokeIndex = 0;
-  lastStrokeBirthTime = _calligClock;
-}
-
-  
-// ── Geometric helpers ─────────────────────────────────────────────────────────
-function _applyChaikin(pts, iterations) {
-  if (iterations === 0 || pts.length < 3) return pts;
-  let out = [pts[0]];
-  for (let i = 0; i < pts.length - 1; i++) {
-    let a = pts[i], b = pts[i+1];
-    out.push({ x: 0.75*a.x+0.25*b.x, y: 0.75*a.y+0.25*b.y, prog: a.prog*0.75+b.prog*0.25, speed: a.speed });
-    out.push({ x: 0.25*a.x+0.75*b.x, y: 0.25*a.y+0.75*b.y, prog: a.prog*0.25+b.prog*0.75, speed: b.speed });
-  }
-  out.push(pts[pts.length-1]);
-  return _applyChaikin(out, iterations - 1);
-}
-
-function _genLinePoints(p, ox, oy, len, angle, wobble) {
-  let pts = [], steps = 14;
-  for (let i = 0; i <= steps; i++) {
-    let prog = i / steps;
-    let n    = (p.noise(ox * 0.02 + prog * 3, oy * 0.02) - 0.5) * len * wobble;
-    pts.push({
-      x: ox + Math.cos(angle) * len * prog + Math.cos(angle + Math.PI/2) * n,
-      y: oy + Math.sin(angle) * len * prog + Math.sin(angle + Math.PI/2) * n,
-      prog, speed: 1.0
-    });
-  }
-  return _applyChaikin(pts, 2);
-}
-
+}; // end SUMIE_COMPOSITIONS
 
   
 // ── LISSAJOUS ───────────────────────────────────────────────────────
