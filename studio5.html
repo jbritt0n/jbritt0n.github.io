@@ -7739,9 +7739,7 @@ const PARAM_REGISTRY = {
     { id:'calligTapDot',     label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
       extra: function() {
-        // First, ensure mode is calligraphy
         if (S.calligInteractive && S.mode !== 'calligraphy') {
-          // Auto-switch mode if needed (optional)
           S.mode = 'calligraphy';
           document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
           let mb = document.querySelector('[data-mode="calligraphy"]');
@@ -7749,10 +7747,7 @@ const PARAM_REGISTRY = {
           document.getElementById('modeLabel').textContent = 'Calligr.';
         }
         if (S.calligInteractive) {
-          // Ensure ink buffer exists
-          if (window._st) {
-            _ensureInkBuffer(window._st.w(), window._st.h());
-          }
+          if (window._st) _ensureInkBuffer(window._st.w(), window._st.h());
           setupCalligraphyInteraction(window._st.p);
           showBrushCursor(true);
           if (!S.playing) {
@@ -7783,14 +7778,12 @@ const PARAM_REGISTRY = {
       ], def:'eternal',
       extra: function() { calligStrokes = []; }
     },
-      extra: function() { calligStrokes = []; }  // clear queue so new set spawns fresh
-    },
     { id:'calligRedrawBtn', label:'↺ Redraw strokes', type:'button',
       action: function() { calligRedraw(window._st && window._st.p); }
     },
     { id:'calligClearBtn',  label:'✕ Clear all ink',  type:'button',
       action: function() { clearInkBuffer(); showToast('Ink cleared'); }
-    },
+    }
   ],
 
   
