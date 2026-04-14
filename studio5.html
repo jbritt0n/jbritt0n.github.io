@@ -668,7 +668,7 @@ select option{background:var(--ink)}
       <option value="classic">Cinzel (Roman)</option>
       <option value="code">JetBrains Mono (Thin)</option>
       <option value="future">Orbitron (Sci-Fi)</option>
-      <option value="marker">Permanent Marker</option
+      <option value="marker">Permanent Marker</option>
       <option value="mono">Monospace</option>
       <option value="wide">Syncopate (Wide)</option>
       <option value="experimental">Megrim (Abstract)</option>
@@ -7633,23 +7633,22 @@ new p5(function(p){
   // Use the variables defined here
   let W, H;
 
-  function resize(w,h){
-    if(w==='fill'){
-      let wrap=document.getElementById('canvas-wrap');
-      W=wrap.offsetWidth;
-      H=wrap.offsetHeight;
-    } else {
-      W=w||800;
-      H=h||600;
-    }
-    p.resizeCanvas(W,H);
-    CTX=p.drawingContext;
-    ri(); // ri calls rd internally
-
-    if (typeof setupCalligraphyInteraction === 'function') {
-      setupCalligraphyInteraction(p);
+  function resize(w, h) {
+  if (w === 'fill') {
+    let wrap = document.getElementById('canvas-wrap');
+    W = wrap.offsetWidth;
+    H = wrap.offsetHeight;
+  } else {
+    W = w || 800;
+    H = h || 600;
   }
-    } // <-- CLOSE resize FUNCTION
+  p.resizeCanvas(W, H);
+  CTX = p.drawingContext;
+  ri(); // reinitialize
+  if (typeof setupCalligraphyInteraction === 'function') {
+    setupCalligraphyInteraction(p);
+  }
+} // <-- CLOSE resize FUNCTION
   
   // ── Function RI - reinitialize ─────────────────────────────────────────────────────────────────
   function ri() {
