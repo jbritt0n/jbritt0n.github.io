@@ -129,7 +129,7 @@ select option{background:var(--ink)}
   
 #gc.calligraphy-interactive {cursor: none;}
 .drawing-mode {cursor: url('/cursor/cursor.cur'), 16 16, crosshair !important;}
-
+.cb.active-submode {border-color: var(--gold);color: var(--gold);background: rgba(184,149,90,.07);}
   
 </style>
 </head>
@@ -342,7 +342,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
-        <button class="mb" data-mode="calligraphy" title="Pressure-sensitive stroke simulations">Calligr.</button>
+
       </div>
     </div>
     
@@ -854,6 +854,83 @@ select option{background:var(--ink)}
         
       </div></div>
 
+<!-- ── CALLIGRAPHY DEDICATED SECTION ─────────────────────────────────────── -->
+<div class="sec" id="calligraphySec">
+  <div class="sec-hd" onclick="toggleSec('calligraphy')">
+    <span class="sl"> Calligraphy</span>
+    <span class="sec-arrow open" id="arr-calligraphy">›</span>
+  </div>
+  <div class="sec-body" id="body-calligraphy">
+
+    <!-- Sub‑mode selector -->
+    <div class="sl2">Mode</div>
+    <div class="cg" id="calligSubModeRow">
+      <button class="cb" data-submode="random">✍️ Random strokes</button>
+      <button class="cb active" data-submode="character">📜 Character paths</button>
+      <button class="cb" data-submode="interactive">🖌️ Interactive draw</button>
+      <button class="cb" data-submode="composition">🎨 Sumi‑e composition</button>
+    </div>
+
+    <!-- Brush settings (always visible) -->
+    <div class="sl2">Brush</div>
+    <div class="rw"><div class="rl"><span class="rn">Width</span><span class="rv" id="vCalligWidth">40</span></div><input type="range" id="sCalligWidth" min="10" max="80" value="40" step="1"></div>
+    <div class="rw"><div class="rl"><span class="rn">Taper</span><span class="rv" id="vCalligTaper">3.0</span></div><input type="range" id="sCalligTaper" min="0.1" max="8" value="3.0" step="0.05"></div>
+    <div class="rw"><div class="rl"><span class="rn">Bleed</span><span class="rv" id="vCalligBleed">1.0</span></div><input type="range" id="sCalligBleed" min="0" max="5" value="1.0" step="0.05"></div>
+    <div class="rw"><div class="rl"><span class="rn">Fibers</span><span class="rv" id="vCalligFibers">6</span></div><input type="range" id="sCalligFibers" min="1" max="12" value="6" step="1"></div>
+    <div class="rw"><div class="rl"><span class="rn">Grow speed</span><span class="rv" id="vCalligGrow">0.5</span></div><input type="range" id="sCalligGrow" min="0.1" max="3" value="0.5" step="0.1"></div>
+    <div class="rw"><div class="rl"><span class="rn">Ink opacity</span><span class="rv" id="vCalligInk">0.9</span></div><input type="range" id="sCalligInk" min="0.2" max="1" value="0.9" step="0.05"></div>
+    <div class="rw"><div class="rl"><span class="rn">Splatter</span><span class="rv" id="vCalligSplatter">0.2</span></div><input type="range" id="sCalligSplatter" min="0" max="8" value="0.2" step="0.05"></div>
+    <div class="rw"><div class="rl"><span class="rn">Wobble</span><span class="rv" id="vCalligWobble">0.5</span></div><input type="range" id="sCalligWobble" min="0" max="1" value="0.5" step="0.05"></div>
+    <div class="tr"><span class="tl">Ink drips</span><button class="tb" id="btnCalligDrips">On</button></div>
+    <div class="tr"><span class="tl">End pooling</span><button class="tb" id="btnCalligPooling">On</button></div>
+    <div class="tr"><span class="tl">Paper grain</span><button class="tb" id="btnCalligPaperGrain">On</button></div>
+    <div class="tr"><span class="tl">Tap creates dot</span><button class="tb" id="btnCalligTapDot">On</button></div>
+
+    <!-- Parameters for random & character modes -->
+    <div class="sl2" id="calligStrokeLabel">Stroke settings</div>
+    <div class="rw"><div class="rl"><span class="rn">Stroke count</span><span class="rv" id="vCalligCount">1</span></div><input type="range" id="sCalligCount" min="1" max="12" value="1" step="1"></div>
+    <div class="rw"><div class="rl"><span class="rn">Min length</span><span class="rv" id="vCalligMinLen">0.30</span></div><input type="range" id="sCalligMinLen" min="0.1" max="1.0" value="0.3" step="0.05"></div>
+    <div class="rw"><div class="rl"><span class="rn">Max length</span><span class="rv" id="vCalligMaxLen">0.75</span></div><input type="range" id="sCalligMaxLen" min="0.2" max="2.0" value="0.75" step="0.05"></div>
+
+    <!-- Character set (visible only in character mode) -->
+    <div class="sl2" id="charSetLabel">Character set</div>
+    <div class="cg" id="calligCharSetRow">
+      <button class="cb" data-charset="eternal">永 Eternity</button>
+      <button class="cb" data-charset="dragon">龍 Dragon</button>
+      <button class="cb" data-charset="mountain">山 Mountain</button>
+      <button class="cb" data-charset="water">水 Water</button>
+      <button class="cb" data-charset="fire">火 Fire</button>
+      <button class="cb" data-charset="tree">木 Tree</button>
+      <button class="cb" data-charset="heart">心 Heart</button>
+      <button class="cb" data-charset="bamboo">竹 Bamboo</button>
+      <button class="cb" data-charset="wind">風 Wind</button>
+      <button class="cb" data-charset="rain">雨 Rain</button>
+      <button class="cb" data-charset="river">川 River</button>
+      <button class="cb" data-charset="zen">☯ Zen</button>
+    </div>
+
+    <!-- Composition picker (visible only in composition mode) -->
+    <div class="sl2" id="compLabel">Composition</div>
+    <select id="calligCompositionSelect">
+      <option value="mount_fuji">🗻 Mount Fuji</option>
+      <option value="bamboo_branch">🎋 Bamboo Branch</option>
+      <option value="sumi_pine">🌲 Sumi Pine</option>
+      <option value="plum_blossom">🌸 Plum Blossom</option>
+      <option value="orchid">🌿 Orchid</option>
+      <option value="chrysanthemum">🌼 Chrysanthemum</option>
+      <option value="rock">🪨 Rock & Moss</option>
+      <option value="landscape">🏞️ Mountain Landscape</option>
+    </select>
+
+    <!-- Action buttons -->
+    <div class="cr" style="margin-top:0.8rem">
+      <button class="ca" id="btnCalligRedraw">↺ Redraw strokes</button>
+      <button class="ca" id="btnCalligClear">✕ Clear all ink</button>
+    </div>
+  </div>
+</div>
+      
+      
       
 <!-- COMPOSITION BLOCKS CONTROL -->
       <div class="sec"><div class="sec-hd" onclick="toggleSec('comp')"><span class="sl">Composition blocks</span><span class="sec-arrow" id="arr-comp">›</span></div>
@@ -7512,6 +7589,25 @@ const DEFAULT_STATE = {
   shapePosition: 'center',           // Default position for new shapes
   shapeSides: 7,                     // Number of sides for polygon shape (3–16)
   shapeText: '',                     // Default custom text for new shapes
+  // ========== CALLIGRAPHY MODE ==========
+  calligSubMode: 'character',          // 'random', 'character', 'interactive', 'composition'
+  calligComposition: 'bamboo_branch',  // composition key
+  calligCharSet: 'eternal',            // character set key
+  calligCount: 1,                      // stroke count (random/character)
+  calligMinLen: 0.3,                   // minimum stroke length (normalized)
+  calligMaxLen: 0.75,                  // maximum stroke length (normalized)
+  calligWidth: 40,                     // brush width (pixels)
+  calligTaper: 3.0,                    // taper factor
+  calligBleed: 1.0,                    // ink bleed amount
+  calligFibers: 6,                     // number of fiber strands
+  calligGrow: 0.5,                     // stroke grow speed
+  calligInk: 0.9,                      // ink opacity
+  calligSplatter: 0.2,                // splatter amount
+  calligWobble: 0.5,                  // brush wobble
+  calligDrips: true,                  // ink drips on/off
+  calligPooling: true,                // end pooling on/off
+  calligPaperGrain: true,             // paper grain texture on/off
+  calligTapDot: true,                 // tap creates dot (interactive)
   // ========== SIGNAL COLLAPSE (temporary effect) ==========
   signalCollapse: false,             // Trigger scan‑line collapse effect
   signalStart: 0,                    // Frame counter when effect started
@@ -8210,91 +8306,7 @@ const PARAM_REGISTRY = {
     { id:'sandSizeMin',   label:'Min size (px)',  min:0.5, max:5,  step:0.5, def:1.5, scale:1 },
     { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
   ],
-  calligraphy: [
-  // ----- Sub‑mode selector (always visible) -----
-    { id:'calligSubMode', label:'Mode', type:'select', modes:['always'], options:[
-        { value:'random',       label:'✍️ Random strokes' },
-        { value:'character',    label:'📜 Character paths' },
-        { value:'interactive',  label:'🖌️ Interactive draw' },
-        { value:'composition',  label:'🎨 Sumi‑e composition' }
-      ], def:'character',
-      extra: function() {
-        // Refresh the UI to show/hide mode‑specific parameters
-        rebuildModeUI('calligraphy');
-        // Reset composition state when leaving composition mode
-        if (S.calligSubMode !== 'composition') calligActiveComp = null;
-        // Ensure interactive mode has handlers and cursor
-        if (S.calligSubMode === 'interactive') {
-          if (window._st) _ensureInkBuffer(window._st.w(), window._st.h());
-          setupCalligraphyInteraction(window._st.p);
-          showBrushCursor(true);
-          if (!S.playing) {
-            S.playing = true;
-            window._st.p.loop();
-            let btn = document.getElementById('btnPlay');
-            if (btn) btn.textContent = '⏸ Pause';
-          }
-        } else {
-          showBrushCursor(false);
-        }
-        window._st.rd();
-      }
-    },
-        // ----- Parameters common to all sub‑modes (always visible) -----
-        { id:'calligWidth',      label:'Brush width',     modes:['always'], min:10.0, max:80.0, step:1.0,  def:40.0, scale:1 },
-        { id:'calligTaper',      label:'Taper',           modes:['always'], min:0.1, max:8.0, step:0.05, def:3.0,  scale:1 },
-        { id:'calligBleed',      label:'Ink bleed',       modes:['always'], min:0,   max:5.0, step:0.05, def:1.0,  scale:1 },
-        { id:'calligFibers',     label:'Fiber strands',   modes:['always'], min:1,   max:12,  step:1,    def:6,    scale:1 },
-        { id:'calligGrow',       label:'Grow speed',      modes:['always'], min:0.1, max:3.0, step:0.1,  def:0.5,  scale:1 },
-        { id:'calligInk',        label:'Ink opacity',     modes:['always'], min:0.2, max:1.0, step:0.05, def:0.9,  scale:1 },
-        { id:'calligSplatter',   label:'Splatter',        modes:['always'], min:0,   max:8.0, step:0.05, def:0.2,  scale:1 },
-        { id:'calligWobble',     label:'Brush wobble',    modes:['always'], min:0,   max:1,   step:0.05, def:0.5,  scale:1 },
-        { id:'calligDrips',      label:'Ink drips',       modes:['always'], type:'toggle', def:true },
-        { id:'calligPooling',    label:'End pooling',     modes:['always'], type:'toggle', def:true },
-        { id:'calligPaperGrain', label:'Paper grain',     modes:['always'], type:'toggle', def:true },
-        { id:'calligTapDot',     label:'Tap creates dot', modes:['always'], type:'toggle', def:true },
-        // ----- Parameters for random & character modes -----
-        { id:'calligCount',      label:'Stroke count',    modes:['random','character'], min:1,   max:12,  step:1,    def:1,    scale:1 },
-        { id:'calligMinLen',     label:'Min length',      modes:['random','character'], min:0.1, max:1.0, step:0.05, def:0.3,  scale:1 },
-        { id:'calligMaxLen',     label:'Max length',      modes:['random','character'], min:0.2, max:2.0, step:0.05, def:0.75, scale:1 },
-        { id:'calligCharSet',    label:'Character set',   modes:['character'], type:'select', options:[
-            {value:'eternal',  label:'永 Eternity'},
-            {value:'dragon',   label:'龍 Dragon'},
-            {value:'mountain', label:'山 Mountain'},
-            {value:'water',    label:'水 Water'},
-            {value:'fire',     label:'火 Fire'},
-            {value:'tree',     label:'木 Tree'},
-            {value:'heart',    label:'心 Heart'},
-            {value:'bamboo',   label:'竹 Bamboo'},
-            {value:'wind',     label:'風 Wind'},
-            {value:'rain',     label:'雨 Rain'},
-            {value:'river',    label:'川 River'},
-            {value:'zen',      label:'☯ Zen'}
-          ], def:'eternal',
-          extra: function() { calligStrokes = []; }
-        },
-        // ----- Parameters for composition mode -----
-        { id:'calligComposition', label:'Composition', modes:['composition'], type:'select', options:[
-            { value:'mount_fuji',     label:'🗻 Mount Fuji' },
-            { value:'bamboo_branch',  label:'🎋 Bamboo Branch' },
-            { value:'sumi_pine',      label:'🌲 Sumi Pine' },
-            { value:'plum_blossom',   label:'🌸 Plum Blossom' },
-            { value:'orchid',         label:'🌿 Orchid' },
-            { value:'chrysanthemum',  label:'🌼 Chrysanthemum' },
-            { value:'rock',           label:'🪨 Rock & Moss' },
-            { value:'landscape',      label:'🏞️ Mountain Landscape' }
-          ], def:'bamboo_branch',
-          extra: function() { calligActiveComp = null; }
-        },
-        // ----- Action buttons (always visible) -----
-        { id:'calligRedrawBtn', label:'↺ Redraw strokes', modes:['always'], type:'button',
-          action: function() { calligRedraw(window._st && window._st.p); }
-        },
-        { id:'calligClearBtn',  label:'✕ Clear all ink',  modes:['always'], type:'button',
-          action: function() { clearInkBuffer(); showToast('Ink cleared'); }
-        }
-      ],
-
+  
   
   //to be refactored
   hatch: [
@@ -9515,7 +9527,148 @@ document.getElementById('btnUpdateStream').addEventListener('click', function() 
   }
 });
 
+// ── CALLIGRAPHY DEDICATED SECTION INIT ──────────────────────────────────────
+function initCalligraphySection() {
+  // Helper to set calligraphy mode and redraw
+  function setCalligraphyMode() {
+    if (S.mode !== 'calligraphy') {
+      S.mode = 'calligraphy';
+      // Update mode button active state (optional)
+      document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
+      document.getElementById('modeLabel').textContent = 'Calligr.';
+      // Ensure ink buffer exists
+      _ensureInkBuffer(window._st.w(), window._st.h());
+      // Reset composition if needed
+      if (S.calligSubMode !== 'composition') calligActiveComp = null;
+    }
+    window._st.rd();
+  }
 
+  // ---- Sub‑mode switching ----
+  let subModeBtns = document.querySelectorAll('#calligSubModeRow .cb');
+  subModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      subModeBtns.forEach(b => b.classList.remove('active-submode'));
+      btn.classList.add('active-submode');
+      S.calligSubMode = btn.dataset.submode;
+      // Show/hide mode‑specific controls
+      let isCharMode = (S.calligSubMode === 'character');
+      let isCompMode = (S.calligSubMode === 'composition');
+      document.getElementById('charSetLabel').style.display = isCharMode ? 'block' : 'none';
+      document.getElementById('calligCharSetRow').style.display = isCharMode ? 'flex' : 'none';
+      document.getElementById('compLabel').style.display = isCompMode ? 'block' : 'none';
+      document.getElementById('calligCompositionSelect').style.display = isCompMode ? 'block' : 'none';
+      // Also show/hide stroke count/length for random+character
+      let showStroke = (S.calligSubMode === 'random' || S.calligSubMode === 'character');
+      document.getElementById('calligStrokeLabel').style.display = showStroke ? 'block' : 'none';
+      document.getElementById('sCalligCount').parentElement.style.display = showStroke ? 'block' : 'none';
+      document.getElementById('sCalligMinLen').parentElement.style.display = showStroke ? 'block' : 'none';
+      document.getElementById('sCalligMaxLen').parentElement.style.display = showStroke ? 'block' : 'none';
+      
+      // For interactive mode, ensure cursor and handlers
+      if (S.calligSubMode === 'interactive') {
+        setupCalligraphyInteraction(window._st.p);
+        showBrushCursor(true);
+        if (!S.playing) { S.playing = true; window._st.p.loop(); document.getElementById('btnPlay').textContent = '⏸ Pause'; }
+      } else {
+        showBrushCursor(false);
+      }
+      // Reset composition state when leaving composition mode
+      if (S.calligSubMode !== 'composition') calligActiveComp = null;
+      setCalligraphyMode();
+    });
+  });
+  // Activate default sub‑mode (character)
+  document.querySelector('#calligSubModeRow .cb[data-submode="character"]').classList.add('active-submode');
+  S.calligSubMode = 'character';
+
+  // ---- Brush sliders ----
+  function wireCalligSlider(slId, vId, key, scale = 1, isFloat = false) {
+    let sl = document.getElementById(slId);
+    let vl = document.getElementById(vId);
+    sl.addEventListener('input', () => {
+      let val = isFloat ? parseFloat(sl.value) : parseInt(sl.value);
+      S[key] = val * scale;
+      vl.textContent = isFloat ? val.toFixed(2) : val;
+      setCalligraphyMode();
+    });
+  }
+  wireCalligSlider('sCalligWidth', 'vCalligWidth', 'calligWidth', 1, false);
+  wireCalligSlider('sCalligTaper', 'vCalligTaper', 'calligTaper', 1, true);
+  wireCalligSlider('sCalligBleed', 'vCalligBleed', 'calligBleed', 1, true);
+  wireCalligSlider('sCalligFibers', 'vCalligFibers', 'calligFibers', 1, false);
+  wireCalligSlider('sCalligGrow', 'vCalligGrow', 'calligGrow', 1, true);
+  wireCalligSlider('sCalligInk', 'vCalligInk', 'calligInk', 1, true);
+  wireCalligSlider('sCalligSplatter', 'vCalligSplatter', 'calligSplatter', 1, true);
+  wireCalligSlider('sCalligWobble', 'vCalligWobble', 'calligWobble', 1, true);
+  wireCalligSlider('sCalligCount', 'vCalligCount', 'calligCount', 1, false);
+  wireCalligSlider('sCalligMinLen', 'vCalligMinLen', 'calligMinLen', 1, true);
+  wireCalligSlider('sCalligMaxLen', 'vCalligMaxLen', 'calligMaxLen', 1, true);
+
+  // Toggle buttons
+  function wireToggle(btnId, key, def) {
+    let btn = document.getElementById(btnId);
+    if (S[key] === undefined) S[key] = def;
+    btn.textContent = S[key] ? 'On' : 'Off';
+    btn.classList.toggle('on', S[key]);
+    btn.addEventListener('click', () => {
+      S[key] = !S[key];
+      btn.textContent = S[key] ? 'On' : 'Off';
+      btn.classList.toggle('on', S[key]);
+      setCalligraphyMode();
+    });
+  }
+  wireToggle('btnCalligDrips', 'calligDrips', true);
+  wireToggle('btnCalligPooling', 'calligPooling', true);
+  wireToggle('btnCalligPaperGrain', 'calligPaperGrain', true);
+  wireToggle('btnCalligTapDot', 'calligTapDot', true);
+
+  // Character set selection
+  let charsetBtns = document.querySelectorAll('#calligCharSetRow .cb');
+  charsetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      charsetBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      S.calligCharSet = btn.dataset.charset;
+      calligStrokes = []; // reset strokes so new characters spawn
+      setCalligraphyMode();
+    });
+  });
+  // Default active character set
+  document.querySelector('#calligCharSetRow .cb[data-charset="eternal"]').classList.add('active');
+  S.calligCharSet = 'eternal';
+
+  // Composition selection
+  let compSelect = document.getElementById('calligCompositionSelect');
+  compSelect.addEventListener('change', () => {
+    S.calligComposition = compSelect.value;
+    if (S.calligSubMode === 'composition') calligActiveComp = null;
+    setCalligraphyMode();
+  });
+  S.calligComposition = 'bamboo_branch';
+
+  // Redraw / Clear buttons
+  document.getElementById('btnCalligRedraw').addEventListener('click', () => {
+    calligRedraw(window._st.p);
+  });
+  document.getElementById('btnCalligClear').addEventListener('click', () => {
+    clearInkBuffer();
+    showToast('Ink cleared');
+    setCalligraphyMode();
+  });
+
+  // Hide/show mode-specific UI initially
+  let initShow = (id, show) => { let el = document.getElementById(id); if (el) el.style.display = show ? 'block' : 'none'; };
+  initShow('charSetLabel', false);
+  initShow('calligCharSetRow', false);
+  initShow('compLabel', false);
+  initShow('calligCompositionSelect', false);
+  initShow('calligStrokeLabel', true);
+  // stroke sliders are visible by default
+}
+
+// Call this after DOM is ready
+document.addEventListener('DOMContentLoaded', initCalligraphySection);
   
 
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
