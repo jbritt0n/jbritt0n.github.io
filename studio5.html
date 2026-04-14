@@ -3547,23 +3547,49 @@ function drawInterference(p,t){
 }
 
 
-// ── CALLIGRAPHY v3 4/13/26 ────────────────────────────────────────────────────────
+// ── CALLIGRAPHY v3 4/14/26 ────────────────────────────────────────────────────────
 let calligStrokes = [];
 let isDrawing = false;
 let lastMouseX = 0, lastMouseY = 0;
 let mouseVelocity = 0;
 let mouseAngle = 0;
-// Use wall-clock ms for stroke timing so strokes animate even when paused
 let _calligClock = 0;
+// Offscreen ink buffer — persists between frames, never cleared by main loop
+let _inkCanvas = null;
+let _inkCTX = null;
+
+function _ensureInkBuffer(W, H) {
+  if (!_inkCanvas || _inkCanvas.width !== W || _inkCanvas.height !== H) {
+    let old = _inkCanvas;
+    _inkCanvas = document.createElement('canvas');
+    _inkCanvas.width = W;
+    _inkCanvas.height = H;
+    _inkCTX = _inkCanvas.getContext('2d');
+    // Fill with current bg
+    _inkCTX.fillStyle = S.bg;
+    _inkCTX.fillRect(0, 0, W, H);
+    // Preserve old ink if resizing
+    if (old) _inkCTX.drawImage(old, 0, 0, W, H);
+  }
+}
+
+function clearInkBuffer() {
+  if (_inkCTX && _inkCanvas) {
+    _inkCTX.clearRect(0, 0, _inkCanvas.width, _inkCanvas.height);
+    _inkCTX.fillStyle = S.bg;
+    _inkCTX.fillRect(0, 0, _inkCanvas.width, _inkCanvas.height);
+  }
+  calligStrokes = [];
+}
 
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
+  _ensureInkBuffer(W, H);
 
-  // ── Parameters ────────────────────────────────────────────────────────────
   let strokeCount  = Math.max(1, Math.floor(S.calligCount     ?? 8));
   let minLen       = (S.calligMinLen    ?? 0.4) * Math.min(W, H);
   let maxLen       = (S.calligMaxLen    ?? 0.9) * Math.min(W, H);
-  let baseWidth    = Math.max(3, (S.calligWidth ?? 1.2) * S.maxSize);
+  let baseWidth    = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
   let taper        = S.calligTaper      ?? 0.5;
   let bleed        = S.calligBleed      ?? 0.6;
   let fibers       = Math.max(1, Math.floor(S.calligFibers ?? 8));
@@ -3578,48 +3604,39 @@ function drawCalligraphy(p, t) {
   let splatterAmt  = S.calligSplatter   ?? 0.3;
   let interactive  = S.calligInteractive ?? false;
 
-  // Advance clock every frame (works regardless of S.playing / S.fc)
   _calligClock++;
 
-  // ── AUTO MODE: spawn strokes on a timer ───────────────────────────────────
- if (!interactive && S.playing) {
-    // Spawn one stroke every N clock ticks so they stagger naturally
-    let spawnInterval = Math.max(8, Math.floor(60 / Math.max(1, strokeCount)));
-    if (_calligClock % spawnInterval === 0 && calligStrokes.length < strokeCount * 3) {
-      let s = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth,
-                                 charMode, charSet, followMouse);
+  // AUTO MODE — spawn strokes on a timer
+  if (!interactive && S.playing) {
+    let spawnInterval = Math.max(6, Math.floor(50 / Math.max(1, strokeCount)));
+    if (_calligClock % spawnInterval === 0 && calligStrokes.length < strokeCount * 2) {
+      let s = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse);
       if (s) calligStrokes.push(s);
     }
   }
-  // ── INTERACTIVE MODE: strokes are pushed by pointer handlers ──────────────
-  // Nothing to spawn here — the pointer handlers call _pushInteractiveStroke()
-  // directly with accurate scaled coordinates.
-  // Just prune the array so it doesn't grow forever.
-  if (interactive && calligStrokes.length > 40) {
-    calligStrokes = calligStrokes.slice(-30);
-  }
-
-  // ── RENDER all strokes ────────────────────────────────────────────────────
-  CTX.save();
-  // Use multiply on light backgrounds (ink-on-paper), source-over on dark
-  let _bgIsLight = (function() {
+  // Prune completed interactive strokes
+  if (interactive && calligStrokes.length > 50) calligStrokes = calligStrokes.slice(-40);
+  // ── Render animating strokes to INK BUFFER ─────────────────────────────────
+  let bgIsLight = (function() {
     let h = S.bg || '#0d0c0a';
-    let r = parseInt(h.slice(1,3),16)||0;
-    let g = parseInt(h.slice(3,5),16)||0;
-    let b = parseInt(h.slice(5,7),16)||0;
-    return (r + g + b) > 382; // >50% avg brightness
+    let r = parseInt(h.slice(1,3),16)||0, g = parseInt(h.slice(3,5),16)||0, b = parseInt(h.slice(5,7),16)||0;
+    return (r + g + b) > 382;
   })();
-  CTX.globalCompositeOperation = _bgIsLight ? 'multiply' : 'source-over';
+  // Draw strokes to ink buffer
+  let origCTX = CTX;
+  CTX = _inkCTX;  // redirect rendering to ink buffer
+  _inkCTX.save();
+  _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
 
   for (let i = calligStrokes.length - 1; i >= 0; i--) {
     let st = calligStrokes[i];
-    // Use _calligClock so strokes still age/fade when S.playing is false
     let age = _calligClock - st.birth;
     if (age > st.lifespan + st.fadeOut) {
       calligStrokes.splice(i, 1);
       continue;
     }
-    let drawProgress = Math.min(1, age * growSpeed * 0.15);
+    // Interactive strokes: full immediate reveal. Auto strokes: progressive draw-in
+    let drawProgress = st.interactive ? 1.0 : Math.min(1, age * growSpeed * 0.12);
     let visiblePts = st.pts.filter(pt => pt.prog <= drawProgress);
     if (visiblePts.length < 2) continue;
 
@@ -3627,23 +3644,41 @@ function drawCalligraphy(p, t) {
       let pt = visiblePts[j];
       let progressFactor = Math.sin(pt.prog * Math.PI);
       let speedFactor = Math.pow(1 / (pt.speed || 1), 0.5);
-      let rawPressure = progressFactor * speedFactor;
-      pt.w = st.baseWidth * Math.pow(rawPressure, 1 / Math.max(0.1, taper));
+      pt.w = st.baseWidth * Math.pow(progressFactor * speedFactor, 1 / Math.max(0.1, taper));
     }
-
     let alpha = inkOpacity;
     if (age > st.lifespan) {
       alpha *= 1 - Math.pow((age - st.lifespan) / st.fadeOut, 2);
     }
-    alpha = Math.max(0, Math.min(1, alpha));
-    _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha,
+    _renderSumiE(p, visiblePts, st.col, bleed, fibers, Math.max(0, Math.min(1, alpha)),
                  drips, pooling, splatterAmt, t);
+    // Bake completed auto strokes — mark as done so they stop re-rendering
+    if (!st.interactive && drawProgress >= 1 && age <= st.lifespan) {
+      st._baked = true;
+    }
   }
+  // Remove baked strokes (they're now part of the buffer pixels)
+  calligStrokes = calligStrokes.filter(st => {
+    let age = _calligClock - st.birth;
+    if (st._baked && age > st.lifespan) return false; // let fade play out on buffer
+    return true;
+  });
 
-  // ── Paper grain overlay ────────────────────────────────────────────────────
+  _inkCTX.restore();
+  CTX = origCTX;  // restore main CTX
+
+  // ── Composite ink buffer onto main canvas ──────────────────────────────────
+  CTX.save();
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.drawImage(_inkCanvas, 0, 0);
+  CTX.restore();
+
+  // ── Paper grain (draws on main CTX, redraws each frame) ───────────────────
   if (paperGrain) {
+    CTX.save();
     CTX.globalCompositeOperation = 'overlay';
-    CTX.globalAlpha = 0.12;
+    CTX.globalAlpha = 0.10;
     for (let x = 0; x < W; x += 3) {
       for (let y = 0; y < H; y += 3) {
         let n = p.noise(x * 0.015, y * 0.015, t * 0.05);
@@ -3653,33 +3688,60 @@ function drawCalligraphy(p, t) {
         }
       }
     }
+    CTX.restore();
   }
-
-  CTX.restore();
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
 }
 
-// Called by pointer handlers — spawns a stroke segment from (x1,y1) to (x2,y2)
+// ── push interactive strokes ───────────────────
 function _pushInteractiveStroke(p, x1, y1, x2, y2) {
-  let minLen   = (S.calligMinLen ?? 0.4) * Math.min(p.width, p.height);
-  let maxLen   = (S.calligMaxLen ?? 0.9) * Math.min(p.width, p.height);
-  let baseWidth = Math.max(3, (S.calligWidth ?? 1.2) * S.maxSize);
-  let charMode  = S.calligCharMode  ?? true;
-  let charSet   = S.calligCharSet   ?? 'eternal';
-
+  let minLen    = (S.calligMinLen ?? 0.4) * Math.min(p.width, p.height);
+  let maxLen    = (S.calligMaxLen ?? 0.9) * Math.min(p.width, p.height);
+  let baseWidth = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
+  let charMode  = S.calligCharMode ?? true;
+  let charSet   = S.calligCharSet  ?? 'eternal';
   let dx = x2 - x1, dy = y2 - y1;
-  let dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < 3) return;  // ignore micro-movements
+  let dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < 2) return;
 
   mouseVelocity = Math.min(2.5, dist / 10);
   mouseAngle    = Math.atan2(dy, dx);
-  let len = Math.max(minLen * 0.2, Math.min(maxLen, dist * 1.5));
-
-  let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len,
-                                   baseWidth, charMode, charSet);
-  if (s) calligStrokes.push(s);
-  if (window._st) window._st.rd();
+  let len = Math.max(minLen * 0.15, Math.min(maxLen, dist * 2.0));
+  let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet);
+  if (s) {
+    s.interactive = true;   // <-- immediate full reveal flag
+    s.lifespan = 9999;      // persist until cleared
+    s.fadeOut  = 0;
+    calligStrokes.push(s);
+    // Immediately bake onto ink buffer (don't wait for draw frame)
+    if (_inkCTX && _inkCanvas) {
+      let bgIsLight = (function() {
+        let h = S.bg || '#0d0c0a';
+        let r = parseInt(h.slice(1,3),16)||0, g = parseInt(h.slice(3,5),16)||0, b = parseInt(h.slice(5,7),16)||0;
+        return (r + g + b) > 382;
+      })();
+      let origCTX = CTX;
+      CTX = _inkCTX;
+      _inkCTX.save();
+      _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
+      // Compute widths
+      for (let j = 0; j < s.pts.length; j++) {
+        let pt = s.pts[j];
+        let progressFactor = Math.sin(pt.prog * Math.PI);
+        pt.w = s.baseWidth * Math.pow(progressFactor, 1 / Math.max(0.1, S.calligTaper ?? 0.5));
+      }
+      _renderSumiE(p, s.pts, s.col, S.calligBleed ?? 0.6,
+                   Math.max(1, Math.floor(S.calligFibers ?? 8)),
+                   S.calligInk ?? 0.9,
+                   S.calligDrips ?? true, S.calligPooling ?? true,
+                   S.calligSplatter ?? 0.3, 0);
+      _inkCTX.restore();
+      CTX = origCTX;
+      // Remove from array immediately — it's baked
+      calligStrokes.pop();
+    }
+  }
 }
 
 // ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
@@ -6741,6 +6803,9 @@ function rd() {
     drawScene(p, t);
     if (S.shapesEnabled) drawShapes(p, t);
     if (S.overlayEnabled) drawOverlay(p, t);
+    if (S.mode === 'calligraphy' && _inkCanvas) {
+    CTX.drawImage(_inkCanvas, 0, 0);
+}
   }
   // ── Function Rc ─────────────────────────────────────────────────────────────────
     function rc(preset){
@@ -7389,9 +7454,7 @@ const PARAM_REGISTRY = {
       extra: function() {calligStrokes = [];
         // Interactive mode must be playing to render strokes as they age
         if (S.calligInteractive && !S.playing) {S.playing = true;window._st.p.loop();let btn = document.getElementById('btnPlay');if (btn) btn.textContent = '⏸ Pause';}}},
-    { id:'calligClear', label:'Clear all ink', type:'button', action: function() {
-      calligStrokes = []; showToast('Ink cleared');
-    } },
+    { id:'calligClear', label:'Clear all ink', type:'button', action: function() {clearInkBuffer(); showToast('Ink cleared');}},
     { id:'calligTapDot',      label:'Tap creates dot', type:'toggle', def:true },
     { id:'calligPaperGrain',label:'Paper grain',       type:'toggle', def:true },
     { id:'calligCharMode',  label:'Draw characters',   type:'toggle', def:true },
@@ -7745,22 +7808,21 @@ document.getElementById('body-mode').addEventListener('click', function(e) {
   if (activeCtrl) activeCtrl.classList.add('active');
   // 5. Re-initialize and redraw, adding mode-specific controls
     rebuildModeUI(S.mode);
+  
   // enable interaction in calligraphy mode
 if (S.mode === 'calligraphy') {
-  S.trailPersist = 0; // turn off trail persist for calligraphy mode
-  document.getElementById('sTrail').value = 0;
-  document.getElementById('vTrail').textContent = '0';
-  // Automatically turn on interactive mode for better UX
-    S.calligInteractive = true;
-  setupCalligraphyInteraction(window._st.p);   // re‑attach handlers
-  // Update the UI toggle button
-  let interactiveBtn = document.getElementById('mdp_calligInteractive');
-  if (interactiveBtn) {
-    interactiveBtn.textContent = 'On';
-    interactiveBtn.classList.add('on');
+  clearInkBuffer();  // fresh paper on mode entry
+  if (!S.playing) {
+    S.playing = true;
+    window._st.p.loop();
+    let btn = document.getElementById('btnPlay');
+    if (btn) btn.textContent = '⏸ Pause';
   }
-  showToast('Calligraphy mode – draw on canvas');
+  setupCalligraphyInteraction(window._st.p);
+  showToast('Calligraphy — draw on canvas');
 }
+
+  // mode parameter registry
   let sec = document.getElementById('mode-extra-sec');
   if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
   if (window._st) {
