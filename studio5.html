@@ -128,19 +128,8 @@ select option{background:var(--ink)}
   .mb{font-size:.43rem;padding:.32rem .1rem}}
   
 #gc.calligraphy-interactive {cursor: none;}
-.drawing-mode {cursor: url('/cursor/cursor.cur'), auto;}
-#brushCursor {
-  position: fixed;
-  pointer-events: none;
-  display: none;
-  z-index: 9999;
-  border: 2px solid rgba(200, 100, 50, 0.8);
-  border-radius: 50%;
-  background: rgba(200, 100, 50, 0.15);
-  box-shadow: 0 0 8px rgba(200, 100, 50, 0.4);
-  transform: translate(-50%, -50%);
-  transition: width 0.05s ease, height 0.05s ease;
-}
+.drawing-mode {cursor: url('/cursor/cursor.cur'), 16 16, crosshair !important;}
+
   
 </style>
 </head>
@@ -3887,9 +3876,13 @@ function _refreshCanvasCursor() {
 
 // Public API — called when mode or subMode changes
 function showBrushCursor(show) {
-  _calligCursor = _calligCursor || document.getElementById('brushCursor');
-  if (_calligCursor) _calligCursor.style.display = show ? 'block' : 'none';
-  _refreshCanvasCursor();
+  let canvas = document.getElementById('gc');
+  if (!canvas) return;
+  if (show && S.calligSubMode === 'interactive' && S.mode === 'calligraphy') {
+    canvas.classList.add('drawing-mode');
+  } else {
+    canvas.classList.remove('drawing-mode');
+  }
 }
 
 // No-op stub kept for compatibility with existing p.setup() call sites
@@ -4171,6 +4164,7 @@ function setupCalligraphyInteraction(p) {
 
   canvas.style.touchAction  = 'none';  // prevent scroll/zoom during drawing
   canvas.style.pointerEvents = 'auto';
+  canvas.style.userSelect = 'none';  // prevent text selection while drawing
 
   // Coordinate helper — maps viewport → canvas pixel space
   function getPos(e) {
@@ -8223,32 +8217,20 @@ const PARAM_REGISTRY = {
     { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
   ],
   calligraphy: [
-    { id:'calligCount',      label:'Stroke count',    min:1,   max:12,  step:1,    def:1,    scale:1 },
-    { id:'calligMinLen',     label:'Min length',      min:0.1, max:1.0, step:0.05, def:0.3,  scale:1 },
-    { id:'calligMaxLen',     label:'Max length',      min:0.2, max:2.0, step:0.05, def:0.75,  scale:1 },
-    { id:'calligWidth',      label:'Brush width',     min:10.0, max:80.0, step:1.0,  def:40.0,  scale:1 },
-    { id:'calligTaper',      label:'Taper',           min:0.1, max:8.0, step:0.05, def:3.0,  scale:1 },
-    { id:'calligBleed',      label:'Ink bleed',       min:0,   max:5.0, step:0.05, def:1.0,  scale:1 },
-    { id:'calligFibers',     label:'Fiber strands',   min:1,   max:12,  step:1,    def:6,    scale:1 },
-    { id:'calligGrow',       label:'Grow speed',      min:0.1, max:3.0, step:0.1,  def:0.5,  scale:1 },
-    { id:'calligInk',        label:'Ink opacity',     min:0.2, max:1.0, step:0.05, def:0.9,  scale:1 },
-    { id:'calligSplatter',   label:'Splatter',        min:0,   max:8.0, step:0.05, def:0.2,  scale:1 },
-    { id:'calligWobble', label:'Brush wobble', min:0, max:1, step:0.05, def:0.5, scale:1 },
-    { id:'calligDrips',      label:'Ink drips',       type:'toggle', def:true },
-    { id:'calligPooling',    label:'End pooling',     type:'toggle', def:true },
-    { id:'calligPaperGrain', label:'Paper grain',     type:'toggle', def:true },
-    { id:'calligCharMode',   label:'Draw characters', type:'toggle', def:true },
-    { id:'calligTapDot',     label:'Tap creates dot', type:'toggle', def:true },
-    { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
+  // ----- Sub‑mode selector (always visible) -----
+    { id:'calligSubMode', label:'Mode', type:'select', modes:['always'], options:[
+        { value:'random',       label:'✍️ Random strokes' },
+        { value:'character',    label:'📜 Character paths' },
+        { value:'interactive',  label:'🖌️ Interactive draw' },
+        { value:'composition',  label:'🎨 Sumi‑e composition' }
+      ], def:'character',
       extra: function() {
-        if (S.calligInteractive && S.mode !== 'calligraphy') {
-          S.mode = 'calligraphy';
-          document.querySelectorAll('.mb').forEach(b => b.classList.remove('active'));
-          let mb = document.querySelector('[data-mode="calligraphy"]');
-          if (mb) mb.classList.add('active');
-          document.getElementById('modeLabel').textContent = 'Calligr.';
-        }
-        if (S.calligInteractive) {
+        // Refresh the UI to show/hide mode‑specific parameters
+        rebuildModeUI('calligraphy');
+        // Reset composition state when leaving composition mode
+        if (S.calligSubMode !== 'composition') calligActiveComp = null;
+        // Ensure interactive mode has handlers and cursor
+        if (S.calligSubMode === 'interactive') {
           if (window._st) _ensureInkBuffer(window._st.w(), window._st.h());
           setupCalligraphyInteraction(window._st.p);
           showBrushCursor(true);
@@ -8264,46 +8246,60 @@ const PARAM_REGISTRY = {
         window._st.rd();
       }
     },
-    { id:'calligCharSet', label:'Character set', type:'select', options:[
-        {value:'eternal',  label:'永 Eternity'},
-        {value:'dragon',   label:'龍 Dragon'},
-        {value:'mountain', label:'山 Mountain'},
-        {value:'water',    label:'水 Water'},
-        {value:'fire',     label:'火 Fire'},
-        {value:'tree',     label:'木 Tree'},
-        {value:'heart',    label:'心 Heart'},
-        {value:'bamboo',   label:'竹 Bamboo'},
-        {value:'wind',     label:'風 Wind'},
-        {value:'rain',     label:'雨 Rain'},
-        {value:'river',    label:'川 River'},
-        {value:'zen',      label:'☯ Zen'}
-      ], def:'eternal',
-      extra: function() { calligStrokes = []; }
-    },
-    { id:'calligCompositionMode', label:'Composition mode', type:'toggle', def:false,
-    extra: function() {
-      if (!S.calligCompositionMode) activeComposition = null;
-    }
-  },
-    { id:'calligComposition', label:'Composition', type:'select', options:[
-    { value:'mount_fuji',     label:'🗻 Mount Fuji' },  
-    { value:'bamboo_branch',  label:'🎋 Bamboo Branch' },
-    { value:'sumi_pine',      label:'🌲 Sumi Pine' },
-    { value:'plum_blossom',   label:'🌸 Plum Blossom' },
-    { value:'orchid',         label:'🌿 Orchid' },
-    { value:'chrysanthemum',  label:'🌼 Chrysanthemum' },
-    { value:'rock',           label:'🪨 Rock & Moss' },
-    { value:'landscape',      label:'🏞️ Mountain Landscape' }
-      ], def:'bamboo_branch',
-      extra: function() { activeComposition = null; }
-    },
-    { id:'calligRedrawBtn', label:'↺ Redraw strokes', type:'button',
-      action: function() { calligRedraw(window._st && window._st.p); }
-    },
-    { id:'calligClearBtn',  label:'✕ Clear all ink',  type:'button',
-      action: function() { clearInkBuffer(); showToast('Ink cleared'); }
-    }
-  ],
+        // ----- Parameters common to all sub‑modes (always visible) -----
+        { id:'calligWidth',      label:'Brush width',     modes:['always'], min:10.0, max:80.0, step:1.0,  def:40.0, scale:1 },
+        { id:'calligTaper',      label:'Taper',           modes:['always'], min:0.1, max:8.0, step:0.05, def:3.0,  scale:1 },
+        { id:'calligBleed',      label:'Ink bleed',       modes:['always'], min:0,   max:5.0, step:0.05, def:1.0,  scale:1 },
+        { id:'calligFibers',     label:'Fiber strands',   modes:['always'], min:1,   max:12,  step:1,    def:6,    scale:1 },
+        { id:'calligGrow',       label:'Grow speed',      modes:['always'], min:0.1, max:3.0, step:0.1,  def:0.5,  scale:1 },
+        { id:'calligInk',        label:'Ink opacity',     modes:['always'], min:0.2, max:1.0, step:0.05, def:0.9,  scale:1 },
+        { id:'calligSplatter',   label:'Splatter',        modes:['always'], min:0,   max:8.0, step:0.05, def:0.2,  scale:1 },
+        { id:'calligWobble',     label:'Brush wobble',    modes:['always'], min:0,   max:1,   step:0.05, def:0.5,  scale:1 },
+        { id:'calligDrips',      label:'Ink drips',       modes:['always'], type:'toggle', def:true },
+        { id:'calligPooling',    label:'End pooling',     modes:['always'], type:'toggle', def:true },
+        { id:'calligPaperGrain', label:'Paper grain',     modes:['always'], type:'toggle', def:true },
+        { id:'calligTapDot',     label:'Tap creates dot', modes:['always'], type:'toggle', def:true },
+        // ----- Parameters for random & character modes -----
+        { id:'calligCount',      label:'Stroke count',    modes:['random','character'], min:1,   max:12,  step:1,    def:1,    scale:1 },
+        { id:'calligMinLen',     label:'Min length',      modes:['random','character'], min:0.1, max:1.0, step:0.05, def:0.3,  scale:1 },
+        { id:'calligMaxLen',     label:'Max length',      modes:['random','character'], min:0.2, max:2.0, step:0.05, def:0.75, scale:1 },
+        { id:'calligCharSet',    label:'Character set',   modes:['character'], type:'select', options:[
+            {value:'eternal',  label:'永 Eternity'},
+            {value:'dragon',   label:'龍 Dragon'},
+            {value:'mountain', label:'山 Mountain'},
+            {value:'water',    label:'水 Water'},
+            {value:'fire',     label:'火 Fire'},
+            {value:'tree',     label:'木 Tree'},
+            {value:'heart',    label:'心 Heart'},
+            {value:'bamboo',   label:'竹 Bamboo'},
+            {value:'wind',     label:'風 Wind'},
+            {value:'rain',     label:'雨 Rain'},
+            {value:'river',    label:'川 River'},
+            {value:'zen',      label:'☯ Zen'}
+          ], def:'eternal',
+          extra: function() { calligStrokes = []; }
+        },
+        // ----- Parameters for composition mode -----
+        { id:'calligComposition', label:'Composition', modes:['composition'], type:'select', options:[
+            { value:'mount_fuji',     label:'🗻 Mount Fuji' },
+            { value:'bamboo_branch',  label:'🎋 Bamboo Branch' },
+            { value:'sumi_pine',      label:'🌲 Sumi Pine' },
+            { value:'plum_blossom',   label:'🌸 Plum Blossom' },
+            { value:'orchid',         label:'🌿 Orchid' },
+            { value:'chrysanthemum',  label:'🌼 Chrysanthemum' },
+            { value:'rock',           label:'🪨 Rock & Moss' },
+            { value:'landscape',      label:'🏞️ Mountain Landscape' }
+          ], def:'bamboo_branch',
+          extra: function() { calligActiveComp = null; }
+        },
+        // ----- Action buttons (always visible) -----
+        { id:'calligRedrawBtn', label:'↺ Redraw strokes', modes:['always'], type:'button',
+          action: function() { calligRedraw(window._st && window._st.p); }
+        },
+        { id:'calligClearBtn',  label:'✕ Clear all ink',  modes:['always'], type:'button',
+          action: function() { clearInkBuffer(); showToast('Ink cleared'); }
+        }
+      ],
 
   
   //to be refactored
@@ -8392,6 +8388,16 @@ function rebuildModeUI(mode) {
   container.innerHTML = '';
 
   let params = PARAM_REGISTRY[mode];
+  
+      // Filter parameters based on current sub‑mode (if the mode is calligraphy)
+    if (mode === 'calligraphy' && S.calligSubMode) {
+      params = params.filter(p => {
+        if (p.modes && p.modes.includes('always')) return true;
+        if (p.modes && p.modes.includes(S.calligSubMode)) return true;
+        return false;
+      });
+    }
+  
   if (!params || !params.length) {
     container.style.display = 'none';
     return;
