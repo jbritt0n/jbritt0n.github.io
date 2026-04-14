@@ -3721,76 +3721,112 @@ function drawCalligraphy(p, t) {
     CTX.drawImage(_grainCanvas, 0, 0);
   }
 
-// ── HANKO SEAL (RED STAMP) ────────────────────────────────────────────────────────────
-  if (S.mode === 'calligraphy') {
-    CTX.save();
-    // Set stamp dimensions - making it rectangular for a vertical stack
-    let stampW = Math.min(32, W * 0.05); 
-    let stampH = stampW * 2.2; // Tall rectangle
-    let stampX = 30;
-    let stampY = H - stampH - 30;
-    // 1. Draw Organic/Weathered Red Background
-    CTX.fillStyle = '#b22222'; // Deeper cinnabar red
-    CTX.globalAlpha = 0.9;
-    // Create a "rough" carved edge using small line segments and noise
-    CTX.beginPath();
-    let steps = 12; // points per side
-    let jitter = 1.2; // how much the stone is "chipped"
-    // Top Edge
-    for(let i=0; i<=steps; i++) {
-      let x = stampX + (i/steps) * stampW;
-      let y = stampY + (p.noise(x*0.1, stampY*0.1) - 0.5) * jitter;
-      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
-    }
-    // Right Edge
-    for(let i=0; i<=steps; i++) {
-      let y = stampY + (i/steps) * stampH;
-      let x = stampX + stampW + (p.noise((stampX+stampW)*0.1, y*0.1) - 0.5) * jitter;
-      CTX.lineTo(x, y);
-    }
-    // Bottom Edge
-    for(let i=steps; i>=0; i--) {
-      let x = stampX + (i/steps) * stampW;
-      let y = stampY + stampH + (p.noise(x*0.1, (stampY+stampH)*0.1) - 0.5) * jitter;
-      CTX.lineTo(x, y);
-    }
-    // Left Edge
-    for(let i=steps; i>=0; i--) {
-      let y = stampY + (i/steps) * stampH;
-      let x = stampX + (p.noise(stampX*0.1, y*0.1) - 0.5) * jitter;
-      CTX.lineTo(x, y);
-    }
-    CTX.closePath();
-    CTX.fill();
-    // 2. Stylized Text (Stacked)
-    CTX.translate(stampX + stampW/2, stampY + stampH/2);
-    CTX.rotate((p.noise(t*0.1) - 0.5) * 0.02 - 0.03); // Very slight tilt
-    // Use a high-contrast off-white for the "cut" area
-    CTX.fillStyle = '#fffaf0'; 
-    // "Zhuanshu" (Seal Script) is ideal, but "Ma Shan Zheng" or "Noto Serif SC" are great fallbacks
-    CTX.font = `bold ${stampW * 0.65}px "Ma Shan Zheng", "Noto Serif SC", serif`;
-    CTX.textAlign = 'center';
-    CTX.textBaseline = 'middle';
-    // Split characters for vertical stacking
-    let chars = ['乔', '纳', '森'];
-    let spacing = stampH * 0.28;
-    chars.forEach((char, i) => {
-      let yOff = (i - 1) * spacing;
-      // Draw character
-      CTX.fillText(char, 0, yOff);
-      // Optional: Second pass with 'lighter' composite to simulate paper fiber showing through
-      CTX.globalCompositeOperation = 'lighter';
-      CTX.globalAlpha = 0.1;
-      CTX.fillText(char, 0.5, yOff + 0.5);
-      CTX.globalCompositeOperation = 'source-over';
-      CTX.globalAlpha = 0.9;
-    });
-
-    CTX.restore();
+// ── HANKO SEAL (PHYSICAL INK SIMULATION) ─────────────────────────────────────
+if (S.mode === 'calligraphy') {
+  CTX.save();
+  // ── Layout ────────────────────────────────────────────────────────────────
+  let stampW = Math.min(36, W * 0.06);
+  let stampH = stampW * 1.1; // more authentic proportions
+  let stampX = 30;
+  let stampY = H - stampH - 30;
+  // subtle stamping offset (misregistration)
+  let offsetX = (p.noise(t * 0.5) - 0.5) * 2;
+  let offsetY = (p.noise(t * 0.5 + 100) - 0.5) * 2;
+  CTX.translate(offsetX, offsetY);
+  // ── 1. INK LAYER (before carving) ─────────────────────────────────────────
+  // pressure gradient (uneven stamping force)
+  let grad = CTX.createLinearGradient(
+    stampX, stampY,
+    stampX, stampY + stampH
+  );
+  grad.addColorStop(0, 'rgba(150,20,20,0.95)');
+  grad.addColorStop(1, 'rgba(150,20,20,0.65)');
+  CTX.fillStyle = grad;
+  CTX.globalAlpha = 0.95;
+  // organic carved stone edge
+  CTX.beginPath();
+  let steps = 14;
+  let jitter = 1.5;
+  for (let i = 0; i <= steps; i++) {
+    let x = stampX + (i / steps) * stampW;
+    let y = stampY + (p.noise(x * 0.08, stampY * 0.08) - 0.5) * jitter;
+    i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
   }
+  for (let i = 0; i <= steps; i++) {
+    let y = stampY + (i / steps) * stampH;
+    let x = stampX + stampW + (p.noise((stampX + stampW) * 0.08, y * 0.08) - 0.5) * jitter;
+    CTX.lineTo(x, y);
+  }
+  for (let i = steps; i >= 0; i--) {
+    let x = stampX + (i / steps) * stampW;
+    let y = stampY + stampH + (p.noise(x * 0.08, (stampY + stampH) * 0.08) - 0.5) * jitter;
+    CTX.lineTo(x, y);
+  }
+  for (let i = steps; i >= 0; i--) {
+    let y = stampY + (i / steps) * stampH;
+    let x = stampX + (p.noise(stampX * 0.08, y * 0.08) - 0.5) * jitter;
+    CTX.lineTo(x, y);
+  }
+  CTX.closePath();
+  CTX.fill();
+  // ── 2. BORDER FRAME (important realism cue) ────────────────────────────────
+  CTX.lineWidth = 1.2;
+  CTX.strokeStyle = 'rgba(120,10,10,0.8)';
+  CTX.stroke();
+  // ── 3. CARVE TEXT (negative space) ─────────────────────────────────────────
+  CTX.save();
+  CTX.translate(stampX + stampW / 2, stampY + stampH / 2);
+  CTX.rotate((p.noise(t * 0.2) - 0.5) * 0.04);
+  // slight distortion (hand-carved feel)
+  CTX.scale(0.92, 1.05);
+  CTX.textAlign = 'center';
+  CTX.textBaseline = 'middle';
+  CTX.font = `bold ${stampW * 0.55}px "Ma Shan Zheng", "Noto Serif SC", serif`;
+  let chars = ['乔', '纳', '森'];
+  let spacing = stampH * 0.3;
+  // carve out text
+  CTX.globalCompositeOperation = 'destination-out';
+  chars.forEach((char, i) => {
+    let yOff = (i - 1) * spacing;
+    let jx = (p.noise(i * 10) - 0.5) * 1.5;
+    let jy = (p.noise(i * 20) - 0.5) * 1.5;
+    CTX.fillText(char, jx, yOff + jy);
+  });
 
   CTX.restore();
-
+  // ── 4. INK BREAKUP (paper absorption simulation) ───────────────────────────
+  let img = CTX.getImageData(stampX, stampY, stampW, stampH);
+  let d = img.data;
+  for (let y = 0; y < stampH; y++) {
+    for (let x = 0; x < stampW; x++) {
+      let i = (y * stampW + x) * 4;
+      let n = p.noise(x * 0.12, y * 0.12);
+      // simulate fiber + ink gaps
+      let alphaMod = 0.65 + n * 0.35;
+      // edge darkening (ink pooling)
+      let edgeDist = Math.min(
+        x, y,
+        stampW - x,
+        stampH - y
+      ) / 10;
+      let edgeBoost = Math.min(1.2, 1 + (1 - edgeDist) * 0.25);
+      d[i + 3] *= alphaMod * edgeBoost;
+    }
+  }
+  CTX.putImageData(img, stampX, stampY);
+  // ── 5. MULTIPLY INTO PAPER ────────────────────────────────────────────────
+  CTX.globalCompositeOperation = 'multiply';
+  // subtle second pass (ink soak)
+  CTX.globalAlpha = 0.25;
+  CTX.drawImage(
+    CTX.canvas,
+    stampX, stampY, stampW, stampH,
+    stampX + 0.5, stampY + 0.5, stampW, stampH
+  );
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
   // Brush cursor size update (position set by pointer event)
   _calligCursor = _calligCursor || document.getElementById('brushCursor');
   if (_calligCursor) {
