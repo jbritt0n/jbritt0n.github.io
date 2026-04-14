@@ -3548,94 +3548,92 @@ function drawInterference(p,t){
 
 
 // ── CALLIGRAPHY v3 4/13/26 ────────────────────────────────────────────────────────
+// ── CALLIGRAPHY ────────────────────────────────────────────────────────────
 let calligStrokes = [];
 let isDrawing = false;
 let lastMouseX = 0, lastMouseY = 0;
 let mouseVelocity = 0;
-let mouseAngle = 0;  
+let mouseAngle = 0;
+// Use wall-clock ms for stroke timing so strokes animate even when paused
+let _calligClock = 0;
 
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
-  // ── Parameters ───────────────────────────────────────────────────────────
-  let strokeCount   = Math.max(1, Math.floor(S.calligCount     ?? 8));
-  let minLen        = (S.calligMinLen    ?? 0.4) * Math.min(W, H);
-  let maxLen        = (S.calligMaxLen    ?? 0.9) * Math.min(W, H);
-  let baseWidth     = Math.max(3, (S.calligWidth    ?? 1.2) * S.maxSize);
-  let taper         = S.calligTaper      ?? 0.5;
-  let bleed         = S.calligBleed      ?? 0.6;
-  let fibers        = Math.max(1, Math.floor(S.calligFibers ?? 8));
-  let growSpeed     = S.calligGrow       ?? 0.6;
-  let inkOpacity    = S.calligInk        ?? 0.9;
-  let charMode      = S.calligCharMode   ?? true;
-  let charSet       = S.calligCharSet    ?? 'eternal';
-  let drips         = S.calligDrips      ?? true;
-  let pooling       = S.calligPooling    ?? true;
-  let continuous    = S.calligContinuous ?? true;
-  let followMouse   = S.calligFollowMouse?? false;
-  let paperGrain    = S.calligPaperGrain ?? true;
-  let splatterAmt   = S.calligSplatter   ?? 0.3;
-  let interactive   = S.calligInteractive ?? false;
 
-  // ── Interactive Drawing Mode ──────────────────────────────────────────────
-  if (interactive) {
-    if (isDrawing && p.mouseIsPressed) {
-      let dx = p.mouseX - lastMouseX;
-      let dy = p.mouseY - lastMouseY;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist > 5) {
-        mouseVelocity = Math.min(2.5, dist / 10);
-        mouseAngle = Math.atan2(dy, dx);
-        let len = p.constrain(dist * 1.5, minLen * 0.3, maxLen);
-        let newStroke = _spawnInteractiveStroke(p, lastMouseX, lastMouseY, p.mouseX, p.mouseY, len, baseWidth, charMode, charSet);
-        if (newStroke) calligStrokes.push(newStroke);
-        lastMouseX = p.mouseX;
-        lastMouseY = p.mouseY;
-      }
-    } else {
-      lastMouseX = p.mouseX;
-      lastMouseY = p.mouseY;
-    }
-    if (calligStrokes.length > 30) calligStrokes = calligStrokes.slice(-20);
-  } else {
-    // Automatic spawning
+  // ── Parameters ────────────────────────────────────────────────────────────
+  let strokeCount  = Math.max(1, Math.floor(S.calligCount     ?? 8));
+  let minLen       = (S.calligMinLen    ?? 0.4) * Math.min(W, H);
+  let maxLen       = (S.calligMaxLen    ?? 0.9) * Math.min(W, H);
+  let baseWidth    = Math.max(3, (S.calligWidth ?? 1.2) * S.maxSize);
+  let taper        = S.calligTaper      ?? 0.5;
+  let bleed        = S.calligBleed      ?? 0.6;
+  let fibers       = Math.max(1, Math.floor(S.calligFibers ?? 8));
+  let growSpeed    = S.calligGrow       ?? 0.6;
+  let inkOpacity   = S.calligInk        ?? 0.9;
+  let charMode     = S.calligCharMode   ?? true;
+  let charSet      = S.calligCharSet    ?? 'eternal';
+  let drips        = S.calligDrips      ?? true;
+  let pooling      = S.calligPooling    ?? true;
+  let followMouse  = S.calligFollowMouse?? false;
+  let paperGrain   = S.calligPaperGrain ?? true;
+  let splatterAmt  = S.calligSplatter   ?? 0.3;
+  let interactive  = S.calligInteractive ?? false;
+
+  // Advance clock every frame (works regardless of S.playing / S.fc)
+  _calligClock++;
+
+  // ── AUTO MODE: spawn strokes on a timer ───────────────────────────────────
+  if (!interactive) {
     if (S.playing) {
       while (calligStrokes.length < strokeCount) {
-        let newStroke = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse);
-        if (newStroke) calligStrokes.push(newStroke);
+        let s = _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth,
+                                   charMode, charSet, followMouse);
+        if (s) calligStrokes.push(s);
       }
     }
   }
+  // ── INTERACTIVE MODE: strokes are pushed by pointer handlers ──────────────
+  // Nothing to spawn here — the pointer handlers call _pushInteractiveStroke()
+  // directly with accurate scaled coordinates.
+  // Just prune the array so it doesn't grow forever.
+  if (interactive && calligStrokes.length > 40) {
+    calligStrokes = calligStrokes.slice(-30);
+  }
+
+  // ── RENDER all strokes ────────────────────────────────────────────────────
   CTX.save();
-  // Use multiply blend for richer ink layering (or follow global blend)
   CTX.globalCompositeOperation = 'multiply';
+
   for (let i = calligStrokes.length - 1; i >= 0; i--) {
     let st = calligStrokes[i];
-    let age = S.fc - st.birth;
-    let isDead = age > st.lifespan + st.fadeOut;
-    if (isDead) {
+    // Use _calligClock so strokes still age/fade when S.playing is false
+    let age = _calligClock - st.birth;
+    if (age > st.lifespan + st.fadeOut) {
       calligStrokes.splice(i, 1);
       continue;
     }
     let drawProgress = Math.min(1, (age * growSpeed) / 10);
     let visiblePts = st.pts.filter(pt => pt.prog <= drawProgress);
     if (visiblePts.length < 2) continue;
-    // Compute dynamic pressure
+
     for (let j = 0; j < visiblePts.length; j++) {
       let pt = visiblePts[j];
       let progressFactor = Math.sin(pt.prog * Math.PI);
       let speedFactor = Math.pow(1 / (pt.speed || 1), 0.5);
       let rawPressure = progressFactor * speedFactor;
-      let pressure = Math.pow(rawPressure, 1 / Math.max(0.1, taper));
-      pt.w = st.baseWidth * pressure;
+      pt.w = st.baseWidth * Math.pow(rawPressure, 1 / Math.max(0.1, taper));
     }
+
     let alpha = inkOpacity;
     if (age > st.lifespan) {
       alpha *= 1 - Math.pow((age - st.lifespan) / st.fadeOut, 2);
     }
     alpha = Math.max(0, Math.min(1, alpha));
-    _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha, drips, pooling, splatterAmt, t);
+    _renderSumiE(p, visiblePts, st.col, bleed, fibers, alpha,
+                 drips, pooling, splatterAmt, t);
   }
-  // Paper grain overlay
+
+  // ── Paper grain overlay ────────────────────────────────────────────────────
   if (paperGrain) {
     CTX.globalCompositeOperation = 'overlay';
     CTX.globalAlpha = 0.12;
@@ -3649,10 +3647,100 @@ function drawCalligraphy(p, t) {
       }
     }
   }
+
   CTX.restore();
   CTX.globalCompositeOperation = 'source-over';
   CTX.globalAlpha = 1;
 }
+
+// Called by pointer handlers — spawns a stroke segment from (x1,y1) to (x2,y2)
+function _pushInteractiveStroke(p, x1, y1, x2, y2) {
+  let minLen   = (S.calligMinLen ?? 0.4) * Math.min(p.width, p.height);
+  let maxLen   = (S.calligMaxLen ?? 0.9) * Math.min(p.width, p.height);
+  let baseWidth = Math.max(3, (S.calligWidth ?? 1.2) * S.maxSize);
+  let charMode  = S.calligCharMode  ?? true;
+  let charSet   = S.calligCharSet   ?? 'eternal';
+
+  let dx = x2 - x1, dy = y2 - y1;
+  let dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < 3) return;  // ignore micro-movements
+
+  mouseVelocity = Math.min(2.5, dist / 10);
+  mouseAngle    = Math.atan2(dy, dx);
+  let len = Math.max(minLen * 0.2, Math.min(maxLen, dist * 1.5));
+
+  let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len,
+                                   baseWidth, charMode, charSet);
+  if (s) calligStrokes.push(s);
+}
+
+// ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
+function setupCalligraphyInteraction(p) {
+  let canvas = document.getElementById('gc');
+  if (!canvas) return;
+
+  // Remove any previously attached handlers cleanly
+  if (canvas._calligHandlers) {
+    canvas.removeEventListener('pointerdown',  canvas._calligHandlers.down);
+    canvas.removeEventListener('pointermove',  canvas._calligHandlers.move);
+    canvas.removeEventListener('pointerup',    canvas._calligHandlers.up);
+    canvas.removeEventListener('pointerleave', canvas._calligHandlers.up);
+  }
+  function getCanvasXY(e) {
+    let rect   = canvas.getBoundingClientRect();
+    let scaleX = canvas.width  / rect.width;
+    let scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top)  * scaleY
+    };
+  }
+  const onDown = (e) => {
+    // Only capture when calligraphy interactive is active
+    if (!S.calligInteractive || S.mode !== 'calligraphy') return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);  // keep tracking even if pointer leaves
+    let { x, y } = getCanvasXY(e);
+    isDrawing  = true;
+    lastMouseX = x;
+    lastMouseY = y;
+    // Spawn a tap-dot on initial press
+    if (S.calligTapDot) {
+      let s = _spawnDotStroke(p, x, y, S.maxSize * 0.5);
+      if (s) calligStrokes.push(s);
+    }
+  };
+  const onMove = (e) => {
+    if (!S.calligInteractive || !isDrawing) return;
+    e.preventDefault();
+    let { x, y } = getCanvasXY(e);
+    // FIX: spawn stroke segment HERE with accurate scaled coords,
+    // not inside drawCalligraphy which uses p.mouseX (unreliable after preventDefault)
+    _pushInteractiveStroke(p, lastMouseX, lastMouseY, x, y);
+    lastMouseX = x;
+    lastMouseY = y;
+  };
+  const onUp = (e) => {
+    isDrawing = false;
+  };
+  canvas._calligHandlers = { down: onDown, move: onMove, up: onUp };
+  canvas.addEventListener('pointerdown',  onDown);
+  canvas.addEventListener('pointermove',  onMove);
+  canvas.addEventListener('pointerup',    onUp);
+  canvas.addEventListener('pointerleave', onUp);
+  canvas.style.touchAction = 'none';
+}
+
+function _spawnDotStroke(p, x, y, size) {
+  let col = pickColor(p, x, y, 0);
+  let pts = [];
+  for (let i = 0; i <= 4; i++) {
+    pts.push({ x: x + (i - 2) * 0.5, y: y + (i - 2) * 0.5,
+               prog: i / 4, speed: 1.0, w: size * 0.4 });
+  }
+  return { pts, col, birth: _calligClock, lifespan: 200, fadeOut: 60, baseWidth: size };
+}
+  
 // ── Spawn a new stroke ───────────────────────────────────────────────────────
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
   let pts = [];
@@ -6757,66 +6845,6 @@ p.setup = function() {
 
 
   
-// ── CALLIGRAPHY Interactive Drawing Event Handlers for Sumi-e ─────────────────────────────────────
-function setupCalligraphyInteraction(p) {
-  let canvasWrap = document.getElementById('canvas-wrap');
-  if (!canvasWrap) return;
-  let canvas = document.getElementById('gc');
-  if (!canvas) return;
-  const handlePointerDown = (e) => {
-    if (!S.calligInteractive) return;
-    e.preventDefault();
-    let rect = canvas.getBoundingClientRect();
-    let scaleX = canvas.width / rect.width;
-    let scaleY = canvas.height / rect.height;
-    let x = (e.clientX - rect.left) * scaleX;
-    let y = (e.clientY - rect.top) * scaleY;
-    isDrawing = true;
-    lastMouseX = x;
-    lastMouseY = y;
-    // Spawn a dot on tap
-    if (S.calligTapDot) {
-      let dotStroke = _spawnDotStroke(p, x, y, S.maxSize * 0.5);
-      if (dotStroke) calligStrokes.push(dotStroke);
-    }
-  };
-  const handlePointerMove = (e) => {
-    if (!S.calligInteractive || !isDrawing) return;
-    e.preventDefault();
-    let rect = canvas.getBoundingClientRect();
-    let scaleX = canvas.width / rect.width;
-    let scaleY = canvas.height / rect.height;
-    let x = (e.clientX - rect.left) * scaleX;
-    let y = (e.clientY - rect.top) * scaleY;
-    // The actual stroke spawning is handled in drawCalligraphy using p.mouseX/Y
-    // Just update the p5 mouse position (p5 does this automatically)
-  };
-  const handlePointerUp = (e) => {
-    isDrawing = false;
-  };
-  canvas.addEventListener('pointerdown', handlePointerDown);
-  canvas.addEventListener('pointermove', handlePointerMove);
-  canvas.addEventListener('pointerup', handlePointerUp);
-  canvas.addEventListener('pointerleave', handlePointerUp);
-  // Prevent default touch actions
-  canvas.style.touchAction = 'none';
-}
-// Helper for tap dot
-function _spawnDotStroke(p, x, y, size) {
-  let col = pickColor(p, x, y, 0);
-  let pts = [];
-  for (let i = 0; i <= 4; i++) {
-    pts.push({ x: x + (i-2)*0.5, y: y + (i-2)*0.5, prog: i/4, speed: 1.0 });
-  }
-  return {
-    pts: pts,
-    col: col,
-    birth: S.fc,
-    lifespan: 200,
-    fadeOut: 60,
-    baseWidth: size
-  };
-}
 
   
 // ── P.Draw ────────────────────────────────────────────────── 
@@ -7313,7 +7341,10 @@ const PARAM_REGISTRY = {
     { id:'calligPooling',   label:'End pooling',       type:'toggle', def:true },
     { id:'calligContinuous',label:'Continuous spawn',  type:'toggle', def:true },
     { id:'calligFollowMouse',label:'Follow mouse',     type:'toggle', def:false },
-    { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false },
+    { id:'calligInteractive', label:'Interactive draw', type:'toggle', def:false,
+      extra: function() {calligStrokes = [];
+        // Interactive mode must be playing to render strokes as they age
+        if (S.calligInteractive && !S.playing) {S.playing = true;window._st.p.loop();let btn = document.getElementById('btnPlay');if (btn) btn.textContent = '⏸ Pause';}}},
     { id:'calligClear', label:'Clear all ink', type:'button', action: function() {
       calligStrokes = []; showToast('Ink cleared');
     } },
@@ -7330,6 +7361,8 @@ const PARAM_REGISTRY = {
         {value:'river', label:'川 River'}
       ], def:'eternal' },
   ],
+
+  
   //to be refactored
   hatch: [
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
