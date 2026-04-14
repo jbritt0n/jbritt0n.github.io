@@ -3673,6 +3673,24 @@ function drawCalligraphy(p, t) {
   }
   if (interactive && calligStrokes.length > 60) calligStrokes = calligStrokes.slice(-50);
 
+  // Sumi-e composition draw
+  if (activeComposition) {
+    _updateCompositionSequence(p);
+  } else {
+    // Logic for deciding whether to spawn a character vs. a full composition
+    if (S.playing && _calligClock % 120 === 0 && Math.random() < 0.2) { // 20% chance every 120 frames
+      let compKeys = Object.keys(SUMIE_COMPOSITIONS);
+      let key = compKeys[Math.floor(p.random(compKeys.length))];
+      let W = p.width, H = p.height;
+      // Spawn at random location, scaled appropriately
+      _spawnSumieComposition(p, key, p.random(W*0.2, W*0.8), p.random(H*0.2, H*0.8), Math.min(W,H)*0.5);
+    } else if (S.playing) {
+      // Current single-stroke/glyph logic
+      // while (calligStrokes.length < strokeCount) { ... }
+    }
+  }
+
+  
   // Render growing strokes to ink buffer
   let light   = _bgIsLight(S.bg);
   let origCTX = CTX;
@@ -3724,109 +3742,85 @@ function drawCalligraphy(p, t) {
 // ── HANKO SEAL (PHYSICAL INK SIMULATION) ─────────────────────────────────────
 if (S.mode === 'calligraphy') {
   CTX.save();
-  // ── Layout ────────────────────────────────────────────────────────────────
-  let stampW = Math.min(36, W * 0.06);
-  let stampH = stampW * 1.1; // more authentic proportions
-  let stampX = 30;
-  let stampY = H - stampH - 30;
-  // subtle stamping offset (misregistration)
-  let offsetX = (p.noise(t * 0.5) - 0.5) * 2;
-  let offsetY = (p.noise(t * 0.5 + 100) - 0.5) * 2;
-  CTX.translate(offsetX, offsetY);
-  // ── 1. INK LAYER (before carving) ─────────────────────────────────────────
-  // pressure gradient (uneven stamping force)
-  let grad = CTX.createLinearGradient(
-    stampX, stampY,
-    stampX, stampY + stampH
-  );
-  grad.addColorStop(0, 'rgba(150,20,20,0.95)');
-  grad.addColorStop(1, 'rgba(150,20,20,0.65)');
-  CTX.fillStyle = grad;
-  CTX.globalAlpha = 0.95;
-  // organic carved stone edge
+  // 1. Layout & Proportions
+  // A traditional tall rectangular seal for a 3-character name
+  let stampW = Math.min(34, W * 0.05);
+  let stampH = stampW * 2.4; 
+  let stampX = 35;
+  let stampY = H - stampH - 35;
+  // Subtle rotation for the "hand-stamped" look
+  CTX.translate(stampX + stampW / 2, stampY + stampH / 2);
+  CTX.rotate(-0.02); 
+  CTX.translate(-(stampX + stampW / 2), -(stampY + stampH / 2));
+  // 2. Draw the Weathered Stone Shape
+  // We use "destination-out" later, so we draw the red base first
+  CTX.fillStyle = '#b32222'; // Cinnabar Red
+  CTX.globalAlpha = 0.9;
   CTX.beginPath();
-  let steps = 14;
-  let jitter = 1.5;
+  let steps = 12;
+  let jitter = 1.2;
+  // Create organic, slightly "chipped" edges
   for (let i = 0; i <= steps; i++) {
     let x = stampX + (i / steps) * stampW;
-    let y = stampY + (p.noise(x * 0.08, stampY * 0.08) - 0.5) * jitter;
+    let y = stampY + (p.noise(x * 0.1, stampY * 0.1) - 0.5) * jitter;
     i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
   }
   for (let i = 0; i <= steps; i++) {
     let y = stampY + (i / steps) * stampH;
-    let x = stampX + stampW + (p.noise((stampX + stampW) * 0.08, y * 0.08) - 0.5) * jitter;
+    let x = stampX + stampW + (p.noise((stampX + stampW) * 0.1, y * 0.1) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
     let x = stampX + (i / steps) * stampW;
-    let y = stampY + stampH + (p.noise(x * 0.08, (stampY + stampH) * 0.08) - 0.5) * jitter;
+    let y = stampY + stampH + (p.noise(x * 0.1, (stampY + stampH) * 0.1) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
     let y = stampY + (i / steps) * stampH;
-    let x = stampX + (p.noise(stampX * 0.08, y * 0.08) - 0.5) * jitter;
+    let x = stampX + (p.noise(stampX * 0.1, y * 0.1) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   CTX.closePath();
   CTX.fill();
-  // ── 2. BORDER FRAME (important realism cue) ────────────────────────────────
-  CTX.lineWidth = 1.2;
-  CTX.strokeStyle = 'rgba(120,10,10,0.8)';
-  CTX.stroke();
-  // ── 3. CARVE TEXT (negative space) ─────────────────────────────────────────
-  CTX.save();
-  CTX.translate(stampX + stampW / 2, stampY + stampH / 2);
-  CTX.rotate((p.noise(t * 0.2) - 0.5) * 0.04);
-  // slight distortion (hand-carved feel)
-  CTX.scale(0.92, 1.05);
+  // 3. Apply Ink "Break-up" (The Fading Effect)
+  // We use 'destination-out' with random noise to simulate ink not hitting the paper
+  CTX.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 40; i++) {
+    let rx = stampX + Math.random() * stampW;
+    let ry = stampY + Math.random() * stampH;
+    let rs = Math.random() * 2 + 1;
+    CTX.globalAlpha = Math.random() * 0.4;
+    CTX.beginPath();
+    CTX.arc(rx, ry, rs, 0, Math.PI * 2);
+    CTX.fill();
+  }
+  // 4. Carve the Name (Transparent Mask)
+  // This removes the red ink where the characters are
+  CTX.globalAlpha = 1.0;
   CTX.textAlign = 'center';
   CTX.textBaseline = 'middle';
-  CTX.font = `bold ${stampW * 0.55}px "Ma Shan Zheng", "Noto Serif SC", serif`;
+  // Using Ma Shan Zheng for that brushed/carved feel
+  CTX.font = `bold ${stampW * 0.7}px "Ma Shan Zheng", "Noto Serif SC", serif`;
   let chars = ['乔', '纳', '森'];
-  let spacing = stampH * 0.3;
-  // carve out text
-  CTX.globalCompositeOperation = 'destination-out';
+  let spacing = stampH * 0.31;
   chars.forEach((char, i) => {
-    let yOff = (i - 1) * spacing;
-    let jx = (p.noise(i * 10) - 0.5) * 1.5;
-    let jy = (p.noise(i * 20) - 0.5) * 1.5;
-    CTX.fillText(char, jx, yOff + jy);
+    let charY = stampY + (stampH * 0.18) + (i * spacing);
+    // Slight jitter per character for hand-carved imperfection
+    let jx = (p.noise(i, t * 0.01) - 0.5) * 0.8;
+    CTX.fillText(char, stampX + stampW / 2 + jx, charY);
   });
+  // 5. Restore Composite and add a very faint "Multiply" pass
+  // This makes the red ink feel like it's soaking INTO the paper fibers
+  CTX.globalCompositeOperation = 'multiply';
+  CTX.globalAlpha = 0.1;
+  CTX.fillStyle = '#440000';
+  CTX.fill(); // Re-fills the stone shape with a tiny bit of darkening
 
   CTX.restore();
-  // ── 4. INK BREAKUP (paper absorption simulation) ───────────────────────────
-  let img = CTX.getImageData(stampX, stampY, stampW, stampH);
-  let d = img.data;
-  for (let y = 0; y < stampH; y++) {
-    for (let x = 0; x < stampW; x++) {
-      let i = (y * stampW + x) * 4;
-      let n = p.noise(x * 0.12, y * 0.12);
-      // simulate fiber + ink gaps
-      let alphaMod = 0.65 + n * 0.35;
-      // edge darkening (ink pooling)
-      let edgeDist = Math.min(
-        x, y,
-        stampW - x,
-        stampH - y
-      ) / 10;
-      let edgeBoost = Math.min(1.2, 1 + (1 - edgeDist) * 0.25);
-      d[i + 3] *= alphaMod * edgeBoost;
-    }
-  }
-  CTX.putImageData(img, stampX, stampY);
-  // ── 5. MULTIPLY INTO PAPER ────────────────────────────────────────────────
-  CTX.globalCompositeOperation = 'multiply';
-  // subtle second pass (ink soak)
-  CTX.globalAlpha = 0.25;
-  CTX.drawImage(
-    CTX.canvas,
-    stampX, stampY, stampW, stampH,
-    stampX + 0.5, stampY + 0.5, stampW, stampH
-  );
-  CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
-  CTX.restore();
 }
+
+
+  
   // Brush cursor size update (position set by pointer event)
   _calligCursor = _calligCursor || document.getElementById('brushCursor');
   if (_calligCursor) {
@@ -3838,8 +3832,75 @@ if (S.mode === 'calligraphy') {
       _calligCursor.style.display = 'none';
     }
   }
+
+
+// ── Composition Sequence for Sumi-e Compositions ─────────────────
+function _updateCompositionSequence(p) {
+  // If we've finished all segments, the composition is complete
+  if (currentSegmentIndex >= activeComposition.segments.length) {
+    activeComposition = null; // Clean up the state
+    return;
+  }
+  // Define the gap between releasing individual strokes (e.g., paint one stroke every 15 frames)
+  let interStrokeDelay = 15; 
+  if (_calligClock - lastStrokeBirthTime >= interStrokeDelay) {
+    let currentSegment = activeComposition.segments[currentSegmentIndex];
+    let currentStroke = currentSegment.strokes[currentStrokeIndex];
+    let T = activeComposition.transform;
+    // A. Apply Behavior Overrides (IMPORTANT: mimic the picture's specific look)
+    // We override S (settings) temporarily so the generic renderer draws this stroke correctly.
+    const originalSParams = {
+      width: S.calligWidth,
+      taper: S.calligTaper,
+      wobble: S.calligWobble
+    };
+    // Apply specific behavior for this segment (e.g., 'stalk' vs 'leaf')
+    S.calligWidth = currentSegment.behavior.w;
+    S.calligTaper = currentSegment.behavior.taper;
+    S.calligWobble = currentSegment.behavior.wobble;
+    // B. Transform Normalized Points to Screen Space
+    let rawPts = currentStroke;
+    let baseWidth = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
+    // Compute normalized distances along the path for pressure calculation
+    let cumDist = 0; let dists = [0];
+    for (let i = 1; i < rawPts.length; i++) {
+      cumDist += Math.sqrt(Math.pow(rawPts[i].x-rawPts[i-1].x,2) + Math.pow(rawPts[i].y-rawPts[i-1].y,2));
+      dists.push(cumDist);
+    }
+    // Create the final point array applying offset and composition scale
+    let pts = rawPts.map((pt, i) => ({
+      x: T.ox + (pt.x - 0.5) * T.scale,
+      y: T.oy + (pt.y - 0.5) * T.scale,
+      prog: dists[i] / (cumDist || 1), // Standard progress along stroke
+      speed: 1.0 // Default speed; picture mode is less velocity-dependent
+    }));
+    // C. Smooth and Spawn
+    pts = _applyChaikin(pts, 3);
+    let s = { 
+      pts, 
+      col: pickColor(p, T.ox, T.oy, 0), 
+      birth: _calligClock, 
+      lifespan: 500, // Longer lifespan for composed pictures
+      fadeOut: 150, 
+      baseWidth 
+    };
+    calligStrokes.push(s);
+    // D. Restore generic settings immediately so the next random stroke uses them
+    S.calligWidth = originalSParams.width;
+    S.calligTaper = originalSParams.taper;
+    S.calligWobble = originalSParams.wobble;
+    // E. Advance Sequence State
+    lastStrokeBirthTime = _calligClock;
+    currentStrokeIndex++;
+    // If we finished all strokes in the current segment (e.g., done painting stalks)...
+    if (currentStrokeIndex >= currentSegment.strokes.length) {
+      currentSegmentIndex++; // Move to the next segment (e.g., start painting leaves)
+      currentStrokeIndex = 0; // Reset stroke index for the new segment
+    }
+  }
 }
 
+  
 // ── Spawn a complete character (all strokes, staggered births) ─────────────────
 function _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet) {
   let margin = 0.15 * Math.min(W, H);
@@ -4296,6 +4357,65 @@ const CHARACTER_PATHS = {
 
 };
 
+const SUMIE_COMPOSITIONS = {
+  'bamboo_branch': {
+    // Compositions have logical segments that must be painted sequentially.
+    segments: [
+      {
+        name: 'stalk',
+        behavior: { 
+          w: 2.2,    // Medium-wide stalk
+          taper: 0.1,// Very little taper (rigid)
+          wobble: 0.05 // Straight but textured
+        },
+        strokes: [
+          // Defines the rigid segments of the stalk
+          [{x:0.4, y:0.9}, {x:0.4, y:0.75}], 
+          [{x:0.4, y:0.75}, {x:0.4, y:0.6}],
+          [{x:0.4, y:0.6}, {x:0.4, y:0.45}]
+        ]
+      },
+      {
+        name: 'leaves',
+        behavior: { 
+          w: 0.8,     // Fine brush
+          taper: 0.9, // Sharp points
+          wobble: 0.3 // Very fluid and organic
+        },
+        strokes: [
+          // Fast flicks originating near the top nodes
+          [{x:0.4, y:0.6}, {x:0.6, y:0.5}], 
+          [{x:0.4, y:0.6}, {x:0.2, y:0.5}], 
+          [{x:0.4, y:0.45}, {x:0.7, y:0.35}],
+          [{x:0.4, y:0.45}, {x:0.1, y:0.35}]
+        ]
+      }
+    ]
+  },
+  'sumi_pine': {
+    segments: [
+      {
+        name: 'trunk',
+        behavior: { w: 3.5, taper: 0.3, wobble: 0.25 }, // Gnarled and rough
+        strokes: [
+          [{x:0.5, y:0.9}, {x:0.4, y:0.7}, {x:0.6, y:0.5}, {x:0.4, y:0.3}]
+        ]
+      },
+      {
+        name: 'needles',
+        behavior: { w: 0.4, taper: 1.0, wobble: 0.6 }, // Sharp clusters
+        strokes: [
+          // Clustered flicks along the trunk
+          [{x:0.6, y:0.5}, {x:0.75, y:0.5}],
+          [{x:0.6, y:0.5}, {x:0.7, y:0.55}],
+          [{x:0.4, y:0.3}, {x:0.55, y:0.3}],
+          [{x:0.4, y:0.3}, {x:0.5, y:0.25}]
+        ]
+      }
+    ]
+  }
+};
+  
 // ── Sumi-e renderer ────────────────────────────────────────────────────────────
 function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
   if (pts.length < 2) return;
