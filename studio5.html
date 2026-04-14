@@ -129,6 +129,12 @@ select option{background:var(--ink)}
   
 #gc.calligraphy-interactive {cursor: none;}
 .drawing-mode {cursor: url('/cursor/cursor.cur'), auto;}
+#brushCursor {position: absolute;pointer-events: none; /* Crucial: allows clicks to pass through to the canvas */
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 9999;}
   
 </style>
 </head>
@@ -3573,6 +3579,7 @@ let mouseVelocity = 0;
 let mouseAngle = 0;
 let _calligClock = 0;
 let cursor = null; 
+
 // Offscreen ink buffer — persists between frames, never cleared by main loop
 let _inkCanvas = null;
 let _inkCTX = null;
@@ -3586,10 +3593,8 @@ function _ensureInkBuffer(W, H) {
     _inkCanvas.width = W;
     _inkCanvas.height = H;
     _inkCTX = _inkCanvas.getContext('2d');
-    // Fill with current bg
-    _inkCTX.fillStyle = S.bg;
+    _inkCTX.fillStyle = S.bg || '#0d0c0a';
     _inkCTX.fillRect(0, 0, W, H);
-    // Preserve old ink if resizing
     if (old) _inkCTX.drawImage(old, 0, 0, W, H);
   }
 }
@@ -3597,37 +3602,57 @@ function _ensureInkBuffer(W, H) {
 function clearInkBuffer() {
   if (_inkCTX && _inkCanvas) {
     _inkCTX.clearRect(0, 0, _inkCanvas.width, _inkCanvas.height);
-    _inkCTX.fillStyle = S.bg;
+    _inkCTX.fillStyle = S.bg || '#0d0c0a';
     _inkCTX.fillRect(0, 0, _inkCanvas.width, _inkCanvas.height);
   }
   calligStrokes = [];
+}
+
+function _ensureGrainBuffer(p, W, H) {
+  if (!_grainCanvas || _grainCanvas.width !== W || _grainCanvas.height !== H) {
+    _grainCanvas = document.createElement('canvas');
+    _grainCanvas.width = W;
+    _grainCanvas.height = H;
+    _grainCTX = _grainCanvas.getContext('2d');
+    _grainCTX.clearRect(0, 0, W, H);
+    
+    for (let x = 0; x < W; x += 2) {
+      for (let y = 0; y < H; y += 2) {
+        let n = p.noise(x * 0.05, y * 0.05);
+        if (n > 0.6) {
+          _grainCTX.fillStyle = n > 0.8 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
+          _grainCTX.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+  }
 }
 
 function drawCalligraphy(p, t) {
   let W = p.width, H = p.height;
   _ensureInkBuffer(W, H);
 
-  let strokeCount  = Math.max(1, Math.floor(S.calligCount     ?? 8));
-  let minLen       = (S.calligMinLen    ?? 0.4) * Math.min(W, H);
-  let maxLen       = (S.calligMaxLen    ?? 0.9) * Math.min(W, H);
+  let strokeCount  = Math.max(1, Math.floor(S.calligCount      ?? 8));
+  let minLen       = (S.calligMinLen     ?? 0.4) * Math.min(W, H);
+  let maxLen       = (S.calligMaxLen     ?? 0.9) * Math.min(W, H);
   let baseWidth    = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
-  let taper        = S.calligTaper      ?? 0.5;
-  let bleed        = S.calligBleed      ?? 0.6;
+  let taper        = S.calligTaper       ?? 0.5;
+  let bleed        = S.calligBleed       ?? 0.6;
   let fibers       = Math.max(1, Math.floor(S.calligFibers ?? 8));
-  let growSpeed    = S.calligGrow       ?? 0.6;
-  let inkOpacity   = S.calligInk        ?? 0.9;
-  let charMode     = S.calligCharMode   ?? true;
-  let charSet      = S.calligCharSet    ?? 'eternal';
-  let drips        = S.calligDrips      ?? true;
-  let pooling      = S.calligPooling    ?? true;
-  let followMouse  = S.calligFollowMouse?? false;
-  let paperGrain   = S.calligPaperGrain ?? true;
-  let splatterAmt  = S.calligSplatter   ?? 0.3;
+  let growSpeed    = S.calligGrow        ?? 0.6;
+  let inkOpacity   = S.calligInk         ?? 0.9;
+  let charMode     = S.calligCharMode    ?? true;
+  let charSet      = S.calligCharSet     ?? 'eternal';
+  let drips        = S.calligDrips       ?? true;
+  let pooling      = S.calligPooling     ?? true;
+  let followMouse  = S.calligFollowMouse ?? false;
+  let paperGrain   = S.calligPaperGrain  ?? true;
+  let splatterAmt  = S.calligSplatter    ?? 0.3;
   let interactive  = S.calligInteractive ?? false;
 
   _calligClock++;
 
-  // AUTO MODE — spawn strokes on a timer
+  // ── Spawn Strokes ──────────────────────────────────────────────────────────
   if (!interactive && S.playing) {
     let spawnInterval = Math.max(6, Math.floor(50 / Math.max(1, strokeCount)));
     if (_calligClock % spawnInterval === 0 && calligStrokes.length < strokeCount * 2) {
@@ -3635,17 +3660,17 @@ function drawCalligraphy(p, t) {
       if (s) calligStrokes.push(s);
     }
   }
-  // Prune completed interactive strokes
   if (interactive && calligStrokes.length > 50) calligStrokes = calligStrokes.slice(-40);
-  // ── Render animating strokes to INK BUFFER ─────────────────────────────────
+
+  // ── Render to Ink Buffer ───────────────────────────────────────────────────
   let bgIsLight = (function() {
     let h = S.bg || '#0d0c0a';
     let r = parseInt(h.slice(1,3),16)||0, g = parseInt(h.slice(3,5),16)||0, b = parseInt(h.slice(5,7),16)||0;
     return (r + g + b) > 382;
   })();
-  // Draw strokes to ink buffer
+
   let origCTX = CTX;
-  CTX = _inkCTX;  // redirect rendering to ink buffer
+  CTX = _inkCTX; 
   _inkCTX.save();
   _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
 
@@ -3656,7 +3681,7 @@ function drawCalligraphy(p, t) {
       calligStrokes.splice(i, 1);
       continue;
     }
-    // Interactive strokes: full immediate reveal. Auto strokes: progressive draw-in
+
     let drawProgress = st.interactive ? 1.0 : Math.min(1, age * growSpeed * 0.12);
     let visiblePts = st.pts.filter(pt => pt.prog <= drawProgress);
     if (visiblePts.length < 2) continue;
@@ -3671,25 +3696,24 @@ function drawCalligraphy(p, t) {
     if (age > st.lifespan) {
       alpha *= 1 - Math.pow((age - st.lifespan) / st.fadeOut, 2);
     }
-    _renderSumiE(p, visiblePts, st.col, bleed, fibers, Math.max(0, Math.min(1, alpha)),
-                 drips, pooling, splatterAmt, t);
-    // Bake completed auto strokes — mark as done so they stop re-rendering
+    _renderSumiE(p, visiblePts, st.col, bleed, fibers, Math.max(0, Math.min(1, alpha)), drips, pooling, splatterAmt, t);
+    
     if (!st.interactive && drawProgress >= 1 && age <= st.lifespan) {
       st._baked = true;
     }
   }
-  // Remove baked strokes (they're now part of the buffer pixels)
+
   calligStrokes = calligStrokes.filter(st => {
     let age = _calligClock - st.birth;
-    if (st._baked && age > st.lifespan) return false; // let fade play out on buffer
+    if (st._baked && age > st.lifespan) return false;
     return true;
   });
 
   _inkCTX.restore();
-  CTX = origCTX;  // restore main CTX
+  CTX = origCTX; 
 
-  // ── Update Brush Cursor ──────────────────────────────────────────────────────
-  cursor = document.getElementById('brushCursor'); 
+  // ── Update Brush Cursor ────────────────────────────────────────────────────
+  cursor = cursor || document.getElementById('brushCursor'); 
   if (cursor) {
     if (S.calligInteractive && S.mode === 'calligraphy') {
       cursor.style.display = 'block';
@@ -3701,140 +3725,77 @@ function drawCalligraphy(p, t) {
     } else {
       cursor.style.display = 'none';
     }
-}
-  
-  // ── Composite ink buffer onto main canvas ──────────────────────────────────
+  }
+
+  // ── Composite & Paper Grain ───────────────────────────────────────────────
   CTX.save();
   CTX.globalCompositeOperation = 'source-over';
-  CTX.globalAlpha = 1;
   CTX.drawImage(_inkCanvas, 0, 0);
-  CTX.restore();
   
-  // ── Paper grain buffer ───────────────────
-  function _ensureGrainBuffer(p, W, H) {
-    if (!_grainCanvas || _grainCanvas.width !== W || _grainCanvas.height !== H) {
-      _grainCanvas = document.createElement('canvas');
-      _grainCanvas.width = W;
-      _grainCanvas.height = H;
-      _grainCTX = _grainCanvas.getContext('2d');
-  
-      _grainCTX.clearRect(0, 0, W, H);
-      
-      // Generate static noise once
-      for (let x = 0; x < W; x += 2) {
-        for (let y = 0; y < H; y += 2) {
-          let n = p.noise(x * 0.05, y * 0.05);
-          if (n > 0.6) {
-            // Use white for "grit" on dark paper, or black for light paper
-            _grainCTX.fillStyle = n > 0.8 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
-            _grainCTX.fillRect(x, y, 1, 1);
-          }
-        }
-      }
-    }
-  }
-
-// ── Optimized Paper Grain ───────────────────
   if (paperGrain) {
     _ensureGrainBuffer(p, W, H);
-    CTX.save();
-    // 'screen' or 'lighter' makes the grain show up on dark backgrounds
-    // 'multiply' would be for light paper
     CTX.globalCompositeOperation = 'screen'; 
     CTX.drawImage(_grainCanvas, 0, 0);
-    CTX.restore();
   }
+  CTX.restore();
+}
 
-// ── Push interactive strokes ───────────────────
+// ── Interactive Logic ────────────────────────────────────────────────────────
 function _pushInteractiveStroke(p, x1, y1, x2, y2) {
-  // Ensure ink buffer exists
-  if (!_inkCanvas || !_inkCTX) {
-    _ensureInkBuffer(p.width, p.height);
-  }
+  if (!_inkCanvas || !_inkCTX) _ensureInkBuffer(p.width, p.height);
 
-  let minLen    = (S.calligMinLen ?? 0.4) * Math.min(p.width, p.height);
-  let maxLen    = (S.calligMaxLen ?? 0.9) * Math.min(p.width, p.height);
   let baseWidth = Math.max(3, (S.calligWidth ?? 2.5) * (S.maxSize / 20));
-  let charMode  = S.calligCharMode ?? true;
-  let charSet   = S.calligCharSet  ?? 'eternal';
-
   let dx = x2 - x1, dy = y2 - y1;
   let dist = Math.sqrt(dx*dx + dy*dy);
   if (dist < 2) return;
 
   mouseVelocity = Math.min(2.5, dist / 10);
   mouseAngle    = Math.atan2(dy, dx);
-  let len = Math.max(minLen * 0.15, Math.min(maxLen, dist * 2.0));
+  let len = Math.max(20, dist * 2.0);
 
-  let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet);
+  let s = _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, S.calligCharMode ?? true, S.calligCharSet ?? 'eternal');
   if (s) {
     s.interactive = true;
     s.lifespan = 9999;
     s.fadeOut  = 0;
-    calligStrokes.push(s);
 
-    // Immediately bake onto ink buffer
-    if (_inkCTX && _inkCanvas) {
-      let bgIsLight = (function() {
-        let h = S.bg || '#0d0c0a';
-        let r = parseInt(h.slice(1,3),16)||0,
-            g = parseInt(h.slice(3,5),16)||0,
-            b = parseInt(h.slice(5,7),16)||0;
-        return (r + g + b) > 382;
-      })();
-      let origCTX = CTX;
-      CTX = _inkCTX;
-      _inkCTX.save();
-      _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
+    let bgIsLight = (function() {
+      let h = S.bg || '#0d0c0a';
+      let r = parseInt(h.slice(1,3),16)||0, g = parseInt(h.slice(3,5),16)||0, b = parseInt(h.slice(5,7),16)||0;
+      return (r + g + b) > 382;
+    })();
 
-      // Compute widths for all points
-      for (let j = 0; j < s.pts.length; j++) {
-        let pt = s.pts[j];
-        let progressFactor = Math.sin(pt.prog * Math.PI);
-        pt.w = s.baseWidth * Math.pow(progressFactor, 1 / Math.max(0.1, S.calligTaper ?? 0.5));
-      }
-      _renderSumiE(p, s.pts, s.col, S.calligBleed ?? 0.6,
-                   Math.max(1, Math.floor(S.calligFibers ?? 8)),
-                   S.calligInk ?? 0.9,
-                   S.calligDrips ?? true, S.calligPooling ?? true,
-                   S.calligSplatter ?? 0.3, 0);
-      _inkCTX.restore();
-      CTX = origCTX;
+    let origCTX = CTX;
+    CTX = _inkCTX;
+    _inkCTX.save();
+    _inkCTX.globalCompositeOperation = bgIsLight ? 'multiply' : 'source-over';
 
-      // Remove from array – it's already baked into the buffer
-      calligStrokes.pop();
+    for (let j = 0; j < s.pts.length; j++) {
+      let pt = s.pts[j];
+      pt.w = s.baseWidth * Math.pow(Math.sin(pt.prog * Math.PI), 1 / Math.max(0.1, S.calligTaper ?? 0.5));
     }
+    _renderSumiE(p, s.pts, s.col, S.calligBleed ?? 0.6, Math.max(1, Math.floor(S.calligFibers ?? 8)), S.calligInk ?? 0.9, S.calligDrips ?? true, S.calligPooling ?? true, S.calligSplatter ?? 0.3, 0);
+    _inkCTX.restore();
+    CTX = origCTX;
   }
 }
 
-
-  
-// ── CALLIGRAPHY Event Handlers ────────────────────────────────────────────────
 function setupCalligraphyInteraction(p) {
   let canvas = document.getElementById('gc');
   if (!canvas) return;
-
-  // Clean up old listeners
   canvas.replaceWith(canvas.cloneNode(true));
   canvas = document.getElementById('gc');
 
   const getPos = (e) => {
     let rect = canvas.getBoundingClientRect();
-    // This maps the CSS mouse position to the actual canvas internal resolution
-    return {
-      x: (e.clientX - rect.left) * (p.width / rect.width),
-      y: (e.clientY - rect.top) * (p.height / rect.height)
-    };
+    return { x: (e.clientX - rect.left) * (p.width / rect.width), y: (e.clientY - rect.top) * (p.height / rect.height) };
   };
 
   canvas.addEventListener('pointerdown', (e) => {
     if (!S.calligInteractive || S.mode !== 'calligraphy') return;
     isDrawing = true;
     let pos = getPos(e);
-    lastMouseX = pos.x;
-    lastMouseY = pos.y;
-    
-    // Initial ink drop
+    lastMouseX = pos.x; lastMouseY = pos.y;
     let s = _spawnDotStroke(p, pos.x, pos.y, (S.calligWidth ?? 1.2) * S.maxSize);
     if (s) calligStrokes.push(s);
   });
@@ -3843,366 +3804,122 @@ function setupCalligraphyInteraction(p) {
     if (!isDrawing || !S.calligInteractive) return;
     let pos = getPos(e);
     _pushInteractiveStroke(p, lastMouseX, lastMouseY, pos.x, pos.y);
-    lastMouseX = pos.x;
-    lastMouseY = pos.y;
+    lastMouseX = pos.x; lastMouseY = pos.y;
   });
 
   window.addEventListener('pointerup', () => { isDrawing = false; });
-}
-  
-// ── BRUSH CURSOR ─────────────────────────────────────────────────
-let brushCursor = null;
-let cursorVisible = false;
-
-function initBrushCursor() {
-  brushCursor = document.getElementById('brushCursor');
-  if (!brushCursor) return;
-  const canvas = document.getElementById('gc');
-  if (!canvas) return;
-
-  canvas.addEventListener('mousemove', (e) => {
-    if (!cursorVisible) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    brushCursor.style.left = x + 'px';
-    brushCursor.style.top = y + 'px';
-  });
-
-  canvas.addEventListener('mouseleave', () => {
-    if (brushCursor) brushCursor.style.display = 'none';
-    cursorVisible = false;
-  });
 }
 
 function showBrushCursor(show) {
   const canvas = document.getElementById('gc');
   if (!canvas) return;
-  if (show) {
-    canvas.classList.add('drawing-mode');
-  } else {
-    canvas.classList.remove('drawing-mode');
-  }
+  if (show) { canvas.classList.add('drawing-mode'); } 
+  else { canvas.classList.remove('drawing-mode'); }
 }
-  
+
 function _spawnDotStroke(p, x, y, size) {
   let col = pickColor(p, x, y, 0);
   let pts = [];
   for (let i = 0; i <= 4; i++) {
-    pts.push({ x: x + (i - 2) * 0.5, y: y + (i - 2) * 0.5,
-               prog: i / 4, speed: 1.0, w: size * 0.4 });
+    pts.push({ x: x + (i - 2) * 0.5, y: y + (i - 2) * 0.5, prog: i / 4, speed: 1.0, w: size * 0.4 });
   }
   return { pts, col, birth: _calligClock, lifespan: 200, fadeOut: 60, baseWidth: size };
 }
-  
-// ── Spawn a new stroke ───────────────────────────────────────────────────────
+
 function _spawnCalligStroke(p, W, H, minLen, maxLen, baseWidth, charMode, charSet, followMouse) {
   let pts = [];
   let col = pickColor(p, p.random(W), p.random(H), 0);
   let ox, oy, angle, len;
   if (followMouse && p.mouseX > 0 && p.mouseX < W && p.mouseY > 0 && p.mouseY < H) {
-    ox = p.mouseX;
-    oy = p.mouseY;
+    ox = p.mouseX; oy = p.mouseY;
     angle = Math.atan2(p.mouseY - H/2, p.mouseX - W/2) + (p.random() - 0.5) * 0.8;
   } else {
-    ox = p.random(W * 0.2, W * 0.8);
-    oy = p.random(H * 0.2, H * 0.8);
+    ox = p.random(W * 0.2, W * 0.8); oy = p.random(H * 0.2, H * 0.8);
     angle = p.random(Math.PI * 2);
   }
   len = p.random(minLen, maxLen);
   if (charMode) {
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
-    let strokeIdx = Math.floor(p.random(strokes.length));
-    let rawPts = strokes[strokeIdx];
-    let cumDist = 0;
-    let dists = [0];
+    let rawPts = strokes[Math.floor(p.random(strokes.length))];
+    let cumDist = 0; let dists = [0];
     for (let i = 1; i < rawPts.length; i++) {
-      let dx = rawPts[i].x - rawPts[i-1].x;
-      let dy = rawPts[i].y - rawPts[i-1].y;
-      cumDist += Math.sqrt(dx*dx + dy*dy);
+      cumDist += Math.sqrt(Math.pow(rawPts[i].x-rawPts[i-1].x,2) + Math.pow(rawPts[i].y-rawPts[i-1].y,2));
       dists.push(cumDist);
     }
-    let normDists = dists.map(d => d / cumDist);
-    let margin = 0.15 * Math.min(W, H);
-    ox = p.constrain(ox, margin, W - margin);
-    oy = p.constrain(oy, margin, H - margin);
     let scale = len / Math.max(0.5, cumDist);
-    pts = rawPts.map((pt, i) => ({
-      x: ox + (pt.x - 0.5) * scale,
-      y: oy + (pt.y - 0.5) * scale,
-      prog: normDists[i],
-      speed: 1.0
-    }));
+    pts = rawPts.map((pt, i) => ({ x: ox + (pt.x - 0.5) * scale, y: oy + (pt.y - 0.5) * scale, prog: dists[i] / cumDist, speed: 1.0 }));
     pts = _applyChaikin(pts, 3);
-    let avgLen = len / (pts.length - 1);
-    for (let i = 1; i < pts.length; i++) {
-      let dx = pts[i].x - pts[i-1].x;
-      let dy = pts[i].y - pts[i-1].y;
-      let segLen = Math.sqrt(dx*dx + dy*dy);
-      pts[i].speed = Math.min(2.5, Math.max(0.4, avgLen / (segLen + 0.001)));
-    }
-    pts[0].speed = pts[1].speed;
   } else {
     pts = _genLinePoints(p, ox, oy, len, angle, 0.25);
-    let avgLen = len / (pts.length - 1);
-    for (let i = 1; i < pts.length; i++) {
-      let dx = pts[i].x - pts[i-1].x;
-      let dy = pts[i].y - pts[i-1].y;
-      let segLen = Math.sqrt(dx*dx + dy*dy);
-      pts[i].speed = Math.min(2.5, Math.max(0.4, avgLen / (segLen + 0.001)));
-    }
-    pts[0].speed = pts[1].speed;
   }
-  if (!pts || pts.length < 2) return null;
-  return {
-    pts: pts,
-    col: col,
-    birth: _calligClock,
-    lifespan: 400 + Math.floor(p.random(100)),
-    fadeOut: 120,
-    baseWidth: baseWidth
-  };
+  return { pts, col, birth: _calligClock, lifespan: 400 + Math.floor(p.random(100)), fadeOut: 120, baseWidth: baseWidth };
 }
-// ── Interactive stroke ───────────────────────────────────────────────────────
+
 function _spawnInteractiveStroke(p, x1, y1, x2, y2, len, baseWidth, charMode, charSet) {
-  // 1. Setup basic properties
   let col = pickColor(p, x1, y1, 0);
   let angle = Math.atan2(y2 - y1, x2 - x1);
   let pts = [];
-
   if (charMode) {
-    // 2. Get the character path
     let strokes = CHARACTER_PATHS[charSet] || CHARACTER_PATHS['eternal'];
     let rawPts = strokes[Math.floor(p.random(strokes.length))];
-    // 3. Calculate the actual center of THIS specific stroke segment
-    // This prevents the "spawning in the center/wrong place" bug
     let avgX = 0, avgY = 0;
     rawPts.forEach(pt => { avgX += pt.x; avgY += pt.y; });
-    avgX /= rawPts.length;
-    avgY /= rawPts.length;
-    // 4. Calculate Path Length for normalization
-    let cumDist = 0;
-    let dists = [0];
+    avgX /= rawPts.length; avgY /= rawPts.length;
+    let cumDist = 0; let dists = [0];
     for (let i = 1; i < rawPts.length; i++) {
-      let dx = rawPts[i].x - rawPts[i-1].x;
-      let dy = rawPts[i].y - rawPts[i-1].y;
-      cumDist += Math.sqrt(dx*dx + dy*dy);
+      cumDist += Math.sqrt(Math.pow(rawPts[i].x-rawPts[i-1].x,2) + Math.pow(rawPts[i].y-rawPts[i-1].y,2));
       dists.push(cumDist);
     }
-    // 5. Scale and Rotate relative to the mouse position
-    // We use a minimum scale to ensure it never collapses into a "dot"
     let scale = Math.max(20, len) / Math.max(0.1, cumDist);
     pts = rawPts.map((pt, i) => {
-      // Local offset from its own center
-      let lX = pt.x - avgX;
-      let lY = pt.y - avgY;
-      // Rotate the segment to align with drag direction
+      let lX = pt.x - avgX, lY = pt.y - avgY;
       let rX = lX * Math.cos(angle) - lY * Math.sin(angle);
       let rY = lX * Math.sin(angle) + lY * Math.cos(angle);
-      return {
-        x: x1 + rX * scale,
-        y: y1 + rY * scale,
-        prog: dists[i] / (cumDist || 1),
-        speed: Math.max(0.5, mouseVelocity)
-      };
+      return { x: x1 + rX * scale, y: y1 + rY * scale, prog: dists[i] / (cumDist || 1), speed: Math.max(0.5, mouseVelocity) };
     });
-    // 6. Smooth the path
     pts = _applyChaikin(pts, 2);
-    // Calculate internal point speeds for pressure tapering
-    for (let i = 1; i < pts.length; i++) {
-      let d = Math.sqrt(Math.pow(pts[i].x - pts[i-1].x, 2) + Math.pow(pts[i].y - pts[i-1].y, 2));
-      pts[i].speed = Math.min(3, 10 / (d + 1));
-    }
-    if(pts[0]) pts[0].speed = pts[1] ? pts[1].speed : 1;
   } else {
-    // Standard organic line mode
     pts = _genLinePoints(p, x1, y1, len, angle, 0.15);
   }
-  if (!pts || pts.length < 2) return null;
-  // 7. Return the stroke object with a custom lifespan
-  return {
-    pts: pts,
-    col: col,
-    birth: _calligClock, // Uses the independent calligraphy clock
-    lifespan: 250 + Math.random() * 100,
-    fadeOut: 100,
-    // Width reacts to mouse speed: fast = thin, slow = thick
-    baseWidth: baseWidth * (0.4 + (1 / (mouseVelocity + 0.5))) 
-  };
+  return { pts, col, birth: _calligClock, lifespan: 250, fadeOut: 100, baseWidth: baseWidth * (0.4 + (1 / (mouseVelocity + 0.5))) };
 }
-  
-// ── Update Brush Cursor position ─────────────────────────────────────────────────
-  cursor = cursor || document.getElementById('brushCursor'); // Get it if we haven't yet
-  if (cursor) {
-    if (S.calligInteractive && S.mode === 'calligraphy') {
-      cursor.style.display = 'block';
-      cursor.style.left = p.mouseX + 'px';
-      cursor.style.top = p.mouseY + 'px';
-      // Dynamic size based on your settings
-      let s = (S.calligWidth ?? 1.2) * S.maxSize;
-      cursor.style.width = s + 'px';
-      cursor.style.height = s + 'px';
-    } else {
-      cursor.style.display = 'none';
-    }
-  }
-  
-// ── Expanded Character Paths ─────────────────────────────────────────────────
+
 const CHARACTER_PATHS = {
-  'eternal': [ // 永
-    [{x:0.5, y:0.1}, {x:0.55, y:0.2}],
-    [{x:0.2, y:0.3}, {x:0.8, y:0.3}],
-    [{x:0.5, y:0.3}, {x:0.5, y:0.8}, {x:0.4, y:0.75}],
-    [{x:0.5, y:0.45}, {x:0.25, y:0.6}],
-    [{x:0.5, y:0.5}, {x:0.75, y:0.7}]
-  ],
-  'mountain': [ // 山
-    [{x:0.5, y:0.2}, {x:0.5, y:0.8}],
-    [{x:0.2, y:0.4}, {x:0.2, y:0.8}, {x:0.8, y:0.8}, {x:0.8, y:0.4}]
-  ],
-  'wind': [ // 風
-    [{x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.7, y:0.85}],
-    [{x:0.4, y:0.4}, {x:0.6, y:0.4}],
-    [{x:0.5, y:0.4}, {x:0.5, y:0.7}]
-  ],
-  'heart': [ // 心
-    [{x:0.2, y:0.5}, {x:0.25, y:0.6}],
-    [{x:0.4, y:0.8}, {x:0.7, y:0.8}, {x:0.85, y:0.4}],
-    [{x:0.5, y:0.4}, {x:0.55, y:0.5}],
-    [{x:0.75, y:0.3}, {x:0.8, y:0.4}]
-  ],
-  'bamboo': [ // 竹
-    [{x:0.3, y:0.2}, {x:0.3, y:0.8}],
-    [{x:0.3, y:0.3}, {x:0.5, y:0.3}],
-    [{x:0.7, y:0.2}, {x:0.7, y:0.8}],
-    [{x:0.7, y:0.3}, {x:0.9, y:0.3}]
-  ],
-  'rain': [ // 雨
-    [{x:0.2, y:0.2}, {x:0.8, y:0.2}],
-    [{x:0.2, y:0.35}, {x:0.8, y:0.35}],
-    [{x:0.5, y:0.35}, {x:0.5, y:0.8}],
-    [{x:0.3, y:0.5}, {x:0.3, y:0.6}],
-    [{x:0.5, y:0.5}, {x:0.5, y:0.6}],
-    [{x:0.7, y:0.5}, {x:0.7, y:0.6}]
-  ],
-  'river': [ // 川
-    [{x:0.2, y:0.2}, {x:0.2, y:0.8}],
-    [{x:0.5, y:0.3}, {x:0.5, y:0.7}],
-    [{x:0.8, y:0.2}, {x:0.8, y:0.8}]
-  ]
+  'eternal': [[{x:0.5,y:0.1},{x:0.55,y:0.2}],[{x:0.2,y:0.3},{x:0.8,y:0.3}],[{x:0.5,y:0.3},{x:0.5,y:0.8},{x:0.4,y:0.75}],[{x:0.5,y:0.45},{x:0.25,y:0.6}],[{x:0.5,y:0.5},{x:0.75,y:0.7}]],
+  'mountain': [[{x:0.5,y:0.2},{x:0.5,y:0.8}],[{x:0.2,y:0.4},{x:0.2,y:0.8},{x:0.8,y:0.8},{x:0.8,y:0.4}]],
+  'wind': [[{x:0.2,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8},{x:0.7,y:0.85}],[{x:0.4,y:0.4},{x:0.6,y:0.4}],[{x:0.5,y:0.4},{x:0.5,y:0.7}]],
+  'heart': [[{x:0.2,y:0.5},{x:0.25,y:0.6}],[{x:0.4,y:0.8},{x:0.7,y:0.8},{x:0.85,y:0.4}],[{x:0.5,y:0.4},{x:0.55,y:0.5}],[{x:0.75,y:0.3},{x:0.8,y:0.4}]],
+  'bamboo': [[{x:0.3,y:0.2},{x:0.3,y:0.8}],[{x:0.3,y:0.3},{x:0.5,y:0.3}],[{x:0.7,y:0.2},{x:0.7,y:0.8}],[{x:0.7,y:0.3},{x:0.9,y:0.3}]],
+  'rain': [[{x:0.2,y:0.2},{x:0.8,y:0.2}],[{x:0.2,y:0.35},{x:0.8,y:0.35}],[{x:0.5,y:0.35},{x:0.5,y:0.8}],[{x:0.3,y:0.5},{x:0.3,y:0.6}],[{x:0.5,y:0.5},{x:0.5,y:0.6}],[{x:0.7,y:0.5},{x:0.7,y:0.6}]],
+  'river': [[{x:0.2,y:0.2},{x:0.2,y:0.8}],[{x:0.5,y:0.3},{x:0.5,y:0.7}],[{x:0.8,y:0.2},{x:0.8,y:0.8}]]
 };
-// ── Sumi‑e Renderer ─────────────────────────────────────────────────────────
+
 function _renderSumiE(p, pts, col, bleed, fibers, baseAlpha, drips, pooling, splatterAmt, t) {
   if (pts.length < 2) return;
-  //  AIGUMA (Wet Edge)
   if (bleed > 0) {
-    CTX.beginPath();
-    CTX.strokeStyle = col;
-    CTX.globalAlpha = baseAlpha * 0.08;
-    CTX.lineWidth = pts[0].w * (1 + bleed * 2.5);
-    CTX.filter = `blur(${bleed * 6}px)`;
-    for (let i = 0; i < pts.length; i++) {
-      i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
-    }
-    CTX.stroke();
-    CTX.filter = 'none';
+    CTX.beginPath(); CTX.strokeStyle = col; CTX.globalAlpha = baseAlpha * 0.08;
+    CTX.lineWidth = pts[0].w * (1 + bleed * 2.5); CTX.filter = `blur(${bleed * 6}px)`;
+    for (let i = 0; i < pts.length; i++) { i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y); }
+    CTX.stroke(); CTX.filter = 'none';
   }
-  //  KATAGUMA (Split-Ink Fibers)
   for (let f = 0; f < fibers; f++) {
-    let fOff = (f / fibers - 0.5) * 1.8;
-    CTX.beginPath();
+    let fOff = (f / fibers - 0.5) * 1.8; CTX.beginPath();
     for (let i = 0; i < pts.length; i++) {
-      let pt = pts[i];
-      // "Flying White" (Dryness) increases at the end of strokes
-      let dryness = p.noise(pt.x * 0.05, pt.y * 0.05, f) * (1.1 - pt.prog * 0.4);
+      let pt = pts[i]; let dryness = p.noise(pt.x * 0.05, pt.y * 0.05, f) * (1.1 - pt.prog * 0.4);
       if (dryness < 0.2) { CTX.stroke(); CTX.beginPath(); continue; }
-
-      let next = pts[i+1] || pt;
-      let ang = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI/2;
-      let x = pt.x + Math.cos(ang) * fOff * pt.w;
-      let y = pt.y + Math.sin(ang) * fOff * pt.w;
-
+      let next = pts[i+1] || pt; let ang = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI/2;
+      let x = pt.x + Math.cos(ang) * fOff * pt.w; let y = pt.y + Math.sin(ang) * fOff * pt.w;
       i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
-      CTX.lineWidth = pt.w * (0.15 + dryness * 0.3);
-      // Split ink: outer fibers are lighter/dryer
-      CTX.globalAlpha = baseAlpha * dryness * (1.2 - Math.abs(fOff));
-      CTX.strokeStyle = col;
+      CTX.lineWidth = pt.w * (0.15 + dryness * 0.3); CTX.globalAlpha = baseAlpha * dryness * (1.2 - Math.abs(fOff)); CTX.strokeStyle = col;
     }
     CTX.stroke();
   }
-  //  HIHAKU (Dry Brush)
-  for (let f = 0; f < fibers; f++) {
-    let fOff = (f / fibers - 0.5) * 1.8;
-    CTX.beginPath();
-    for (let i = 0; i < pts.length; i++) {
-      let pt = pts[i];
-      let dryness = p.noise(pt.x * 0.04, pt.y * 0.04, f * 2) * 0.6
-                  + p.noise(pt.x * 0.12, pt.y * 0.12, f * 3) * 0.4;
-      dryness *= 1 - Math.abs(pt.prog - 0.5) * 0.3;
-      if (dryness < 0.15) {
-        CTX.stroke(); CTX.beginPath(); continue;
-      }
-      let next = pts[i+1] || pt;
-      let ang = Math.atan2(next.y - pt.y, next.x - pt.x) + Math.PI/2;
-      let x = pt.x + Math.cos(ang) * fOff * pt.w * 0.5;
-      let y = pt.y + Math.sin(ang) * fOff * pt.w * 0.5;
-      i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
-      CTX.lineWidth = pt.w * (0.08 + dryness * 0.25);
-      CTX.globalAlpha = baseAlpha * dryness * 0.8;
-      CTX.strokeStyle = col;
-    }
-    CTX.stroke();
-  }
-  //  KASURI (Dark Core)
-  CTX.beginPath();
-  CTX.globalAlpha = baseAlpha * 0.85;
-  for (let i = 0; i < pts.length; i++) {
-    CTX.lineWidth = pts[i].w * 0.65;
-    i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y);
-  }
+  CTX.beginPath(); CTX.globalAlpha = baseAlpha * 0.85;
+  for (let i = 0; i < pts.length; i++) { CTX.lineWidth = pts[i].w * 0.65; i === 0 ? CTX.moveTo(pts[i].x, pts[i].y) : CTX.lineTo(pts[i].x, pts[i].y); }
   CTX.stroke();
-  //  Ink pooling
-  if (pooling) {
-    [0, pts.length-1].forEach(idx => {
-      let pt = pts[idx];
-      CTX.globalAlpha = baseAlpha * 0.2;
-      CTX.fillStyle = col;
-      CTX.beginPath();
-      CTX.arc(pt.x, pt.y, pt.w * 0.5, 0, Math.PI*2);
-      CTX.fill();
-    });
-  }
-  //  Splatters
-  if (splatterAmt > 0 && Math.random() < splatterAmt * 0.15) {
-    for (let s = 0; s < Math.floor(splatterAmt * 8); s++) {
-      let idx = Math.floor(p.noise(s * 17) * (pts.length - 1));
-      let pt = pts[idx];
-      let angle = p.random(Math.PI * 2);
-      let dist = pt.w * (0.5 + p.random() * 2.5);
-      let sx = pt.x + Math.cos(angle) * dist;
-      let sy = pt.y + Math.sin(angle) * dist;
-      let sz = pt.w * 0.08 * (0.5 + p.random() * 2);
-      CTX.globalAlpha = baseAlpha * 0.6;
-      CTX.fillStyle = col;
-      CTX.beginPath();
-      CTX.arc(sx, sy, Math.max(0.5, sz), 0, Math.PI*2);
-      CTX.fill();
-    }
-  }
-  //  Drips
-  if (drips && Math.random() < 0.15) {
-    let pt = pts[pts.length-1];
-    for (let d = 0; d < 3; d++) {
-      let dropY = pt.y + d * pt.w * 1.5;
-      CTX.globalAlpha = baseAlpha * (0.5 - d * 0.12);
-      CTX.fillStyle = col;
-      CTX.beginPath();
-      CTX.ellipse(pt.x + (d * 1.5 - 1) * pt.w * 0.1, dropY, pt.w*0.15, pt.w*0.35, 0, 0, Math.PI*2);
-      CTX.fill();
-    }
-  }
+  if (pooling) { [0, pts.length-1].forEach(idx => { let pt = pts[idx]; CTX.globalAlpha = baseAlpha * 0.2; CTX.fillStyle = col; CTX.beginPath(); CTX.arc(pt.x, pt.y, pt.w * 0.5, 0, Math.PI*2); CTX.fill(); }); }
 }
-// ── Chaikin Smoothing ────────────────────────────────────────────────────────
+
 function _applyChaikin(pts, iterations) {
   if (iterations === 0 || pts.length < 3) return pts;
   let newPts = [pts[0]];
@@ -4214,23 +3931,16 @@ function _applyChaikin(pts, iterations) {
   newPts.push(pts[pts.length-1]);
   return _applyChaikin(newPts, iterations - 1);
 }
-// ── Generate random organic line ─────────────────────────────────────────────
+
 function _genLinePoints(p, ox, oy, len, angle, wobble) {
-  let pts = [];
-  let steps = 12;
+  let pts = []; let steps = 12;
   for (let i = 0; i <= steps; i++) {
     let prog = i / steps;
     let n = (p.noise(ox * 0.02 + prog * 3, oy * 0.02) - 0.5) * len * wobble;
-    pts.push({
-      x: ox + Math.cos(angle) * len * prog + Math.cos(angle + Math.PI/2) * n,
-      y: oy + Math.sin(angle) * len * prog + Math.sin(angle + Math.PI/2) * n,
-      prog: prog,
-      speed: 1.0
-    });
+    pts.push({ x: ox + Math.cos(angle)*len*prog + Math.cos(angle+Math.PI/2)*n, y: oy + Math.sin(angle)*len*prog + Math.sin(angle+Math.PI/2)*n, prog, speed: 1.0 });
   }
   return _applyChaikin(pts, 2);
 }
-
 
 
   
