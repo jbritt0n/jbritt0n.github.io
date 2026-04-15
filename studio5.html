@@ -3410,6 +3410,7 @@ function drawVoronoi(p, t) {
 }
 
 // ── TRABECULUM MODE - added 4/14/26 ──────────────────────────────────────────────────────────
+// ── TRABECULUM MODE (Refactored) ─────────────────────────────────────────────
 let trabePoints = [];
 
 function initTrabeculum(W, H) {
@@ -3430,15 +3431,11 @@ function drawTrabeculum(p, t) {
   let W = p.width, H = p.height;
   if (trabePoints.length === 0) initTrabeculum(W, H);
 
-  // Background
-  CTX.fillStyle = S.bg || '#050505';
-  CTX.fillRect(0, 0, W, H);
-
-  // Update points if playing
+  // Update points (respect S.playing and global speed)
   if (S.playing) {
     let speed = S.trabeSpeed ?? 1.0;
     for (let pt of trabePoints) {
-      pt.x += pt.vx * speed * (S.speed * 100); // scale with global speed
+      pt.x += pt.vx * speed * (S.speed * 100);
       pt.y += pt.vy * speed * (S.speed * 100);
       if (pt.x < 0) pt.x = W;
       if (pt.x > W) pt.x = 0;
@@ -3447,64 +3444,82 @@ function drawTrabeculum(p, t) {
     }
   }
 
-  // Use p5 pixel array for direct manipulation
-  p.loadPixels();
-  let res = Math.max(1, Math.floor(S.trabeRes ?? 2));
+  // Mode parameters with defaults
   let thickness = S.trabeThickness ?? 0.05;
-  let smooth = S.trabeSmooth ?? 0.02;
-  let borderColor = S.trabeStroke ?? '#ff9900';
-  let showIso = S.trabeShowIso ?? true;
-  let isoFreq = S.trabeFreq ?? 10;
-  let isoOpacity = S.trabeIsoOpacity ?? 0.1;
-  let isoColor = S.trabeIsoCol ?? '#444444';
-  let pulse = S.trabePulse ?? false;
+  let smooth    = S.trabeSmooth ?? 0.02;
+  let pulse     = S.trabePulse ?? false;
+  let showIso   = S.trabeShowIso ?? true;
+  let isoFreq   = S.trabeFreq ?? 10;
+  let isoOpacity= S.trabeIsoOpacity ?? 0.1;
+  let charDensity = S.trabeCharDensity ?? 0.5;    // new parameter
+  let useChars  = S.trabeUseChars ?? true;        // toggle character fill
 
-  let bgColor = p.color(S.bg || '#050505');
-  let strokeCol = p.color(borderColor);
-  let isoCol = p.color(isoColor);
-
-  // Pre‑compute normalisation factor (scale with maxSize)
+  // Normalisation factor (scale with maxSize)
   let normFactor = (S.maxSize / 10) || 2.0;
 
-  for (let y = 0; y < H; y += res) {
-    for (let x = 0; x < W; x += res) {
+  // Pre‑compute colours (use palette/accent for characters)
+  let bgColor   = S.bg || '#050505';
+  let strokeCol = S.trabeStroke ?? '#ff9900';
+  let isoCol    = S.trabeIsoCol ?? '#444444';
+
+  // Character grid step – driven by S.spacing
+  let step = Math.max(4, S.spacing);
+
+  for (let x = 0; x < W; x += step) {
+    for (let y = 0; y < H; y += step) {
+      // Find two closest points
       let d1 = Infinity, d2 = Infinity;
       for (let pt of trabePoints) {
-        let d = p.dist(x, y, pt.x, pt.y);
+        let d = Math.hypot(x - pt.x, y - pt.y);
         if (d < d1) { d2 = d1; d1 = d; }
         else if (d < d2) { d2 = d; }
       }
 
+      // Harmonic mean of distances
       let val = 2.0 / (1.0 / Math.max(0.1, d1) + 1.0 / Math.max(0.1, d2));
       val /= normFactor;
 
       let borderEdge = thickness;
       if (pulse) borderEdge += Math.sin(t * 0.05) * 0.02;
 
-      let col;
-      if (val < borderEdge) {
-        col = strokeCol;
-      } else if (val < borderEdge + smooth) {
-        let inter = p.map(val, borderEdge, borderEdge + smooth, 0, 1);
-        col = p.lerpColor(strokeCol, bgColor, inter);
-      } else {
-        col = bgColor;
-        if (showIso) {
-          let iso = 0.5 + 0.5 * Math.sin(val * isoFreq);
-          let alpha = p.map(val, borderEdge, S.maxSize, isoOpacity, 0);
-          col = p.lerpColor(col, isoCol, iso * alpha);
+      // Determine if we are near a cell border
+      let isBorder = (val < borderEdge);
+      let isTransition = (!isBorder && val < borderEdge + smooth);
+
+      // --- Character drawing (if enabled and density threshold met) ---
+      if (useChars) {
+        // Use sampleNoise for organic density variation (respects noiseType, octaves)
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.3);
+        if (n < charDensity) {
+          // Choose colour: use pickColor for palette/accent integration
+          let col = pickColor(p, x, y, t);
+          // For border areas, optionally override with accent colour
+          if (isBorder && S.accent !== 'none' && Math.random() < S.accentAmt) {
+            col = S.accent;
+          } else if (isTransition && S.accent2 !== 'none' && Math.random() < S.accentAmt2) {
+            col = S.accent2;
+          }
+
+          let ch = pickChar(p, x, y, t);
+          let sz = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
+          let rot = 0; // could add rotation based on angle to nearest point if desired
+
+          dc(x, y, sz, rot, col, ch);
         }
       }
 
-      // Write pixel block
-      for (let i = 0; i < res; i++) {
-        for (let j = 0; j < res; j++) {
-          p.set(x + i, y + j, col);
-        }
+      // --- Optional: draw isolines as background (can be disabled via showIso) ---
+      // (If you want to keep the pixel‑based effect, you can still use it,
+      //  but for a pure character mode we skip it. This block is commented out.)
+      /*
+      if (showIso && !isBorder) {
+        let iso = 0.5 + 0.5 * Math.sin(val * isoFreq);
+        let alpha = Math.max(0, Math.min(1, (val - borderEdge) / (S.maxSize - borderEdge) * isoOpacity));
+        // draw subtle iso lines via dc or canvas strokes...
       }
+      */
     }
   }
-  p.updatePixels();
 }
   
 // ── MYCELIUM 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────  
@@ -7758,10 +7773,10 @@ new p5(function(p){
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
     initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
-    initLoops(W,H); initStripedRects(W,H);
+    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H);
     recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
-    lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[];
+    lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[]; 
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
@@ -8302,20 +8317,20 @@ const PARAM_REGISTRY = {
     { id:'vorSpeedMult',   label:'Site speed mult', min:0,  max:2, step:0.1, def:1.0, scale:1 },
   ],
     trabeculum: [
-    { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
-      extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
-    { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
-    { id: 'trabeRes',     label: 'Resolution',      min: 1,  max: 8,   step: 1,   def: 2,    scale: 1,
-      hint: '1 = full quality, 4 = fast preview' },
-    { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
-    { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
-    { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
-    { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
-    { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
-    { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
-    { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.1,  scale: 1 },
-    { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
-  ],
+  { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
+    extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
+  { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
+  { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
+  { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
+  { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
+  { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
+  { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
+  { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
+  { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.1,  scale: 1 },
+  { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
+  { id: 'trabeUseChars',label: 'Fill with characters', type: 'toggle', def: true },
+  { id: 'trabeCharDensity', label: 'Character density', min: 0, max: 1, step: 0.05, def: 0.5, scale: 1 },
+],
   reaction: [
     { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
     { id: 'reactKill',    label: 'Kill rate',    min: 10, max: 100, step: 1, def: 65, scale: 0.001 },
