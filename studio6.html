@@ -7187,10 +7187,12 @@ function drawMonogrid(p, t) {
 
 
 // ── NUMB COLLAGE ──────────────────────────────
-// ── NUMB COLLAGE MODE ────────────────────────────────────────────────────────// ── NUMB COLLAGE MODE ────────────────────────────────────────────────────────
-let collageBlocks = [];   // Note: "collage" spelling must match everywhere
+let collageBlocks = [];
 
 function initNumbCollage(p) {
+  // p might be undefined if called from extra without p; fallback to window._st.p
+  if (!p) p = window._st?.p;
+  if (!p) return;
   collageBlocks = [];
   let count = Math.floor(S.numbBlockCount ?? 40);
   let minW = S.numbBlockMinSize ?? 60;
@@ -7217,12 +7219,13 @@ function initNumbCollage(p) {
       z: p.random()
     });
   }
+  console.log('Numb Collage initialized:', collageBlocks.length, 'blocks');
 }
 
 function drawNumbCollage(p, t) {
   let W = p.width, H = p.height;
 
-  // Safety: ensure blocks exist (lazy init)
+  // Lazy init
   if (!collageBlocks || collageBlocks.length === 0) {
     initNumbCollage(p);
   }
@@ -7239,7 +7242,7 @@ function drawNumbCollage(p, t) {
   let blockOpacity = S.numbBlockOpacity ?? 0.9;
   let showText   = S.numbShowText ?? true;
 
-  // Sort blocks for z‑index (back to front)
+  // Sort blocks for z‑index
   if (sortByY) {
     collageBlocks.sort((a, b) => a.y - b.y);
   } else {
@@ -7259,15 +7262,18 @@ function drawNumbCollage(p, t) {
     }
   }
 
-  // Pre‑compute text tokens
   let rawText = S.numbText ?? '麻木的';
   let tokens = rawText.split('');
 
   for (let b of collageBlocks) {
-    // Get color from palette
+    // Get color from palette as CSS string
     let col = pickColor(p, b.x, b.y, t);
+    // Apply opacity (convert hex to rgba)
     let c = p.color(col);
-    c.setAlpha(blockOpacity * 255);
+    let r = p.red(c);
+    let g = p.green(c);
+    let bVal = p.blue(c);
+    let rgba = `rgba(${r}, ${g}, ${bVal}, ${blockOpacity})`;
 
     CTX.save();
     CTX.translate(b.x + b.w/2, b.y + b.h/2);
@@ -7308,7 +7314,7 @@ function drawNumbCollage(p, t) {
     } else {
       CTX.rect(-hw, -hh, b.w, b.h);
     }
-    CTX.fillStyle = c;
+    CTX.fillStyle = rgba;
     CTX.fill();
 
     // ── Paper grain ─────────────────────────────────────────────────────────
@@ -7337,6 +7343,10 @@ function drawNumbCollage(p, t) {
 
       CTX.fillStyle = textColor;
       CTX.globalAlpha = textOpacity;
+      // Ensure font is set
+      CTX.font = `${baseSize}px ${S.fontStack}`;
+      CTX.textAlign = 'center';
+      CTX.textBaseline = 'middle';
 
       for (let xx = -hw + step/2; xx < hw; xx += step) {
         for (let yy = -hh + step/2; yy < hh; yy += step) {
@@ -7347,9 +7357,7 @@ function drawNumbCollage(p, t) {
           let ch = tokens[idx];
 
           let sz = baseSize * p.random(0.8, 1.2);
-          CTX.font = sz + 'px ' + S.fontStack;
-          CTX.textAlign = 'center';
-          CTX.textBaseline = 'middle';
+          CTX.font = `${sz}px ${S.fontStack}`;
 
           if (inkBleed > 0) {
             CTX.save();
@@ -8621,7 +8629,7 @@ new p5(function(p){
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
-    
+    if (typeof initNumbCollage === 'function') initNumbCollage(p);
     if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
     
