@@ -7188,7 +7188,7 @@ function drawMonogrid(p, t) {
 
 // ── NUMB COLLAGE ──────────────────────────────
 // ── NUMB COLLAGE MODE ────────────────────────────────────────────────────────
-let collageBlocks = [];
+let collageBlocks = [];   // Note: "collage" spelling must match everywhere
 
 function initNumbCollage(p) {
   collageBlocks = [];
@@ -7201,7 +7201,6 @@ function initNumbCollage(p) {
   for (let i = 0; i < count; i++) {
     let w = p.random(minW, maxW);
     let h = p.random(minH, maxH);
-    // Rotation: 0°, 90°, 180°, or 270°
     let rot = 0;
     if (p.random() < (S.numbRotateChance ?? 0.5)) {
       let opts = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
@@ -7215,14 +7214,18 @@ function initNumbCollage(p) {
       vy: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5),
       textDensity: p.random(0.6, 1.4),
       textSizeFactor: p.random(0.7, 1.3),
-      z: p.random() // for sorting
+      z: p.random()
     });
   }
 }
 
 function drawNumbCollage(p, t) {
   let W = p.width, H = p.height;
-  if (!collageBlocks.length) initNumbCollage(p);
+
+  // Safety: ensure blocks exist (lazy init)
+  if (!collageBlocks || collageBlocks.length === 0) {
+    initNumbCollage(p);
+  }
 
   // Parameters with defaults
   let driftX = S.numbDriftX ?? 0.5;
@@ -7263,7 +7266,6 @@ function drawNumbCollage(p, t) {
   for (let b of collageBlocks) {
     // Get color from palette
     let col = pickColor(p, b.x, b.y, t);
-    // Apply block opacity
     let c = p.color(col);
     c.setAlpha(blockOpacity * 255);
 
@@ -7273,7 +7275,7 @@ function drawNumbCollage(p, t) {
 
     let hw = b.w/2, hh = b.h/2;
 
-    // ── Edge tearing (draw irregular polygon instead of rect) ───────────────
+    // ── Edge tearing ────────────────────────────────────────────────────────
     CTX.beginPath();
     if (edgeTear > 0) {
       let steps = 8;
@@ -7309,7 +7311,7 @@ function drawNumbCollage(p, t) {
     CTX.fillStyle = c;
     CTX.fill();
 
-    // ── Paper grain (noise overlay) ─────────────────────────────────────────
+    // ── Paper grain ─────────────────────────────────────────────────────────
     if (paperGrain) {
       CTX.save();
       CTX.clip();
@@ -7341,7 +7343,6 @@ function drawNumbCollage(p, t) {
           let jx = (Math.random() - 0.5) * jitterAmt;
           let jy = (Math.random() - 0.5) * jitterAmt;
 
-          // Pick a token (cycling through "麻木的")
           let idx = (Math.floor(xx / step) + Math.floor(yy / step)) % tokens.length;
           let ch = tokens[idx];
 
@@ -7350,7 +7351,6 @@ function drawNumbCollage(p, t) {
           CTX.textAlign = 'center';
           CTX.textBaseline = 'middle';
 
-          // Ink bleed: draw a blurred version behind
           if (inkBleed > 0) {
             CTX.save();
             CTX.filter = `blur(${inkBleed * 3}px)`;
