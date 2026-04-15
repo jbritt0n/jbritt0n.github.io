@@ -10882,3 +10882,101 @@ function togglePanel() {
 </script>
 </body>
 </html>
+
+
+// APPENDIX
+// ─────────────────────────────────────────────────────────────────────────────
+// MODE REFACTORING INSTRUCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// 🧠 When refactoring a legacy drawXXX(p, t) function, follow this checklist.
+// Use the current state object S (defined in DEFAULT_STATE and extended by
+// PARAM_REGISTRY). Keep the original character and structure intact – only
+// replace hardcoded constants with variable references where appropriate.
+//
+// 1. Global Field & Motion Parameters (always available)
+//    ┌─────────────────────┬──────────────────────────────────────────────────┐
+//    │ Variable            │ Use instead of hardcoded value                   │
+//    ├─────────────────────┼──────────────────────────────────────────────────┤
+//    │ S.spacing           │ Grid step (pixels)                               │
+//    │ S.maxSize           │ Maximum font size                                │
+//    │ S.density           │ Threshold for character placement (0..1)         │
+//    │ S.speed             │ Time multiplier (already applied to t)           │
+//    │ S.wave              │ Amplitude for displacements, pulse strength      │
+//    │ S.turb              │ Frequency multiplier for waves, turbulence       │
+//    │ S.noiseScale        │ Scale for Perlin/simplex noise fields            │
+//    │ S.charNoiseScale    │ Scale for character selection noise (mottling)   │
+//    │ S.jitter            │ Random position jitter (handled in dc)           │
+//    │ S.entropy           │ Glitch probability (already in pickChar)         │
+//    │ S.caseGlitch        │ Case flipping probability (already in pickChar)  │
+//    │ S.flipChance        │ Mirror probability (already in dc)               │
+//    │ S.flipHMirror       │ Global horizontal mirror toggle (in dc)          │
+//    │ S.flipVMirror       │ Global vertical mirror toggle (in dc)            │
+//    │ S.charRotation      │ Global character rotation (degrees → rad in dc)  │
+//    │ S.fontStack         │ Font family (already in dc)                      │
+//    │ S.blendMode         │ Canvas composite operation (set globally)        │
+//    │ S.trailPersist      │ Frame persistence (handled in p.draw)            │
+//    │ S.bg                │ Background colour (canvas clear)                 │
+//    │ S.palette           │ Active colour palette (used by pickColor)        │
+//    │ S.accent / Amt      │ Primary accent colour & probability              │
+//    │ S.accent2 / Amt2    │ Secondary accent colour & probability            │
+//    │ S.colorMapMode      │ Colour mapping strategy (noise, radial, etc.)    │
+//    │ S.noiseType         │ Noise texture (perlin, cellular, etc.)           │
+//    │ S.noiseOctaves      │ fBm octave count                                 │
+//    │ S.noiseFalloff      │ Amplitude falloff per octave                     │
+//    └─────────────────────┴──────────────────────────────────────────────────┘
+//
+// 1b. Global Glitch Parameters (available for any mode)
+//    ┌──────────────────────┬─────────────────────────────────────────────────┐
+//    │ Variable             │ Description                                     │
+//    ├──────────────────────┼─────────────────────────────────────────────────┤
+//    │ S.glitchIntensity    │ Displacement strength (0 = off, 1 = max)        │
+//    │ S.glitchChromatic    │ Offset R/G/B channels separately (boolean)      │
+//    │ S.glitchScanlines    │ Overlay dark scanlines (boolean)                │
+//    │ S.glitchPixelate     │ Blocky low‑res rendering (boolean)              │
+//    └──────────────────────┴─────────────────────────────────────────────────┘
+//
+//    Helper functions (callable from any mode):
+//      applyGlitchOffset(p, x, y, t, [intensity]) → {x, y}
+//      applyChromaticGlitch(p, x, y, t) → {r:{x,y}, g:{x,y}, b:{x,y}}
+//      applyScanline(x, y, w, h, row)   // draws scanline on CTX
+//
+// 2. Mode‑Specific Parameters (defined in PARAM_REGISTRY[mode])
+//    For the mode being refactored, look up its entry in PARAM_REGISTRY.
+//    Each parameter has an id that maps to S[id]. Replace hardcoded values
+//    with S[id] (with a fallback to the original default).
+//
+// 3. Noise Calls – Migration to sampleNoise
+//    Use sampleNoise(p, nx, ny, nt) for density gates, colour mapping,
+//    and any organic field that should respect noiseType, noiseOctaves, etc.
+//    Keep raw p.noise() for purely geometric offsets unless you want them
+//    to also change with noise type.
+//
+// 4. Character Selection – Already modernised (pickChar)
+//
+// 5. Drawing Characters – Use dc()
+//    All character drawing must go through dc(x, y, size, rotation, colour, char).
+//
+// 6. Reinitialisation – State Arrays
+//    Modes with persistent arrays (rainDrops, tessGrid, etc.) are re‑initialised
+//    automatically by ri() when relevant parameters change.
+//
+// 7. Step‑by‑Step Refactoring Workflow
+//    • Identify the mode.
+//    • Look up PARAM_REGISTRY[mode] for custom parameters.
+//    • Replace hardcoded multipliers with S.param || default.
+//    • Replace density/colour noise with sampleNoise where appropriate.
+//    • Test with various slider settings.
+//
+// 8. Do NOT Change
+//    • Overall loop structure.
+//    • Core mathematical relationships.
+//    • The way pcc or pickColor is used.
+//
+// 9. After Refactoring
+//    • Add mode parameters to PARAM_REGISTRY.
+//    • Update init function if needed.
+//    • Test thoroughly.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
