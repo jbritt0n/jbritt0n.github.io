@@ -473,6 +473,12 @@ select option{background:var(--ink)}
       Entropy &amp; Glitch <span class="sec-arrow" id="arr-sub-entropy">›</span>
     </div>
     <div class="sec-body collapsed" id="body-sub-entropy" style="padding:0 0 .5rem 0">
+      <div class="sl2">Global Glitch</div>
+      <div class="rw"><div class="rl"><span class="rn">Glitch intensity</span><span class="rv" id="vGlitchInt">0</span></div>
+        <input type="range" id="sGlitchInt" min="0" max="100" value="0" step="2" title="Global displacement strength (0 = off)"></div>
+      <div class="tr"><span class="tl">Chromatic shift</span><button class="tb" id="btnGlitchChromatic" title="Offset R/G/B channels separately">Off</button></div>
+      <div class="tr"><span class="tl">Scanlines</span><button class="tb" id="btnGlitchScanlines" title="Add dark scanlines">Off</button></div>
+      <div class="tr"><span class="tl">Pixelate</span><button class="tb" id="btnGlitchPixelate" title="Blocky low‑res look">Off</button></div>
       <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Replaces characters with random glitch symbols at this probability"></div>
       <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Randomly flips character case (uppercase ↔ lowercase)"></div>
       <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Probability of flipping a character horizontally or vertically"></div>
@@ -1446,6 +1452,10 @@ let S={
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
+  glitchIntensity: 0.0,        // 0 = off, 1 = max displacement
+  glitchChromatic: false,      // whether to offset R/G/B channels separately
+  glitchScanlines: false,      // overlay dark scanlines
+  glitchPixelate: false,       // blocky/pixelated rendering
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
   blendMode: 'source-over',
   colorMapMode: 'noise', // Default mode
@@ -1543,6 +1553,10 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
 
+  
+
+
+  
 // ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
 
 function worleyNoise(x, y, t) {
@@ -1961,6 +1975,68 @@ function pickColor(p, x, y, t) {
 
 function pcc(p,x,y,t){return {ch:pickChar(p,x,y,t),col:pickColor(p,x,y,t)};}
 
+
+// ── Global Glitch Helpers ─────────────────────────────────────────────────────
+/**
+ * Apply glitch displacement to a coordinate.
+ * @param {p5} p - p5 instance
+ * @param {number} x - original x
+ * @param {number} y - original y
+ * @param {number} t - time
+ * @param {number} [intensity] - override global intensity (optional)
+ * @returns {{x: number, y: number}} displaced coordinates
+ */
+function applyGlitchOffset(p, x, y, t, intensity = null) {
+  let int = intensity !== null ? intensity : (S.glitchIntensity || 0);
+  if (int <= 0) return { x, y };
+  // Use sampleNoise so noiseType and octaves affect the glitch pattern
+  let nx = sampleNoise(p, x * 0.01, y * 0.01, t * 2) * 2 - 1;
+  let ny = sampleNoise(p, x * 0.01 + 10, y * 0.01 + 10, t * 1.7) * 2 - 1;
+  let amt = int * 20 * (1 + S.wave * 0.01);
+  return {
+    x: x + nx * amt,
+    y: y + ny * amt
+  };
+}
+/**
+ * Apply chromatic glitch – returns three displaced coordinates for R,G,B.
+ * @param {p5} p - p5 instance
+ * @param {number} x - original x
+ * @param {number} y - original y
+ * @param {number} t - time
+ * @returns {{r: {x,y}, g: {x,y}, b: {x,y}}}
+ */
+function applyChromaticGlitch(p, x, y, t) {
+  let int = S.glitchIntensity || 0;
+  return {
+    r: applyGlitchOffset(p, x, y, t, int),
+    g: applyGlitchOffset(p, x, y, t, int * 1.2),
+    b: applyGlitchOffset(p, x, y, t, int * 1.4)
+  };
+}
+
+/**
+ * Draw a scanline effect over a rectangular area.
+ * Call this after drawing a pixel block, or use as a post‑process.
+ * @param {number} x - block x
+ * @param {number} y - block y
+ * @param {number} w - block width
+ * @param {number} h - block height
+ * @param {number} row - current row index (for scanline parity)
+ */
+function applyScanline(x, y, w, h, row) {
+  if (!S.glitchScanlines) return;
+  CTX.save();
+  CTX.globalAlpha = 0.25;
+  CTX.fillStyle = '#000000';
+  if (row % 2 === 0) {
+    CTX.fillRect(x, y, w, h * 0.5);
+  }
+  CTX.restore();
+}
+
+
+  
 // ── INIT HELPERS ─────────────────────────────────────────────────────────────
 // INIT RAIN (used by Rain1 and Rain2)
 function initRain(W, H) {
@@ -7850,6 +7926,10 @@ const DEFAULT_STATE = {
   // ========== ENTROPY & GLITCH ==========
   entropy: 0,                        // Probability (0–1) of replacing char with glitch symbol
   caseGlitch: 0,                     // Probability (0–1) of toggling character case
+  glitchIntensity: 0.0,        // 0 = off, 1 = max displacement
+  glitchChromatic: false,      // whether to offset R/G/B channels separately
+  glitchScanlines: false,      // overlay dark scanlines
+  glitchPixelate: false,       // blocky/pixelated rendering
   // ========== FONT ==========
   fontKey: 'courier',                // Identifier for selected font
   fontStack: "'Courier New',Courier,monospace",  // CSS font-family string
@@ -10041,7 +10121,6 @@ function initCalligraphySection() {
 document.addEventListener('DOMContentLoaded', initCalligraphySection);
 
 
-// ── CALLIGRAPHY ENABLE/DISABLE TOGGLE ──────────────────────────────────────
 // ── CALLIGRAPHY ENABLE/DISABLE TOGGLE ──────────────────────────────────────
 let calligraphyToggle = document.getElementById('btnCalligraphyEnable');
 if (calligraphyToggle) {
