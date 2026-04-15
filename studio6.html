@@ -350,7 +350,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
         <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
         <button class="mb" data-mode="collagewash" title="Collage Wash - Numb">Collage Wash</button>
-        <button class="mb" data-mode="numbcollage" title="numb">NumbCollage</button>
+        <button class="mb" data-mode="numbcollage" title="Collage of drifting paper rectangles with Chinese text '麻木的'">📰 Numb Collage</button>
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
       </div>
     </div>
@@ -7186,100 +7186,184 @@ function drawMonogrid(p, t) {
 
 
 // ── NUMB COLLAGE ──────────────────────────────
+// ── NUMB COLLAGE MODE ────────────────────────────────────────────────────────
 let collageBlocks = [];
 
 function initNumbCollage(p) {
   collageBlocks = [];
-
-  let count = S.blockCount || 40;
+  let count = Math.floor(S.numbBlockCount ?? 40);
+  let minW = S.numbBlockMinSize ?? 60;
+  let maxW = S.numbBlockMaxSize ?? 180;
+  let minH = S.numbBlockMinSize ?? 50;
+  let maxH = S.numbBlockMaxSize ?? 140;
 
   for (let i = 0; i < count; i++) {
-    let w = p.random(S.blockMinSize, S.blockMaxSize);
-    let h = p.random(S.blockMinSize, S.blockMaxSize);
-
+    let w = p.random(minW, maxW);
+    let h = p.random(minH, maxH);
+    // Rotation: 0°, 90°, 180°, or 270°
+    let rot = 0;
+    if (p.random() < (S.numbRotateChance ?? 0.5)) {
+      let opts = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+      rot = p.random(opts);
+    }
     collageBlocks.push({
       x: p.random(p.width),
       y: p.random(p.height),
-      w,
-      h,
-      rot: p.random() < (S.rotateChance || 0.4)
-        ? (p.random() < (S.verticalBias || 0.6) ? p.HALF_PI : 0)
-        : 0,
-      speedX: p.random(-1, 1),
-      speedY: p.random(-1, 1),
-      textScale: p.random(),
-      density: p.random(0.5, 1.5)
+      w, h, rot,
+      vx: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5),
+      vy: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5),
+      textDensity: p.random(0.6, 1.4),
+      textSizeFactor: p.random(0.7, 1.3),
+      z: p.random() // for sorting
     });
   }
 }
-  
+
 function drawNumbCollage(p, t) {
+  let W = p.width, H = p.height;
   if (!collageBlocks.length) initNumbCollage(p);
 
-  let driftX = S.driftX || 0.3;
-  let driftY = S.driftY || 0.8;
+  // Parameters with defaults
+  let driftX = S.numbDriftX ?? 0.5;
+  let driftY = S.numbDriftY ?? 0.8;
+  let edgeTear  = S.numbEdgeTear ?? 0.5;
+  let paperGrain = S.numbPaperGrain ?? true;
+  let inkBleed   = S.numbInkBleed ?? 0.4;
+  let sortByY    = S.numbSortByY ?? true;
+  let textColor  = S.numbTextColor ?? '#1a1a1a';
+  let textOpacity = S.numbTextOpacity ?? 0.85;
+  let blockOpacity = S.numbBlockOpacity ?? 0.9;
+  let showText   = S.numbShowText ?? true;
+
+  // Sort blocks for z‑index (back to front)
+  if (sortByY) {
+    collageBlocks.sort((a, b) => a.y - b.y);
+  } else {
+    collageBlocks.sort((a, b) => a.z - b.z);
+  }
+
+  // Update positions
+  if (S.playing) {
+    for (let b of collageBlocks) {
+      b.x += b.vx * driftX * S.speed * 60;
+      b.y += b.vy * driftY * S.speed * 60;
+      // Wrap around
+      if (b.x > W + b.w) b.x = -b.w;
+      if (b.x < -b.w) b.x = W + b.w;
+      if (b.y > H + b.h) b.y = -b.h;
+      if (b.y < -b.h) b.y = H + b.h;
+    }
+  }
+
+  // Pre‑compute text tokens
+  let rawText = S.numbText ?? '麻木的';
+  let tokens = rawText.split('');
 
   for (let b of collageBlocks) {
+    // Get color from palette
+    let col = pickColor(p, b.x, b.y, t);
+    // Apply block opacity
+    let c = p.color(col);
+    c.setAlpha(blockOpacity * 255);
 
-    // --- Animate position ---
-    b.x += b.speedX * driftX;
-    b.y += b.speedY * driftY;
+    CTX.save();
+    CTX.translate(b.x + b.w/2, b.y + b.h/2);
+    CTX.rotate(b.rot);
 
-    // wrap around screen
-    if (b.x > p.width) b.x = 0;
-    if (b.x < 0) b.x = p.width;
-    if (b.y > p.height) b.y = 0;
-    if (b.y < 0) b.y = p.height;
+    let hw = b.w/2, hh = b.h/2;
 
-    // --- Color (green/orange palette via existing system) ---
-    let r = pcc(p, b.x, b.y, t);
-    let col = r.col;
+    // ── Edge tearing (draw irregular polygon instead of rect) ───────────────
+    CTX.beginPath();
+    if (edgeTear > 0) {
+      let steps = 8;
+      let tearAmt = edgeTear * 6;
+      for (let i = 0; i <= steps; i++) {
+        let t = i / steps;
+        let x = -hw + t * b.w;
+        let y = -hh + (sampleNoise(p, b.x + x, b.y - hh, 0) - 0.5) * tearAmt;
+        if (i === 0) CTX.moveTo(x, y); else CTX.lineTo(x, y);
+      }
+      for (let i = 0; i <= steps; i++) {
+        let t = i / steps;
+        let x = hw;
+        let y = -hh + t * b.h + (sampleNoise(p, b.x + hw, b.y - hh + t*b.h, 0) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let t = i / steps;
+        let x = -hw + t * b.w;
+        let y = hh + (sampleNoise(p, b.x + x, b.y + hh, 0) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let t = i / steps;
+        let x = -hw;
+        let y = -hh + t * b.h + (sampleNoise(p, b.x - hw, b.y - hh + t*b.h, 0) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      CTX.closePath();
+    } else {
+      CTX.rect(-hw, -hh, b.w, b.h);
+    }
+    CTX.fillStyle = c;
+    CTX.fill();
 
-    // --- Draw rectangle ---
-    p.push();
-    p.translate(b.x, b.y);
-    p.rotate(b.rot);
-
-    p.noStroke();
-    p.fill(col);
-    p.rect(0, 0, b.w, b.h);
-
-    // --- Text fill ---
-    let textSizeMin = S.textSizeMin || 10;
-    let textSizeMax = S.textSizeMax || 28;
-
-    let baseSize = p.lerp(textSizeMin, textSizeMax, b.textScale);
-
-    let step = baseSize * (S.textDensity || 1.0);
-
-    p.fill(0, 180); // ink-like dark overlay
-    p.textAlign(p.LEFT, p.TOP);
-
-    for (let xx = 0; xx < b.w; xx += step) {
-      for (let yy = 0; yy < b.h; yy += step) {
-
-        // jitter (collage imperfection)
-        let jx = p.random(-S.jitterAmt, S.jitterAmt);
-        let jy = p.random(-S.jitterAmt, S.jitterAmt);
-
-        p.textSize(baseSize * p.random(0.8, 1.2));
-
-        let txt = "麻木的";
-
-        p.push();
-
-        // random orientation per glyph cluster
-        if (p.random() < (S.rotateChance || 0.4)) {
-          p.rotate(p.HALF_PI);
+    // ── Paper grain (noise overlay) ─────────────────────────────────────────
+    if (paperGrain) {
+      CTX.save();
+      CTX.clip();
+      CTX.globalAlpha = 0.08;
+      for (let i = 0; i < b.w * b.h * 0.01; i++) {
+        let gx = -hw + Math.random() * b.w;
+        let gy = -hh + Math.random() * b.h;
+        let grain = sampleNoise(p, b.x + gx, b.y + gy, 0);
+        if (grain > 0.6) {
+          CTX.fillStyle = grain > 0.8 ? '#000000' : '#ffffff';
+          CTX.fillRect(gx, gy, 1.5, 1.5);
         }
+      }
+      CTX.restore();
+    }
 
-        p.text(txt, xx + jx, yy + jy);
+    // ── Text fill ───────────────────────────────────────────────────────────
+    if (showText) {
+      let baseSize = p.map(b.textSizeFactor, 0.7, 1.3,
+        (S.numbTextSizeMin ?? 12), (S.numbTextSizeMax ?? 24));
+      let step = baseSize * (S.numbTextDensity ?? 1.0) * b.textDensity;
+      let jitterAmt = S.numbJitter ?? 1.5;
 
-        p.pop();
+      CTX.fillStyle = textColor;
+      CTX.globalAlpha = textOpacity;
+
+      for (let xx = -hw + step/2; xx < hw; xx += step) {
+        for (let yy = -hh + step/2; yy < hh; yy += step) {
+          let jx = (Math.random() - 0.5) * jitterAmt;
+          let jy = (Math.random() - 0.5) * jitterAmt;
+
+          // Pick a token (cycling through "麻木的")
+          let idx = (Math.floor(xx / step) + Math.floor(yy / step)) % tokens.length;
+          let ch = tokens[idx];
+
+          let sz = baseSize * p.random(0.8, 1.2);
+          CTX.font = sz + 'px ' + S.fontStack;
+          CTX.textAlign = 'center';
+          CTX.textBaseline = 'middle';
+
+          // Ink bleed: draw a blurred version behind
+          if (inkBleed > 0) {
+            CTX.save();
+            CTX.filter = `blur(${inkBleed * 3}px)`;
+            CTX.globalAlpha = textOpacity * 0.3;
+            CTX.fillText(ch, xx + jx, yy + jy);
+            CTX.restore();
+          }
+
+          CTX.fillText(ch, xx + jx, yy + jy);
+        }
       }
     }
 
-    p.pop();
+    CTX.restore();
   }
 }
 
@@ -9264,20 +9348,29 @@ const PARAM_REGISTRY = {
     { id: 'colLayers', label: 'Layers', min: 1, max: 5, step: 1, def: 2 }
   ],
   numbcollage: [
-    { id:'blockCount',     label:'Block count',        min:10,  max:120, step:1,   def:40,  scale:1 },
-    { id:'blockMinSize',   label:'Min block size',     min:40,  max:300, step:1,   def:80,  scale:1 },
-    { id:'blockMaxSize',   label:'Max block size',     min:80,  max:600, step:1,   def:220, scale:1 },
-    { id:'driftX',         label:'Drift X',            min:-2,  max:2,   step:0.01,def:0.3, scale:1 },
-    { id:'driftY',         label:'Drift Y',            min:-2,  max:2,   step:0.01,def:0.8, scale:1 },
-    { id:'textDensity',    label:'Text density',       min:0.2, max:2.5, step:0.01,def:1.0, scale:1 },
-    { id:'textSizeMin',    label:'Min text size',      min:6,   max:40,  step:1,   def:10,  scale:1 },
-    { id:'textSizeMax',    label:'Max text size',      min:12,  max:120, step:1,   def:28,  scale:1 },
-    { id:'rotateChance',   label:'Rotate chance',      min:0,   max:1,   step:0.01,def:0.4, scale:1 },
-    { id:'verticalBias',   label:'Vertical bias',      min:0,   max:1,   step:0.01,def:0.6, scale:1 },
-    { id:'jitterAmt',      label:'Jitter',             min:0,   max:20,  step:0.1, def:4,   scale:1 },
-    { id:'overlap',        label:'Overlap feel',       min:0,   max:1,   step:0.01,def:0.5, scale:1 }
+    { id: 'numbText',          label: 'Text',           type: 'text', def: '麻木的' },
+    { id: 'numbBlockCount',    label: 'Block count',    min: 5,  max: 100, step: 5,  def: 40, scale: 1,
+      extra: function() { if (window._st) initNumbCollage(window._st.p); } },
+    { id: 'numbBlockMinSize',  label: 'Min block size', min: 20, max: 120, step: 5, def: 60, scale: 1 },
+    { id: 'numbBlockMaxSize',  label: 'Max block size', min: 40, max: 250, step: 10, def: 140, scale: 1 },
+    { id: 'numbRotateChance',  label: 'Rotate chance',  min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'numbDriftSpeed',    label: 'Drift speed',    min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'numbDriftX',        label: 'Drift X',        min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'numbDriftY',        label: 'Drift Y',        min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
+    { id: 'numbEdgeTear',      label: 'Edge tear',      min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'numbPaperGrain',    label: 'Paper grain',    type: 'toggle', def: true },
+    { id: 'numbInkBleed',      label: 'Ink bleed',      min: 0,  max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbSortByY',       label: 'Sort by Y (back to front)', type: 'toggle', def: true },
+    { id: 'numbTextColor',     label: 'Text color',     type: 'color', def: '#1a1a1a' },
+    { id: 'numbTextOpacity',   label: 'Text opacity',   min: 0,  max: 1,   step: 0.05, def: 0.85, scale: 1 },
+    { id: 'numbBlockOpacity',  label: 'Block opacity',  min: 0,  max: 1,   step: 0.05, def: 0.9, scale: 1 },
+    { id: 'numbShowText',      label: 'Show text',      type: 'toggle', def: true },
+    { id: 'numbTextSizeMin',   label: 'Min text size',  min: 6,  max: 30,  step: 1, def: 12, scale: 1 },
+    { id: 'numbTextSizeMax',   label: 'Max text size',  min: 10, max: 50,  step: 2, def: 24, scale: 1 },
+    { id: 'numbTextDensity',   label: 'Text density',   min: 0.5, max: 2.5, step: 0.1, def: 1.0, scale: 1 },
+    { id: 'numbJitter',        label: 'Text jitter',    min: 0,  max: 8,   step: 0.5, def: 1.5, scale: 1 },
   ],
-  
+    
   //to be refactored
   hatch: [
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
