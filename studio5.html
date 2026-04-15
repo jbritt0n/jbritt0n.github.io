@@ -2427,34 +2427,34 @@ function drawHexCRT(p, t) {
     p.background(S.bg || 0);
     let size = S.hexScale || 80;
     let layers = S.hexLayers || 4;
-    let rot = t * (S.hexRotation || 0.5) * 0.001;
-    let glitch = S.hexGlitch || 0.1;
+    let rot = t * (S.hexRotation || 0.5) * 0.0005;
+    let glitchChance = S.hexGlitch || 0.1;
 
-    // Hexagonal grid spacing
-    let hSpacing = size;
     let vSpacing = size * 0.866;
 
     for (let y = 0; y < p.height + size; y += vSpacing) {
         let rowIdx = Math.floor(y / vSpacing);
         let xOff = (rowIdx % 2 === 0) ? 0 : size * 0.5;
 
-        for (let x = xOff; x < p.width + size; x += hSpacing) {
-            // Apply Glitch filter per row/cell
-            let gCheck = sampleNoise(p, 0, y * 0.1, t * 0.01);
+        for (let x = xOff; x < p.width + size; x += size) {
+            // Glitch horizontal tear
+            let g = (typeof sampleNoise === 'function') ? sampleNoise(p, 0, y * 0.1, t * 0.01) : p.noise(y * 0.1, t * 0.01);
             let rx = x;
-            if (gCheck < glitch) rx += (p.width * 0.1) * (gCheck - 0.5);
+            if (g < glitchChance) rx += (p.width * 0.1) * (g - 0.5);
 
-            // Calculate layered brightness from hex rotation
+            // Layered noise brightness
             let bright = 0;
             for (let i = 1; i <= layers; i++) {
+                let factor = 0.4 / i;
                 let nx = (rx * Math.cos(rot) - y * Math.sin(rot)) * 0.005;
                 let ny = (rx * Math.sin(rot) + y * Math.cos(rot)) * 0.005;
-                bright += (0.4 / i) * sampleNoise(p, nx * i, ny * i, t * 0.0005);
+                let val = (typeof sampleNoise === 'function') ? sampleNoise(p, nx * i, ny * i, t * 0.0005) : p.noise(nx * i, ny * i);
+                bright += val * factor;
             }
 
-            if (bright > 0.15) {
-                let col = pickColor(bright);
-                let char = S.matrixMode ? pickChar() : '⬢'; // Hex character
+            if (bright > 0.18) {
+                let col = (typeof pickColor === 'function') ? pickColor(bright) : p.color(bright * 255);
+                let char = S.matrixMode ? ((typeof pickChar === 'function') ? pickChar() : 'x') : '⬢';
                 dc(p, rx, y, size * bright * 0.9, 0, col, char);
             }
         }
@@ -2464,38 +2464,38 @@ function drawHexCRT(p, t) {
 // ── CRT STRIPES MODE ─────────────────────────────────────────────────────────
 function drawCRTStripes(p, t) {
     p.background(S.bg || 0);
+    // Safety Fallbacks
     let gx = S.crtGridX || 60;
     let gy = S.crtGridY || 60;
-    let cw = p.width / gx;
-    let ch = p.height / gy;
-    
     let speed = S.crtSpeed || 1.5;
     let thresh = S.crtThreshold || 0.5;
     let aberration = S.crtAberration || 20;
+    
+    let cw = p.width / gx;
+    let ch = p.height / gy;
 
     for (let j = 0; j < gy; j++) {
-        // Row-based velocity logic
-        let rowRand = sampleNoise(p, 0, j * 0.01, 1);
-        let vel = (t * 0.1 * speed * gx) * (-0.5 * rowRand);
+        // Row-based velocity logic using sampleNoise (or p.noise if sampleNoise fails)
+        let rowRand = (typeof sampleNoise === 'function') ? sampleNoise(p, 0, j * 0.01, 1) : p.noise(j * 0.01);
+        let vel = (t * 0.05 * speed * gx) * (-0.5 * rowRand);
         
         for (let i = 0; i < gx; i++) {
             let x = i * cw;
             let y = j * ch;
             
-            // Check pattern threshold using sampleNoise
-            let n = sampleNoise(p, (i + vel) * 0.01, j * 0.01, 0);
+            let n = (typeof sampleNoise === 'function') ? sampleNoise(p, (i + vel) * 0.02, j * 0.02, 0) : p.noise(i * 0.02, j * 0.02);
             
             if (n > thresh) {
-                let col = pickColor(n);
-                let char = pickChar();
+                let col = (typeof pickColor === 'function') ? pickColor(n) : p.color(255);
+                let char = (typeof pickChar === 'function') ? pickChar() : '■';
                 
-                // Draw RGB offsets for the glitch feel
+                // Draw Glitch Layers
                 p.push();
                 // Red Shift
-                dc(p, x + aberration, y, cw * 0.8, 0, p.color(255, 0, 0, 150), char);
-                // Cyan Shift (Green + Blue)
-                dc(p, x - aberration, y, cw * 0.8, 0, p.color(0, 255, 255, 150), char);
-                // Main Character
+                dc(p, x + aberration, y, cw * 0.8, 0, p.color(255, 0, 0, 180), char);
+                // Cyan Shift
+                dc(p, x - aberration, y, cw * 0.8, 0, p.color(0, 255, 255, 180), char);
+                // Main
                 dc(p, x, y, cw * 0.8, 0, col, char);
                 p.pop();
             }
@@ -8375,18 +8375,18 @@ const PARAM_REGISTRY = {
     { id: 'glitchMinSize',       label: 'Min char size',   min: 2,   max: 20,  step: 1,   def: 4,   scale: 1 },
     { id: 'glitchMaxSizeMult',   label: 'Max size mult',   min: 0.3, max: 1,   step: 0.05,def: 0.65,scale: 1 },
   ],
-  hexcrt: [
-    { id: 'hexScale',       label: 'Hex size',          min: 10, max: 150, step: 5, def: 80,  scale: 1 },
-    { id: 'hexLayers',      label: 'Complexity',        min: 1, max: 12, step: 1, def: 4,   scale: 1 },
-    { id: 'hexGlitch',      label: 'Glitch chance',     min: 0, max: 0.5, step: 0.01, def: 0.1, scale: 1 },
-    { id: 'hexRotation',    label: 'Spin speed',        min: 0, max: 2, step: 0.1, def: 0.5, scale: 1 }
-  ],
   crtstripes: [
     { id: 'crtGridX',       label: 'Grid columns',      min: 10, max: 200, step: 5, def: 60,  scale: 1 },
     { id: 'crtGridY',       label: 'Grid rows',         min: 10, max: 200, step: 5, def: 60,  scale: 1 },
     { id: 'crtSpeed',       label: 'Flow speed',        min: 0, max: 5, step: 0.1, def: 1.5, scale: 1 },
     { id: 'crtThreshold',   label: 'Pattern density',   min: 0.1, max: 0.9, step: 0.05, def: 0.5, scale: 1 },
-    { id: 'crtAberration',  label: 'RGB offset',       min: 0, max: 100, step: 1, def: 20,  scale: 1 }
+    { id: 'crtAberration',  label: 'RGB offset',        min: 0, max: 100, step: 1, def: 20,  scale: 1 }
+  ],
+  hexcrt: [
+    { id: 'hexScale',       label: 'Hex size',          min: 10, max: 150, step: 5, def: 80,  scale: 1 },
+    { id: 'hexLayers',      label: 'Complexity',        min: 1, max: 12, step: 1, def: 4,   scale: 1 },
+    { id: 'hexGlitch',      label: 'Glitch chance',     min: 0, max: 0.5, step: 0.01, def: 0.1, scale: 1 },
+    { id: 'hexRotation',    label: 'Spin speed',        min: 0, max: 2, step: 0.1, def: 0.5, scale: 1 }
   ],
   webster: [
     { id: 'websterNoiseFreq',      label: 'Wave freq',       min: 0.002, max: 0.03, step: 0.001, def: 0.008, scale: 1 },
