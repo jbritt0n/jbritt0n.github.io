@@ -2424,91 +2424,84 @@ function drawGlitch(p, t) {
 
 // ── HEX-GRID CRT MODE (Optimized with Visible Hexes) ─────────────────────────
 function drawHexCRT(p, t) {
-  p.background(S.bg || 0);
-  let size = S.spacing || 20;
-  let layers = S.hexLayers || 3;
-  let rotation = t * (S.hexRotation || 0.5) * 0.01;
+    p.background(S.bg || 0);
+    let size = S.hexScale || 80;
+    let layers = S.hexLayers || 4;
+    let rot = t * (S.hexRotation || 0.5) * 0.001;
+    let glitch = S.hexGlitch || 0.1;
 
-  // Grid iteration
-  for (let y = 0; y < p.height + size; y += size * 0.866) {
-    for (let x = 0; x < p.width + size; x += size) {
-      let xOff = (Math.floor(y / (size * 0.866)) % 2 === 0) ? 0 : size * 0.5;
-      let cx = x + xOff;
-      let cy = y;
+    // Hexagonal grid spacing
+    let hSpacing = size;
+    let vSpacing = size * 0.866;
 
-      // Apply Glitch Filter logic
-      let g = sampleNoise(p, 0, cy * 0.1, t * 0.01);
-      let renderX = cx;
-      if (g < (S.hexGlitch || 0.1)) renderX += (p.width * 0.05) * g;
+    for (let y = 0; y < p.height + size; y += vSpacing) {
+        let rowIdx = Math.floor(y / vSpacing);
+        let xOff = (rowIdx % 2 === 0) ? 0 : size * 0.5;
 
-      // Calculate Layered Brightness
-      let bright = 0;
-      for (let i = 1; i <= layers; i++) {
-        let factor = 0.5 / i;
-        // Sample noise based on hex-rotated coordinates
-        let nx = (renderX * Math.cos(rotation) - cy * Math.sin(rotation)) * 0.01;
-        let ny = (renderX * Math.sin(rotation) + cy * Math.cos(rotation)) * 0.01;
-        
-        let val = sampleNoise(p, nx * i, ny * i, t * 0.001);
-        bright += val * factor;
-      }
+        for (let x = xOff; x < p.width + size; x += hSpacing) {
+            // Apply Glitch filter per row/cell
+            let gCheck = sampleNoise(p, 0, y * 0.1, t * 0.01);
+            let rx = x;
+            if (gCheck < glitch) rx += (p.width * 0.1) * (gCheck - 0.5);
 
-      if (bright > 0.2) {
-        // Use dc() for rendering "sub-pixels" or hex shapes
-        let col = pickColor(bright); 
-        let char = S.matrixMode ? pickChar() : '■';
-        
-        // Draw the "Pixelized" CRT look
-        p.push();
-        p.translate(renderX, cy);
-        dc(p, 0, 0, size * bright, 0, col, char);
-        p.pop();
-      }
+            // Calculate layered brightness from hex rotation
+            let bright = 0;
+            for (let i = 1; i <= layers; i++) {
+                let nx = (rx * Math.cos(rot) - y * Math.sin(rot)) * 0.005;
+                let ny = (rx * Math.sin(rot) + y * Math.cos(rot)) * 0.005;
+                bright += (0.4 / i) * sampleNoise(p, nx * i, ny * i, t * 0.0005);
+            }
+
+            if (bright > 0.15) {
+                let col = pickColor(bright);
+                let char = S.matrixMode ? pickChar() : '⬢'; // Hex character
+                dc(p, rx, y, size * bright * 0.9, 0, col, char);
+            }
+        }
     }
-  }
 }
 
 // ── CRT STRIPES MODE ─────────────────────────────────────────────────────────
 function drawCRTStripes(p, t) {
-  p.background(S.bg || 0);
-  let stepY = S.spacing || 10;
-  let speed = S.crtSpeed || 1.5;
-  let threshold = S.crtDensity || 0.5;
-  let aberration = S.crtAberration || 20;
-
-  for (let y = 0; y < p.height; y += stepY) {
-    // Determine row-specific speed/offset using sampleNoise
-    let rowSeed = sampleNoise(p, 0, y * 0.01, t * 0.0001);
-    let rowVel = (speed * 10) * (rowSeed - 0.5);
-    let offsetX = (t * rowVel) % p.width;
-
-    // Draw three passes for RGB Aberration
-    // Red channel
-    p.stroke(255, 0, 0);
-    drawStripeRow(p, y, offsetX + aberration, stepY, threshold);
+    p.background(S.bg || 0);
+    let gx = S.crtGridX || 60;
+    let gy = S.crtGridY || 60;
+    let cw = p.width / gx;
+    let ch = p.height / gy;
     
-    // Green/Cyan channel
-    p.stroke(0, 255, 255);
-    drawStripeRow(p, y, offsetX, stepY, threshold);
-    
-    // Blue channel
-    p.stroke(0, 0, 255);
-    drawStripeRow(p, y, offsetX - aberration, stepY, threshold);
-  }
-}
+    let speed = S.crtSpeed || 1.5;
+    let thresh = S.crtThreshold || 0.5;
+    let aberration = S.crtAberration || 20;
 
-function drawStripeRow(p, y, offX, h, thresh) {
-  let segWidth = h * 4;
-  for (let x = -segWidth; x < p.width + segWidth; x += segWidth) {
-    // Pattern logic from ShaderToy translated to noise
-    let n = sampleNoise(p, (x + offX) * 0.001, y * 0.001, 0);
-    if (n > thresh) {
-      p.strokeWeight(h * 0.5);
-      p.line(x + offX, y, x + offX + segWidth * 0.7, y);
+    for (let j = 0; j < gy; j++) {
+        // Row-based velocity logic
+        let rowRand = sampleNoise(p, 0, j * 0.01, 1);
+        let vel = (t * 0.1 * speed * gx) * (-0.5 * rowRand);
+        
+        for (let i = 0; i < gx; i++) {
+            let x = i * cw;
+            let y = j * ch;
+            
+            // Check pattern threshold using sampleNoise
+            let n = sampleNoise(p, (i + vel) * 0.01, j * 0.01, 0);
+            
+            if (n > thresh) {
+                let col = pickColor(n);
+                let char = pickChar();
+                
+                // Draw RGB offsets for the glitch feel
+                p.push();
+                // Red Shift
+                dc(p, x + aberration, y, cw * 0.8, 0, p.color(255, 0, 0, 150), char);
+                // Cyan Shift (Green + Blue)
+                dc(p, x - aberration, y, cw * 0.8, 0, p.color(0, 255, 255, 150), char);
+                // Main Character
+                dc(p, x, y, cw * 0.8, 0, col, char);
+                p.pop();
+            }
+        }
     }
-  }
 }
-
   
 // ── WEBSTER 2.0 Refactored 4/13/26 ───────────────────────────────────────────
 function drawWebster(p, t) {
