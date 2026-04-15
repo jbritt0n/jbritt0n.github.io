@@ -7181,6 +7181,106 @@ function drawMonogrid(p, t) {
 
 
 
+
+// ── YANDINSKY MODE ───────────────────────────────────────────────────────────
+// Inspired by Vasily Kandinsky: geometric clusters with vertical lines on yellow.
+
+function drawYandinsky(p, t) {
+  let W = p.width, H = p.height;
+  let sp = S.spacing || 15;
+
+  // Mode parameters (with defaults)
+  let clusterCount = Math.floor(S.kClusterCount ?? 12);
+  let burstElements = Math.floor(S.kBurstElements ?? 8);
+  let burstSpread  = S.kBurstSpread ?? 0.5;       // multiplier for distance from center
+  let lineCount    = Math.floor(S.kLineCount ?? 20);
+  let lineWidth    = S.kLineWidth ?? 1.0;
+  let lineLength   = S.kLineLength ?? 0.8;        // fraction of canvas height
+  let useGeomChars = S.kGeomChars ?? true;        // use particle/geometric chars
+
+  // Colors: we'll use palette colors, but the user expects yellow, blue, black, magenta.
+  // The preset will set an appropriate palette; here we just use pickColor.
+
+  // ── 1. Vertical lines (thin, semi‑transparent black) ──────────────────────
+  CTX.save();
+  CTX.strokeStyle = '#000000';
+  CTX.lineWidth = lineWidth;
+  CTX.globalAlpha = 0.3;
+
+  for (let i = 0; i < lineCount; i++) {
+    let x = (i / lineCount) * W + (Math.sin(i * 1.3) * sp * 0.5);
+    let yStart = H * ((1 - lineLength) / 2);
+    let yEnd = H - yStart;
+    // Slight wobble
+    x += sampleNoise(p, i * 0.5, t * 0.1) * sp * 0.8;
+    CTX.beginPath();
+    CTX.moveTo(x, yStart);
+    CTX.lineTo(x, yEnd);
+    CTX.stroke();
+  }
+  CTX.globalAlpha = 1.0;
+  CTX.restore();
+
+  // ── 2. Geometric clusters ─────────────────────────────────────────────────
+  // Temporarily switch to particle mode if geometric characters are enabled
+  let originalParticleMode = S.useParticleMode;
+  let originalCharSet = S.charSet;
+
+  if (useGeomChars) {
+    S.useParticleMode = true;
+    // Rotate through geometric particle sets
+    let geomSets = ['slate', 'arch', 'petals', 'neural', 'husks', 'filaments'];
+    S.charSet = geomSets[Math.floor(t * 0.1) % geomSets.length];
+  }
+
+  for (let c = 0; c < clusterCount; c++) {
+    // Cluster center – driven by noise field for organic placement
+    let cx = sampleNoise(p, c * 0.15, t * 0.1, 0) * W;
+    let cy = sampleNoise(p, c * 0.2 + 50, t * 0.1, 0) * H;
+
+    // Base color for this cluster
+    let col = pickColor(p, cx, cy, t);
+
+    for (let i = 0; i < burstElements; i++) {
+      // Angle: spiral out from center with noise variation
+      let angle = (i / burstElements) * Math.PI * 2 + t * 0.02;
+      angle += sampleNoise(p, cx * 0.01, cy * 0.01, i * 0.1) * 1.5;
+
+      // Distance from center grows with i, scaled by burstSpread
+      let dist = i * sp * burstSpread;
+
+      let x = cx + Math.cos(angle) * dist;
+      let y = cy + Math.sin(angle) * dist;
+
+      if (x < 0 || x > W || y < 0 || y > H) continue;
+
+      // Character selection
+      let ch = pickChar(p, x, y, t);
+
+      // Size: varies with distance and noise
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.2);
+      let sz = p.map(n, 0, 1, S.maxSize * 0.5, S.maxSize);
+
+      dc(x, y, sz, angle, col, ch);
+
+      // Optional: draw a subtle shadow rectangle for depth (Webster style)
+      if (S.kDrawShadows) {
+        CTX.save();
+        CTX.globalAlpha = 0.15;
+        CTX.fillStyle = '#000000';
+        CTX.fillRect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
+        CTX.restore();
+      }
+    }
+  }
+
+  // Restore original character mode
+  S.useParticleMode = originalParticleMode;
+  S.charSet = originalCharSet;
+}
+
+
+  
   
 // ── POETIC TENDRILS MODE (Enhanced with line spacing & noise bias) ────────────
 function drawPoeticTendrils(p, t) {
@@ -8418,6 +8518,7 @@ function rd() {
       case 'circlefield':    drawCircleField(p, t);     break;  
       case 'trabeculum':     drawTrabeculum(p, t);     break;  
       case 'poetictendrils': drawPoeticTendrils(p, t); break;
+      case 'yandinsky': drawYandinsky(p, t); break;  
   
     } // closes switch
 } // closes drawScene function
@@ -8986,6 +9087,16 @@ const PARAM_REGISTRY = {
     { id: 'poeticSeedSpread', label: 'Seed spread',   min: 0,   max: 1.0, step: 0.1, def: 1.0, scale: 1, hint: '0 = edges only, 1 = full canvas' },
     { id: 'poeticSeedBias',   label: 'Noise bias',    min: 0,   max: 1.0, step: 0.05, def: 0.0, scale: 1, hint: 'Strength of Perlin noise clustering' },
     { id: 'poeticSeedNoiseScale', label: 'Bias scale', min: 0.001, max: 0.05, step: 0.002, def: 0.01, scale: 1, hint: 'Noise zoom for bias' },
+  ],
+   yandinsky: [
+    { id: 'kClusterCount',  label: 'Cluster count',   min: 3,  max: 30,  step: 1, def: 12, scale: 1 },
+    { id: 'kBurstElements', label: 'Burst elements',  min: 2,  max: 20,  step: 1, def: 8,  scale: 1 },
+    { id: 'kBurstSpread',   label: 'Burst spread',    min: 0.1, max: 2.0, step: 0.1, def: 0.5, scale: 1 },
+    { id: 'kLineCount',     label: 'Vertical lines',  min: 0,  max: 40,  step: 1, def: 20, scale: 1 },
+    { id: 'kLineWidth',     label: 'Line width',      min: 0.2, max: 3.0, step: 0.1, def: 1.0, scale: 1 },
+    { id: 'kLineLength',    label: 'Line length',     min: 0.2, max: 1.0, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'kGeomChars',     label: 'Geometric chars', type: 'toggle', def: true },
+    { id: 'kDrawShadows',   label: 'Draw shadows',    type: 'toggle', def: false },
   ],
   
   //to be refactored
@@ -10817,6 +10928,10 @@ const PRESETS={
   hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
   circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
   poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
+  kandinsky_composition: function() {  ap({    mode: 'kandinsky',font: 'courier', bg: '#FFD700', palette: 'site', accent: '#FF00FF',accentAmt: 0.3,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20, turb: 0.006,noiseType: 'simplex',kClusterCount: 14,kBurstElements: 10,kBurstSpread: 0.7,kLineCount: 24,kLineWidth: 0.8,kLineLength: 0.9,kGeomChars: true,kDrawShadows: true,});},
+
+
+
   
 };
 
