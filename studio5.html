@@ -2422,85 +2422,180 @@ function drawGlitch(p, t) {
   CTX.globalAlpha = 1;
 }
 
-// ── HEX-GRID CRT MODE (Optimized with Visible Hexes) ─────────────────────────
+// ── HEX-GRID CRT MODE (Refactored) ──────────────────────────────────────────
 function drawHexCRT(p, t) {
-    p.background(S.bg || 0);
-    let size = S.hexScale || 80;
-    let layers = S.hexLayers || 4;
-    let rot = t * (S.hexRotation || 0.5) * 0.0005;
-    let glitchChance = S.hexGlitch || 0.1;
+  let W = p.width, H = p.height;
 
-    let vSpacing = size * 0.866;
+  // Mode parameters (from registry)
+  let hexSize     = S.hexSize ?? 30;          // size of hex cells
+  let layers      = S.hexLayers ?? 4;         // noise layers for complexity
+  let glitchChance= S.hexGlitch ?? 0.1;       // probability of horizontal tear
+  let rotSpeed    = S.hexRotation ?? 0.5;     // rotation speed multiplier
 
-    for (let y = 0; y < p.height + size; y += vSpacing) {
-        let rowIdx = Math.floor(y / vSpacing);
-        let xOff = (rowIdx % 2 === 0) ? 0 : size * 0.5;
+  // Global glitch integration
+  let glitchInt   = S.glitchIntensity ?? 0.0;
+  let chromatic   = S.glitchChromatic ?? false;
+  let scanlines   = S.glitchScanlines ?? false;
+  let pixelate    = S.glitchPixelate ?? false;
 
-        for (let x = xOff; x < p.width + size; x += size) {
-            // Glitch horizontal tear
-            let g = (typeof sampleNoise === 'function') ? sampleNoise(p, 0, y * 0.1, t * 0.01) : p.noise(y * 0.1, t * 0.01);
-            let rx = x;
-            if (g < glitchChance) rx += (p.width * 0.1) * (g - 0.5);
+  // Hex grid constants (pointy-top)
+  const sqrt3 = Math.sqrt(3);
+  let hexW = hexSize * 2;
+  let hexH = sqrt3 * hexSize;
+  let vSpacing = hexSize * 1.5;  // vertical distance between rows
 
-            // Layered noise brightness
-            let bright = 0;
-            for (let i = 1; i <= layers; i++) {
-                let factor = 0.4 / i;
-                let nx = (rx * Math.cos(rot) - y * Math.sin(rot)) * 0.005;
-                let ny = (rx * Math.sin(rot) + y * Math.cos(rot)) * 0.005;
-                let val = (typeof sampleNoise === 'function') ? sampleNoise(p, nx * i, ny * i, t * 0.0005) : p.noise(nx * i, ny * i);
-                bright += val * factor;
-            }
+  // Step for pixelation
+  let step = pixelate ? Math.max(2, Math.floor(S.spacing * 0.8)) : 1;
 
-            if (bright > 0.18) {
-                let col = (typeof pickColor === 'function') ? pickColor(bright) : p.color(bright * 255);
-                let char = S.matrixMode ? ((typeof pickChar === 'function') ? pickChar() : 'x') : '⬢';
-                dc(p, rx, y, size * bright * 0.9, 0, col, char);
-            }
+  // Rotation angle (time‑varying)
+  let rot = t * rotSpeed * 0.005;
+
+  CTX.save();
+  if (pixelate) CTX.imageSmoothingEnabled = false;
+
+  for (let y = 0; y < H + vSpacing; y += vSpacing) {
+    let row = Math.floor(y / vSpacing);
+    let xOff = (row % 2 === 0) ? 0 : hexSize;
+
+    for (let x = xOff; x < W + hexSize; x += hexW) {
+      for (let sy = 0; sy < vSpacing; sy += step) {
+        for (let sx = 0; sx < hexW; sx += step) {
+          let px = x + sx;
+          let py = y + sy;
+          if (px < 0 || px >= W || py < 0 || py >= H) continue;
+
+          // Apply global glitch offset
+          let pos = applyGlitchOffset(p, px, py, t, glitchInt);
+          let gx = pos.x, gy = pos.y;
+
+          // Horizontal tear (additional glitch)
+          let g = sampleNoise(p, 0, gy * 0.1, t * 0.01);
+          if (g < glitchChance) gx += (W * 0.1) * (g - 0.5);
+
+          // Rotate coordinates for layered noise
+          let cosR = Math.cos(rot), sinR = Math.sin(rot);
+          let nx = (gx * cosR - gy * sinR) * 0.005;
+          let ny = (gx * sinR + gy * cosR) * 0.005;
+
+          // Accumulate brightness from multiple noise layers
+          let bright = 0;
+          for (let i = 1; i <= layers; i++) {
+            let factor = 0.4 / i;
+            let n = sampleNoise(p, nx * i, ny * i, t * 0.0005);
+            bright += n * factor;
+          }
+
+          // Threshold to create distinct hex cells
+          if (bright > 0.18) {
+            let col = pickColor(p, gx, gy, t);
+            // Map brightness to character size
+            let sz = p.map(bright, 0.18, 1, S.maxSize * 0.4, S.maxSize);
+            let ch = pickChar(p, gx, gy, t);
+            dc(gx, gy, sz, 0, col, ch);
+          }
         }
+      }
     }
+  }
+
+  // Scanline overlay (global)
+  if (scanlines) {
+    CTX.fillStyle = '#000000';
+    for (let y = 0; y < H; y += 4) {
+      CTX.globalAlpha = 0.15;
+      CTX.fillRect(0, y, W, 2);
+    }
+    CTX.globalAlpha = 1.0;
+  }
+
+  CTX.restore();
 }
 
-// ── CRT STRIPES MODE ─────────────────────────────────────────────────────────
-function drawCRTStripes(p, t) {
-    p.background(S.bg || 0);
-    // Safety Fallbacks
-    let gx = S.crtGridX || 60;
-    let gy = S.crtGridY || 60;
-    let speed = S.crtSpeed || 1.5;
-    let thresh = S.crtThreshold || 0.5;
-    let aberration = S.crtAberration || 20;
-    
-    let cw = p.width / gx;
-    let ch = p.height / gy;
 
-    for (let j = 0; j < gy; j++) {
-        // Row-based velocity logic using sampleNoise (or p.noise if sampleNoise fails)
-        let rowRand = (typeof sampleNoise === 'function') ? sampleNoise(p, 0, j * 0.01, 1) : p.noise(j * 0.01);
-        let vel = (t * 0.05 * speed * gx) * (-0.5 * rowRand);
-        
-        for (let i = 0; i < gx; i++) {
-            let x = i * cw;
-            let y = j * ch;
-            
-            let n = (typeof sampleNoise === 'function') ? sampleNoise(p, (i + vel) * 0.02, j * 0.02, 0) : p.noise(i * 0.02, j * 0.02);
-            
-            if (n > thresh) {
-                let col = (typeof pickColor === 'function') ? pickColor(n) : p.color(255);
-                let char = (typeof pickChar === 'function') ? pickChar() : '■';
-                
-                // Draw Glitch Layers
-                p.push();
-                // Red Shift
-                dc(p, x + aberration, y, cw * 0.8, 0, p.color(255, 0, 0, 180), char);
-                // Cyan Shift
-                dc(p, x - aberration, y, cw * 0.8, 0, p.color(0, 255, 255, 180), char);
-                // Main
-                dc(p, x, y, cw * 0.8, 0, col, char);
-                p.pop();
-            }
+// ── CRT STRIPES MODE (Refactored) ───────────────────────────────────────────
+function drawCrtStripes(p, t) {
+  let W = p.width, H = p.height;
+
+  // Mode parameters
+  let gridX       = S.crtGridX ?? 60;
+  let gridY       = S.crtGridY ?? 40;
+  let speed       = S.crtSpeed ?? 1.5;
+  let threshold   = S.crtThreshold ?? 0.5;
+  let aberration  = S.crtAberration ?? 20;
+
+  // Global glitch
+  let glitchInt   = S.glitchIntensity ?? 0.0;
+  let chromatic   = S.glitchChromatic ?? true;
+  let scanlines   = S.glitchScanlines ?? true;
+  let pixelate    = S.glitchPixelate ?? false;
+
+  let cellW = W / gridX;
+  let cellH = H / gridY;
+  let step = pixelate ? Math.max(2, Math.floor(cellW * 0.8)) : 1;
+
+  // Simple deterministic random for pattern
+  function rand(seed) {
+    return Math.abs(Math.sin(seed * 127.1 + seed * 311.7) * 43758.5453) % 1;
+  }
+
+  CTX.save();
+  if (pixelate) CTX.imageSmoothingEnabled = false;
+
+  for (let gy = 0; gy < gridY; gy++) {
+    let yBase = gy * cellH;
+
+    // Row‑based velocity (from original shader)
+    let rowRand = rand(gy * 0.01);
+    let vel = t * 0.05 * speed * gridX * (-0.5 * rowRand);
+
+    for (let gx = 0; gx < gridX; gx++) {
+      let xBase = gx * cellW;
+
+      // Pattern value using noise
+      let n = sampleNoise(p, (gx + vel) * 0.02, gy * 0.02, 0);
+      if (n <= threshold) continue;
+
+      for (let dy = 0; dy < cellH; dy += step) {
+        for (let dx = 0; dx < cellW; dx += step) {
+          let x = xBase + dx;
+          let y = yBase + dy;
+
+          // Apply glitch offset
+          let pos = applyGlitchOffset(p, x, y, t, glitchInt);
+          let px = pos.x, py = pos.y;
+
+          let col = pickColor(p, px, py, t);
+          let ch = pickChar(p, px, py, t);
+          let sz = cellW * 0.8;
+
+          if (chromatic && aberration > 0) {
+            // Red channel offset
+            let offR = applyGlitchOffset(p, x + aberration, y, t, glitchInt * 1.2);
+            let colR = p.color(255, 0, 0, 180);
+            dc(offR.x, offR.y, sz, 0, colR, ch);
+            // Blue channel offset
+            let offB = applyGlitchOffset(p, x - aberration, y, t, glitchInt * 1.4);
+            let colB = p.color(0, 255, 255, 180);
+            dc(offB.x, offB.y, sz, 0, colB, ch);
+          }
+          // Main character
+          dc(px, py, sz, 0, col, ch);
         }
+      }
     }
+  }
+
+  // Scanlines
+  if (scanlines) {
+    CTX.fillStyle = '#000000';
+    for (let y = 0; y < H; y += 4) {
+      CTX.globalAlpha = 0.2;
+      CTX.fillRect(0, y, W, 2);
+    }
+    CTX.globalAlpha = 1.0;
+  }
+
+  CTX.restore();
 }
   
 // ── WEBSTER 2.0 Refactored 4/13/26 ───────────────────────────────────────────
@@ -8375,18 +8470,18 @@ const PARAM_REGISTRY = {
     { id: 'glitchMinSize',       label: 'Min char size',   min: 2,   max: 20,  step: 1,   def: 4,   scale: 1 },
     { id: 'glitchMaxSizeMult',   label: 'Max size mult',   min: 0.3, max: 1,   step: 0.05,def: 0.65,scale: 1 },
   ],
-  crtstripes: [
-    { id: 'crtGridX',       label: 'Grid columns',      min: 10, max: 200, step: 5, def: 60,  scale: 1 },
-    { id: 'crtGridY',       label: 'Grid rows',         min: 10, max: 200, step: 5, def: 60,  scale: 1 },
-    { id: 'crtSpeed',       label: 'Flow speed',        min: 0, max: 5, step: 0.1, def: 1.5, scale: 1 },
-    { id: 'crtThreshold',   label: 'Pattern density',   min: 0.1, max: 0.9, step: 0.05, def: 0.5, scale: 1 },
-    { id: 'crtAberration',  label: 'RGB offset',        min: 0, max: 100, step: 1, def: 20,  scale: 1 }
-  ],
   hexcrt: [
-    { id: 'hexScale',       label: 'Hex size',          min: 10, max: 150, step: 5, def: 80,  scale: 1 },
-    { id: 'hexLayers',      label: 'Complexity',        min: 1, max: 12, step: 1, def: 4,   scale: 1 },
-    { id: 'hexGlitch',      label: 'Glitch chance',     min: 0, max: 0.5, step: 0.01, def: 0.1, scale: 1 },
-    { id: 'hexRotation',    label: 'Spin speed',        min: 0, max: 2, step: 0.1, def: 0.5, scale: 1 }
+    { id: 'hexSize',    label: 'Hex size',       min: 10, max: 80, step: 2, def: 30, scale: 1 },
+    { id: 'hexLayers',  label: 'Complexity',     min: 1,  max: 12, step: 1, def: 4,  scale: 1 },
+    { id: 'hexGlitch',  label: 'Glitch chance',  min: 0,  max: 0.5, step: 0.01, def: 0.1, scale: 1 },
+    { id: 'hexRotation',label: 'Spin speed',     min: 0,  max: 2,  step: 0.1, def: 0.5, scale: 1 },
+  ],
+  crtstripes: [
+    { id: 'crtGridX',      label: 'Grid columns',   min: 10, max: 200, step: 5, def: 60,  scale: 1 },
+    { id: 'crtGridY',      label: 'Grid rows',      min: 5,  max: 120, step: 5, def: 40,  scale: 1 },
+    { id: 'crtSpeed',      label: 'Scroll speed',   min: 0,  max: 3,   step: 0.1, def: 1.5, scale: 1 },
+    { id: 'crtThreshold',  label: 'Stripe density', min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'crtAberration', label: 'RGB separation', min: 0,  max: 100, step: 1,   def: 20,  scale: 1 },
   ],
   webster: [
     { id: 'websterNoiseFreq',      label: 'Wave freq',       min: 0.002, max: 0.03, step: 0.001, def: 0.008, scale: 1 },
