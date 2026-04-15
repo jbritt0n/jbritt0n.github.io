@@ -349,6 +349,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
         <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
         <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
+        <button class="mb" data-mode="collagewash" title="Collage Wash - Numb">Collage Wash</button>
       </div>
     </div>
     
@@ -7180,6 +7181,59 @@ function drawMonogrid(p, t) {
 }      // closes drawMonogrid function
 
 
+  
+// ── Collage Wash (numb) ───────────────────────────────────────────────────────────
+function drawCollageWash(p, t) {
+  let W = p.width, H = p.height;
+  let colW = S.colWidth || 80;
+  let layers = S.colLayers || 2;
+  
+  // 1. Draw the "Painted Wash" Layer first (The Background stains)
+  // We use the green and orange from your palette
+  for (let l = 0; l < layers; l++) {
+    let washY = p.noise(l, t * 0.1) * H;
+    let washH = p.noise(l + 10, t * 0.05) * (H * 0.4);
+    
+    CTX.globalAlpha = S.colBleed || 0.4;
+    let washCol = S.palette[l % S.palette.length];
+    CTX.fillStyle = washCol;
+    CTX.fillRect(0, washY, W, washH);
+    CTX.globalAlpha = 1.0;
+  }
+
+  // 2. Draw the "Newspaper Strips" (The Columns)
+  for (let x = 0; x < W; x += colW) {
+    // Offset each column vertically to create the "Cut-Up" look
+    let yOffset = p.noise(x * 0.01, t * 0.05) * 50;
+    let sp = S.spacing || 12;
+    
+    for (let curY = 0; curY < H; curY += sp) {
+      // Logic: Only draw a character if it's within the "torn" edge of the strip
+      let stripNoise = p.noise(x * 0.05, (curY + yOffset) * 0.01, t * 0.1);
+      if (stripNoise < 0.2) continue; // "Torn" gap
+
+      // Pick a color based on whether the "Wash" is over this area
+      let n = getColorIndex(p, x, curY, t);
+      let col = S.palette[Math.floor(n * S.palette.length) % S.palette.length];
+      
+      // Webster-style: Darker text for the "printed" areas
+      if (stripNoise > 0.7) col = "#111111"; 
+
+      let ch = S.chars[Math.floor(p.noise(x, curY) * S.chars.length)];
+      let sz = S.maxSize * (0.8 + stripNoise * 0.4);
+
+      // Render the "ink"
+      dc(x + (p.noise(curY)*10), curY + yOffset, sz, 0, col, ch);
+    }
+    
+    // 3. Draw "Tear Lines" (Faint vertical borders)
+    CTX.strokeStyle = "rgba(255,255,255,0.1)";
+    CTX.beginPath();
+    CTX.moveTo(x, 0);
+    CTX.lineTo(x, H);
+    CTX.stroke();
+  }
+}  
 
 
 // ── YANDINSKY MODE ───────────────────────────────────────────────────────────
@@ -8519,7 +8573,8 @@ function rd() {
       case 'trabeculum':     drawTrabeculum(p, t);     break;  
       case 'poetictendrils': drawPoeticTendrils(p, t); break;
       case 'yandinsky': drawYandinsky(p, t); break;  
-  
+      case 'collagewash': drawCollageWash(p, t); break; 
+        
     } // closes switch
 } // closes drawScene function
     
@@ -9098,6 +9153,12 @@ const PARAM_REGISTRY = {
     { id: 'kGeomChars',     label: 'Geometric chars', type: 'toggle', def: true },
     { id: 'kDrawShadows',   label: 'Draw shadows',    type: 'toggle', def: false },
   ],
+  collageWash: [
+    { id: 'colWidth', label: 'Strip Width', min: 20, max: 200, step: 10, def: 80 },
+    { id: 'colBleed', label: 'Paint Bleed', min: 0, max: 1, step: 0.1, def: 0.4 },
+    { id: 'colLayers', label: 'Layers', min: 1, max: 5, step: 1, def: 2 }
+  ],
+
   
   //to be refactored
   hatch: [
