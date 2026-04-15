@@ -3409,8 +3409,7 @@ function drawVoronoi(p, t) {
   }
 }
 
-// ── TRABECULUM MODE - added 4/14/26 ──────────────────────────────────────────────────────────
-// ── TRABECULUM MODE (Refactored) ─────────────────────────────────────────────
+// ── TRABECULUM MODE - Refactored 4/14/26 ──────────────────────────────────────────────────────────
 let trabePoints = [];
 
 function initTrabeculum(W, H) {
@@ -3430,8 +3429,7 @@ function initTrabeculum(W, H) {
 function drawTrabeculum(p, t) {
   let W = p.width, H = p.height;
   if (trabePoints.length === 0) initTrabeculum(W, H);
-
-  // Update points (respect S.playing and global speed)
+  // Update points
   if (S.playing) {
     let speed = S.trabeSpeed ?? 1.0;
     for (let pt of trabePoints) {
@@ -3443,81 +3441,122 @@ function drawTrabeculum(p, t) {
       if (pt.y > H) pt.y = 0;
     }
   }
-
-  // Mode parameters with defaults
-  let thickness = S.trabeThickness ?? 0.05;
-  let smooth    = S.trabeSmooth ?? 0.02;
-  let pulse     = S.trabePulse ?? false;
-  let showIso   = S.trabeShowIso ?? true;
-  let isoFreq   = S.trabeFreq ?? 10;
-  let isoOpacity= S.trabeIsoOpacity ?? 0.1;
-  let charDensity = S.trabeCharDensity ?? 0.5;    // new parameter
-  let useChars  = S.trabeUseChars ?? true;        // toggle character fill
-
-  // Normalisation factor (scale with maxSize)
+  // Parameters with defaults
+  let thickness   = S.trabeThickness ?? 0.05;
+  let smooth      = S.trabeSmooth ?? 0.02;
+  let pulse       = S.trabePulse ?? false;
+  let lineWidth   = S.trabeLineWidth ?? 1.5;
+  let useChars    = S.trabeUseChars ?? true;
+  let showIso     = S.trabeShowIso ?? true;
+  let isoFreq     = S.trabeFreq ?? 10;
+  let isoOpacity  = S.trabeIsoOpacity ?? 0.15;
+  let borderColor = S.trabeStroke ?? '#ff9900';
+  let isoColor    = S.trabeIsoCol ?? '#444444';
+  // Normalisation factor
   let normFactor = (S.maxSize / 10) || 2.0;
-
-  // Pre‑compute colours (use palette/accent for characters)
-  let bgColor   = S.bg || '#050505';
-  let strokeCol = S.trabeStroke ?? '#ff9900';
-  let isoCol    = S.trabeIsoCol ?? '#444444';
-
-  // Character grid step – driven by S.spacing
-  let step = Math.max(4, S.spacing);
-
-  for (let x = 0; x < W; x += step) {
-    for (let y = 0; y < H; y += step) {
-      // Find two closest points
-      let d1 = Infinity, d2 = Infinity;
+  // Grid resolution for line extraction (lower = finer, but slower)
+  let res = Math.max(2, Math.floor(S.spacing * 0.5));
+  let cols = Math.ceil(W / res) + 1;
+  let rows = Math.ceil(H / res) + 1;
+  // Build distance field (to nearest point) using sampleNoise for optional perturbation
+  let field = new Float32Array(cols * rows);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let x = c * res;
+      let y = r * res;
+      let minD = Infinity;
       for (let pt of trabePoints) {
         let d = Math.hypot(x - pt.x, y - pt.y);
-        if (d < d1) { d2 = d1; d1 = d; }
-        else if (d < d2) { d2 = d; }
+        if (d < minD) minD = d;
       }
-
-      // Harmonic mean of distances
-      let val = 2.0 / (1.0 / Math.max(0.1, d1) + 1.0 / Math.max(0.1, d2));
-      val /= normFactor;
-
-      let borderEdge = thickness;
-      if (pulse) borderEdge += Math.sin(t * 0.05) * 0.02;
-
-      // Determine if we are near a cell border
-      let isBorder = (val < borderEdge);
-      let isTransition = (!isBorder && val < borderEdge + smooth);
-
-      // --- Character drawing (if enabled and density threshold met) ---
-      if (useChars) {
-        // Use sampleNoise for organic density variation (respects noiseType, octaves)
-        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.3);
-        if (n < charDensity) {
-          // Choose colour: use pickColor for palette/accent integration
-          let col = pickColor(p, x, y, t);
-          // For border areas, optionally override with accent colour
-          if (isBorder && S.accent !== 'none' && Math.random() < S.accentAmt) {
-            col = S.accent;
-          } else if (isTransition && S.accent2 !== 'none' && Math.random() < S.accentAmt2) {
-            col = S.accent2;
+      // Add subtle noise perturbation to field (respects noise type)
+      let n = sampleNoise(p, x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.3);
+      field[r * cols + c] = minD + n * 2;
+    }
+  }
+  // Normalise field to [0,1] based on max distance
+  let maxD = 0;
+  for (let i = 0; i < field.length; i++) if (field[i] > maxD) maxD = field[i];
+  maxD = maxD || 1;
+  for (let i = 0; i < field.length; i++) field[i] /= maxD;
+  // Draw isolines via marching squares
+  if (showIso) {
+    CTX.save();
+    CTX.lineCap = 'round';
+    CTX.lineJoin = 'round';
+    let levels = 8; // number of contour levels
+    for (let lv = 0; lv < levels; lv++) {
+      let threshold = (lv + 1) / (levels + 1);
+      if (pulse) threshold += Math.sin(t * 0.05) * 0.01;
+      // Color for this contour: use palette + mapping
+      let col = pickColor(p, 0, 0, t); // placeholder; we'll refine per segment
+      // For consistent line color, we can use borderColor or palette
+      let lineCol = borderColor;
+      if (S.colorMapMode !== 'noise') {
+        // Use mapping to vary line color
+        let ci = Math.floor(threshold * S.palette.length);
+        lineCol = S.palette[ci % S.palette.length];
+      }
+      if (S.accent !== 'none' && lv === 0) lineCol = S.accent;
+      CTX.strokeStyle = lineCol;
+      CTX.lineWidth = lineWidth * (lv === 0 ? 1.8 : 1.0);
+      CTX.globalAlpha = 0.6 + 0.3 * (1 - Math.abs(lv - levels/2) / levels);
+      // Marching squares edge extraction
+      for (let r = 0; r < rows - 1; r++) {
+        for (let c = 0; c < cols - 1; c++) {
+          let a = field[r * cols + c];
+          let b = field[r * cols + c + 1];
+          let d = field[(r + 1) * cols + c];
+          let e = field[(r + 1) * cols + c + 1];
+          let x0 = c * res, y0 = r * res;
+          // Linear interpolation along edges
+          let pts = [];
+          if ((a < threshold) !== (b < threshold))
+            pts.push({ x: x0 + res * (threshold - a) / (b - a), y: y0 });
+          if ((b < threshold) !== (e < threshold))
+            pts.push({ x: x0 + res, y: y0 + res * (threshold - b) / (e - b) });
+          if ((d < threshold) !== (e < threshold))
+            pts.push({ x: x0 + res * (threshold - d) / (e - d), y: y0 + res });
+          if ((a < threshold) !== (d < threshold))
+            pts.push({ x: x0, y: y0 + res * (threshold - a) / (d - a) });
+          if (pts.length >= 2) {
+            CTX.beginPath();
+            CTX.moveTo(pts[0].x, pts[0].y);
+            CTX.lineTo(pts[1].x, pts[1].y);
+            CTX.stroke();
           }
-
-          let ch = pickChar(p, x, y, t);
-          let sz = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
-          let rot = 0; // could add rotation based on angle to nearest point if desired
-
-          dc(x, y, sz, rot, col, ch);
+          if (pts.length === 4) {
+            CTX.beginPath();
+            CTX.moveTo(pts[2].x, pts[2].y);
+            CTX.lineTo(pts[3].x, pts[3].y);
+            CTX.stroke();
+          }
         }
       }
-
-      // --- Optional: draw isolines as background (can be disabled via showIso) ---
-      // (If you want to keep the pixel‑based effect, you can still use it,
-      //  but for a pure character mode we skip it. This block is commented out.)
-      /*
-      if (showIso && !isBorder) {
-        let iso = 0.5 + 0.5 * Math.sin(val * isoFreq);
-        let alpha = Math.max(0, Math.min(1, (val - borderEdge) / (S.maxSize - borderEdge) * isoOpacity));
-        // draw subtle iso lines via dc or canvas strokes...
+    }
+    CTX.restore();
+  }
+  // Character fill inside cells (optional)
+  if (useChars) {
+    let step = S.spacing;
+    for (let x = 0; x < W; x += step) {
+      for (let y = 0; y < H; y += step) {
+        // Determine cell index (nearest point)
+        let minD = Infinity, idx = 0;
+        for (let i = 0; i < trabePoints.length; i++) {
+          let d = Math.hypot(x - trabePoints[i].x, y - trabePoints[i].y);
+          if (d < minD) { minD = d; idx = i; }
+        }
+        // Use sampleNoise for density gating (global S.density)
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.5);
+        if (n < S.density) continue;
+        // Check if we are near the border? (optional: skip characters too close to edges)
+        // For simplicity, place characters everywhere inside cells.
+        let col = pickColor(p, x, y, t);
+        let ch = pickChar(p, x, y, t);
+        let sz = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
+        dc(x, y, sz, 0, col, ch);
       }
-      */
     }
   }
 }
@@ -8319,20 +8358,20 @@ const PARAM_REGISTRY = {
     { id:'vorSpeedMult',   label:'Site speed mult', min:0,  max:2, step:0.1, def:1.0, scale:1 },
   ],
     trabeculum: [
-  { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
-    extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
-  { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
-  { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
-  { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
-  { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
-  { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
-  { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
-  { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
-  { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.1,  scale: 1 },
-  { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
-  { id: 'trabeUseChars',label: 'Fill with characters', type: 'toggle', def: true },
-  { id: 'trabeCharDensity', label: 'Character density', min: 0, max: 1, step: 0.05, def: 0.5, scale: 1 },
-],
+    { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
+      extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
+    { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
+    { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
+    { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
+    { id: 'trabeLineWidth', label: 'Line width',     min: 0.5, max: 5,   step: 0.5, def: 1.5,  scale: 1 },
+    { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
+    { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
+    { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
+    { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
+    { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.15, scale: 1 },
+    { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
+    { id: 'trabeUseChars',label: 'Fill with characters', type: 'toggle', def: true },
+  ],
   reaction: [
     { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
     { id: 'reactKill',    label: 'Kill rate',    min: 10, max: 100, step: 1, def: 65, scale: 0.001 },
