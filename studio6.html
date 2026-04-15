@@ -7182,17 +7182,18 @@ function drawMonogrid(p, t) {
 
 
   
-// ── POETIC TENDRILS MODE (Enhanced) ─────────────────────────────────────────
+// ── POETIC TENDRILS MODE (Enhanced with line spacing & noise bias) ────────────
 function drawPoeticTendrils(p, t) {
   let W = p.width, H = p.height;
 
   // Text parameters
   let textSize      = S.poeticTextSize ?? 0.8;
-  let textWrap      = S.poeticTextWrap ?? true;        // wrap vs tile
-  let wrapWidth     = S.poeticWrapWidth ?? 0.8;        // fraction of canvas width
+  let textWrap      = S.poeticTextWrap ?? true;
+  let wrapWidth     = S.poeticWrapWidth ?? 0.8;
   let offsetX       = S.poeticOffsetX ?? 0;
   let offsetY       = S.poeticOffsetY ?? 0;
-  let textGlitch    = S.poeticTextGlitch ?? false;     // apply global entropy/glitch
+  let textGlitch    = S.poeticTextGlitch ?? false;
+  let lineSpacing   = S.poeticLineSpacing ?? 1.0;    // multiplier of char height
 
   // Tendril parameters
   let tendrilCount  = S.poeticCount ?? 80;
@@ -7201,8 +7202,10 @@ function drawPoeticTendrils(p, t) {
   let tendrilWidth  = S.poeticWidth ?? 1.2;
   let glowIntensity = S.poeticGlow ?? 0.6;
   let pulseSpeed    = S.poeticPulse ?? 0.8;
-  let seedDensity   = S.poeticSeedDensity ?? 0.4;      // probability per cell
-  let seedSpread    = S.poeticSeedSpread ?? 1.0;       // 0 = edges, 1 = full canvas
+  let seedDensity   = S.poeticSeedDensity ?? 0.4;
+  let seedSpread    = S.poeticSeedSpread ?? 1.0;
+  let seedBias      = S.poeticSeedBias ?? 0.0;       // 0 = uniform, 1 = noise‑driven clusters
+  let seedNoiseScale= S.poeticSeedNoiseScale ?? 0.01;
 
   // ── 1. Background poem text ───────────────────────────────────────────────
   let rawText = S.poeticPoemText;
@@ -7213,13 +7216,13 @@ function drawPoeticTendrils(p, t) {
   let sz = Math.max(2, S.spacing * textSize);
   let charW = sz * 0.63;
   let charH = sz * 1.05;
+  let rowH = charH * lineSpacing;   // line spacing applied
 
   if (textWrap) {
-    // Wrap text within a defined column width
     let colW = W * wrapWidth;
     let startX = (W - colW) / 2 + offsetX;
     let x = startX;
-    let y = charH + offsetY;
+    let y = rowH + offsetY;
     let tokIdx = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
 
     while (y < H) {
@@ -7233,18 +7236,17 @@ function drawPoeticTendrils(p, t) {
       x += charW;
       if (x + charW > startX + colW) {
         x = startX;
-        y += charH;
+        y += rowH;
       }
     }
   } else {
-    // Tile text across entire canvas (original Webster style)
     let tokOff = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
-    for (let y = sz + offsetY; y < H + sz; y += charH) {
+    for (let y = sz + offsetY; y < H + sz; y += rowH) {
       for (let x = offsetX; x < W + charW; x += charW) {
         let n = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.2);
         if (n < 0.25) continue;
         let col = pickColor(p, x, y, t);
-        let idx = (tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length;
+        let idx = (tokOff + Math.floor(x / charW) + Math.floor(y / rowH)) % tokens.length;
         let ch = tokens[idx];
         if (textGlitch && S.entropy > 0 && Math.random() < S.entropy) {
           ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
@@ -7258,17 +7260,27 @@ function drawPoeticTendrils(p, t) {
   let step = S.spacing;
   let seedPoints = [];
 
-  // Generate seed points based on spread and density
   for (let y = step; y < H - step; y += step * 1.5) {
     for (let x = step; x < W - step; x += step * 1.5) {
-      // Bias toward edges if seedSpread < 1
-      let edgeBias = 1.0;
+      // Base probability from density
+      let prob = seedDensity;
+
+      // Edge bias (seedSpread < 1)
       if (seedSpread < 1.0) {
         let dx = Math.abs(x - W/2) / (W/2);
         let dy = Math.abs(y - H/2) / (H/2);
-        edgeBias = Math.max(dx, dy);
+        let edgeFactor = Math.max(dx, dy);
+        prob *= (seedSpread + (1 - seedSpread) * edgeFactor);
       }
-      let prob = seedDensity * (seedSpread < 1.0 ? edgeBias : 1.0);
+
+      // Perlin‑noise bias (seedBias > 0)
+      if (seedBias > 0) {
+        let n = sampleNoise(p, x * seedNoiseScale, y * seedNoiseScale, t * 0.1);
+        // Map noise 0..1 to a factor: low noise = lower prob, high noise = higher prob
+        let noiseFactor = p.map(n, 0, 1, 1 - seedBias, 1 + seedBias);
+        prob *= noiseFactor;
+      }
+
       if (Math.random() > prob) continue;
       seedPoints.push({ x, y });
     }
@@ -8962,6 +8974,7 @@ const PARAM_REGISTRY = {
     { id: 'poeticWrapWidth', label: 'Wrap width',     min: 0.2, max: 1.0, step: 0.05, def: 0.8, scale: 1 },
     { id: 'poeticOffsetX',   label: 'Offset X',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
     { id: 'poeticOffsetY',   label: 'Offset Y',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
+    { id: 'poeticLineSpacing', label: 'Line spacing', min: 0.5, max: 3.0, step: 0.1, def: 1.0, scale: 1 },
     { id: 'poeticTextGlitch',label: 'Apply entropy to text', type: 'toggle', def: true },
     { id: 'poeticCount',     label: 'Tendril count',  min: 10, max: 200, step: 5, def: 80, scale: 1 },
     { id: 'poeticLength',    label: 'Tendril length', min: 2,  max: 20,  step: 1, def: 6,  scale: 1 },
@@ -8971,6 +8984,8 @@ const PARAM_REGISTRY = {
     { id: 'poeticPulse',     label: 'Pulse speed',    min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
     { id: 'poeticSeedDensity', label: 'Seed density', min: 0.05, max: 1.0, step: 0.05, def: 0.4, scale: 1 },
     { id: 'poeticSeedSpread', label: 'Seed spread',   min: 0,   max: 1.0, step: 0.1, def: 1.0, scale: 1, hint: '0 = edges only, 1 = full canvas' },
+    { id: 'poeticSeedBias',   label: 'Noise bias',    min: 0,   max: 1.0, step: 0.05, def: 0.0, scale: 1, hint: 'Strength of Perlin noise clustering' },
+    { id: 'poeticSeedNoiseScale', label: 'Bias scale', min: 0.001, max: 0.05, step: 0.002, def: 0.01, scale: 1, hint: 'Noise zoom for bias' },
   ],
   
   //to be refactored
