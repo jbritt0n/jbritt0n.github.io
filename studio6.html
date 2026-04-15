@@ -350,6 +350,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
         <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
         <button class="mb" data-mode="collagewash" title="Collage Wash - Numb">Collage Wash</button>
+        <button class="mb" data-mode="numbcollage" title="numb">NumbCollage</button>
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
       </div>
     </div>
@@ -8676,6 +8677,8 @@ function rd() {
       case 'poetictendrils': drawPoeticTendrils(p, t); break;
       case 'yandinsky': drawYandinsky(p, t); break;  
       case 'collagewash': drawCollageWash(p, t); break; 
+      case 'numbcollage': drawNumbCollage(p, t); break;   
+
         
     } // closes switch
 } // closes drawScene function
@@ -9260,7 +9263,20 @@ const PARAM_REGISTRY = {
     { id: 'colBleed', label: 'Paint Bleed', min: 0, max: 1, step: 0.1, def: 0.4 },
     { id: 'colLayers', label: 'Layers', min: 1, max: 5, step: 1, def: 2 }
   ],
-
+  numbCollage: [
+    { id:'blockCount',     label:'Block count',        min:10,  max:120, step:1,   def:40,  scale:1 },
+    { id:'blockMinSize',   label:'Min block size',     min:40,  max:300, step:1,   def:80,  scale:1 },
+    { id:'blockMaxSize',   label:'Max block size',     min:80,  max:600, step:1,   def:220, scale:1 },
+    { id:'driftX',         label:'Drift X',            min:-2,  max:2,   step:0.01,def:0.3, scale:1 },
+    { id:'driftY',         label:'Drift Y',            min:-2,  max:2,   step:0.01,def:0.8, scale:1 },
+    { id:'textDensity',    label:'Text density',       min:0.2, max:2.5, step:0.01,def:1.0, scale:1 },
+    { id:'textSizeMin',    label:'Min text size',      min:6,   max:40,  step:1,   def:10,  scale:1 },
+    { id:'textSizeMax',    label:'Max text size',      min:12,  max:120, step:1,   def:28,  scale:1 },
+    { id:'rotateChance',   label:'Rotate chance',      min:0,   max:1,   step:0.01,def:0.4, scale:1 },
+    { id:'verticalBias',   label:'Vertical bias',      min:0,   max:1,   step:0.01,def:0.6, scale:1 },
+    { id:'jitterAmt',      label:'Jitter',             min:0,   max:20,  step:0.1, def:4,   scale:1 },
+    { id:'overlap',        label:'Overlap feel',       min:0,   max:1,   step:0.01,def:0.5, scale:1 }
+  ],
   
   //to be refactored
   hatch: [
