@@ -313,6 +313,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="warp" title="Local space distortion and stretching">Warp</button>
         <button class="mb" data-mode="webster" title="Classic terminal-style block character layout">Blocks</button>
         <button class="mb" data-mode="glitch" title="Intentional pixel sorting and data corruption">Glitch</button>
+        <button class="mb" data-mode="hexcrt" title="Hexagonal grid with CRT glitch and scanlines">📺 Hex CRT</button>
         <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
         <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
         <button class="mb" data-mode="matrix" title="Digital rain code-stream aesthetic">Matrix</button>
@@ -2345,6 +2346,108 @@ function drawGlitch(p, t) {
   CTX.globalAlpha = 1;
 }
 
+// ── HEX-GRID CRT MODE (Refactored) ──────────────────────────────────────────
+function drawHexCRT(p, t) {
+  let W = p.width, H = p.height;
+
+  // Mode parameters with fallbacks
+  let res         = Math.max(1, Math.floor(S.hexRes ?? 3));
+  let hexScale    = S.hexScale ?? 0.02;
+  let glitchInt   = S.hexGlitchIntensity ?? 0.5;
+  let chromatic   = S.hexChromatic ?? true;
+  let scanlines   = S.hexScanlines ?? true;
+  let pixelate    = S.hexPixelate ?? true;
+  let useChars    = S.hexUseChars ?? false;
+  let charDensity = S.hexCharDensity ?? 0.5;
+  // Pre‑compute palette colours for character mode
+  let bgColor = S.bg || '#000000';
+  // Helper: apply glitch displacement
+  function applyGlitch(x, y, t, intensity) {
+    let nx = sampleNoise(p, x * 0.01, y * 0.01, t * 2) * 2 - 1;
+    let ny = sampleNoise(p, x * 0.01 + 10, y * 0.01 + 10, t * 1.7) * 2 - 1;
+    let amt = intensity * 20 * (1 + S.wave * 0.01);
+    return {
+      x: x + nx * amt,
+      y: y + ny * amt
+    };
+  }
+  // Helper: hex pattern brightness using sampleNoise (respects noiseType)
+  function getHexBrightness(x, y, t) {
+    // Use noise to create a layered hexagonal feel
+    let n1 = sampleNoise(p, x * hexScale, y * hexScale, t * 0.1);
+    let n2 = sampleNoise(p, x * hexScale * 3 + 50, y * hexScale * 3 + 20, t * 0.15);
+    let n  = (n1 + n2 * 0.5) / 1.5;
+    // Pulse with wave and turbulence
+    let pulse = Math.sin(t * 0.02 + n * 10 * (1 + S.turb * 2));
+    return n > 0.5 ? p.map(pulse, -1, 1, 0.2, 1) : 0.0;
+  }
+  // Use CTX for direct pixel manipulation (fast)
+  CTX.save();
+  if (pixelate) {
+    // Disable smoothing for crisp pixels
+    CTX.imageSmoothingEnabled = false;
+  }
+  // Loop over pixels with given resolution
+  for (let y = 0; y < H; y += res) {
+    for (let x = 0; x < W; x += res) {
+      let rVal, gVal, bVal;
+      if (chromatic) {
+        let posR = applyGlitch(x, y, t, glitchInt);
+        let posG = applyGlitch(x, y, t, glitchInt * 1.2);
+        let posB = applyGlitch(x, y, t, glitchInt * 1.4);
+        rVal = getHexBrightness(posR.x, posR.y, t);
+        gVal = getHexBrightness(posG.x, posG.y, t);
+        bVal = getHexBrightness(posB.x, posB.y, t);
+      } else {
+        let pos = applyGlitch(x, y, t, glitchInt);
+        let v = getHexBrightness(pos.x, pos.y, t);
+        rVal = gVal = bVal = v;
+      }
+      // Map brightness to palette/accent
+      let col;
+      if (S.colorMapMode !== 'noise') {
+        let ci = Math.floor((rVal + gVal + bVal) / 3 * S.palette.length);
+        col = S.palette[ci % S.palette.length];
+      } else {
+        col = pickColor(p, x, y, t);
+        // Adjust brightness by the computed value
+        let c = p.color(col);
+        let r = p.red(c) * (0.5 + 0.5 * rVal);
+        let g = p.green(c) * (0.5 + 0.5 * gVal);
+        let b = p.blue(c) * (0.5 + 0.5 * bVal);
+        col = p.color(r, g, b);
+      }
+      // Apply scanline darkening
+      if (scanlines && y % (res * 2) === 0) {
+        let c = p.color(col);
+        col = p.lerpColor(c, p.color(bgColor), 0.3);
+      }
+      // Draw pixel block
+      CTX.fillStyle = col;
+      CTX.fillRect(x, y, res, res);
+    }
+  }
+  // ---- Optional character overlay ----
+  if (useChars) {
+    let step = Math.max(4, S.spacing);
+    for (let x = 0; x < W; x += step) {
+      for (let y = 0; y < H; y += step) {
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.3);
+        if (n < charDensity) continue;
+
+        let col = pickColor(p, x, y, t);
+        let ch  = pickChar(p, x, y, t);
+        let sz  = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
+        // Add a little glitch to character positions
+        let pos = applyGlitch(x, y, t, glitchInt * 0.3);
+        dc(pos.x, pos.y, sz, 0, col, ch);
+      }
+    }
+  }
+
+  CTX.restore();
+}
+  
 // ── WEBSTER 2.0 Refactored 4/13/26 ───────────────────────────────────────────
 function drawWebster(p, t) {
   let sp = S.spacing;
@@ -7933,6 +8036,7 @@ function rd() {
       case 'tess': drawTess(p, t); break;
       case 'warp': drawWarp(p, t); break;
       case 'glitch': drawGlitch(p, t); break;
+      case 'hexcrt': drawHexCRT(p, t); break;  
       case 'webster': drawWebster(p, t); break;
       case 'matrix': drawMatrix(p, t); break;
       case 'orbit': drawOrbit(p, t); break;
@@ -8210,6 +8314,18 @@ const PARAM_REGISTRY = {
     { id: 'glitchRGBSpeed',      label: 'RGB flicker',     min: 1,   max: 15,  step: 1,   def: 6,   scale: 1 },
     { id: 'glitchMinSize',       label: 'Min char size',   min: 2,   max: 20,  step: 1,   def: 4,   scale: 1 },
     { id: 'glitchMaxSizeMult',   label: 'Max size mult',   min: 0.3, max: 1,   step: 0.05,def: 0.65,scale: 1 },
+  ],
+  hexcrt: [
+    { id: 'hexRes',          label: 'Pixel size',        min: 1,  max: 12,  step: 1, def: 3,   scale: 1,
+      hint: 'Higher = blockier, faster' },
+    { id: 'hexScale',        label: 'Hex scale',         min: 5,  max: 100, step: 1, def: 20,  scale: 0.001,
+      hint: 'Size of hex pattern' },
+    { id: 'hexGlitchIntensity', label: 'Glitch intensity', min: 0, max: 2, step: 0.05, def: 0.5, scale: 1 },
+    { id: 'hexChromatic',    label: 'Chromatic aberration', type: 'toggle', def: true },
+    { id: 'hexScanlines',    label: 'Scanlines',         type: 'toggle', def: true },
+    { id: 'hexPixelate',     label: 'Pixelate',          type: 'toggle', def: true },
+    { id: 'hexUseChars',     label: 'Overlay characters', type: 'toggle', def: false },
+    { id: 'hexCharDensity',  label: 'Character density', min: 0, max: 1, step: 0.05, def: 0.5, scale: 1 },
   ],
   webster: [
     { id: 'websterNoiseFreq',      label: 'Wave freq',       min: 0.002, max: 0.03, step: 0.001, def: 0.008, scale: 1 },
