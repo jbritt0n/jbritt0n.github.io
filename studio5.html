@@ -128,7 +128,7 @@ select option{background:var(--ink)}
   .mb{font-size:.43rem;padding:.32rem .1rem}}
   
 #gc.calligraphy-interactive {cursor: none;}
-.drawing-mode {cursor: url('/cursor/cursor.cur'), 16 16, crosshair !important;}
+.drawing-mode {cursor: url('/cursor/cursor.cur') 16 16, crosshair;}
 .cb.active-submode {border-color: var(--gold);color: var(--gold);background: rgba(184,149,90,.07);}
   
 </style>
@@ -155,8 +155,10 @@ select option{background:var(--ink)}
     <!-- BRUSHCURSOR -->
     <div id="brushCursor" style="position: fixed; pointer-events: none; display: none; z-index: 9999; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%);"></div>
     
-    <!-- PANEL -->
-  </div> <div id="panel">
+  </div><!-- /canvas-wrap -->
+  <!-- PANEL -->
+  <div id="brushCursor" style="position: fixed; pointer-events: none; display: none; z-index: 9999; border: 2px solid rgba(80,60,20,0.7); border-radius: 50%; transform: translate(-50%, -50%);"></div>
+  <div id="panel">
     <div class="ph">
       <div class="pt">Studio</div>
       <div class="ps">jonathanbrittonart.com/studio</div>
@@ -3753,10 +3755,9 @@ function drawCalligraphy(p, t) {
   let grain      = S.calligPaperGrain ?? true;
 
     // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
-  if (!interactive && S.playing) {
-    if (subMode === 'composition') {
+  if (subMode !== 'interactive' && S.playing) {
       // Only spawn a new composition when none is active, and wait a bit between finished ones
-      if (!calligActiveComp && _calligClock % 180 === 0) {
+      if (!calligActiveComp) {
         let compKey = S.calligComposition || 'bamboo_branch';
         // Scale to ~75% of the smaller canvas dimension – fills most of the canvas
         let scale = Math.min(W, H) * 0.75;
@@ -3774,7 +3775,7 @@ function drawCalligraphy(p, t) {
         _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, useChars, charSet);
       }
     }
-  }
+  
 
   // ── Render growing stroke queue → ink buffer ──────────────────────────────
   let light   = _bgIsLight(S.bg);
@@ -4004,9 +4005,9 @@ function _updateCompositionSequence(p) {
   // Temporarily override style settings for this segment
   let saved = { w: S.calligWidth, taper: S.calligTaper, wobble: S.calligWobble };
   // Multiply user’s current values by the segment’s behavior factors
-  S.calligWidth  = origWidth * (segment.behavior.w || 1);
-  S.calligTaper  = origTaper * (segment.behavior.taper || 1);
-  S.calligWobble = origWobble * (segment.behavior.wobble || 1);
+  S.calligWidth  = origWidth  * (beh.w      || 1);
+  S.calligTaper  = origTaper  * (beh.taper  || 1);
+  S.calligWobble = origWobble * (beh.wobble || 1);
 
   let baseWidth = Math.max(3, S.calligWidth * (S.maxSize / 20));
 
@@ -4298,7 +4299,8 @@ function setupCalligraphyInteraction(p) {
       _pushInteractiveStroke(p, calligLastX, calligLastY, pos.x, pos.y);
       calligLastX = pos.x;
       calligLastY = pos.y;
-      if (window._st) window._st.rd();
+      // Ink buffer is updated by _pushInteractiveStroke directly;
+      // p.draw loop composites it each frame. No explicit rd() needed.
     }
   };
 
@@ -7730,10 +7732,8 @@ function rd() {
  // ── drawScene ────────────────────────────────────────────────── 
   function drawScene(p, t) {
     if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
-  if (S.calligraphyEnabled && S.mode === 'calligraphy') {
-    drawCalligraphy(p, t);
-  } else {
     switch (S.mode) {
+      case 'calligraphy': drawCalligraphy(p, t); break;
       case 'bloom': drawBloom(p, t); break;
       case 'wave': drawWave(p, t); break;
       case 'rain1': drawRain1(p, t); break;
@@ -7766,7 +7766,6 @@ function rd() {
       case 'sand': drawSand(p, t); break;
       case 'cellular': drawCellular(p, t); break;
       case 'interference': drawInterference(p, t); break;
-      case 'calligraphy': drawCalligraphy(p, t); break;
       case 'lissajous': drawLissajous(p, t); break;
       case 'wireterrain': drawWireTerrain(p, t); break;
       case 'fractalsubdiv': drawFractalSubdiv(p, t); break;
@@ -7802,8 +7801,9 @@ function rd() {
       case 'cosmicpoems':    drawCosmicPoems(p, t);     break;
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
-    }
-  } //closes drawscene
+        
+    } // closes switch
+} // closes drawScene function
     
 // ── P.Setup ────────────────────────────────────────────────── 
 p.setup = function() {
