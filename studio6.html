@@ -1405,6 +1405,8 @@ const PALETTES={
   sakurasnow: ['#fff0f5','#ffe4e1','#ffc0cb','#ffb7c5','#ff99cc','#e68ab8'],
   // Green & Organic
   oxcopper:   ['#4a5d23','#6b8e23','#8fbc6e','#b5d88c','#2e3b1f','#1e2a12'],
+  numb:     ['#1f5f3a','#2f7d4f','#4c9a6a','#e85c2a','#f26a3d','#c94b1f','#f2e8d5']
+
 };
 
 const FONTS={
@@ -7182,6 +7184,105 @@ function drawMonogrid(p, t) {
 }      // closes drawMonogrid function
 
 
+// ── NUMB COLLAGE ──────────────────────────────
+let collageBlocks = [];
+
+function initNumbCollage(p) {
+  collageBlocks = [];
+
+  let count = S.blockCount || 40;
+
+  for (let i = 0; i < count; i++) {
+    let w = p.random(S.blockMinSize, S.blockMaxSize);
+    let h = p.random(S.blockMinSize, S.blockMaxSize);
+
+    collageBlocks.push({
+      x: p.random(p.width),
+      y: p.random(p.height),
+      w,
+      h,
+      rot: p.random() < (S.rotateChance || 0.4)
+        ? (p.random() < (S.verticalBias || 0.6) ? p.HALF_PI : 0)
+        : 0,
+      speedX: p.random(-1, 1),
+      speedY: p.random(-1, 1),
+      textScale: p.random(),
+      density: p.random(0.5, 1.5)
+    });
+  }
+}
+  
+function drawNumbCollage(p, t) {
+  if (!collageBlocks.length) initNumbCollage(p);
+
+  let driftX = S.driftX || 0.3;
+  let driftY = S.driftY || 0.8;
+
+  for (let b of collageBlocks) {
+
+    // --- Animate position ---
+    b.x += b.speedX * driftX;
+    b.y += b.speedY * driftY;
+
+    // wrap around screen
+    if (b.x > p.width) b.x = 0;
+    if (b.x < 0) b.x = p.width;
+    if (b.y > p.height) b.y = 0;
+    if (b.y < 0) b.y = p.height;
+
+    // --- Color (green/orange palette via existing system) ---
+    let r = pcc(p, b.x, b.y, t);
+    let col = r.col;
+
+    // --- Draw rectangle ---
+    p.push();
+    p.translate(b.x, b.y);
+    p.rotate(b.rot);
+
+    p.noStroke();
+    p.fill(col);
+    p.rect(0, 0, b.w, b.h);
+
+    // --- Text fill ---
+    let textSizeMin = S.textSizeMin || 10;
+    let textSizeMax = S.textSizeMax || 28;
+
+    let baseSize = p.lerp(textSizeMin, textSizeMax, b.textScale);
+
+    let step = baseSize * (S.textDensity || 1.0);
+
+    p.fill(0, 180); // ink-like dark overlay
+    p.textAlign(p.LEFT, p.TOP);
+
+    for (let xx = 0; xx < b.w; xx += step) {
+      for (let yy = 0; yy < b.h; yy += step) {
+
+        // jitter (collage imperfection)
+        let jx = p.random(-S.jitterAmt, S.jitterAmt);
+        let jy = p.random(-S.jitterAmt, S.jitterAmt);
+
+        p.textSize(baseSize * p.random(0.8, 1.2));
+
+        let txt = "麻木的";
+
+        p.push();
+
+        // random orientation per glyph cluster
+        if (p.random() < (S.rotateChance || 0.4)) {
+          p.rotate(p.HALF_PI);
+        }
+
+        p.text(txt, xx + jx, yy + jy);
+
+        p.pop();
+      }
+    }
+
+    p.pop();
+  }
+}
+
+  
   
 // ── Collage Wash (numb) ───────────────────────────────────────────────────────────
 function drawCollageWash(p, t) {
@@ -8428,8 +8529,8 @@ new p5(function(p){
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
     initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
-    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H);
-    recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
+    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p)
+    recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
     lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[]; 
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
