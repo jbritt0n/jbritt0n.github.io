@@ -4184,7 +4184,7 @@ function drawCalligraphy(p, t) {
   let count      = Math.max(1, Math.floor(S.calligCount   ?? 5));
   let minLen     = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
   let maxLen     = (S.calligMaxLen    ?? 0.8) * Math.min(W, H);
-  let baseWidth  = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let baseWidth  = Math.max(1, S.calligWidth ?? 20);
   let taper      = S.calligTaper      ?? 0.5;
   let bleed      = S.calligBleed      ?? 0.5;
   let fibers     = Math.max(1, Math.floor(S.calligFibers ?? 6));
@@ -4411,14 +4411,12 @@ function initBrushCursor() {}
 function _spawnSumieComposition(p, compKey, ox, oy, scale) {
   let comp = SUMIE_COMPOSITIONS[compKey];
   if (!comp) { console.warn('Unknown composition:', compKey); return; }
-  // Cancel any existing composition to prevent overlapping
+  // Always center on canvas and fill ~80% of smaller dimension
+  ox    = ox    ?? p.width  / 2;
+  oy    = oy    ?? p.height / 2;
+  scale = scale ?? Math.min(p.width, p.height) * 0.78;
   calligActiveComp = null;
   calligStrokes = calligStrokes.filter(s => s.lifespan > 0); // optional: keep old strokes?
-  calligActiveComp = {
-    key: compKey,
-    segments: comp.segments,
-    transform: { ox, oy, scale }
-  };
   calligSegIdx    = 0;
   calligStrokeIdx = 0;
   calligLastBirth = _calligClock;
@@ -4430,8 +4428,11 @@ function _updateCompositionSequence(p) {
   if (!calligActiveComp) return;
   if (calligSegIdx >= calligActiveComp.segments.length) {
     calligActiveComp = null;   // composition finished
+    // Auto-respawn: clear ink, wait 90 ticks, then redraw same or new composition
+    calligLastBirth = _calligClock; // reuse as pause timer
     return;
   }
+
 
   let interStrokeDelay = 15;
   if (_calligClock - calligLastBirth < interStrokeDelay) return;
@@ -4451,7 +4452,7 @@ function _updateCompositionSequence(p) {
   S.calligTaper  = origTaper  * (beh.taper  || 1);
   S.calligWobble = origWobble * (beh.wobble || 1);
 
-  let baseWidth = Math.max(3, S.calligWidth * (S.maxSize / 20));
+  let baseWidth  = Math.max(1, S.calligWidth ?? 20);
 
   // Cumulative distances along the raw path
   let cumDist = 0, dists = [0];
@@ -4516,7 +4517,7 @@ function _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet) 
   } else {
     // 'random' — single abstract line
     let angle = p.random(Math.PI * 2);
-    let pts   = _genLinePoints(p, ox, oy, len, angle, 0.3);
+    let pts   = _genLinePoints(p, ox, oy, len, angle, S.calligWobble ?? 0.3);
     if (!pts || pts.length < 2) return;
     _assignSpeeds(pts, len);
     calligStrokes.push({
@@ -4546,8 +4547,8 @@ function _buildStroke(p, rawPts, ox, oy, len, col, baseWidth) {
   }));
   pts = _densify(pts, 6);
   pts = _applyChaikin(pts, 2);
+  _wobblePts(pts, len, S.calligWobble ?? 0.15);
   _assignSpeeds(pts, len);
-  return { pts, col, baseWidth, birth: _calligClock };
 }
 
 
@@ -4560,7 +4561,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   calligMouseVelocity = Math.min(3, dist / 8);
   calligMouseAngle    = Math.atan2(y2 - y1, x2 - x1);
 
-  let baseWidth = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let baseWidth = Math.max(1, S.calligWidth ?? 20);
   let col       = pickColor(p, x1, y1, 0);
   let taper     = S.calligTaper ?? 0.5;
 
@@ -4645,25 +4646,24 @@ function calligRedraw(p) {
   if (!p || !p.width) p = window._st && window._st.p;
   if (!p) return;
   clearInkBuffer();
-  let W = p.width, H = p.height;
+  let W      = p.width, H = p.height;
   let subMode = S.calligSubMode ?? 'character';
-  let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
-  let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
-  let bw = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let count = Math.max(1, Math.floor(S.calligCount ?? 5));
-  let charSet = S.calligCharSet ?? 'eternal';
 
   if (subMode === 'composition') {
-    let compKey = S.calligComposition || 'bamboo_branch';
-    let scale = Math.min(W, H) * 0.75;
-    _spawnSumieComposition(p, compKey, W / 2, H / 2, scale);
+    calligLastBirth = 0; // reset pause so it spawns immediately
+    _spawnSumieComposition(p, S.calligComposition || 'bamboo_branch',
+                            W / 2, H / 2, Math.min(W, H) * 0.78);
   } else {
-    // 'random' or 'character' — spawn individual strokes
+    let bw    = Math.max(1, S.calligWidth ?? 20);
+    let count = Math.max(1, Math.floor(S.calligCount ?? 5));
+    let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
+    let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
     for (let i = 0; i < count; i++) {
-      _spawnCharacter(p, W, H, minLen, maxLen, bw, subMode === 'character', charSet);
+      _spawnCharacter(p, W, H, minLen, maxLen, bw,
+                      subMode === 'character', S.calligCharSet ?? 'eternal');
     }
   }
-  if (typeof showToast === 'function') showToast('Redrawn');
+  showToast('Redrawn');
 }
 
 // ── Pointer event setup ────────────────────────────────────────────────────────
@@ -4940,6 +4940,18 @@ function _genLinePoints(p, ox, oy, len, angle, wobble) {
   return _applyChaikin(pts, 2);
 }
 
+function _wobblePts(pts, len, amount) {
+  if (!amount || amount < 0.01) return;
+  for (let i = 1; i < pts.length - 1; i++) {
+    let perp = Math.atan2(
+      pts[i+1 < pts.length ? i+1 : i].y - pts[i-1].y,
+      pts[i+1 < pts.length ? i+1 : i].x - pts[i-1].x
+    ) + Math.PI / 2;
+    let offset = (Math.random() - 0.5) * amount * len * 0.12;
+    pts[i].x += Math.cos(perp) * offset;
+    pts[i].y += Math.sin(perp) * offset;
+  }
+}  
 
 // ── CHARACTER_PATHS ────────────────────────────────────────────────────────────
 // Normalised [0,1] coordinates; centred on 0.5, 0.5.
@@ -8365,13 +8377,13 @@ function toggleSec(id) {
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored'];
 const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles'];
 const globalSubSecs = ['sub-motion', 'sub-field', 'sub-entropy', 'sub-render'];  
-const ALL_SECS = ['presets', 'userpresets', 'global', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...globalSubSecs, ...modeSubSecs, ...charSubSecs];
+const ALL_SECS = ['presets', 'userpresets', 'global', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'calligraphy', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...globalSubSecs, ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 [  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored',
   'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles',
-  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'calligraphy', 'shapes', 'overlay', 'img', 'size'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
@@ -10664,7 +10676,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
   'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
   'global', 'sub-motion', 'sub-field', 'sub-entropy', 'sub-render',
-  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', 'userpresets'
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'calligraphy', 'shapes', 'overlay', 'img', 'size', 'userpresets'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
