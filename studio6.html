@@ -7182,45 +7182,94 @@ function drawMonogrid(p, t) {
 
 
   
-// ── POETIC TENDRILS MODE ────────────────────────────────────────────────────
-// Background: Webster‑style monogrid text field showing the poem.
-// Overlay: Organic tendril lines connecting characters based on a flow field.
-
+// ── POETIC TENDRILS MODE (Enhanced) ─────────────────────────────────────────
 function drawPoeticTendrils(p, t) {
   let W = p.width, H = p.height;
 
-  // Mode parameters (with defaults)
-  let textSize      = S.poeticTextSize ?? 0.8;      // relative to spacing
-  let tendrilCount  = S.poeticCount ?? 80;          // number of connection strands
-  let tendrilLength = S.poeticLength ?? 6;          // segments per strand
-  let tendrilCurve  = S.poeticCurve ?? 0.5;         // curvature amount
-  let tendrilWidth  = S.poeticWidth ?? 1.2;         // line thickness
-  let glowIntensity = S.poeticGlow ?? 0.6;          // accent color blend
-  let pulseSpeed    = S.poeticPulse ?? 0.8;         // speed of pulse animation
+  // Text parameters
+  let textSize      = S.poeticTextSize ?? 0.8;
+  let textWrap      = S.poeticTextWrap ?? true;        // wrap vs tile
+  let wrapWidth     = S.poeticWrapWidth ?? 0.8;        // fraction of canvas width
+  let offsetX       = S.poeticOffsetX ?? 0;
+  let offsetY       = S.poeticOffsetY ?? 0;
+  let textGlitch    = S.poeticTextGlitch ?? false;     // apply global entropy/glitch
 
-  // ── 1. Background text field (Webster‑style monogrid) ────────────────────
-  let tokens = S.poeticPoemText ? S.poeticPoemText.split('') : ['·'];
+  // Tendril parameters
+  let tendrilCount  = S.poeticCount ?? 80;
+  let tendrilLength = S.poeticLength ?? 6;
+  let tendrilCurve  = S.poeticCurve ?? 0.5;
+  let tendrilWidth  = S.poeticWidth ?? 1.2;
+  let glowIntensity = S.poeticGlow ?? 0.6;
+  let pulseSpeed    = S.poeticPulse ?? 0.8;
+  let seedDensity   = S.poeticSeedDensity ?? 0.4;      // probability per cell
+  let seedSpread    = S.poeticSeedSpread ?? 1.0;       // 0 = edges, 1 = full canvas
+
+  // ── 1. Background poem text ───────────────────────────────────────────────
+  let rawText = S.poeticPoemText;
+  if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
+    rawText = 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.';
+  }
+  let tokens = rawText.split('');
   let sz = Math.max(2, S.spacing * textSize);
   let charW = sz * 0.63;
   let charH = sz * 1.05;
-  let tokOff = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
 
-  for (let y = sz; y < H + sz; y += charH) {
-    for (let x = 0; x < W + charW; x += charW) {
-      let n = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.2);
-      if (n < 0.25) continue;
+  if (textWrap) {
+    // Wrap text within a defined column width
+    let colW = W * wrapWidth;
+    let startX = (W - colW) / 2 + offsetX;
+    let x = startX;
+    let y = charH + offsetY;
+    let tokIdx = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
+
+    while (y < H) {
+      let ch = tokens[tokIdx % tokens.length];
       let col = pickColor(p, x, y, t);
-      let ch = tokens[(tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      if (textGlitch && S.entropy > 0 && Math.random() < S.entropy) {
+        ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+      }
       dc(x, y, sz, 0, col, ch);
+      tokIdx++;
+      x += charW;
+      if (x + charW > startX + colW) {
+        x = startX;
+        y += charH;
+      }
+    }
+  } else {
+    // Tile text across entire canvas (original Webster style)
+    let tokOff = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
+    for (let y = sz + offsetY; y < H + sz; y += charH) {
+      for (let x = offsetX; x < W + charW; x += charW) {
+        let n = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.2);
+        if (n < 0.25) continue;
+        let col = pickColor(p, x, y, t);
+        let idx = (tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length;
+        let ch = tokens[idx];
+        if (textGlitch && S.entropy > 0 && Math.random() < S.entropy) {
+          ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+        }
+        dc(x, y, sz, 0, col, ch);
+      }
     }
   }
 
-  // ── 2. Tendril overlay (connecting strands) ──────────────────────────────
+  // ── 2. Tendril overlay ────────────────────────────────────────────────────
   let step = S.spacing;
   let seedPoints = [];
-  for (let y = step; y < H - step; y += step * 2) {
-    for (let x = step; x < W - step; x += step * 2) {
-      if (Math.random() > 0.4) continue;
+
+  // Generate seed points based on spread and density
+  for (let y = step; y < H - step; y += step * 1.5) {
+    for (let x = step; x < W - step; x += step * 1.5) {
+      // Bias toward edges if seedSpread < 1
+      let edgeBias = 1.0;
+      if (seedSpread < 1.0) {
+        let dx = Math.abs(x - W/2) / (W/2);
+        let dy = Math.abs(y - H/2) / (H/2);
+        edgeBias = Math.max(dx, dy);
+      }
+      let prob = seedDensity * (seedSpread < 1.0 ? edgeBias : 1.0);
+      if (Math.random() > prob) continue;
       seedPoints.push({ x, y });
     }
   }
@@ -8909,12 +8958,19 @@ const PARAM_REGISTRY = {
   poetictendrils: [
     { id: 'poeticPoemText', label: 'Poem text', type: 'text', def: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.' },
     { id: 'poeticTextSize',  label: 'Text size',      min: 0.3, max: 1.5, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'poeticTextWrap',  label: 'Wrap text',      type: 'toggle', def: true },
+    { id: 'poeticWrapWidth', label: 'Wrap width',     min: 0.2, max: 1.0, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'poeticOffsetX',   label: 'Offset X',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
+    { id: 'poeticOffsetY',   label: 'Offset Y',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
+    { id: 'poeticTextGlitch',label: 'Apply entropy to text', type: 'toggle', def: true },
     { id: 'poeticCount',     label: 'Tendril count',  min: 10, max: 200, step: 5, def: 80, scale: 1 },
     { id: 'poeticLength',    label: 'Tendril length', min: 2,  max: 20,  step: 1, def: 6,  scale: 1 },
     { id: 'poeticCurve',     label: 'Curvature',      min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
-    { id: 'poeticWidth',     label: 'Line width',     min: 0.5,max: 4,   step: 0.1, def: 1.2, scale: 1 },
+    { id: 'poeticWidth',     label: 'Line width',     min: 0.5, max: 4,   step: 0.1, def: 1.2, scale: 1 },
     { id: 'poeticGlow',      label: 'Glow intensity', min: 0,  max: 1,   step: 0.05, def: 0.6, scale: 1 },
     { id: 'poeticPulse',     label: 'Pulse speed',    min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
+    { id: 'poeticSeedDensity', label: 'Seed density', min: 0.05, max: 1.0, step: 0.05, def: 0.4, scale: 1 },
+    { id: 'poeticSeedSpread', label: 'Seed spread',   min: 0,   max: 1.0, step: 0.1, def: 1.0, scale: 1, hint: '0 = edges only, 1 = full canvas' },
   ],
   
   //to be refactored
