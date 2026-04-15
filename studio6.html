@@ -348,6 +348,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
         <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
+        <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
       </div>
     </div>
     
@@ -7177,6 +7178,94 @@ function drawMonogrid(p, t) {
     }
   });  // closes monogridBlocks.forEach
 }      // closes drawMonogrid function
+
+
+
+  
+// ── POETIC TENDRILS MODE ────────────────────────────────────────────────────
+// Background: Webster‑style monogrid text field showing the poem.
+// Overlay: Organic tendril lines connecting characters based on a flow field.
+
+function drawPoeticTendrils(p, t) {
+  let W = p.width, H = p.height;
+
+  // Mode parameters (with defaults)
+  let textSize      = S.poeticTextSize ?? 0.8;      // relative to spacing
+  let tendrilCount  = S.poeticCount ?? 80;          // number of connection strands
+  let tendrilLength = S.poeticLength ?? 6;          // segments per strand
+  let tendrilCurve  = S.poeticCurve ?? 0.5;         // curvature amount
+  let tendrilWidth  = S.poeticWidth ?? 1.2;         // line thickness
+  let glowIntensity = S.poeticGlow ?? 0.6;          // accent color blend
+  let pulseSpeed    = S.poeticPulse ?? 0.8;         // speed of pulse animation
+
+  // ── 1. Background text field (Webster‑style monogrid) ────────────────────
+  let tokens = S.poeticPoemText ? S.poeticPoemText.split('') : ['·'];
+  let sz = Math.max(2, S.spacing * textSize);
+  let charW = sz * 0.63;
+  let charH = sz * 1.05;
+  let tokOff = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
+
+  for (let y = sz; y < H + sz; y += charH) {
+    for (let x = 0; x < W + charW; x += charW) {
+      let n = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.2);
+      if (n < 0.25) continue;
+      let col = pickColor(p, x, y, t);
+      let ch = tokens[(tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
+      dc(x, y, sz, 0, col, ch);
+    }
+  }
+
+  // ── 2. Tendril overlay (connecting strands) ──────────────────────────────
+  let step = S.spacing;
+  let seedPoints = [];
+  for (let y = step; y < H - step; y += step * 2) {
+    for (let x = step; x < W - step; x += step * 2) {
+      if (Math.random() > 0.4) continue;
+      seedPoints.push({ x, y });
+    }
+  }
+
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+  CTX.lineWidth = tendrilWidth;
+
+  for (let i = 0; i < Math.min(tendrilCount, seedPoints.length); i++) {
+    let pt = seedPoints[i % seedPoints.length];
+    let x = pt.x, y = pt.y;
+
+    CTX.beginPath();
+    CTX.moveTo(x, y);
+
+    for (let seg = 0; seg < tendrilLength; seg++) {
+      let angle = sampleNoise(p, x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.5 + seg) * Math.PI * 2;
+      angle += Math.sin(seg * 1.5 + t * pulseSpeed) * tendrilCurve;
+
+      let nx = x + Math.cos(angle) * step * 0.9;
+      let ny = y + Math.sin(angle) * step * 0.9;
+
+      if (nx < 0 || nx > W) angle = Math.PI - angle;
+      if (ny < 0 || ny > H) angle = -angle;
+      nx = Math.min(W, Math.max(0, x + Math.cos(angle) * step * 0.9));
+      ny = Math.min(H, Math.max(0, y + Math.sin(angle) * step * 0.9));
+
+      CTX.lineTo(nx, ny);
+      x = nx; y = ny;
+    }
+
+    let baseCol = pickColor(p, pt.x, pt.y, t);
+    let accentCol = S.accent !== 'none' ? S.accent : S.palette[0];
+    let pulse = 0.5 + 0.5 * Math.sin(t * 2 + i * 0.5);
+    let lineCol = p.lerpColor(p.color(baseCol), p.color(accentCol), pulse * glowIntensity);
+    CTX.strokeStyle = lineCol;
+    CTX.globalAlpha = 0.4 + 0.3 * pulse;
+    CTX.stroke();
+  }
+
+  CTX.restore();
+  _lastFill = '';
+}
+
   
 // ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
@@ -8267,7 +8356,7 @@ function rd() {
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
       case 'trabeculum':     drawTrabeculum(p, t);     break;  
-
+      case 'poetictendrils': drawPoeticTendrils(p, t); break;
   
     } // closes switch
 } // closes drawScene function
@@ -8817,7 +8906,16 @@ const PARAM_REGISTRY = {
     { id:'sandSizeMin',   label:'Min size (px)',  min:0.5, max:5,  step:0.5, def:1.5, scale:1 },
     { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
   ],
-  
+  poetictendrils: [
+    { id: 'poeticPoemText', label: 'Poem text', type: 'text', def: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.' },
+    { id: 'poeticTextSize',  label: 'Text size',      min: 0.3, max: 1.5, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'poeticCount',     label: 'Tendril count',  min: 10, max: 200, step: 5, def: 80, scale: 1 },
+    { id: 'poeticLength',    label: 'Tendril length', min: 2,  max: 20,  step: 1, def: 6,  scale: 1 },
+    { id: 'poeticCurve',     label: 'Curvature',      min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'poeticWidth',     label: 'Line width',     min: 0.5,max: 4,   step: 0.1, def: 1.2, scale: 1 },
+    { id: 'poeticGlow',      label: 'Glow intensity', min: 0,  max: 1,   step: 0.05, def: 0.6, scale: 1 },
+    { id: 'poeticPulse',     label: 'Pulse speed',    min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
+  ],
   
   //to be refactored
   hatch: [
@@ -10647,7 +10745,8 @@ const PRESETS={
   hypertype_mode: function() {ap({ mode:'hypertype', font:'courier', entropy:.04, speed:.004,wave:15, bg:'#f5f0ea', spacing:18, maxSize:24,noiseScale:.01, palette:'neon', compEnabled:false,chars: CHARSETS.ascii });hypertypeGrid = [];},
   hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
   circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
-    
+  poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
+  
 };
 
  // ── CORNER LABELS UI HELPER ──────────────────────────────────────────────────────── 
