@@ -344,7 +344,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="sand" title="Falling grain physics and accumulation">Sand</button>
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
-
+        <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
       </div>
     </div>
     
@@ -3409,6 +3409,104 @@ function drawVoronoi(p, t) {
   }
 }
 
+// ── TRABECULUM MODE - added 4/14/26 ──────────────────────────────────────────────────────────
+let trabePoints = [];
+
+function initTrabeculum(W, H) {
+  trabePoints = [];
+  let count = Math.max(5, Math.floor(S.trabeCount ?? 40));
+  for (let i = 0; i < count; i++) {
+    trabePoints.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * (S.trabeSpeed ?? 1.0),
+      vy: (Math.random() - 0.5) * (S.trabeSpeed ?? 1.0),
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function drawTrabeculum(p, t) {
+  let W = p.width, H = p.height;
+  if (trabePoints.length === 0) initTrabeculum(W, H);
+
+  // Background
+  CTX.fillStyle = S.bg || '#050505';
+  CTX.fillRect(0, 0, W, H);
+
+  // Update points if playing
+  if (S.playing) {
+    let speed = S.trabeSpeed ?? 1.0;
+    for (let pt of trabePoints) {
+      pt.x += pt.vx * speed * (S.speed * 100); // scale with global speed
+      pt.y += pt.vy * speed * (S.speed * 100);
+      if (pt.x < 0) pt.x = W;
+      if (pt.x > W) pt.x = 0;
+      if (pt.y < 0) pt.y = H;
+      if (pt.y > H) pt.y = 0;
+    }
+  }
+
+  // Use p5 pixel array for direct manipulation
+  p.loadPixels();
+  let res = Math.max(1, Math.floor(S.trabeRes ?? 2));
+  let thickness = S.trabeThickness ?? 0.05;
+  let smooth = S.trabeSmooth ?? 0.02;
+  let borderColor = S.trabeStroke ?? '#ff9900';
+  let showIso = S.trabeShowIso ?? true;
+  let isoFreq = S.trabeFreq ?? 10;
+  let isoOpacity = S.trabeIsoOpacity ?? 0.1;
+  let isoColor = S.trabeIsoCol ?? '#444444';
+  let pulse = S.trabePulse ?? false;
+
+  let bgColor = p.color(S.bg || '#050505');
+  let strokeCol = p.color(borderColor);
+  let isoCol = p.color(isoColor);
+
+  // Pre‑compute normalisation factor (scale with maxSize)
+  let normFactor = (S.maxSize / 10) || 2.0;
+
+  for (let y = 0; y < H; y += res) {
+    for (let x = 0; x < W; x += res) {
+      let d1 = Infinity, d2 = Infinity;
+      for (let pt of trabePoints) {
+        let d = p.dist(x, y, pt.x, pt.y);
+        if (d < d1) { d2 = d1; d1 = d; }
+        else if (d < d2) { d2 = d; }
+      }
+
+      let val = 2.0 / (1.0 / Math.max(0.1, d1) + 1.0 / Math.max(0.1, d2));
+      val /= normFactor;
+
+      let borderEdge = thickness;
+      if (pulse) borderEdge += Math.sin(t * 0.05) * 0.02;
+
+      let col;
+      if (val < borderEdge) {
+        col = strokeCol;
+      } else if (val < borderEdge + smooth) {
+        let inter = p.map(val, borderEdge, borderEdge + smooth, 0, 1);
+        col = p.lerpColor(strokeCol, bgColor, inter);
+      } else {
+        col = bgColor;
+        if (showIso) {
+          let iso = 0.5 + 0.5 * Math.sin(val * isoFreq);
+          let alpha = p.map(val, borderEdge, S.maxSize, isoOpacity, 0);
+          col = p.lerpColor(col, isoCol, iso * alpha);
+        }
+      }
+
+      // Write pixel block
+      for (let i = 0; i < res; i++) {
+        for (let j = 0; j < res; j++) {
+          p.set(x + i, y + j, col);
+        }
+      }
+    }
+  }
+  p.updatePixels();
+}
+  
 // ── MYCELIUM 2.0 Refactored 4/13/26 ─────────────────────────────────────────────────────────  
 function initMycelium(W, H) {
   myceliumBranches = [];
@@ -7801,7 +7899,7 @@ function rd() {
       case 'cosmicpoems':    drawCosmicPoems(p, t);     break;
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
-        
+      case 'trabeculum':     drawTrabeculum(p, _t);     break;  
     } // closes switch
 } // closes drawScene function
     
@@ -8202,6 +8300,21 @@ const PARAM_REGISTRY = {
     { id:'vorSiteCount',   label:'Site count mult', min:0.5,max:2, step:0.1, def:1.0, scale:1,
       extra: function(){ voronoiSites = []; } },
     { id:'vorSpeedMult',   label:'Site speed mult', min:0,  max:2, step:0.1, def:1.0, scale:1 },
+  ],
+    trabeculum: [
+    { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
+      extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
+    { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
+    { id: 'trabeRes',     label: 'Resolution',      min: 1,  max: 8,   step: 1,   def: 2,    scale: 1,
+      hint: '1 = full quality, 4 = fast preview' },
+    { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
+    { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
+    { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
+    { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
+    { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
+    { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
+    { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.1,  scale: 1 },
+    { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
   ],
   reaction: [
     { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
