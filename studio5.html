@@ -2426,96 +2426,70 @@ function drawGlitch(p, t) {
 function drawHexCRT(p, t) {
   let W = p.width, H = p.height;
 
-  // Mode parameters with fallbacks
-  let res         = Math.max(1, Math.floor(S.hexRes ?? 3));
+  let res         = S.glitchPixelate ? Math.max(2, Math.floor(S.hexRes ?? 3)) : 1;
   let hexScale    = S.hexScale ?? 0.02;
-  let glitchInt   = S.hexGlitchIntensity ?? 0.5;
-  let chromatic   = S.hexChromatic ?? true;
-  let scanlines   = S.hexScanlines ?? true;
-  let pixelate    = S.hexPixelate ?? true;
   let useChars    = S.hexUseChars ?? false;
   let charDensity = S.hexCharDensity ?? 0.5;
-  // Pre‑compute palette colours for character mode
-  let bgColor = S.bg || '#000000';
-  // Helper: apply glitch displacement
-  function applyGlitch(x, y, t, intensity) {
-    let nx = sampleNoise(p, x * 0.01, y * 0.01, t * 2) * 2 - 1;
-    let ny = sampleNoise(p, x * 0.01 + 10, y * 0.01 + 10, t * 1.7) * 2 - 1;
-    let amt = intensity * 20 * (1 + S.wave * 0.01);
-    return {
-      x: x + nx * amt,
-      y: y + ny * amt
-    };
-  }
-  // Helper: hex pattern brightness using sampleNoise (respects noiseType)
+  let chromatic   = S.glitchChromatic;
+
+  // Helper: hex brightness (unchanged)
   function getHexBrightness(x, y, t) {
-    // Use noise to create a layered hexagonal feel
     let n1 = sampleNoise(p, x * hexScale, y * hexScale, t * 0.1);
     let n2 = sampleNoise(p, x * hexScale * 3 + 50, y * hexScale * 3 + 20, t * 0.15);
     let n  = (n1 + n2 * 0.5) / 1.5;
-    // Pulse with wave and turbulence
     let pulse = Math.sin(t * 0.02 + n * 10 * (1 + S.turb * 2));
     return n > 0.5 ? p.map(pulse, -1, 1, 0.2, 1) : 0.0;
   }
-  // Use CTX for direct pixel manipulation (fast)
+
   CTX.save();
-  if (pixelate) {
-    // Disable smoothing for crisp pixels
-    CTX.imageSmoothingEnabled = false;
-  }
-  // Loop over pixels with given resolution
+  if (S.glitchPixelate) CTX.imageSmoothingEnabled = false;
   for (let y = 0; y < H; y += res) {
     for (let x = 0; x < W; x += res) {
       let rVal, gVal, bVal;
       if (chromatic) {
-        let posR = applyGlitch(x, y, t, glitchInt);
-        let posG = applyGlitch(x, y, t, glitchInt * 1.2);
-        let posB = applyGlitch(x, y, t, glitchInt * 1.4);
-        rVal = getHexBrightness(posR.x, posR.y, t);
-        gVal = getHexBrightness(posG.x, posG.y, t);
-        bVal = getHexBrightness(posB.x, posB.y, t);
+        let off = applyChromaticGlitch(p, x, y, t);
+        rVal = getHexBrightness(off.r.x, off.r.y, t);
+        gVal = getHexBrightness(off.g.x, off.g.y, t);
+        bVal = getHexBrightness(off.b.x, off.b.y, t);
       } else {
-        let pos = applyGlitch(x, y, t, glitchInt);
+        let pos = applyGlitchOffset(p, x, y, t);
         let v = getHexBrightness(pos.x, pos.y, t);
         rVal = gVal = bVal = v;
       }
-      // Map brightness to palette/accent
       let col;
       if (S.colorMapMode !== 'noise') {
         let ci = Math.floor((rVal + gVal + bVal) / 3 * S.palette.length);
         col = S.palette[ci % S.palette.length];
       } else {
-        col = pickColor(p, x, y, t);
-        // Adjust brightness by the computed value
-        let c = p.color(col);
-        let r = p.red(c) * (0.5 + 0.5 * rVal);
-        let g = p.green(c) * (0.5 + 0.5 * gVal);
-        let b = p.blue(c) * (0.5 + 0.5 * bVal);
-        col = p.color(r, g, b);
+        let c = p.color(pickColor(p, x, y, t));
+        col = p.color(
+          p.red(c)   * (0.5 + 0.5 * rVal),
+          p.green(c) * (0.5 + 0.5 * gVal),
+          p.blue(c)  * (0.5 + 0.5 * bVal)
+        );
       }
-      // Apply scanline darkening
-      if (scanlines && y % (res * 2) === 0) {
-        let c = p.color(col);
-        col = p.lerpColor(c, p.color(bgColor), 0.3);
-      }
-      // Draw pixel block
       CTX.fillStyle = col;
       CTX.fillRect(x, y, res, res);
+      // Global scanlines
+      if (S.glitchScanlines && y % (res * 2) === 0) {
+        CTX.fillStyle = '#000000';
+        CTX.globalAlpha = 0.2;
+        CTX.fillRect(x, y, res, res * 0.5);
+        CTX.globalAlpha = 1.0;
+      }
     }
   }
-  // ---- Optional character overlay ----
+  // Character overlay (using global glitch for position)
   if (useChars) {
-    let step = Math.max(4, S.spacing);
+    let step = S.spacing;
     for (let x = 0; x < W; x += step) {
       for (let y = 0; y < H; y += step) {
         let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.3);
         if (n < charDensity) continue;
-
+        let pos = applyGlitchOffset(p, x, y, t);
         let col = pickColor(p, x, y, t);
         let ch  = pickChar(p, x, y, t);
         let sz  = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
-        // Add a little glitch to character positions
-        let pos = applyGlitch(x, y, t, glitchInt * 0.3);
         dc(pos.x, pos.y, sz, 0, col, ch);
       }
     }
@@ -9060,6 +9034,7 @@ wireSlider('sOvSpeed','vOvSpeed','overlaySpeed');
 wireSlider('sOvSize','vOvSize','overlaySize');
 wireSlider('sOvAlpha','vOvAlpha','overlayAlpha');
 wireSlider('sOvWave','vOvWave','overlayWave');
+wireSlider('sGlitchInt', 'vGlitchInt', 'glitchIntensity', v => v / 100);  
 wireSlider('sOvEntropy','vOvEntropy','overlayEntropy',function(v){return v;});
 wireSlider('sOvDistort','vOvDistort','overlayDistort',function(v){return v;});
 wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
@@ -9274,6 +9249,26 @@ document.getElementById('btnSignalCollapse').addEventListener('click', function(
     document.getElementById('btnPlay').textContent = '⏸ Pause';
   }
   showToast('Signal collapse');
+});
+
+// ── Global Glitch Wiring ───────────────────────────────────────────────────────
+document.getElementById('btnGlitchChromatic').addEventListener('click', function() {
+  S.glitchChromatic = !S.glitchChromatic;
+  this.textContent = S.glitchChromatic ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchChromatic);
+  window._st.rd();
+});
+document.getElementById('btnGlitchScanlines').addEventListener('click', function() {
+  S.glitchScanlines = !S.glitchScanlines;
+  this.textContent = S.glitchScanlines ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchScanlines);
+  window._st.rd();
+});
+document.getElementById('btnGlitchPixelate').addEventListener('click', function() {
+  S.glitchPixelate = !S.glitchPixelate;
+  this.textContent = S.glitchPixelate ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchPixelate);
+  window._st.rd();
 });
   
 // ── PALETTE LISTENERS ───────────────────────────────────────────────────────────────────
