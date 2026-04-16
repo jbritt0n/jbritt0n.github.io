@@ -2200,87 +2200,95 @@ function buildComp(preset,W,H){
 }
 
 // ── WELCOME MODE ────────────────────────────────────────────────────────────
-// Displays an instructional overlay with a gently animated panel.
 function drawWelcome(p, t) {
   let W = p.width, H = p.height;
-  
-  // Background – dark navy blue
-  CTX.fillStyle = '#0a1628';
+  // Background – very dark void
+  CTX.fillStyle = '#050a14';
   CTX.fillRect(0, 0, W, H);
-  
+  // Drift & Glitch Animation
+  let driftX = Math.cos(t * 0.5) * 15; // Small circular drift
+  let driftY = Math.sin(t * 0.5) * 15;
+  let glitch = (p.noise(t * 20) > 0.8) ? (Math.random() - 0.5) * 4 : 0; // Quick jitter
   // Panel dimensions (responsive)
-  let panelW = Math.min(520, W * 0.8);
-  let panelH = Math.min(380, H * 0.7);
-  let panelX = (W - panelW) / 2;
-  let panelY = (H - panelH) / 2;
-  
-  // Gentle pulse animation
-  let pulse = 1 + Math.sin(t * 1.5) * 0.01;
-  let animatedW = panelW * pulse;
-  let animatedH = panelH * pulse;
-  let animatedX = (W - animatedW) / 2;
-  let animatedY = (H - animatedH) / 2;
-  
-  // Steel blue panel with 80% opacity
-  CTX.fillStyle = 'rgba(70, 130, 180, 0.8)'; // steel blue
-  CTX.shadowColor = 'rgba(0, 0, 0, 0.5)';
-  CTX.shadowBlur = 20;
+  let panelW = Math.min(550, W * 0.85);
+  let panelH = Math.min(450, H * 0.75);
+  let panelX = (W - panelW) / 2 + driftX + glitch;
+  let panelY = (H - panelH) / 2 + driftY + glitch;
+  // Steel blue panel with high texture
+  CTX.save();
+  CTX.fillStyle = 'rgba(25, 45, 75, 0.95)'; 
+  CTX.shadowColor = 'rgba(0, 0, 0, 0.7)';
+  CTX.shadowBlur = 30;
   CTX.beginPath();
-  CTX.rect(animatedX, animatedY, animatedW, animatedH);
+  CTX.rect(panelX, panelY, panelW, panelH);
   CTX.fill();
-  CTX.shadowBlur = 0;
-  
-  // Border
-  CTX.strokeStyle = '#c4bcb0';
-  CTX.lineWidth = 2;
-  CTX.stroke();
-  
-  // ── Text Content ─────────────────────────────────────────────────────────
+  CTX.restore();
+  // Dashed Dark Navy Border
+  CTX.strokeStyle = '#0a1628';
+  CTX.lineWidth = 4;
+  CTX.setLineDash([15, 10]); // Dashed effect
+  CTX.lineDashOffset = -t * 20; // Animated dashes
+  CTX.strokeRect(panelX, panelY, panelW, panelH);
+  CTX.setLineDash([]); // Reset dash for other draws
+  // ── Header Section ─────────────────────────────────────────────────────────
   CTX.fillStyle = '#f0ece4';
-  CTX.font = `bold ${Math.floor(panelW * 0.06)}px 'EB Garamond', serif`;
+  CTX.font = `bold ${Math.floor(panelW * 0.07)}px 'EB Garamond', serif`;
   CTX.textAlign = 'center';
-  CTX.textBaseline = 'middle';
-  
-  let titleY = panelY + panelH * 0.18;
-  CTX.fillText('Welcome to Studio', W/2, titleY);
-  
-  // Subtitle
-  CTX.font = `${Math.floor(panelW * 0.035)}px 'Jost', sans-serif`;
-  CTX.fillStyle = '#ede9e2';
-  let subtitleY = panelY + panelH * 0.32;
-  CTX.fillText('A generative typography playground', W/2, subtitleY);
-  // Divider line
+  CTX.fillText('Studio Guide', W/2 + driftX, panelY + 60);
+
+  CTX.font = `300 ${Math.floor(panelW * 0.03)}px 'Jost', sans-serif`;
+  CTX.fillStyle = '#8ba4bc';
+  CTX.fillText('Navigating the Generative Engine', W/2 + driftX, panelY + 90);
+  // ── Scrollable Content Area ───────────────────────────────────────────────
+  let contentY = panelY + 120;
+  let contentH = panelH - 180;
+  let scrollY = (Math.sin(t * 0.2) * 0.5 + 0.5) * -150; // Auto-scrolling simulation
+  CTX.save();
+  // Clip the text so it stays inside the panel
   CTX.beginPath();
-  CTX.strokeStyle = '#c4bcb0';
-  CTX.lineWidth = 1;
-  CTX.moveTo(panelX + panelW * 0.15, panelY + panelH * 0.42);
-  CTX.lineTo(panelX + panelW * 0.85, panelY + panelH * 0.42);
-  CTX.stroke();
-  // Instructions (left-aligned within panel)
-  CTX.font = `${Math.floor(panelW * 0.032)}px 'Jost', sans-serif`;
-  CTX.fillStyle = '#ffffff';
-  CTX.textAlign = 'left';
-  let lineH = panelH * 0.07;
-  let startY = panelY + panelH * 0.52;
-  let leftX = panelX + panelW * 0.1;
-  let lines = [
-    '• Click a mode button to change visuals',
-    '• Adjust sliders to tweak parameters',
-    '• Press Space to play/pause',
-    '• Press R to regenerate, S to save PNG',
-    '• Try "Chaos" for random surprises',
-    '• Upload an image to convert to text'
-  ];
-  lines.forEach((line, i) => {
-    CTX.fillText(line, leftX, startY + i * lineH);
-  });
-  // Footer hint
-  CTX.font = `${Math.floor(panelW * 0.028)}px 'Jost', sans-serif`;
-  CTX.fillStyle = '#c4bcb0';
+  CTX.rect(panelX + 20, contentY, panelW - 40, contentH);
+  CTX.clip();
+  let textX = panelX + 40;
+  let curY = contentY + 20 + scrollY;
+  let lineH = 22;
+  const drawWrappedText = (text, x, y, width, font, color) => {
+    CTX.font = font;
+    CTX.fillStyle = color;
+    let words = text.split(' ');
+    let line = '';
+    for (let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      if (CTX.measureText(testLine).width > width && n > 0) {
+        CTX.fillText(line, x, y);
+        line = words[n] + ' ';
+        y += lineH;
+      } else { line = testLine; }
+    }
+    CTX.fillText(line, x, y);
+    return y + lineH + 10;
+  };
+  // Section: Presets
+  curY = drawWrappedText("PRESETS: Think of these as 'Recipes'. Use the Top-Left menu to load curated starting points. They overwrite all current settings.", textX, curY, panelW - 80, "bold 14px Jost", "#d1dce5");
+  // Section: Modes
+  curY = drawWrappedText("MODES: These are the 'Engines'. Each mode uses different math to render characters. 'Bloom' radiates, 'Wave' flows, and 'Collage' layers.", textX, curY, panelW - 80, "bold 14px Jost", "#d1dce5");
+  // Section: Tips
+  curY = drawWrappedText("TIPS & TRICKS:", textX, curY, panelW - 80, "bold 16px EB Garamond", "#e67e22");
+  curY = drawWrappedText("• Field & Entropy: Turn up Entropy to break the grid and add chaos.", textX, curY, panelW - 80, "13px Jost", "#ffffff");
+  curY = drawWrappedText("• Character Sets: Use 'Arcane' for mystic vibes or 'Custom' to type your own story.", textX, curY, panelW - 80, "13px Jost", "#ffffff");
+  curY = drawWrappedText("• Exporting: Press 'S' at any time to save a high-res PNG of the current frame.", textX, curY, panelW - 80, "13px Jost", "#ffffff");
+  CTX.restore();
+  // Scrollbar track
+  CTX.fillStyle = 'rgba(0,0,0,0.3)';
+  CTX.fillRect(panelX + panelW - 15, contentY, 5, contentH);
+  // Scrollbar handle
+  let handleY = p.map(scrollY, 0, -150, contentY, contentY + contentH - 40);
+  CTX.fillStyle = '#8ba4bc';
+  CTX.fillRect(panelX + panelW - 15, handleY, 5, 40);
+  // Footer
   CTX.textAlign = 'center';
-  CTX.fillText('Press any mode button to begin', W/2, panelY + panelH * 0.9);
-  // Restore text alignment
-  CTX.textAlign = 'left';
+  CTX.font = "italic 13px Jost";
+  CTX.fillStyle = '#6b8e23';
+  CTX.fillText('Click any Mode or Preset to start creating.', W/2 + driftX, panelY + panelH - 30);
 }
   
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
