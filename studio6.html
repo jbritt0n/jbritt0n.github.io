@@ -2294,19 +2294,10 @@ let welcomeSections = [
   
   
   function drawWelcome(p, t) {
-    
   let W = p.width, H = p.height;
-  let welcomeClickRegions = []; // reset each frame
+  let welcomeClickRegions = [];
 
-    welcomeSections.forEach((sec, i) => {
-      renderSection(sec, i);
-    });
-    
-    // Store click regions globally for event handler
-    window._welcomeClickRegions = welcomeClickRegions;
-    
-  // ── 1. RAIN BACKGROUND (Matrix‑style digital rain) ───────────────────────
-  // Initialize rain columns if not present
+  // ── 1. RAIN BACKGROUND ─────────────────────────────────────────────────
   if (!window._welcomeRain) {
     let colCount = Math.floor(W / 15) + 1;
     window._welcomeRain = [];
@@ -2320,8 +2311,7 @@ let welcomeSections = [
       });
     }
   }
-  
-  // Update rain positions if playing
+
   if (S.playing) {
     window._welcomeRain.forEach(d => {
       d.y += d.speed * (S.speed * 200 + 1);
@@ -2330,15 +2320,13 @@ let welcomeSections = [
         d.speed = 1.5 + Math.random() * 3;
         d.length = 5 + Math.floor(Math.random() * 15);
       }
-      // Update character stream
       if (Math.random() < 0.3) {
-        d.chars.push(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96))); // Katakana block
+        d.chars.push(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)));
         if (d.chars.length > d.length) d.chars.shift();
       }
     });
   }
-  
-  // Draw rain (dark cyan, low opacity)
+
   CTX.save();
   CTX.font = '14px "VT323", "Courier New", monospace';
   CTX.textAlign = 'center';
@@ -2353,14 +2341,14 @@ let welcomeSections = [
     }
   });
   CTX.restore();
-  
-  // ── 2. BACKGROUND OVERLAY (dark navy) ────────────────────────────────────
+
+  // ── 2. DARK OVERLAY ────────────────────────────────────────────────────
   CTX.fillStyle = '#050a14';
   CTX.globalAlpha = 0.75;
   CTX.fillRect(0, 0, W, H);
   CTX.globalAlpha = 1.0;
-  
-  // ── 3. ANIMATED PANEL ────────────────────────────────────────────────────
+
+  // ── 3. ANIMATED PANEL ─────────────────────────────────────────────────
   let driftX = Math.cos(t * 0.5) * 10;
   let driftY = Math.sin(t * 0.5) * 10;
   let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
@@ -2369,127 +2357,101 @@ let welcomeSections = [
   let panelH = Math.min(500, H * 0.8);
   let panelX = (W - panelW) / 2 + driftX + glitch;
   let panelY = (H - panelH) / 2 + driftY + glitch;
-  
-  // Panel Body (dark terminal)
+
   CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
   CTX.beginPath();
   CTX.rect(panelX, panelY, panelW, panelH);
   CTX.fill();
-  
-  // Animated dashed border
+
   CTX.save();
-  CTX.strokeStyle = '#1a2a44'; 
+  CTX.strokeStyle = '#1a2a44';
   CTX.lineWidth = 3;
   CTX.setLineDash([12, 10]);
   CTX.lineDashOffset = -t * 15;
   CTX.strokeRect(panelX, panelY, panelW, panelH);
   CTX.restore();
-  
-  // ── 4. TERMINAL FONT SETUP ───────────────────────────────────────────────
-  // Use monospace for the entire panel content
+
+  // ── 4. TITLE ───────────────────────────────────────────────────────────
   CTX.textAlign = 'center';
   CTX.font = "bold 24px 'VT323', 'Courier New', monospace";
-  CTX.fillStyle = '#80d0ff'; // cyan heading
+  CTX.fillStyle = '#80d0ff';
   CTX.fillText('STUDIO_MANUAL v2.0', W/2 + driftX, panelY + 50);
-  
-  // ── 5. SCROLLING CONTENT (clipped) ──────────────────────────────────────
+
+  // ── 5. SCROLLING CONTENT (clipped) ────────────────────────────────────
   let viewY = panelY + 90;
   let viewH = panelH - 150;
-  
+  let margin = 40;
+  let wrapW = panelW - (margin * 2);
+
   CTX.save();
   CTX.beginPath();
   CTX.rect(panelX + 25, viewY, panelW - 50, viewH);
   CTX.clip();
 
   let curY = viewY + 30 + (S.welcomeScroll || 0);
-  let margin = 40;
-  let wrapW = panelW - (margin * 2);
 
-  const printSection = (title, body) => {
-    // Header (orange for Webster vibe)
+  const renderSection = (sec, index) => {
+    let isCollapsed = sec.collapsed;
+    let toggleSymbol = isCollapsed ? '▶' : '▼';
+
     CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
     CTX.fillStyle = '#e67e22';
     CTX.textAlign = 'left';
-    CTX.fillText('> ' + title.toUpperCase(), panelX + margin, curY);
+    CTX.fillText(toggleSymbol + ' ' + sec.title.toUpperCase(), panelX + margin, curY);
+
+    let headerY = curY - 16;
+    let headerHeight = 24;
+    welcomeClickRegions.push({
+      type: 'toggle',
+      index: index,
+      x: panelX + margin,
+      y: headerY,
+      w: CTX.measureText(toggleSymbol + ' ' + sec.title.toUpperCase()).width,
+      h: headerHeight
+    });
+
     curY += 24;
 
-    // Body (light grey)
-    CTX.font = "15px 'VT323', 'Courier New', monospace";
-    CTX.fillStyle = '#ced4da';
-    let words = body.split(' ');
-    let line = '';
-    for (let i = 0; i < words.length; i++) {
-      let test = line + words[i] + ' ';
-      if (CTX.measureText(test).width > wrapW) {
-        CTX.fillText(line, panelX + margin + 10, curY);
-        line = words[i] + ' ';
+    if (!isCollapsed) {
+      CTX.font = "15px 'VT323', 'Courier New', monospace";
+      CTX.fillStyle = '#ced4da';
+
+      let lines = sec.body.split('\n');
+      lines.forEach(line => {
+        let displayLine = line.trim();
+        let indent = displayLine.startsWith('•') ? 20 : 10;
+        CTX.fillText(displayLine, panelX + margin + indent, curY);
         curY += 22;
-      } else { line = test; }
+      });
+      curY += 10;
     }
-    CTX.fillText(line, panelX + margin + 10, curY);
-    curY += 38; // Space between sections
+    curY += 8;
   };
 
-// ── CONTENT SECTIONS ──
-
-  const renderSection = (sec, index) => {
-  let isCollapsed = sec.collapsed;
-  let toggleSymbol = isCollapsed ? '▶' : '▼';
-  
-  // Draw header with toggle
-  CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
-  CTX.fillStyle = '#e67e22';
-  CTX.textAlign = 'left';
-  CTX.fillText(toggleSymbol + ' ' + sec.title.toUpperCase(), panelX + margin, curY);
-  
-  // Store clickable region for this header (we'll handle click detection separately)
-  let headerY = curY - 16;
-  let headerHeight = 24;
-  welcomeClickRegions.push({
-    type: 'toggle',
-    index: index,
-    x: panelX + margin,
-    y: headerY,
-    w: CTX.measureText(toggleSymbol + ' ' + sec.title.toUpperCase()).width,
-    h: headerHeight
+  // Draw all sections
+  welcomeSections.forEach((sec, i) => {
+    renderSection(sec, i);
   });
-  
-  curY += 24;
-  
-  if (!isCollapsed) {
-    // Draw body
-    CTX.font = "15px 'VT323', 'Courier New', monospace";
-    CTX.fillStyle = '#ced4da';
-    
-    let lines = sec.body.split('\n');
-    lines.forEach(line => {
-      // Handle bullet lines with extra indent
-      let displayLine = line.trim();
-      let indent = displayLine.startsWith('•') ? 20 : 10;
-      CTX.fillText(displayLine, panelX + margin + indent, curY);
-      curY += 22;
-    });
-    curY += 10; // extra space after body
-  }
-  curY += 8; // spacing between sections
-};
 
-  // ── SCROLLBAR ────────────────────────────────────────────────────────────
-  let scrollMax = 1200; 
+  CTX.restore();
+
+  window._welcomeClickRegions = welcomeClickRegions;
+
+  // ── 6. SCROLLBAR ───────────────────────────────────────────────────────
+  let scrollMax = 1200;
   let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
   let barY = viewY + (scrollPercent * (viewH - 60));
   CTX.fillStyle = 'rgba(26, 42, 68, 0.5)';
-  CTX.fillRect(panelX + panelW - 12, viewY, 4, viewH); 
+  CTX.fillRect(panelX + panelW - 12, viewY, 4, viewH);
   CTX.fillStyle = '#8ba4bc';
   CTX.fillRect(panelX + panelW - 12, barY, 4, 60);
 
-  // ── FOOTER ───────────────────────────────────────────────────────────────
+  // ── 7. FOOTER ──────────────────────────────────────────────────────────
   CTX.textAlign = 'center';
   CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
   CTX.fillStyle = '#6b8e23';
   CTX.fillText('[ Scroll to explore ]  [ Click any Mode to begin ]', W/2 + driftX, panelY + panelH - 25);
 }
-
 
 
   
