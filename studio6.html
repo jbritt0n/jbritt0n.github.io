@@ -7187,7 +7187,6 @@ function drawMonogrid(p, t) {
 
 
 // ── NUMB COLLAGE ──────────────────────────────
-// ── NUMB COLLAGE MODE (Fixed) ─────────────────────────────────────────────────
 let collageBlocks = [];
 
 function initNumbCollage(p) {
@@ -7247,14 +7246,12 @@ function drawNumbCollage(p, t) {
   let textOpacity = S.numbTextOpacity ?? 0.85;
   let blockOpacity = S.numbBlockOpacity ?? 0.9;
   let showText = S.numbShowText ?? true;
-
   // Sort blocks for z‑index
   if (sortByY) {
     collageBlocks.sort((a, b) => a.y - b.y);
   } else {
     collageBlocks.sort((a, b) => a.z - b.z);
   }
-
   // Update positions
   if (S.playing) {
     for (let b of collageBlocks) {
@@ -7267,10 +7264,11 @@ function drawNumbCollage(p, t) {
       if (b.y < -b.h) b.y = H + b.h;
     }
   }
-
-  let rawText = S.numbText ?? '麻木的';
+  let rawText = S.numbText;
+  if (typeof rawText !== 'string') {
+    rawText = '麻木的'; // fallback
+  }
   let tokens = rawText.split('');
-
   for (let b of collageBlocks) {
     // Get color from palette
     let col = pickColor(p, b.x, b.y, t);
@@ -7280,13 +7278,10 @@ function drawNumbCollage(p, t) {
     let g = p.green(c);
     let bVal = p.blue(c);
     let rgba = `rgba(${r}, ${g}, ${bVal}, ${blockOpacity})`;
-
     CTX.save();
     CTX.translate(b.x + b.w / 2, b.y + b.h / 2);
     CTX.rotate(b.rot);
-
     let hw = b.w / 2, hh = b.h / 2;
-
     // ── Edge tearing (irregular polygon) ──────────────────────────────────
     CTX.beginPath();
     if (edgeTear > 0) {
@@ -7362,13 +7357,10 @@ function drawNumbCollage(p, t) {
         for (let yy = -hh + step / 2; yy < hh; yy += step) {
           let jx = (Math.random() - 0.5) * jitterAmt;
           let jy = (Math.random() - 0.5) * jitterAmt;
-
           let idx = (Math.floor(xx / step) + Math.floor(yy / step)) % tokens.length;
           let ch = tokens[idx];
-
           let sz = baseSize * p.random(0.8, 1.2);
           CTX.font = `${sz}px ${S.fontStack}`;
-
           // Ink bleed (blur)
           if (inkBleed > 0) {
             CTX.save();
@@ -7377,16 +7369,14 @@ function drawNumbCollage(p, t) {
             CTX.fillText(ch, xx + jx, yy + jy);
             CTX.restore();
           }
-
           CTX.fillText(ch, xx + jx, yy + jy);
         }
       }
     }
-
     CTX.restore();
   }
 }
-  
+
   
 // ── Collage Wash (numb) ───────────────────────────────────────────────────────────
 function drawCollageWash(p, t) {
