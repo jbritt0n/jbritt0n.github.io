@@ -1594,6 +1594,94 @@ let _lastFont='',_lastSize=-1,_lastFill='';
 
   
 
+// ── WELCOME SECTIONS ─────────────────────────────────────────────────────
+ let welcomeSections = [
+  {
+    title: "The Generative Philosophy",
+    body: "You are not drawing; you are sculpting behavior. This studio is a 'shared resource' engine where mathematical noise fields guide the placement of characters. Every visual is a living system reacting to your input.",
+    collapsed: false
+  },
+  {
+    title: "Presets & Modes",
+    body: "Start here. Presets are curated 'snapshots' that instantly apply a complete visual style.\nModes are the generative engines—each creates a different kind of motion.\n• Try 'Bloom' for organic radiation\n• 'Wave' for flowing oscillations\n• 'Yandinsky' for bold, clashing geometric abstraction.",
+    collapsed: false
+  },
+  {
+    title: "Global Controls – Overview",
+    body: "The Global Controls panel contains sliders and toggles that affect every generative mode.\nThey are grouped into Motion, Field, Entropy & Glitch, and Rendering & Mapping.\nUnderstanding these will help you shape any composition to your liking.",
+    collapsed: true
+  },
+  {
+    title: "Motion",
+    body: "• Speed – How fast the pattern animates. Higher values create rapid evolution.\n• Wave Amplitude – Strength of displacement, ripples, and oscillations. Affects mountain height, warp intensity, and more.\n• Turbulence – Frequency multiplier for waves. Higher = tighter, more chaotic undulations.\n• Jitter – Random positional offset applied to each character. Adds a hand‑drawn, shaky feel.",
+    collapsed: true
+  },
+  {
+    title: "Field",
+    body: "• Density – Threshold for placing characters. Lower values = more characters (denser field).\n• Spacing – Grid distance between character positions. Larger spacing creates airy compositions.\n• Max Size – Upper limit for character font size. Many modes map noise to this range.\n• Noise Scale – Controls the zoom level of the noise field. Lower = larger, smoother blobs; higher = fine texture.\n• Char Variation – How quickly the selected character changes across the canvas. High values give mottled, diverse text.\n• Rotation – Global rotation offset (in degrees) applied to all characters.",
+    collapsed: true
+  },
+  {
+    title: "Entropy & Glitch",
+    body: "These controls add happy accidents and digital artifacts.\n• Glitch Intensity – Global displacement strength. At 0, glitch is off; higher values warp the image more.\n• Chromatic Shift – Offsets red, green, and blue channels separately for a colour‑fringed effect.\n• Scanlines – Overlays dark horizontal lines, mimicking a CRT monitor.\n• Pixelate – Renders at a lower resolution for a blocky, retro look.\n• Entropy – Probability of replacing a character with a glitch symbol (like █ or _).\n• Case Glitch – Randomly flips character case (upper ↔ lower).\n• Mirror Chance – Probability of flipping a character horizontally or vertically.\n• Flip H / Flip V – Toggles global horizontal or vertical mirroring for all characters.\n• Trail Persistence – How much of the previous frame remains, creating motion blur or smear effects.\n• Signal Collapse – Triggers a temporary scan‑line glitch across the canvas.",
+    collapsed: true
+  },
+  {
+    title: "Rendering & Mapping",
+    body: "Canvas Blending:\nDetermines how characters and shapes composite with the background. 'Screen' lightens and creates neon glows; 'Multiply' darkens like ink on paper; 'Overlay' and 'Hard Light' boost contrast; 'Difference' gives psychedelic inversions.\n\nNoise Type:\nSelects the underlying noise algorithm used for organic patterns.\n• Perlin – Classic smooth, cloud‑like noise.\n• Simplex – Similar to Perlin but with less visible grid artifacts.\n• Ridged – Sharp bright ridges with dark valleys (good for lightning or terrain).\n• Billow – Soft rounded domes with dark cuts.\n• Cellular (Worley) – Creates cell‑like clusters; characters gather at cell centres.\n• Value – Blockier, more grid‑aligned noise.\n• Marble – Sine veining driven by turbulence; mimics polished stone.\n• Domain Warp – Noise that warps its own coordinates, producing swirly, organic forms.\n• Checker – Animated hard‑edge checkerboard cells.\n\nNoise Detail (fBm):\n• Octaves – Number of noise layers stacked together. More octaves = richer detail (but slower).\n• Falloff – How quickly each octave's amplitude decreases. Lower values create sharper, more detailed layers.\n\nColor Mapping:\nDefines how the palette colours are distributed across the canvas.\n• Noise – Colour varies with the organic noise field (default).\n• Radial – Concentric rings from the centre.\n• Angular – Rotating pie‑slice colour wheel.\n• Diamond – Manhattan distance creates diamond‑shaped colour zones.\n• Tunnel – Logarithmic zoom rings that pulse inward.\n• Spiral – Hypnotic spinning colour gradient.\n• Axial – Bidirectional sine wave interference.\n• Plasma – Demoscene‑style rich multicolour interference.\n• Scan – Horizontal animated bands (like a barcode scanner).\n• Stepped – Hard, quantized colour bands (set the number of bands with the slider).\n• Vortex – Spiral plus noise for an organic spinning field.\n• Mosaic – Colour locks to grid tiles, creating blocky colour patterns.",
+    collapsed: true
+  },
+  {
+    title: "Mode Parameters",
+    body: "When a mode is selected, unique sliders appear. These are the 'personality' controls for that engine—tweaking them fine-tunes the specific generative behavior, such as 'Stretch' in Tendril Engine or 'Clash' in Yandinsky.",
+    collapsed: true
+  },
+  {
+    title: "Calligraphy & Ink",
+    body: "The Calligraphy section lets you create sumi‑e paintings with a virtual brush.\nChoose from four sub‑modes: Random strokes, Character paths (永, 龍), Interactive drawing, and pre‑composed scenes like bamboo or mount fuji.\nAdjust brush taper and ink bleed for authentic atmospheric effects.",
+    collapsed: true
+  },
+  {
+    title: "Characters & Font",
+    body: "Choose the 'Ink' for your engine. Select from dozens of sets—Chinese, Kanji, Cyrillic, runes, or Braille.\nSelect a font family to change the typographic voice. For maximum variety, try 'Rand Unicode' to explore the vast edges of the character map.",
+    collapsed: true
+  },
+  {
+    title: "Palette & Colors",
+    body: "Click a swatch to change the entire mood. Colors are mapped to noise fields, creating organic gradients.\nUse Accent 1 and 2 for pops of contrast, and use the Background selector to set the canvas base—light grounds for ink‑wash, dark for neon and glitch.",
+    collapsed: true
+  },
+  {
+    title: "Image → Text",
+    body: "Upload an image to convert it into generative ASCII art. The system interprets brightness as density instructions, allowing you to 'paint' with typography using styles like hatch, stipple, or edge rendering.",
+    collapsed: true
+  },
+  {
+    title: "Shape & Text Overlays",
+    body: "Add geometric forms (stars, polygons, rings) or scrolling text 'crawls' that float above the main engine.\nThese act as structural anchors or narrative fragments, perfect for adding poetry that moves independently of the underlying generative flow.",
+    collapsed: true
+  },
+  {
+    title: "Chaos Monkey",
+    body: "Feeling adventurous? Turn on Chaos Monkey. Every few seconds it randomly shifts a parameter—speed, palette, or mode—triggering a cascade of unexpected and often beautiful phase shifts.",
+    collapsed: true
+  },
+  {
+    title: "Canvas Size",
+    body: "Resize the canvas to fit your needs. Choose from presets like 800×800, 1080×1080, or full‑panel responsive.\nCustom dimensions let you export exactly the resolution you want.",
+    collapsed: true
+  },
+  {
+    title: "My Presets",
+    body: "Save your favorite settings as named presets.\nClick 'Save' after tweaking parameters, then load them later with one click.\nYou can rename, export, or delete presets—perfect for building a personal library of styles.",
+    collapsed: true
+  },
+  {
+    title: "Keyboard Shortcuts",
+    body: "• SPACE: Play / Pause\n• R: Regenerate Field\n• S: Save high‑res PNG\n• Use the Mouse Wheel to scroll this manual.\nSmall slider tweaks produce the most intentional art.",
+    collapsed: false
+  }
+]; 
 
   
 // ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
@@ -2205,95 +2293,6 @@ function buildComp(preset,W,H){
 
   
 // ── WELCOME MODE (Terminal + Rain) ─────────────────────────────────────────
-let welcomeSections = [
-  {
-    title: "The Generative Philosophy",
-    body: "You are not drawing; you are sculpting behavior. This studio is a 'shared resource' engine where mathematical noise fields guide the placement of characters. Every visual is a living system reacting to your input.",
-    collapsed: false
-  },
-  {
-    title: "Presets & Modes",
-    body: "Start here. Presets are curated 'snapshots' that instantly apply a complete visual style.\nModes are the generative engines—each creates a different kind of motion.\n• Try 'Bloom' for organic radiation\n• 'Wave' for flowing oscillations\n• 'Yandinsky' for bold, clashing geometric abstraction.",
-    collapsed: false
-  },
-  {
-    title: "Global Controls – Overview",
-    body: "The Global Controls panel contains sliders and toggles that affect every generative mode.\nThey are grouped into Motion, Field, Entropy & Glitch, and Rendering & Mapping.\nUnderstanding these will help you shape any composition to your liking.",
-    collapsed: true
-  },
-  {
-    title: "Motion",
-    body: "• Speed – How fast the pattern animates. Higher values create rapid evolution.\n• Wave Amplitude – Strength of displacement, ripples, and oscillations. Affects mountain height, warp intensity, and more.\n• Turbulence – Frequency multiplier for waves. Higher = tighter, more chaotic undulations.\n• Jitter – Random positional offset applied to each character. Adds a hand‑drawn, shaky feel.",
-    collapsed: true
-  },
-  {
-    title: "Field",
-    body: "• Density – Threshold for placing characters. Lower values = more characters (denser field).\n• Spacing – Grid distance between character positions. Larger spacing creates airy compositions.\n• Max Size – Upper limit for character font size. Many modes map noise to this range.\n• Noise Scale – Controls the zoom level of the noise field. Lower = larger, smoother blobs; higher = fine texture.\n• Char Variation – How quickly the selected character changes across the canvas. High values give mottled, diverse text.\n• Rotation – Global rotation offset (in degrees) applied to all characters.",
-    collapsed: true
-  },
-  {
-    title: "Entropy & Glitch",
-    body: "These controls add happy accidents and digital artifacts.\n• Glitch Intensity – Global displacement strength. At 0, glitch is off; higher values warp the image more.\n• Chromatic Shift – Offsets red, green, and blue channels separately for a colour‑fringed effect.\n• Scanlines – Overlays dark horizontal lines, mimicking a CRT monitor.\n• Pixelate – Renders at a lower resolution for a blocky, retro look.\n• Entropy – Probability of replacing a character with a glitch symbol (like █ or _).\n• Case Glitch – Randomly flips character case (upper ↔ lower).\n• Mirror Chance – Probability of flipping a character horizontally or vertically.\n• Flip H / Flip V – Toggles global horizontal or vertical mirroring for all characters.\n• Trail Persistence – How much of the previous frame remains, creating motion blur or smear effects.\n• Signal Collapse – Triggers a temporary scan‑line glitch across the canvas.",
-    collapsed: true
-  },
-  {
-    title: "Rendering & Mapping",
-    body: "Canvas Blending:\nDetermines how characters and shapes composite with the background. 'Screen' lightens and creates neon glows; 'Multiply' darkens like ink on paper; 'Overlay' and 'Hard Light' boost contrast; 'Difference' gives psychedelic inversions.\n\nNoise Type:\nSelects the underlying noise algorithm used for organic patterns.\n• Perlin – Classic smooth, cloud‑like noise.\n• Simplex – Similar to Perlin but with less visible grid artifacts.\n• Ridged – Sharp bright ridges with dark valleys (good for lightning or terrain).\n• Billow – Soft rounded domes with dark cuts.\n• Cellular (Worley) – Creates cell‑like clusters; characters gather at cell centres.\n• Value – Blockier, more grid‑aligned noise.\n• Marble – Sine veining driven by turbulence; mimics polished stone.\n• Domain Warp – Noise that warps its own coordinates, producing swirly, organic forms.\n• Checker – Animated hard‑edge checkerboard cells.\n\nNoise Detail (fBm):\n• Octaves – Number of noise layers stacked together. More octaves = richer detail (but slower).\n• Falloff – How quickly each octave's amplitude decreases. Lower values create sharper, more detailed layers.\n\nColor Mapping:\nDefines how the palette colours are distributed across the canvas.\n• Noise – Colour varies with the organic noise field (default).\n• Radial – Concentric rings from the centre.\n• Angular – Rotating pie‑slice colour wheel.\n• Diamond – Manhattan distance creates diamond‑shaped colour zones.\n• Tunnel – Logarithmic zoom rings that pulse inward.\n• Spiral – Hypnotic spinning colour gradient.\n• Axial – Bidirectional sine wave interference.\n• Plasma – Demoscene‑style rich multicolour interference.\n• Scan – Horizontal animated bands (like a barcode scanner).\n• Stepped – Hard, quantized colour bands (set the number of bands with the slider).\n• Vortex – Spiral plus noise for an organic spinning field.\n• Mosaic – Colour locks to grid tiles, creating blocky colour patterns.",
-    collapsed: true
-  },
-  {
-    title: "Mode Parameters",
-    body: "When a mode is selected, unique sliders appear. These are the 'personality' controls for that engine—tweaking them fine-tunes the specific generative behavior, such as 'Stretch' in Tendril Engine or 'Clash' in Yandinsky.",
-    collapsed: true
-  },
-  {
-    title: "Calligraphy & Ink",
-    body: "The Calligraphy section lets you create sumi‑e paintings with a virtual brush.\nChoose from four sub‑modes: Random strokes, Character paths (永, 龍), Interactive drawing, and pre‑composed scenes like bamboo or mount fuji.\nAdjust brush taper and ink bleed for authentic atmospheric effects.",
-    collapsed: true
-  },
-  {
-    title: "Characters & Font",
-    body: "Choose the 'Ink' for your engine. Select from dozens of sets—Chinese, Kanji, Cyrillic, runes, or Braille.\nSelect a font family to change the typographic voice. For maximum variety, try 'Rand Unicode' to explore the vast edges of the character map.",
-    collapsed: true
-  },
-  {
-    title: "Palette & Colors",
-    body: "Click a swatch to change the entire mood. Colors are mapped to noise fields, creating organic gradients.\nUse Accent 1 and 2 for pops of contrast, and use the Background selector to set the canvas base—light grounds for ink‑wash, dark for neon and glitch.",
-    collapsed: true
-  },
-  {
-    title: "Image → Text",
-    body: "Upload an image to convert it into generative ASCII art. The system interprets brightness as density instructions, allowing you to 'paint' with typography using styles like hatch, stipple, or edge rendering.",
-    collapsed: true
-  },
-  {
-    title: "Shape & Text Overlays",
-    body: "Add geometric forms (stars, polygons, rings) or scrolling text 'crawls' that float above the main engine.\nThese act as structural anchors or narrative fragments, perfect for adding poetry that moves independently of the underlying generative flow.",
-    collapsed: true
-  },
-  {
-    title: "Chaos Monkey",
-    body: "Feeling adventurous? Turn on Chaos Monkey. Every few seconds it randomly shifts a parameter—speed, palette, or mode—triggering a cascade of unexpected and often beautiful phase shifts.",
-    collapsed: true
-  },
-  {
-    title: "Canvas Size",
-    body: "Resize the canvas to fit your needs. Choose from presets like 800×800, 1080×1080, or full‑panel responsive.\nCustom dimensions let you export exactly the resolution you want.",
-    collapsed: true
-  },
-  {
-    title: "My Presets",
-    body: "Save your favorite settings as named presets.\nClick 'Save' after tweaking parameters, then load them later with one click.\nYou can rename, export, or delete presets—perfect for building a personal library of styles.",
-    collapsed: true
-  },
-  {
-    title: "Keyboard Shortcuts",
-    body: "• SPACE: Play / Pause\n• R: Regenerate Field\n• S: Save high‑res PNG\n• Use the Mouse Wheel to scroll this manual.\nSmall slider tweaks produce the most intentional art.",
-    collapsed: false
-  }
-];
-  
-  
 function drawWelcome(p, t) {
   let W = p.width, H = p.height;
   
@@ -2343,8 +2342,8 @@ function drawWelcome(p, t) {
   let wrapW = panelW - (margin * 2);
 
   window._welcomeClickRegions = [];
-
-  const printSection = (index, title, body) => {
+  
+  const printSection = (index, title, bodyText) => { // Use 'bodyText' as parameter name
   let isCollapsed = welcomeSections[index].collapsed;
   
   // Header Hitbox (matches your handleWelcomeClick logic)
@@ -2394,9 +2393,10 @@ function drawWelcome(p, t) {
 };
 
   // ── RENDER SECTIONS ──
-  welcomeSections.forEach((sec, i) => {
-    printSection(i, sec.title, sec.content);
-  });
+welcomeSections.forEach((sec, i) => {
+  // Pass sec.title and sec.body specifically
+  printSection(i, sec.title, sec.body); 
+});
 
   CTX.restore();
 
