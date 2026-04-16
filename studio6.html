@@ -12520,7 +12520,7 @@ window.addEventListener('wheel', function(e) {
   if (S.mode === 'welcome') {
     S.welcomeScroll += e.deltaY > 0 ? -40 : 40;
     // Increased lower limit to -1200 to allow room for new sections
-    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -2800));
+    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -3500));
     e.preventDefault();
   }
 }, { passive: false });
