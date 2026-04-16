@@ -8280,10 +8280,9 @@ function drawYandinsky(p, t) {
   let lw          = S.ynLineWeight ?? 1.0;
   let showGrid    = S.ynShowGrid   ?? true;
   let textureAmt  = S.ynTexture    ?? 1.0;
-  let concrete    = S.ynConcrete   ?? 0.3;
- 
-  // Unified tick: t is p5 millis; convert to seconds then scale by speed
-  let tick = (t * 0.001) * speed;
+  
+  // Use p5 millis for continuous animation
+  let tick = (p.millis() * 0.001) * speed;
  
   // ── 1. Background — warm ochre ground ────────────────────────────────────
   let bg = S.bg || '#d4a828';
