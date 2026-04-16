@@ -251,6 +251,9 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="hypertype_mode" title="Hypertype — large glyphs on pattern backgrounds">Hypertype</button>
         <button class="pbar-btn" data-preset="hypertype_hearts" title="Hypertype — sentiment data feel (heart + word mix)">♥ Hypertype</button>
         <button class="pbar-btn" data-preset="circle_field_warm" title="Circle field — Strange Loops ms_092 style">Circle Field</button>
+        <button class="pbar-btn" data-preset="yandinsky_original" title="Yandinsky">Yandinsky OG</button>
+
+        
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('pre-atmos')">
@@ -8102,6 +8105,7 @@ let _ynS = null; // scene state
 function initYandinsky(p) {
   let W = p.width, H = p.height;
   let m = Math.min(W, H);
+  let rectColors = S.palette && S.palette.length ? S.palette.slice(0, 6) : ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'];
 
   // Helper for drift config
   function driftCfg(dxFrac, dyFrac, phaseSeed) {
@@ -8205,7 +8209,7 @@ function initYandinsky(p) {
   }
 
   // Generate extra rectangles
-  let rectColors = ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'];
+  let rectColors = S.palette && S.palette.length ? S.palette : ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'];
   for (let i = 0; i < extraRectsCount; i++) {
     let baseX = p.random(W * 0.1, W * 0.8);
     let baseY = p.random(H * 0.1, H * 0.8);
@@ -8249,12 +8253,14 @@ function initYandinsky(p) {
   }
 }
 
-// ── Eased drift: given a drift config and global tick, return {dx, dy} ────────
-function _ynDrift(d, tick, driftScale) {
+// ── Eased drift with noise variation ─────────────────────────────────────────
+function _ynDrift(p, d, tick, driftScale) {
   let t = tick * d.speed;
+  let nx = sampleNoise(p, d.phase + t, 0, 0);
+  let ny = sampleNoise(p, 0, d.phase + t * 1.27, 0);
   return {
-    x: Math.sin(d.phase + t) * d.dx * driftScale,
-    y: Math.cos(d.phase + t * 1.27) * d.dy * driftScale
+    x: Math.sin(nx * Math.PI * 2) * d.dx * driftScale,
+    y: Math.cos(ny * Math.PI * 2) * d.dy * driftScale
   };
 }
   
@@ -8406,163 +8412,170 @@ function drawYandinsky(p, t) {
     CTX.stroke();
   });
   // ── 3. Large circle (black outline, the primary geometric anchor) ─────────
-  let cd = _ynDrift(Y.circle.d, tick, driftScale);
+  let cd = _ynDrift(p, Y.circle.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.circle.cx + cd.x, Y.circle.cy + cd.y, tick);
   CTX.save();
-  CTX.strokeStyle = 'rgba(22,14,6,0.90)';
+  CTX.translate(W/2, H/2);
+  CTX.rotate(S.charRotRad);
+  CTX.translate(-W/2, -H/2);
+  CTX.strokeStyle = S.palette[0] || 'rgba(22,14,6,0.90)';
   CTX.lineWidth   = lw * 2.4;
   CTX.beginPath();
-  CTX.arc(Y.circle.cx + cd.x, Y.circle.cy + cd.y, Y.circle.r, 0, Math.PI * 2);
+  CTX.arc(gPos.x, gPos.y, Y.circle.r, 0, Math.PI * 2);
   CTX.stroke();
   CTX.restore();
+  
  
   // ── 4. Magenta filled rectangle ───────────────────────────────────────────
-  let rd = _ynDrift(Y.rectMag.d, tick, driftScale);
+  let rd = _ynDrift(p, Y.rectMag.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.rectMag.x + rd.x, Y.rectMag.y + rd.y, tick);
   CTX.save();
-  CTX.fillStyle   = '#d4166e';
-  CTX.strokeStyle = 'rgba(22,14,6,0.55)';
+  CTX.fillStyle   = S.palette[0] || '#d4166e';
+  CTX.strokeStyle = S.palette[1] || 'rgba(22,14,6,0.55)';
   CTX.lineWidth   = lw * 0.7;
-  let rmx = Y.rectMag.x + rd.x, rmy = Y.rectMag.y + rd.y;
-  CTX.fillRect(rmx, rmy, Y.rectMag.w, Y.rectMag.h);
-  CTX.strokeRect(rmx, rmy, Y.rectMag.w, Y.rectMag.h);
-  // Light cyan highlight fleck (visible in painting)
-  CTX.fillStyle = 'rgba(140,210,220,0.45)';
-  CTX.fillRect(rmx + Y.rectMag.w * 0.04, rmy + Y.rectMag.h * 0.62, Y.rectMag.w * 0.3, Y.rectMag.h * 0.08);
+  CTX.fillRect(gPos.x, gPos.y, Y.rectMag.w, Y.rectMag.h);
+  CTX.strokeRect(gPos.x, gPos.y, Y.rectMag.w, Y.rectMag.h);
+  // Light cyan highlight (use accent or palette[2])
+  CTX.fillStyle = S.accent || 'rgba(140,210,220,0.45)';
+  CTX.fillRect(gPos.x + Y.rectMag.w * 0.04, gPos.y + Y.rectMag.h * 0.62, Y.rectMag.w * 0.3, Y.rectMag.h * 0.08);
   CTX.restore();
  
   // ── 5. Pink / magenta dot ─────────────────────────────────────────────────
-  let dd = _ynDrift(Y.dot.d, tick, driftScale);
+  let dd = _ynDrift(p, Y.dot.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.dot.cx + dd.x, Y.dot.cy + dd.y, tick);
   CTX.save();
-  // Slight glow halo
-  let dotGr = CTX.createRadialGradient(
-    Y.dot.cx + dd.x, Y.dot.cy + dd.y, 0,
-    Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r * 1.6
-  );
+  // Glow halo
+  let dotGr = CTX.createRadialGradient(gPos.x, gPos.y, 0, gPos.x, gPos.y, Y.dot.r * 1.6);
   dotGr.addColorStop(0,   'rgba(230,20,100,0.22)');
   dotGr.addColorStop(1,   'rgba(230,20,100,0)');
   CTX.fillStyle = dotGr;
   CTX.beginPath();
-  CTX.arc(Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r * 1.6, 0, Math.PI * 2);
+  CTX.arc(gPos.x, gPos.y, Y.dot.r * 1.6, 0, Math.PI * 2);
   CTX.fill();
-  // Solid magenta dot
-  CTX.fillStyle = '#e01870';
+  // Solid dot
+  CTX.fillStyle = S.palette[0] || '#e01870';
   CTX.beginPath();
-  CTX.arc(Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r, 0, Math.PI * 2);
+  CTX.arc(gPos.x, gPos.y, Y.dot.r, 0, Math.PI * 2);
   CTX.fill();
   CTX.restore();
  
   // ── 6. Black vertical rectangle ───────────────────────────────────────────
-  let bvd = _ynDrift(Y.rectBlkV.d, tick, driftScale);
+  let bvd = _ynDrift(p, Y.rectBlkV.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, tick);
   CTX.save();
-  CTX.fillStyle = '#18120a';
-  CTX.fillRect(Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, Y.rectBlkV.w, Y.rectBlkV.h);
+  CTX.fillStyle = S.palette[2] || '#18120a';
+  CTX.fillRect(gPos.x, gPos.y, Y.rectBlkV.w, Y.rectBlkV.h);
   CTX.restore();
  
   // ── 7. Dark horizontal band ────────────────────────────────────────────────
-  let bd = _ynDrift(Y.band.d, tick, driftScale);
-  let bx = Y.band.x + bd.x, by_ = Y.band.y + bd.y;
+  let bd = _ynDrift(p, Y.band.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.band.x + bd.x, Y.band.y + bd.y, tick);
   CTX.save();
-  CTX.fillStyle = '#1c1810';
-  CTX.fillRect(bx, by_, Y.band.w, Y.band.h);
+  CTX.fillStyle = S.palette[2] || '#1c1810';
+  CTX.fillRect(gPos.x, gPos.y, Y.band.w, Y.band.h);
   CTX.restore();
  
   // ── 8. Teal-blue accent band (inside/below dark band, shares drift) ───────
-  let tbd = _ynDrift(Y.bandTeal.d, tick, driftScale);
+  let tbd = _ynDrift(p, Y.bandTeal.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, tick);
   CTX.save();
-  CTX.fillStyle = '#3a7882';
-  CTX.fillRect(Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, Y.bandTeal.w, Y.bandTeal.h);
-  // Lighter highlight within the teal band
-  CTX.fillStyle = 'rgba(160,215,225,0.32)';
-  CTX.fillRect(Y.bandTeal.x + tbd.x + Y.bandTeal.w * 0.04, Y.bandTeal.y + tbd.y + Y.bandTeal.h * 0.25,
+  CTX.fillStyle = S.palette[1] || '#3a7882';
+  CTX.fillRect(gPos.x, gPos.y, Y.bandTeal.w, Y.bandTeal.h);
+  // Highlight
+  CTX.fillStyle = S.accent2 || 'rgba(160,215,225,0.32)';
+  CTX.fillRect(gPos.x + Y.bandTeal.w * 0.04, gPos.y + Y.bandTeal.h * 0.25,
                Y.bandTeal.w * 0.45, Y.bandTeal.h * 0.45);
   CTX.restore();
  
   // ── 9. Crosspiece column: black body + magenta stripe ─────────────────────
-  let crd = _ynDrift(Y.cross.d, tick, driftScale);
-  let cx_ = Y.cross.x + crd.x, cy_ = Y.cross.y + crd.y;
+  let crd = _ynDrift(p, Y.cross.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.cross.x + crd.x, Y.cross.y + crd.y, tick);
   CTX.save();
-  CTX.fillStyle = '#18120a';
-  CTX.fillRect(cx_, cy_, Y.cross.w, Y.cross.h);
-  CTX.fillStyle = '#d4166e'; // magenta stripe
-  CTX.fillRect(cx_, cy_ + Y.cross.h * Y.cross.magStripeT, Y.cross.w, Y.cross.h * Y.cross.magStripeH);
+  CTX.fillStyle = S.palette[2] || '#18120a';
+  CTX.fillRect(gPos.x, gPos.y, Y.cross.w, Y.cross.h);
+  CTX.fillStyle = S.palette[0] || '#d4166e';
+  CTX.fillRect(gPos.x, gPos.y + Y.cross.h * Y.cross.magStripeT, Y.cross.w, Y.cross.h * Y.cross.magStripeH);
   CTX.restore();
  
   // ── 10. Three small accent dots (inside circle near arc) ──────────────────
   Y.accentDots.forEach(function(dt) {
-    // Dots share the circle's drift so they feel attached to it
-    let ddt = _ynDrift(dt.d, tick, driftScale);
+    let ddt = _ynDrift(p, dt.d, tick, driftScale);
+    let gPos = applyGlitchOffset(p, dt.cx + ddt.x, dt.cy + ddt.y, tick);
     CTX.save();
-    CTX.fillStyle = 'rgba(22,14,6,0.72)';
+    CTX.fillStyle = S.accent || 'rgba(22,14,6,0.72)';
     CTX.beginPath();
-    CTX.arc(dt.cx + ddt.x, dt.cy + ddt.y, dt.r, 0, Math.PI * 2);
+    CTX.arc(gPos.x, gPos.y, dt.r, 0, Math.PI * 2);
     CTX.fill();
     CTX.restore();
   });
  
   // ── 11. Blue-teal crescent arc ────────────────────────────────────────────
-  let ard = _ynDrift(Y.arc.d, tick, driftScale);
-  let ax = Y.arc.cx + ard.x, ay = Y.arc.cy + ard.y;
+  let ard = _ynDrift(p, Y.arc.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.arc.cx + ard.x, Y.arc.cy + ard.y, tick);
   CTX.save();
   CTX.lineCap = 'round';
-  // Base teal-blue body (thick)
-  CTX.strokeStyle = '#3a7580';
+  CTX.strokeStyle = S.palette[1] || '#3a7580';
   CTX.lineWidth   = Y.arc.thickness;
   CTX.beginPath();
-  CTX.arc(ax, ay, Y.arc.r, Y.arc.a0, Y.arc.a1);
+  CTX.arc(gPos.x, gPos.y, Y.arc.r, Y.arc.a0, Y.arc.a1);
   CTX.stroke();
-  // Lighter inner highlight stripe — slightly smaller radius
-  CTX.strokeStyle = 'rgba(90,168,180,0.68)';
+  CTX.strokeStyle = S.accent || 'rgba(90,168,180,0.68)';
   CTX.lineWidth   = Y.arc.thickness * 0.38;
   CTX.beginPath();
-  CTX.arc(ax, ay, Y.arc.r * 0.86, Y.arc.a0 + 0.14, Y.arc.a1 - 0.10);
+  CTX.arc(gPos.x, gPos.y, Y.arc.r * 0.86, Y.arc.a0 + 0.14, Y.arc.a1 - 0.10);
   CTX.stroke();
-  // Darker outer edge
-  CTX.strokeStyle = 'rgba(22,55,60,0.40)';
+  CTX.strokeStyle = S.palette[2] || 'rgba(22,55,60,0.40)';
   CTX.lineWidth   = Y.arc.thickness * 0.25;
   CTX.beginPath();
-  CTX.arc(ax, ay, Y.arc.r * 1.07, Y.arc.a0, Y.arc.a1);
+  CTX.arc(gPos.x, gPos.y, Y.arc.r * 1.07, Y.arc.a0, Y.arc.a1);
   CTX.stroke();
   CTX.restore();
 
   // ── Extra rectangles (variation) ──────────────────────────────────────────
   Y.extraRects.forEach(function(r) {
-    let rd = _ynDrift(r.d, tick, driftScale);
-    CTX.save();
-    CTX.fillStyle = r.col;
-    CTX.globalAlpha = 0.75;
-    CTX.fillRect(r.x + rd.x, r.y + rd.y, r.w, r.h);
-    CTX.strokeStyle = 'rgba(22,14,6,0.4)';
-    CTX.lineWidth = lw * 0.5;
-    CTX.strokeRect(r.x + rd.x, r.y + rd.y, r.w, r.h);
-    CTX.restore();
-  });
+  let rd = _ynDrift(p, r.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, r.x + rd.x, r.y + rd.y, tick);
+  CTX.save();
+  CTX.fillStyle = r.col; // already uses palette
+  CTX.globalAlpha = 0.75;
+  CTX.fillRect(gPos.x, gPos.y, r.w, r.h);
+  CTX.strokeStyle = S.palette[2] || 'rgba(22,14,6,0.4)';
+  CTX.lineWidth = lw * 0.5;
+  CTX.strokeRect(gPos.x, gPos.y, r.w, r.h);
+  CTX.restore();
+});
   
   // ── 12. Red curved accent ─────────────────────────────────────────────────
-  let rad = _ynDrift(Y.redArc.d, tick, driftScale);
+  let rad = _ynDrift(p, Y.redArc.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, tick);
   CTX.save();
-  CTX.strokeStyle = '#c02020';
+  CTX.strokeStyle = S.accent || '#c02020';
   CTX.lineWidth   = lw * 1.6;
   CTX.lineCap     = 'round';
   CTX.beginPath();
-  CTX.arc(Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, Y.redArc.r, Y.redArc.a0, Y.redArc.a1);
+  CTX.arc(gPos.x, gPos.y, Y.redArc.r, Y.redArc.a0, Y.redArc.a1);
   CTX.stroke();
   CTX.restore();
  
   // ── 13. Light highlight strokes inside the band (white/cream flecks) ──────
   // These move with the band so they read as surface marks on the dark paint
+  let bd2 = _ynDrift(p, Y.band.d, tick, driftScale);
+  let bx = Y.band.x + bd2.x, by_ = Y.band.y + bd2.y;
   CTX.save();
-  CTX.strokeStyle = 'rgba(230,215,185,0.40)';
+  CTX.strokeStyle = S.accent || 'rgba(230,215,185,0.40)';
   CTX.lineWidth   = lw * 1.7;
   CTX.lineCap     = 'round';
   CTX.beginPath();
   CTX.moveTo(bx + Y.band.w * 0.06, by_ + Y.band.h * 0.35);
   CTX.lineTo(bx + Y.band.w * 0.52, by_ + Y.band.h * 0.55);
   CTX.stroke();
-  CTX.strokeStyle = 'rgba(230,215,185,0.22)';
+  CTX.strokeStyle = S.accent2 || 'rgba(230,215,185,0.22)';
   CTX.lineWidth   = lw * 0.9;
   CTX.beginPath();
   CTX.moveTo(bx + Y.band.w * 0.10, by_ + Y.band.h * 0.70);
   CTX.lineTo(bx + Y.band.w * 0.35, by_ + Y.band.h * 0.80);
   CTX.stroke();
+  CTX.restore();
 
 
   // ── Concrete texture overlay ──────────────────────────────────────────────
@@ -8570,7 +8583,7 @@ function drawYandinsky(p, t) {
   if (concrete > 0) {
     CTX.save();
     CTX.globalAlpha = concrete * 0.25;
-    CTX.fillStyle = '#3a3020';
+    CTX.fillStyle = S.palette[5] || '#3a3020';
     for (let tx = 0; tx < W; tx += 3) {
       for (let ty = 0; ty < H; ty += 3) {
         let n = p.noise(tx * 0.03, ty * 0.03, tick * 0.01);
@@ -8581,7 +8594,7 @@ function drawYandinsky(p, t) {
     }
     // Additional fine scratches
     CTX.globalAlpha = concrete * 0.12;
-    CTX.strokeStyle = '#2a2015';
+    CTX.strokeStyle = S.palette[5] || '#2a2015';
     CTX.lineWidth = 0.5;
     for (let i = 0; i < 20; i++) {
       let x = p.noise(i, tick) * W;
@@ -12331,7 +12344,7 @@ const PRESETS={
   poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
   kandinsky_composition: function() {ap({mode: 'kandinsky',font: 'courier', bg: '#FFD700', palette: 'site', accent: '#FF00FF',accentAmt: 0.3,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20, turb: 0.006,noiseType: 'simplex',kClusterCount: 14,kBurstElements: 10,kBurstSpread: 0.7,kLineCount: 24,kLineWidth: 0.8,kLineLength: 0.9,kGeomChars: true,kDrawShadows: true,});},
   numb_poem: function(){ap({mode: 'numbpoem',font: 'typewriter', bg: '#f2e8d5', palette: 'numb',accent: '#c94b1f',spacing: 12,maxSize: 18,density: 0.5,speed: 0.0015,wave: 8,turb: 0.004,numbPoemBlockMinW: 140,numbPoemBlockMaxW: 300,numbPoemBlockMinH: 120,numbPoemBlockMaxH: 280,numbPoemRotateChance: 0.3,numbPoemDriftSpeed: 0.25,numbPoemDriftX: 0.5,numbPoemDriftY: 0.4,numbPoemEdgeTear: 0.5,numbPoemPaperGrain: true,numbPoemInkBleed: 0.35,numbPoemTextColor: '#1a1a1a',numbPoemTextOpacity: 0.95,numbPoemBlockOpacity: 0.9,numbPoemTextSizeMin: 12,numbPoemTextSizeMax: 20,numbPoemLineSpacing: 1.4,numbPoemPadding: 14,});},
-
+  yandinsky_original: function() {ap({mode: 'yandinsky',bg: '#d4a828',palette: 'site',accent: '#e63946',accentAmt: 0.15,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20,turb: 0.006,noiseType: 'simplex',ynDrift: 1.0,ynOsc: 1.0,ynSpeed: 1.0,ynLineWeight: 1.0,ynShowGrid: true,ynTexture: 1.0,ynExtraRects: 0,ynExtraLines: 0,ynRandomize: false,ynConcrete: 0.3});},
 
   
 };
