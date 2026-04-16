@@ -12462,15 +12462,13 @@ document.getElementById('btnReset').addEventListener('click',function(){resetAll
 
 let mediaRecorder;
 let recordedChunks = [];
-let recordingTimeout;
-
-
-// ── WELCOME CLICK LISTENER COLLAPSE EXPAND ─────────────────────────────────────────────────────────────────  
 function handleWelcomeClick(e) {
   if (S.mode !== 'welcome') return;
   
   let canvas = document.getElementById('gc');
   let rect = canvas.getBoundingClientRect();
+  
+  // Calculate scaling factors between canvas pixel dimensions and CSS display size
   let scaleX = canvas.width / rect.width;
   let scaleY = canvas.height / rect.height;
   
@@ -12478,14 +12476,15 @@ function handleWelcomeClick(e) {
   let mouseY = (e.clientY - rect.top) * scaleY;
   
   let regions = window._welcomeClickRegions || [];
+  console.log('Click at', mouseX, mouseY, 'Regions:', regions.length); // debug
+  
   for (let r of regions) {
     if (mouseX >= r.x && mouseX <= r.x + r.w &&
         mouseY >= r.y && mouseY <= r.y + r.h) {
       if (r.type === 'toggle') {
         welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
-        
-        // Force a canvas refresh
-        if(window._st && window._st.rd) window._st.rd(); 
+        console.log('Toggled section', r.index); // debug
+        if (window._st && window._st.rd) window._st.rd();
       }
       break;
     }
