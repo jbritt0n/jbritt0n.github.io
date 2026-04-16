@@ -4422,15 +4422,17 @@ function initBrushCursor() {}
 function _spawnSumieComposition(p, compKey, ox, oy, scale) {
   let comp = SUMIE_COMPOSITIONS[compKey];
   if (!comp) { console.warn('Unknown composition:', compKey); return; }
-  // Always center on canvas and fill ~80% of smaller dimension
   ox    = ox    ?? p.width  / 2;
   oy    = oy    ?? p.height / 2;
   scale = scale ?? Math.min(p.width, p.height) * 0.78;
-  calligActiveComp = null;
-  calligStrokes = calligStrokes.filter(s => s.lifespan > 0); // optional: keep old strokes?
+  calligStrokes   = [];
   calligSegIdx    = 0;
   calligStrokeIdx = 0;
   calligLastBirth = _calligClock;
+  calligActiveComp = {
+    segments:  comp.segments,
+    transform: { ox, oy, scale }
+  };
 }
 
 // Releases one stroke every interStrokeDelay frames, advancing through segments.
@@ -4480,8 +4482,10 @@ function _updateCompositionSequence(p) {
     speed: 1.0
   }));
   pts = _densify(pts, 6);
-  pts = _applyChaikin(pts, 3);
-  _assignSpeeds(pts, T.scale);
+  pts = _applyChaikin(pts, 2);
+  _wobblePts(pts, len, S.calligWobble ?? 0.15);
+  _assignSpeeds(pts, len);
+  return pts;
 
   calligStrokes.push({
     pts,
