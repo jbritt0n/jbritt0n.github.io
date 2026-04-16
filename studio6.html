@@ -2204,103 +2204,113 @@ function buildComp(preset,W,H){
 function drawWelcome(p, t) {
   let W = p.width, H = p.height;
   
-  // Background
+  // ── BACKGROUND & ANIMATION ──
   CTX.fillStyle = '#050a14';
   CTX.fillRect(0, 0, W, H);
   
-  // Drift & Glitch
   let driftX = Math.cos(t * 0.5) * 10;
   let driftY = Math.sin(t * 0.5) * 10;
-  let glitch = (p.noise(t * 15) > 0.95) ? (Math.random() - 0.5) * 5 : 0;
+  let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
 
-  let panelW = Math.min(550, W * 0.85);
-  let panelH = Math.min(450, H * 0.75);
+  let panelW = Math.min(600, W * 0.9);
+  let panelH = Math.min(500, H * 0.8);
   let panelX = (W - panelW) / 2 + driftX + glitch;
   let panelY = (H - panelH) / 2 + driftY + glitch;
   
   // Panel Body
-  CTX.fillStyle = 'rgba(10, 22, 40, 0.98)';
+  CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
   CTX.beginPath();
   CTX.rect(panelX, panelY, panelW, panelH);
   CTX.fill();
   
-  // Dashed Dark Navy Border (The "Frame")
+  // Dashed Navy Border
   CTX.save();
   CTX.strokeStyle = '#1a2a44'; 
   CTX.lineWidth = 3;
-  CTX.setLineDash([10, 8]);
-  CTX.lineDashOffset = -t * 10;
+  CTX.setLineDash([12, 10]);
+  CTX.lineDashOffset = -t * 15;
   CTX.strokeRect(panelX, panelY, panelW, panelH);
   CTX.restore();
   
-  // Title Header
+  // Title
   CTX.fillStyle = '#f0ece4';
   CTX.textAlign = 'center';
   CTX.font = `bold ${Math.floor(panelW * 0.07)}px 'EB Garamond'`;
-  CTX.fillText('Studio Guide', W/2 + driftX, panelY + 60);
+  CTX.fillText('Studio Manual', W/2 + driftX, panelY + 60);
 
-  // Clipping for Scroll Area
+  // ── CLIPPING & SCROLLING ──
   let viewY = panelY + 100;
   let viewH = panelH - 160;
   
   CTX.save();
   CTX.beginPath();
-  CTX.rect(panelX + 20, viewY, panelW - 40, viewH);
+  CTX.rect(panelX + 25, viewY, panelW - 50, viewH);
   CTX.clip();
 
-  // Draw Content
   let curY = viewY + 30 + (S.welcomeScroll || 0);
-  let margin = 40;
+  let margin = 50;
   let wrapW = panelW - (margin * 2);
 
-  // Helper for Wrapping Text
-  const printWrapped = (txt, size, font, col, spacing = 1.4) => {
-    CTX.font = `${size}px ${font}`;
-    CTX.fillStyle = col;
+  const printSection = (title, body) => {
+    // Header
+    CTX.font = "bold 15px 'Jost'";
+    CTX.fillStyle = '#e67e22'; // Webster Orange
     CTX.textAlign = 'left';
-    
-    let words = txt.split(' ');
-    let line = '';
-    let lineH = size * spacing;
+    CTX.fillText(title.toUpperCase(), panelX + margin, curY);
+    curY += 22;
 
+    // Body
+    CTX.font = "14px 'Jost'";
+    CTX.fillStyle = '#ced4da';
+    let words = body.split(' ');
+    let line = '';
     for (let i = 0; i < words.length; i++) {
       let test = line + words[i] + ' ';
       if (CTX.measureText(test).width > wrapW) {
         CTX.fillText(line, panelX + margin, curY);
         line = words[i] + ' ';
-        curY += lineH;
-      } else {
-        line = test;
-      }
+        curY += 20;
+      } else { line = test; }
     }
     CTX.fillText(line, panelX + margin, curY);
-    curY += lineH + 15; // Paragraph break
+    curY += 35; // Space between sections
   };
 
-  // Content
-  printWrapped("WELCOME: This studio is a generative tool for exploring the intersection of typography and algorithmic art.", 16, "EB Garamond", "#f0ece4");
-  printWrapped("PRESETS: Located in the top-left menu. These are curated 'snapshots' of settings. Click one to instantly change the entire aesthetic.", 14, "Jost", "#8ba4bc");
-  printWrapped("MODES: The 'Engine' of the visual. Modes like 'Bloom' or 'Yandinsky' change the fundamental math used to place characters.", 14, "Jost", "#8ba4bc");
-  printWrapped("THE FIELD: The sliders in the 'Field' section control the underlying noise. 'Scale' changes the detail, while 'Entropy' pushes characters off the grid for a more organic, painterly feel.", 14, "Jost", "#8ba4bc");
-  printWrapped("EXPORTING: When you find a composition you love, press 'S' to download a high-resolution PNG. Use 'Space' to pause the motion for a perfect frame.", 14, "Jost", "#e67e22");
-  printWrapped("INTERACTION: You can also upload your own images in the 'Image' section to use them as a source for the typography density.", 14, "Jost", "#8ba4bc");
+  // ── CONTENT SECTIONS ──
+  printSection("Presets & Modes", "Presets are curated 'snapshots' to get you started. Modes are the mathematical engines—try 'Bloom' for radiation or 'Yandinsky' for geometric clashes.");
+  
+  printSection("Mode Parameters", "When you select a mode, a unique set of sliders appears below it. Use these to tweak the specific 'soul' of that engine, like 'Stretch' in Tendril or 'Clash' in Yandinsky.");
+  
+  printSection("Calligraphy & Scripts", "Choose the 'Ink'. This section selects which characters are drawn. 'Arcane' uses mystical symbols, while 'Scripts' offers ancient and modern alphabets.");
+  
+  printSection("Palette Selection", "Colors are applied based on the underlying noise field. You can select from curated palettes or use the 'Blend' section to adjust how colors bleed into the background.");
+  
+  printSection("Img -> Text", "Upload any image to use it as a density map. Darker areas of your photo will be populated with more characters, allowing you to 'paint' with typography.");
+  
+  printSection("Shapes Overlay", "Add geometric primitives (Circles, Squares, Triangles) that act as masks or additive layers. These can stay static or follow the noise field's flow.");
+  
+  printSection("Scrolling Text Overlay", "Layer a traditional text 'crawl' over your generative art. Perfect for adding poetry or data-streams that move independently of the generative mode.");
+  
+  printSection("User Presets", "Found a configuration you love? Save your own preset locally to return to it later. Your custom creations will appear in the 'User' section of the preset menu.");
+  
+  printSection("Canvas & Export", "Use the 'Size' menu to resize the canvas for social media or high-res print. Press 'S' to save a crystal-clear PNG of your current masterpiece.");
 
   CTX.restore();
 
-  // Manual Scrollbar Indicator
-  let scrollPercent = Math.abs(S.welcomeScroll || 0) / 600;
-  let barH = 50;
-  let barY = viewY + (scrollPercent * (viewH - barH));
-  CTX.fillStyle = '#1a2a44';
-  CTX.fillRect(panelX + panelW - 10, viewY, 4, viewH); // Track
+  // ── SCROLLBAR ──
+  let scrollMax = 1200; 
+  let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
+  let barY = viewY + (scrollPercent * (viewH - 60));
+  CTX.fillStyle = 'rgba(26, 42, 68, 0.5)';
+  CTX.fillRect(panelX + panelW - 12, viewY, 4, viewH); 
   CTX.fillStyle = '#8ba4bc';
-  CTX.fillRect(panelX + panelW - 10, barY, 4, barH); // Handle
+  CTX.fillRect(panelX + panelW - 12, barY, 4, 60);
 
-  // Static Footer
+  // ── FOOTER ──
   CTX.textAlign = 'center';
-  CTX.font = "12px Jost";
+  CTX.font = "italic 13px Jost";
   CTX.fillStyle = '#6b8e23';
-  CTX.fillText('Use Mouse Wheel to scroll • Click any Mode or Preset to exit', W/2 + driftX, panelY + panelH - 25);
+  CTX.fillText('Scroll to explore • Click any Mode to begin', W/2 + driftX, panelY + panelH - 25);
 }
   
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
@@ -12301,13 +12311,12 @@ let recordingTimeout;
 // ── WELCOME (scroll wheel) ─────────────────────────────────────────────────────────────────
 window.addEventListener('wheel', function(e) {
   if (S.mode === 'welcome') {
-    // Adjust scroll speed (30px per notch)
-    S.welcomeScroll += e.deltaY > 0 ? -30 : 30;
-    // Limit scrolling so they don't scroll into infinity
-    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -600)); 
-    e.preventDefault(); // Prevent the whole page from scrolling
+    S.welcomeScroll += e.deltaY > 0 ? -40 : 40;
+    // Increased lower limit to -1200 to allow room for new sections
+    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -1200)); 
+    e.preventDefault();
   }
-}, { passive: false }); 
+}, { passive: false });
 
   
 // ── RECORDER ─────────────────────────────────────────────────────────────────
