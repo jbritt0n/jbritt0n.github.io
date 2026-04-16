@@ -2404,46 +2404,59 @@ function drawWelcome(p, t) {
   }
 
   const renderSection = (sec, index) => {
-    let isCollapsed = sec.collapsed;
-    let toggleSymbol = isCollapsed ? '▶' : '▼';
-    CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
-    CTX.fillStyle = '#e67e22';
-    CTX.textAlign = 'left';
-    CTX.fillText(toggleSymbol + ' ' + sec.title.toUpperCase(), panelX + margin, curY);
-    let headerY = curY - 16;
-    let headerHeight = 24;
-    welcomeClickRegions.push({
-      type: 'toggle',
-      index: index,
-      x: panelX + margin,
-      y: headerY,
-      w: CTX.measureText(toggleSymbol + ' ' + sec.title.toUpperCase()).width,
-      h: headerHeight
-    });
-
-    curY += 24;
-
-    if (!isCollapsed) {
-      CTX.font = "15px 'VT323', 'Courier New', monospace";
-      CTX.fillStyle = '#ced4da';
-      // Split by newlines first, then wrap each paragraph
-      let paragraphs = sec.body.split('\n');
-      paragraphs.forEach(para => {
-        if (para.trim() === '') {
-          curY += 10; // blank line
-          return;
-        }
-        let wrappedLines = wrapText(para, wrapW - 20); // indent allowance
-        wrappedLines.forEach(line => {
-          let indent = line.startsWith('•') ? 20 : 10;
-          CTX.fillText(line, panelX + margin + indent, curY);
-          curY += 22;
-        });
+  let isCollapsed = sec.collapsed;
+  let toggleSymbol = isCollapsed ? '▶' : '▼';
+  let headerText = toggleSymbol + ' ' + sec.title.toUpperCase();
+  
+  CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
+  CTX.fillStyle = '#e67e22';
+  CTX.textAlign = 'left';
+  CTX.textBaseline = 'top'; // Use 'top' for consistent y coordinate
+  
+  let headerX = panelX + margin;
+  let headerY = curY;
+  CTX.fillText(headerText, headerX, headerY);
+  
+  // Measure text for accurate hit region
+  let metrics = CTX.measureText(headerText);
+  let textWidth = metrics.width;
+  let textHeight = 24; // Approximate height for 16px font
+  
+  welcomeClickRegions.push({
+    type: 'toggle',
+    index: index,
+    x: headerX,
+    y: headerY,
+    w: textWidth,
+    h: textHeight
+  });
+  
+  curY += textHeight + 4; // Move down for next section
+  
+  if (!isCollapsed) {
+    CTX.font = "15px 'VT323', 'Courier New', monospace";
+    CTX.fillStyle = '#ced4da';
+    CTX.textBaseline = 'top';
+    
+    let paragraphs = sec.body.split('\n');
+    paragraphs.forEach(para => {
+      if (para.trim() === '') {
+        curY += 10;
+        return;
+      }
+      let wrappedLines = wrapText(para, wrapW - 20);
+      wrappedLines.forEach(line => {
+        let indent = line.startsWith('•') ? 20 : 10;
+        CTX.fillText(line, panelX + margin + indent, curY);
+        curY += 22;
       });
-      curY += 10;
-    }
-    curY += 8;
-  };
+    });
+    curY += 10;
+  }
+  curY += 8;
+};
+
+   
   // Draw all sections
   welcomeSections.forEach((sec, i) => {
     renderSection(sec, i);
@@ -12462,28 +12475,33 @@ document.getElementById('btnReset').addEventListener('click',function(){resetAll
 
 let mediaRecorder;
 let recordedChunks = [];
+
+
+
+// ── WELCOME CLICK - Expand/Collapse sections ─────────────────────────────────────────────────────────────────  
 function handleWelcomeClick(e) {
   if (S.mode !== 'welcome') return;
   
   let canvas = document.getElementById('gc');
   let rect = canvas.getBoundingClientRect();
   
-  // Calculate scaling factors between canvas pixel dimensions and CSS display size
+  // Scale mouse coordinates to canvas pixel space
   let scaleX = canvas.width / rect.width;
   let scaleY = canvas.height / rect.height;
-  
   let mouseX = (e.clientX - rect.left) * scaleX;
   let mouseY = (e.clientY - rect.top) * scaleY;
   
   let regions = window._welcomeClickRegions || [];
-  console.log('Click at', mouseX, mouseY, 'Regions:', regions.length); // debug
+  console.log('Click at', mouseX.toFixed(0), mouseY.toFixed(0), 'Regions:', regions.length);
   
   for (let r of regions) {
+    // Log region details for debugging
+    console.log(`Region ${r.index}: x=${r.x.toFixed(0)} y=${r.y.toFixed(0)} w=${r.w.toFixed(0)} h=${r.h.toFixed(0)}`);
     if (mouseX >= r.x && mouseX <= r.x + r.w &&
         mouseY >= r.y && mouseY <= r.y + r.h) {
       if (r.type === 'toggle') {
         welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
-        console.log('Toggled section', r.index); // debug
+        console.log('Toggled section', r.index, 'to', welcomeSections[r.index].collapsed);
         if (window._st && window._st.rd) window._st.rd();
       }
       break;
