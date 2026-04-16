@@ -4482,10 +4482,7 @@ function _updateCompositionSequence(p) {
     speed: 1.0
   }));
   pts = _densify(pts, 6);
-  pts = _applyChaikin(pts, 2);
-  _wobblePts(pts, len, S.calligWobble ?? 0.15);
-  _assignSpeeds(pts, len);
-  return pts;
+  pts = _applyChaikin(pts, 3);
 
   calligStrokes.push({
     pts,
@@ -4686,7 +4683,7 @@ function calligRedraw(p) {
 // Uses Pointer Events API only (covers mouse, touch, and stylus uniformly).
 // Must be called once when the calligraphy mode is activated.
 function setupCalligraphyInteraction(p) {
-  let canvas = document.getElementById('gc');
+  let canvas = p.drawingContext.canvas;
   if (!canvas) { console.error('[calligraphy] Canvas #gc not found'); return; }
 
   // Tear down previous handlers to prevent duplicates
