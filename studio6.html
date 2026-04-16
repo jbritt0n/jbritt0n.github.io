@@ -204,6 +204,7 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="diagonal_dense" title="Dense character lanes">Diagonal</button>
         <button class="pbar-btn" data-preset="scatter_bloom" title="Scattered character points">Scatter</button>
         <button class="pbar-btn" data-preset="kintsugi_breaks" title="Repaired pottery patterns">Kintsugi</button>
+        <button class="pbar-btn" data-preset="numbpoem" title="numb poem">Numb</button>
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('pre-topo')">
@@ -351,6 +352,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
         <button class="mb" data-mode="collagewash" title="Collage Wash - Numb">Collage Wash</button>
         <button class="mb" data-mode="numbcollage" title="Collage of drifting paper rectangles with Chinese text '麻木的'">📰 Numb Collage</button>
+        <button class="mb" data-mode="numbpoem" title="Each stanza of the poem drifts on its own paper block">📜 Numb Poem</button>
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
       </div>
     </div>
@@ -7187,6 +7189,306 @@ function drawMonogrid(p, t) {
 }      // closes drawMonogrid function
 
 
+// ── NUMBPOEM MODE ────────────────────────────────────────────────────────────
+// Each stanza from the poem is placed on a separate drifting block.
+// Text is word‑wrapped and confined to the block using clipping.
+
+let poemBlocks = [];
+
+// Parse the poem into stanzas (split by blank lines)
+function parsePoemStanzas() {
+  const poemText = S.numbPoemText || `my mother birthed a question mark
+it never matured into a full stop
+only broken syntax and
+bleeding ink
+麻木的
+
+my grandfather died when i was young
+i never attended the funeral
+he never registered as dead, 
+just disappeared like the vapor of old memories
+麻木的
+
+my sibling disowned me for keeping my parents' surname
+she shed the family like a skin
+i wear it like a thrift store sweater
+ill-fitting and untailored,
+neither noose nor anchor
+麻木的
+
+i keep a potted rose by the kitchen window
+it died last winter, 
+crumbling crusty leaves of brown,
+but still I water it hoping it will bloom again
+麻木的
+
+i tried to leave a message but God's voicemail was full
+he never returned my call,
+so i ghosted him back
+麻木的
+
+i answer emails with a dead grimace
+trying my best to sound like i have a heartbeat
+the cursor blinks after "Hi All," 
+i forgot what i was going to type
+麻木的
+
+i attend meetings with camera off
+something about KPIs and synergies
+a brown circle with my initials lights up
+"sorry, can you repeat that? my audio cut out"
+(i wasn't listening) 
+麻木的
+
+i write unfinished poems like diary entries 
+each line a stale breadcrumb 
+leading nowhere 
+in a wild meandering circle
+麻木的 
+
+the bookshelf sags under the weight
+of books I meant to read
+a life of intentions
+spine out, gathering dust
+麻木的
+
+i ran into my younger self while buying $4 wine in Trader Joe's
+he asked if we ever became someone
+i said "sort of" in a tentative voice
+he looked disappointed,
+but i had no time to explain
+麻木的
+
+i meant to call my best friend to wish him well, 
+to chat about the weather,
+to tell him about all of the ideas stagnating in my mind
+but the phone keeps slipping out of my hand
+and my voice cracks when i open my mouth
+麻木的
+
+the national anthem is an advertisement jingle
+playing relentlessly on repeat
+so loudly that it drowns out 
+the sirens and curfew warnings
+麻木的
+
+potatoes in pinstripe suits
+sprout white noise into microphones
+something about national pride, or was it tariffs?
+"kitchen table issues", Venezuelan cartels in fishing boats 
+spinning a scarf long enough to strangle coherence
+麻木的
+
+i picked up a newspaper yesterday
+the riddles smeared across 
+each section made my hands tacky
+every line was written in blood  
+麻木的
+
+i scroll past headlines daily
+obituaries for democracy
+each more outrageous than the last
+shame no longer has a place to hang its head
+麻木的
+
+i'm Bill Murray sleepwalking through another day
+alarmed at unrelenting feelings of déjà vu
+yearning for a tomorrow that never comes
+麻木的
+
+someone once asked me what i wanted to be
+i'm still opening my mouth
+麻木的`;
+
+  // Split by one or more blank lines
+  return poemText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+}
+function initNumbPoem(p) {
+  if (!p) p = window._st?.p;
+  if (!p) return;
+  poemBlocks = [];
+  let stanzas = parsePoemStanzas();
+  let count = stanzas.length;
+  let minW = S.numbPoemBlockMinW ?? 120;
+  let maxW = S.numbPoemBlockMaxW ?? 280;
+  let minH = S.numbPoemBlockMinH ?? 100;
+  let maxH = S.numbPoemBlockMaxH ?? 300;
+
+  for (let i = 0; i < count; i++) {
+    let w = p.random(minW, maxW);
+    let h = p.random(minH, maxH);
+    let rot = 0;
+    if (p.random() < (S.numbPoemRotateChance ?? 0.4)) {
+      let opts = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+      rot = p.random(opts);
+    }
+
+    poemBlocks.push({
+      x: p.random(p.width),
+      y: p.random(p.height),
+      w, h, rot,
+      vx: (p.random() - 0.5) * (S.numbPoemDriftSpeed ?? 0.3),
+      vy: (p.random() - 0.5) * (S.numbPoemDriftSpeed ?? 0.3),
+      text: stanzas[i],
+      textSizeFactor: p.random(0.8, 1.2),
+      z: p.random()
+    });
+  }
+  console.log('NumbPoem initialized:', poemBlocks.length, 'stanzas');
+}
+// Word wrap helper – returns array of lines that fit within maxWidth
+function wrapText(ctx, text, maxWidth) {
+  let words = text.split(' ');
+  let lines = [];
+  let currentLine = words[0];
+  for (let i = 1; i < words.length; i++) {
+    let word = words[i];
+    let testLine = currentLine + ' ' + word;
+    let metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
+function drawNumbPoem(p, t) {
+  let W = p.width, H = p.height;
+  // Lazy init
+  if (!poemBlocks || poemBlocks.length === 0) {
+    initNumbPoem(p);
+  }
+  if (!poemBlocks.length) return;
+  // Parameters
+  let driftX = S.numbPoemDriftX ?? 0.4;
+  let driftY = S.numbPoemDriftY ?? 0.6;
+  let edgeTear = S.numbPoemEdgeTear ?? 0.4;
+  let paperGrain = S.numbPoemPaperGrain ?? true;
+  let inkBleed = S.numbPoemInkBleed ?? 0.3;
+  let sortByY = S.numbPoemSortByY ?? true;
+  let textColor = S.numbPoemTextColor ?? '#1a1a1a';
+  let textOpacity = S.numbPoemTextOpacity ?? 0.9;
+  let blockOpacity = S.numbPoemBlockOpacity ?? 0.85;
+  let lineSpacing = S.numbPoemLineSpacing ?? 1.3;
+  let padding = S.numbPoemPadding ?? 12;
+  // Sort blocks
+  if (sortByY) {
+    poemBlocks.sort((a, b) => a.y - b.y);
+  } else {
+    poemBlocks.sort((a, b) => a.z - b.z);
+  }
+
+  // Update positions
+  if (S.playing) {
+    for (let b of poemBlocks) {
+      b.x += b.vx * driftX * S.speed * 60;
+      b.y += b.vy * driftY * S.speed * 60;
+      if (b.x > W + b.w) b.x = -b.w;
+      if (b.x < -b.w) b.x = W + b.w;
+      if (b.y > H + b.h) b.y = -b.h;
+      if (b.y < -b.h) b.y = H + b.h;
+    }
+  }
+
+  for (let b of poemBlocks) {
+    let col = pickColor(p, b.x, b.y, t);
+    let c = p.color(col);
+    let r = p.red(c);
+    let g = p.green(c);
+    let bVal = p.blue(c);
+    let rgba = `rgba(${r}, ${g}, ${bVal}, ${blockOpacity})`;
+    CTX.save();
+    CTX.translate(b.x + b.w / 2, b.y + b.h / 2);
+    CTX.rotate(b.rot);
+    let hw = b.w / 2, hh = b.h / 2;
+    // Draw torn rectangle
+    CTX.beginPath();
+    if (edgeTear > 0) {
+      let steps = 8;
+      let tearAmt = edgeTear * 5;
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = -hh + (sampleNoise(p, b.x + x, b.y - hh, t * 0.1) - 0.5) * tearAmt;
+        if (i === 0) CTX.moveTo(x, y); else CTX.lineTo(x, y);
+      }
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x + hw, b.y - hh + prog * b.h, t * 0.1 + 1) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = hh + (sampleNoise(p, b.x + x, b.y + hh, t * 0.1 + 2) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x - hw, b.y - hh + prog * b.h, t * 0.1 + 3) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      CTX.closePath();
+    } else {
+      CTX.rect(-hw, -hh, b.w, b.h);
+    }
+    CTX.fillStyle = rgba;
+    CTX.fill();
+    // Paper grain
+    if (paperGrain) {
+      CTX.save();
+      CTX.clip();
+      CTX.globalAlpha = 0.06;
+      for (let i = 0; i < b.w * b.h * 0.008; i++) {
+        let gx = -hw + Math.random() * b.w;
+        let gy = -hh + Math.random() * b.h;
+        let grain = sampleNoise(p, b.x + gx, b.y + gy, t * 0.2);
+        if (grain > 0.65) {
+          CTX.fillStyle = grain > 0.85 ? '#000000' : '#ffffff';
+          CTX.fillRect(gx, gy, 1.5, 1.5);
+        }
+      }
+      CTX.restore();
+    }
+    // Draw text (clipped)
+    CTX.save();
+    CTX.clip();
+    let baseSize = p.map(b.textSizeFactor, 0.8, 1.2,
+      (S.numbPoemTextSizeMin ?? 11), (S.numbPoemTextSizeMax ?? 18));
+    CTX.font = `${baseSize}px ${S.fontStack}`;
+    CTX.fillStyle = textColor;
+    CTX.globalAlpha = textOpacity;
+    CTX.textAlign = 'left';
+    CTX.textBaseline = 'top';
+    let maxWidth = b.w - padding * 2;
+    let lines = wrapText(CTX, b.text, maxWidth);
+    let lineHeight = baseSize * lineSpacing;
+    // Ink bleed pass (optional)
+    if (inkBleed > 0) {
+      CTX.save();
+      CTX.filter = `blur(${inkBleed * 2}px)`;
+      CTX.globalAlpha = textOpacity * 0.25;
+      for (let i = 0; i < lines.length; i++) {
+        CTX.fillText(lines[i], -hw + padding, -hh + padding + i * lineHeight);
+      }
+      CTX.restore();
+    }
+    // Main text
+    for (let i = 0; i < lines.length; i++) {
+      CTX.fillText(lines[i], -hw + padding, -hh + padding + i * lineHeight);
+    }
+    CTX.restore(); // clip
+    CTX.restore(); // transform
+  }
+}
+  
+
 // ── NUMB COLLAGE ──────────────────────────────
 // ── NUMB COLLAGE MODE (Fixed with Layering & Clipping) ───────────────────────
 let collageBlocks = [];
@@ -9411,7 +9713,28 @@ const PARAM_REGISTRY = {
     { id: 'numbBgScale',       label: 'BG block scale', min: 1.0, max: 3.0, step: 0.1, def: 1.8, scale: 1 },
     { id: 'numbBgOpacity',     label: 'BG block opacity', min: 0, max: 1, step: 0.05, def: 0.25, scale: 1 },
   ],
-    
+   numbpoem: [
+    { id: 'numbPoemText',        label: 'Poem text',       type: 'text', def: '' }, // long default handled in parse
+    { id: 'numbPoemBlockMinW',   label: 'Min block width', min: 60,  max: 300, step: 10, def: 120, scale: 1 },
+    { id: 'numbPoemBlockMaxW',   label: 'Max block width', min: 100, max: 500, step: 10, def: 280, scale: 1 },
+    { id: 'numbPoemBlockMinH',   label: 'Min block height',min: 60,  max: 300, step: 10, def: 100, scale: 1 },
+    { id: 'numbPoemBlockMaxH',   label: 'Max block height',min: 100, max: 500, step: 10, def: 300, scale: 1 },
+    { id: 'numbPoemRotateChance',label: 'Rotate chance',   min: 0,   max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbPoemDriftSpeed',  label: 'Drift speed',     min: 0,   max: 1.5, step: 0.05, def: 0.3, scale: 1 },
+    { id: 'numbPoemDriftX',      label: 'Drift X',         min: 0,   max: 2,   step: 0.1, def: 0.4, scale: 1 },
+    { id: 'numbPoemDriftY',      label: 'Drift Y',         min: 0,   max: 2,   step: 0.1, def: 0.6, scale: 1 },
+    { id: 'numbPoemEdgeTear',    label: 'Edge tear',       min: 0,   max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbPoemPaperGrain',  label: 'Paper grain',     type: 'toggle', def: true },
+    { id: 'numbPoemInkBleed',    label: 'Ink bleed',       min: 0,   max: 1,   step: 0.05, def: 0.3, scale: 1 },
+    { id: 'numbPoemSortByY',     label: 'Sort by Y',       type: 'toggle', def: true },
+    { id: 'numbPoemTextColor',   label: 'Text color',      type: 'color', def: '#1a1a1a' },
+    { id: 'numbPoemTextOpacity', label: 'Text opacity',    min: 0,   max: 1,   step: 0.05, def: 0.9, scale: 1 },
+    { id: 'numbPoemBlockOpacity',label: 'Block opacity',   min: 0,   max: 1,   step: 0.05, def: 0.85, scale: 1 },
+    { id: 'numbPoemTextSizeMin', label: 'Min text size',   min: 6,   max: 24,  step: 1, def: 11, scale: 1 },
+    { id: 'numbPoemTextSizeMax', label: 'Max text size',   min: 10,  max: 36,  step: 1, def: 18, scale: 1 },
+    { id: 'numbPoemLineSpacing', label: 'Line spacing',    min: 1.0, max: 2.0, step: 0.1, def: 1.3, scale: 1 },
+    { id: 'numbPoemPadding',     label: 'Text padding',    min: 4,   max: 30,  step: 2, def: 12, scale: 1 },
+  ], 
   //to be refactored
   hatch: [
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
@@ -11241,8 +11564,8 @@ const PRESETS={
   hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
   circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
   poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
-  kandinsky_composition: function() {  ap({    mode: 'kandinsky',font: 'courier', bg: '#FFD700', palette: 'site', accent: '#FF00FF',accentAmt: 0.3,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20, turb: 0.006,noiseType: 'simplex',kClusterCount: 14,kBurstElements: 10,kBurstSpread: 0.7,kLineCount: 24,kLineWidth: 0.8,kLineLength: 0.9,kGeomChars: true,kDrawShadows: true,});},
-
+  kandinsky_composition: function() {ap({mode: 'kandinsky',font: 'courier', bg: '#FFD700', palette: 'site', accent: '#FF00FF',accentAmt: 0.3,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20, turb: 0.006,noiseType: 'simplex',kClusterCount: 14,kBurstElements: 10,kBurstSpread: 0.7,kLineCount: 24,kLineWidth: 0.8,kLineLength: 0.9,kGeomChars: true,kDrawShadows: true,});},
+  numb_poem: function(){ap({mode: 'numbpoem',font: 'typewriter', bg: '#f2e8d5', palette: 'numb',accent: '#c94b1f',spacing: 12,maxSize: 18,density: 0.5,speed: 0.0015,wave: 8,turb: 0.004,numbPoemBlockMinW: 140,numbPoemBlockMaxW: 300,numbPoemBlockMinH: 120,numbPoemBlockMaxH: 280,numbPoemRotateChance: 0.3,numbPoemDriftSpeed: 0.25,numbPoemDriftX: 0.5,numbPoemDriftY: 0.4,numbPoemEdgeTear: 0.5,numbPoemPaperGrain: true,numbPoemInkBleed: 0.35,numbPoemTextColor: '#1a1a1a',numbPoemTextOpacity: 0.95,numbPoemBlockOpacity: 0.9,numbPoemTextSizeMin: 12,numbPoemTextSizeMax: 20,numbPoemLineSpacing: 1.4,numbPoemPadding: 14,});},
 
 
   
