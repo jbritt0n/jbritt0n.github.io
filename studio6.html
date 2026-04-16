@@ -252,7 +252,7 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="hypertype_hearts" title="Hypertype — sentiment data feel (heart + word mix)">♥ Hypertype</button>
         <button class="pbar-btn" data-preset="circle_field_warm" title="Circle field — Strange Loops ms_092 style">Circle Field</button>
         <button class="pbar-btn" data-preset="yandinsky_original" title="Yandinsky">Yandinsky OG</button>
-
+        
         
       </div>
     </div>
@@ -357,6 +357,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="numbcollage" title="Collage of drifting paper rectangles with Chinese text '麻木的'">📰 Numb Collage</button>
         <button class="mb" data-mode="numbpoem" title="Each stanza of the poem drifts on its own paper block">📜 Numb Poem</button>
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
+        <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
       </div>
     </div>
     
@@ -2198,6 +2199,90 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
+// ── WELCOME MODE ────────────────────────────────────────────────────────────
+// Displays an instructional overlay with a gently animated panel.
+function drawWelcome(p, t) {
+  let W = p.width, H = p.height;
+  
+  // Background – dark navy blue
+  CTX.fillStyle = '#0a1628';
+  CTX.fillRect(0, 0, W, H);
+  
+  // Panel dimensions (responsive)
+  let panelW = Math.min(520, W * 0.8);
+  let panelH = Math.min(380, H * 0.7);
+  let panelX = (W - panelW) / 2;
+  let panelY = (H - panelH) / 2;
+  
+  // Gentle pulse animation
+  let pulse = 1 + Math.sin(t * 1.5) * 0.01;
+  let animatedW = panelW * pulse;
+  let animatedH = panelH * pulse;
+  let animatedX = (W - animatedW) / 2;
+  let animatedY = (H - animatedH) / 2;
+  
+  // Steel blue panel with 80% opacity
+  CTX.fillStyle = 'rgba(70, 130, 180, 0.8)'; // steel blue
+  CTX.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  CTX.shadowBlur = 20;
+  CTX.beginPath();
+  CTX.rect(animatedX, animatedY, animatedW, animatedH);
+  CTX.fill();
+  CTX.shadowBlur = 0;
+  
+  // Border
+  CTX.strokeStyle = '#c4bcb0';
+  CTX.lineWidth = 2;
+  CTX.stroke();
+  
+  // ── Text Content ─────────────────────────────────────────────────────────
+  CTX.fillStyle = '#f0ece4';
+  CTX.font = `bold ${Math.floor(panelW * 0.06)}px 'EB Garamond', serif`;
+  CTX.textAlign = 'center';
+  CTX.textBaseline = 'middle';
+  
+  let titleY = panelY + panelH * 0.18;
+  CTX.fillText('Welcome to Studio', W/2, titleY);
+  
+  // Subtitle
+  CTX.font = `${Math.floor(panelW * 0.035)}px 'Jost', sans-serif`;
+  CTX.fillStyle = '#ede9e2';
+  let subtitleY = panelY + panelH * 0.32;
+  CTX.fillText('A generative typography playground', W/2, subtitleY);
+  // Divider line
+  CTX.beginPath();
+  CTX.strokeStyle = '#c4bcb0';
+  CTX.lineWidth = 1;
+  CTX.moveTo(panelX + panelW * 0.15, panelY + panelH * 0.42);
+  CTX.lineTo(panelX + panelW * 0.85, panelY + panelH * 0.42);
+  CTX.stroke();
+  // Instructions (left-aligned within panel)
+  CTX.font = `${Math.floor(panelW * 0.032)}px 'Jost', sans-serif`;
+  CTX.fillStyle = '#ffffff';
+  CTX.textAlign = 'left';
+  let lineH = panelH * 0.07;
+  let startY = panelY + panelH * 0.52;
+  let leftX = panelX + panelW * 0.1;
+  let lines = [
+    '• Click a mode button to change visuals',
+    '• Adjust sliders to tweak parameters',
+    '• Press Space to play/pause',
+    '• Press R to regenerate, S to save PNG',
+    '• Try "Chaos" for random surprises',
+    '• Upload an image to convert to text'
+  ];
+  lines.forEach((line, i) => {
+    CTX.fillText(line, leftX, startY + i * lineH);
+  });
+  // Footer hint
+  CTX.font = `${Math.floor(panelW * 0.028)}px 'Jost', sans-serif`;
+  CTX.fillStyle = '#c4bcb0';
+  CTX.textAlign = 'center';
+  CTX.fillText('Press any mode button to begin', W/2, panelY + panelH * 0.9);
+  // Restore text alignment
+  CTX.textAlign = 'left';
+}
+  
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
   let sp  = S.spacing || 12;
@@ -9582,7 +9667,7 @@ function drawOverlay(p, t) {
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
 const DEFAULT_STATE = {
   // ========== CORE / MODE ==========
-  mode: 'bloom',                     // Active visual mode (bloom, wave, matrix, etc.)
+  mode: 'welcome',                     // Active visual mode (bloom, wave, matrix, etc.)
   chars: CHARSETS.chinese,           // Character set for text rendering
   palette: PALETTES.site,            // Active color palette
   bg: '#0d0c0a',                     // Background color (canvas clear color)
@@ -9798,6 +9883,7 @@ function rd() {
     if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
     switch (S.mode) {
       case 'calligraphy': drawCalligraphy(p, t); break;
+      case 'welcome': drawWelcome(p, t); break;  
       case 'bloom': drawBloom(p, t); break;
       case 'wave': drawWave(p, t); break;
       case 'rain1': drawRain1(p, t); break;
