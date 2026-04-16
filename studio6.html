@@ -8427,7 +8427,7 @@ function drawYandinsky(p, t) {
  
   // ── 4. Magenta filled rectangle ───────────────────────────────────────────
   let rd = _ynDrift(p, Y.rectMag.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.rectMag.x + rd.x, Y.rectMag.y + rd.y, tick);
+  gPos = applyGlitchOffset(p, Y.rectMag.x + rd.x, Y.rectMag.y + rd.y, tick);
   CTX.save();
   CTX.fillStyle   = S.palette[0] || '#d4166e';
   CTX.strokeStyle = S.palette[1] || 'rgba(22,14,6,0.55)';
@@ -8441,7 +8441,7 @@ function drawYandinsky(p, t) {
  
   // ── 5. Pink / magenta dot ─────────────────────────────────────────────────
   let dd = _ynDrift(p, Y.dot.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.dot.cx + dd.x, Y.dot.cy + dd.y, tick);
+  gPos = applyGlitchOffset(p, Y.dot.cx + dd.x, Y.dot.cy + dd.y, tick);
   CTX.save();
   // Glow halo
   let dotGr = CTX.createRadialGradient(gPos.x, gPos.y, 0, gPos.x, gPos.y, Y.dot.r * 1.6);
@@ -8460,7 +8460,7 @@ function drawYandinsky(p, t) {
  
   // ── 6. Black vertical rectangle ───────────────────────────────────────────
   let bvd = _ynDrift(p, Y.rectBlkV.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, tick);
+  gPos = applyGlitchOffset(p, Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, tick);
   CTX.save();
   CTX.fillStyle = S.palette[2] || '#18120a';
   CTX.fillRect(gPos.x, gPos.y, Y.rectBlkV.w, Y.rectBlkV.h);
@@ -8468,7 +8468,7 @@ function drawYandinsky(p, t) {
  
   // ── 7. Dark horizontal band ────────────────────────────────────────────────
   let bd = _ynDrift(p, Y.band.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.band.x + bd.x, Y.band.y + bd.y, tick);
+  gPos = applyGlitchOffset(p, Y.band.x + bd.x, Y.band.y + bd.y, tick);
   CTX.save();
   CTX.fillStyle = S.palette[2] || '#1c1810';
   CTX.fillRect(gPos.x, gPos.y, Y.band.w, Y.band.h);
@@ -8476,7 +8476,7 @@ function drawYandinsky(p, t) {
  
   // ── 8. Teal-blue accent band (inside/below dark band, shares drift) ───────
   let tbd = _ynDrift(p, Y.bandTeal.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, tick);
+  gPos = applyGlitchOffset(p, Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, tick);
   CTX.save();
   CTX.fillStyle = S.palette[1] || '#3a7882';
   CTX.fillRect(gPos.x, gPos.y, Y.bandTeal.w, Y.bandTeal.h);
@@ -8488,7 +8488,7 @@ function drawYandinsky(p, t) {
  
   // ── 9. Crosspiece column: black body + magenta stripe ─────────────────────
   let crd = _ynDrift(p, Y.cross.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.cross.x + crd.x, Y.cross.y + crd.y, tick);
+  gPos = applyGlitchOffset(p, Y.cross.x + crd.x, Y.cross.y + crd.y, tick);
   CTX.save();
   CTX.fillStyle = S.palette[2] || '#18120a';
   CTX.fillRect(gPos.x, gPos.y, Y.cross.w, Y.cross.h);
@@ -8499,7 +8499,7 @@ function drawYandinsky(p, t) {
   // ── 10. Three small accent dots (inside circle near arc) ──────────────────
   Y.accentDots.forEach(function(dt) {
     let ddt = _ynDrift(p, dt.d, tick, driftScale);
-    let gPos = applyGlitchOffset(p, dt.cx + ddt.x, dt.cy + ddt.y, tick);
+    gPos = applyGlitchOffset(p, dt.cx + ddt.x, dt.cy + ddt.y, tick);
     CTX.save();
     CTX.fillStyle = S.accent || 'rgba(22,14,6,0.72)';
     CTX.beginPath();
@@ -8510,7 +8510,7 @@ function drawYandinsky(p, t) {
  
   // ── 11. Blue-teal crescent arc ────────────────────────────────────────────
   let ard = _ynDrift(p, Y.arc.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.arc.cx + ard.x, Y.arc.cy + ard.y, tick);
+  gPos = applyGlitchOffset(p, Y.arc.cx + ard.x, Y.arc.cy + ard.y, tick);
   CTX.save();
   CTX.lineCap = 'round';
   CTX.strokeStyle = S.palette[1] || '#3a7580';
@@ -8533,7 +8533,7 @@ function drawYandinsky(p, t) {
   // ── Extra rectangles (variation) ──────────────────────────────────────────
   Y.extraRects.forEach(function(r) {
   let rd = _ynDrift(p, r.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, r.x + rd.x, r.y + rd.y, tick);
+  gPos = applyGlitchOffset(p, r.x + rd.x, r.y + rd.y, tick);
   CTX.save();
   CTX.fillStyle = r.col; // already uses palette
   CTX.globalAlpha = 0.75;
@@ -8546,7 +8546,7 @@ function drawYandinsky(p, t) {
   
   // ── 12. Red curved accent ─────────────────────────────────────────────────
   let rad = _ynDrift(p, Y.redArc.d, tick, driftScale);
-  let gPos = applyGlitchOffset(p, Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, tick);
+  gPos = applyGlitchOffset(p, Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, tick);
   CTX.save();
   CTX.strokeStyle = S.accent || '#c02020';
   CTX.lineWidth   = lw * 1.6;
