@@ -2417,7 +2417,7 @@ function drawWelcome(p, t) {
   let headerY = curY;
     // Shadowblur
   if (!isCollapsed && Math.floor(t * 2) % 2 === 0) {
-    CTX.shadowBlur = 10;
+    CTX.shadowBlur = 1;
     CTX.shadowColor = '#e67e22';
   } else {
     CTX.shadowBlur = 0;
@@ -2485,7 +2485,7 @@ function drawWelcome(p, t) {
   CTX.textAlign = 'center';
   CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
   CTX.fillStyle = '#6b8e23';
-  CTX.fillText('[ Scroll to explore ]  [ Click any Mode or Preset to the right to begin ]', W/2 + driftX, panelY + panelH - 25);
+  CTX.fillText('[ Click any Mode or Preset in the control bar to the right to begin ]', W/2 + driftX, panelY + panelH - 25);
 }
   
   
