@@ -2415,6 +2415,13 @@ function drawWelcome(p, t) {
   
   let headerX = panelX + margin;
   let headerY = curY;
+    // Shadowblur
+  if (!isCollapsed && Math.floor(t * 2) % 2 === 0) {
+    CTX.shadowBlur = 10;
+    CTX.shadowColor = '#e67e22';
+  } else {
+    CTX.shadowBlur = 0;
+  }  
   CTX.fillText(headerText, headerX, headerY);
   
   // Measure text for accurate hit region
@@ -2427,8 +2434,8 @@ function drawWelcome(p, t) {
     index: index,
     x: headerX,
     y: headerY,
-    w: textWidth,
-    h: textHeight
+    w: panelW - (margin * 2), // Make the whole line clickable for better UX
+    h: textHeight + 5
   });
   
   curY += textHeight + 4; // Move down for next section
@@ -12482,29 +12489,29 @@ let recordedChunks = [];
 function handleWelcomeClick(e) {
   if (S.mode !== 'welcome') return;
   
-  let canvas = document.getElementById('gc');
-  let rect = canvas.getBoundingClientRect();
+  const canvas = document.getElementById('gc');
+  const rect = canvas.getBoundingClientRect();
   
-  // Scale mouse coordinates to canvas pixel space
-  let scaleX = canvas.width / rect.width;
-  let scaleY = canvas.height / rect.height;
-  let mouseX = (e.clientX - rect.left) * scaleX;
-  let mouseY = (e.clientY - rect.top) * scaleY;
+  // Convert mouse pixels to internal canvas coordinates
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mouseX = (e.clientX - rect.left) * scaleX;
+  const mouseY = (e.clientY - rect.top) * scaleY;
   
-  let regions = window._welcomeClickRegions || [];
-  console.log('Click at', mouseX.toFixed(0), mouseY.toFixed(0), 'Regions:', regions.length);
+  const regions = window._welcomeClickRegions || [];
   
   for (let r of regions) {
-    // Log region details for debugging
-    console.log(`Region ${r.index}: x=${r.x.toFixed(0)} y=${r.y.toFixed(0)} w=${r.w.toFixed(0)} h=${r.h.toFixed(0)}`);
     if (mouseX >= r.x && mouseX <= r.x + r.w &&
         mouseY >= r.y && mouseY <= r.y + r.h) {
+      
       if (r.type === 'toggle') {
+        // Toggle the 'collapsed' property in your global array
         welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
-        console.log('Toggled section', r.index, 'to', welcomeSections[r.index].collapsed);
+        
+        // IMPORTANT: Force a p5 redraw if the loop is paused
         if (window._st && window._st.rd) window._st.rd();
       }
-      break;
+      break; 
     }
   }
 }
