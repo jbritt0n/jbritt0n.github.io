@@ -2200,14 +2200,69 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
-// ── WELCOME MODE ────────────────────────────────────────────────────────────
+
+
+  
+// ── WELCOME MODE (Terminal + Rain) ─────────────────────────────────────────
 function drawWelcome(p, t) {
   let W = p.width, H = p.height;
   
-  // ── BACKGROUND & ANIMATION ──
-  CTX.fillStyle = '#050a14';
-  CTX.fillRect(0, 0, W, H);
+  // ── 1. RAIN BACKGROUND (Matrix‑style digital rain) ───────────────────────
+  // Initialize rain columns if not present
+  if (!window._welcomeRain) {
+    let colCount = Math.floor(W / 15) + 1;
+    window._welcomeRain = [];
+    for (let i = 0; i < colCount; i++) {
+      window._welcomeRain.push({
+        x: i * 15 + 7,
+        y: Math.random() * -H,
+        speed: 1.5 + Math.random() * 3,
+        chars: [],
+        length: 5 + Math.floor(Math.random() * 15)
+      });
+    }
+  }
   
+  // Update rain positions if playing
+  if (S.playing) {
+    window._welcomeRain.forEach(d => {
+      d.y += d.speed * (S.speed * 200 + 1);
+      if (d.y > H + 50) {
+        d.y = Math.random() * -100;
+        d.speed = 1.5 + Math.random() * 3;
+        d.length = 5 + Math.floor(Math.random() * 15);
+      }
+      // Update character stream
+      if (Math.random() < 0.3) {
+        d.chars.push(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96))); // Katakana block
+        if (d.chars.length > d.length) d.chars.shift();
+      }
+    });
+  }
+  
+  // Draw rain (dark cyan, low opacity)
+  CTX.save();
+  CTX.font = '14px "VT323", "Courier New", monospace';
+  CTX.textAlign = 'center';
+  window._welcomeRain.forEach(d => {
+    for (let i = 0; i < d.chars.length; i++) {
+      let y = d.y - i * 16;
+      if (y < 0 || y > H) continue;
+      let alpha = 1 - (i / d.chars.length) * 0.8;
+      CTX.fillStyle = i === 0 ? '#80d0ff' : '#2060a0';
+      CTX.globalAlpha = alpha * 0.35;
+      CTX.fillText(d.chars[i] || '0', d.x, y);
+    }
+  });
+  CTX.restore();
+  
+  // ── 2. BACKGROUND OVERLAY (dark navy) ────────────────────────────────────
+  CTX.fillStyle = '#050a14';
+  CTX.globalAlpha = 0.75;
+  CTX.fillRect(0, 0, W, H);
+  CTX.globalAlpha = 1.0;
+  
+  // ── 3. ANIMATED PANEL ────────────────────────────────────────────────────
   let driftX = Math.cos(t * 0.5) * 10;
   let driftY = Math.sin(t * 0.5) * 10;
   let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
@@ -2217,13 +2272,13 @@ function drawWelcome(p, t) {
   let panelX = (W - panelW) / 2 + driftX + glitch;
   let panelY = (H - panelH) / 2 + driftY + glitch;
   
-  // Panel Body
+  // Panel Body (dark terminal)
   CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
   CTX.beginPath();
   CTX.rect(panelX, panelY, panelW, panelH);
   CTX.fill();
   
-  // Dashed Navy Border
+  // Animated dashed border
   CTX.save();
   CTX.strokeStyle = '#1a2a44'; 
   CTX.lineWidth = 3;
@@ -2232,15 +2287,16 @@ function drawWelcome(p, t) {
   CTX.strokeRect(panelX, panelY, panelW, panelH);
   CTX.restore();
   
-  // Title
-  CTX.fillStyle = '#f0ece4';
+  // ── 4. TERMINAL FONT SETUP ───────────────────────────────────────────────
+  // Use monospace for the entire panel content
   CTX.textAlign = 'center';
-  CTX.font = `bold ${Math.floor(panelW * 0.07)}px 'EB Garamond'`;
-  CTX.fillText('Studio Manual', W/2 + driftX, panelY + 60);
-
-  // ── CLIPPING & SCROLLING ──
-  let viewY = panelY + 100;
-  let viewH = panelH - 160;
+  CTX.font = "bold 24px 'VT323', 'Courier New', monospace";
+  CTX.fillStyle = '#80d0ff'; // cyan heading
+  CTX.fillText('STUDIO_MANUAL v2.0', W/2 + driftX, panelY + 50);
+  
+  // ── 5. SCROLLING CONTENT (clipped) ──────────────────────────────────────
+  let viewY = panelY + 90;
+  let viewH = panelH - 150;
   
   CTX.save();
   CTX.beginPath();
@@ -2248,35 +2304,35 @@ function drawWelcome(p, t) {
   CTX.clip();
 
   let curY = viewY + 30 + (S.welcomeScroll || 0);
-  let margin = 50;
+  let margin = 40;
   let wrapW = panelW - (margin * 2);
 
   const printSection = (title, body) => {
-    // Header
-    CTX.font = "bold 15px 'Jost'";
-    CTX.fillStyle = '#e67e22'; // Webster Orange
+    // Header (orange for Webster vibe)
+    CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
+    CTX.fillStyle = '#e67e22';
     CTX.textAlign = 'left';
-    CTX.fillText(title.toUpperCase(), panelX + margin, curY);
-    curY += 22;
+    CTX.fillText('> ' + title.toUpperCase(), panelX + margin, curY);
+    curY += 24;
 
-    // Body
-    CTX.font = "14px 'Jost'";
+    // Body (light grey)
+    CTX.font = "15px 'VT323', 'Courier New', monospace";
     CTX.fillStyle = '#ced4da';
     let words = body.split(' ');
     let line = '';
     for (let i = 0; i < words.length; i++) {
       let test = line + words[i] + ' ';
       if (CTX.measureText(test).width > wrapW) {
-        CTX.fillText(line, panelX + margin, curY);
+        CTX.fillText(line, panelX + margin + 10, curY);
         line = words[i] + ' ';
-        curY += 20;
+        curY += 22;
       } else { line = test; }
     }
-    CTX.fillText(line, panelX + margin, curY);
-    curY += 35; // Space between sections
+    CTX.fillText(line, panelX + margin + 10, curY);
+    curY += 38; // Space between sections
   };
 
-  // ── CONTENT SECTIONS ──
+// ── CONTENT SECTIONS ──
 
   printSection("The Generative Philosophy", "You are not drawing; you are sculpting behavior. This studio is a 'shared resource' engine where mathematical noise fields guide the placement of characters. Every visual is a living system reacting to your input.");
   // ── 1. THE CORE ENGINES ──
@@ -2402,7 +2458,7 @@ printSection("Rendering & Mapping",
   
   CTX.restore();
 
-  // ── SCROLLBAR ──
+  // ── SCROLLBAR ────────────────────────────────────────────────────────────
   let scrollMax = 1200; 
   let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
   let barY = viewY + (scrollPercent * (viewH - 60));
@@ -2411,12 +2467,15 @@ printSection("Rendering & Mapping",
   CTX.fillStyle = '#8ba4bc';
   CTX.fillRect(panelX + panelW - 12, barY, 4, 60);
 
-  // ── FOOTER ──
+  // ── FOOTER ───────────────────────────────────────────────────────────────
   CTX.textAlign = 'center';
-  CTX.font = "italic 13px Jost";
+  CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
   CTX.fillStyle = '#6b8e23';
-  CTX.fillText('Scroll to explore • Click any Mode to begin', W/2 + driftX, panelY + panelH - 25);
+  CTX.fillText('[ Scroll to explore ]  [ Click any Mode to begin ]', W/2 + driftX, panelY + panelH - 25);
 }
+
+
+  
   
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
