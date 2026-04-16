@@ -1486,6 +1486,7 @@ let S={
   mode:'welcome',chars:CHARSETS.chinese,palette:PALETTES.site,
   accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
   welcomeScroll: 0,
+  welcomeOpenSection: 0,
   previousFont: 'courier',   // default
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
@@ -2293,175 +2294,120 @@ let welcomeSections = [
 ];
   
   
-  function drawWelcome(p, t) {
+function drawWelcome(p, t) {
   let W = p.width, H = p.height;
-  let welcomeClickRegions = [];
-
-  // ── 1. RAIN BACKGROUND ─────────────────────────────────────────────────
-  if (!window._welcomeRain) {
-    let colCount = Math.floor(W / 15) + 1;
-    window._welcomeRain = [];
-    for (let i = 0; i < colCount; i++) {
-      window._welcomeRain.push({
-        x: i * 15 + 7,
-        y: Math.random() * -H,
-        speed: 1.5 + Math.random() * 3,
-        chars: [],
-        length: 5 + Math.floor(Math.random() * 15)
-      });
-    }
-  }
-
-  if (S.playing) {
-    window._welcomeRain.forEach(d => {
-      d.y += d.speed * (S.speed * 200 + 1);
-      if (d.y > H + 50) {
-        d.y = Math.random() * -100;
-        d.speed = 1.5 + Math.random() * 3;
-        d.length = 5 + Math.floor(Math.random() * 15);
-      }
-      if (Math.random() < 0.3) {
-        d.chars.push(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)));
-        if (d.chars.length > d.length) d.chars.shift();
-      }
-    });
-  }
-
-  CTX.save();
-  CTX.font = '14px "VT323", "Courier New", monospace';
-  CTX.textAlign = 'center';
-  window._welcomeRain.forEach(d => {
-    for (let i = 0; i < d.chars.length; i++) {
-      let y = d.y - i * 16;
-      if (y < 0 || y > H) continue;
-      let alpha = 1 - (i / d.chars.length) * 0.8;
-      CTX.fillStyle = i === 0 ? '#80d0ff' : '#2060a0';
-      CTX.globalAlpha = alpha * 0.35;
-      CTX.fillText(d.chars[i] || '0', d.x, y);
-    }
-  });
-  CTX.restore();
-
-  // ── 2. DARK OVERLAY ────────────────────────────────────────────────────
-  CTX.fillStyle = '#050a14';
-  CTX.globalAlpha = 0.75;
+  
+  // ── TERMINAL BACKGROUND ──
+  // A slightly "noisy" dark blue-black to simulate a CRT screen
+  CTX.fillStyle = '#02050a';
   CTX.fillRect(0, 0, W, H);
-  CTX.globalAlpha = 1.0;
-    
-// ── 3. ANIMATED PANEL (visual only) ─────────────────────────────────────
-  let driftX = Math.cos(t * 0.5) * 10;
-  let driftY = Math.sin(t * 0.5) * 10;
-  let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
+  
+  let driftX = Math.cos(t * 0.5) * 5;
+  let driftY = Math.sin(t * 0.5) * 5;
+  
+  // Glitch: More frequent for a terminal "bad signal" feel
+  let glitch = (p.noise(t * 25) > 0.98) ? (Math.random() - 0.5) * 12 : 0;
 
   let panelW = Math.min(600, W * 0.9);
   let panelH = Math.min(500, H * 0.8);
-  // Stable position (no drift/glitch) for click detection
-  let stablePanelX = (W - panelW) / 2;
-  let stablePanelY = (H - panelH) / 2;
-  // Animated position for drawing
-  let panelX = stablePanelX + driftX + glitch;
-  let panelY = stablePanelY + driftY + glitch;
-
-
-  CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
-  CTX.beginPath();
-  CTX.rect(panelX, panelY, panelW, panelH);
-  CTX.fill();
-
+  let panelX = (W - panelW) / 2 + driftX + glitch;
+  let panelY = (H - panelH) / 2 + driftY + glitch;
+  
+  // Terminal Panel - Deep Navy with a thin green border
+  CTX.fillStyle = 'rgba(5, 10, 20, 0.95)';
+  CTX.fillRect(panelX, panelY, panelW, panelH);
+  
   CTX.save();
-  CTX.strokeStyle = '#1a2a44';
-  CTX.lineWidth = 3;
-  CTX.setLineDash([12, 10]);
-  CTX.lineDashOffset = -t * 15;
+  CTX.strokeStyle = '#00ff41'; // Matrix Green
+  CTX.lineWidth = 1;
+  CTX.setLineDash([2, 4]); // Fine terminal dash
   CTX.strokeRect(panelX, panelY, panelW, panelH);
   CTX.restore();
-
-  // ── 4. TITLE ───────────────────────────────────────────────────────────
+  
+  // ── HEADER ──
+  CTX.fillStyle = '#00ff41';
   CTX.textAlign = 'center';
-  CTX.font = "bold 24px 'VT323', 'Courier New', monospace";
-  CTX.fillStyle = '#80d0ff';
-  CTX.fillText('STUDIO_MANUAL v2.0', W/2 + driftX, panelY + 50);
+  CTX.font = "28px 'Special Elite'"; // Typewriter style header
+  CTX.fillText('> ACCESSING_SYSTEM_MANUAL...', W/2 + driftX, panelY + 60);
 
-  // ── 5. SCROLLING CONTENT (clipped) ────────────────────────────────────
-  let viewY = stablePanelY + 90;          // use stable coordinates
-  let viewH = panelH - 150;
-  let margin = 40;
-  let wrapW = panelW - (margin * 2);
-
+  // ── VIEWPORT ──
+  let viewY = panelY + 100;
+  let viewH = panelH - 160;
   CTX.save();
   CTX.beginPath();
-  CTX.rect(stablePanelX + 25, viewY, panelW - 50, viewH);
+  CTX.rect(panelX + 25, viewY, panelW - 50, viewH);
   CTX.clip();
 
   let curY = viewY + 30 + (S.welcomeScroll || 0);
+  let margin = 40;
+  let wrapW = panelW - (margin * 2);
 
-  const renderSection = (sec, index) => {
-    let isCollapsed = sec.collapsed;
-    let toggleSymbol = isCollapsed ? '▶' : '▼';
+  window._welcomeClickRegions = [];
 
-    CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
-    CTX.fillStyle = '#e67e22';
-    CTX.textAlign = 'left';
-    // Draw at animated X, but click region uses stable X
-    CTX.fillText(toggleSymbol + ' ' + sec.title.toUpperCase(), panelX + margin, curY);
+  const printSection = (index, title, body) => {
+  let isCollapsed = welcomeSections[index].collapsed;
+  
+  // Header Hitbox (matches your handleWelcomeClick logic)
+  window._welcomeClickRegions.push({
+    x: panelX + margin,
+    y: curY - 20,
+    w: wrapW,
+    h: 25,
+    type: 'toggle',
+    index: index
+  });
 
-    let headerY = curY - 16;
-    let headerHeight = 24;
-    welcomeClickRegions.push({
-      type: 'toggle',
-      index: index,
-      x: stablePanelX + margin,                       // stable!
-      y: headerY,                                     // already calculated
-      w: CTX.measureText(toggleSymbol + ' ' + sec.title.toUpperCase()).width,
-      h: headerHeight
+  // DRAW HEADER
+  CTX.font = "bold 18px 'VT323'";
+  CTX.fillStyle = isCollapsed ? '#008f11' : '#00ff41'; // Dimmer green if closed
+  let prefix = isCollapsed ? "[ + ] " : "[ - ] ";
+  CTX.fillText(prefix + title.toUpperCase(), panelX + margin, curY);
+  curY += 25;
+
+  if (!isCollapsed) {
+    CTX.font = "16px 'VT323'";
+    CTX.fillStyle = '#d1d1d1';
+    
+    // Split by actual new lines first, then wrap words
+    let paragraphs = body.split('\n');
+    
+    paragraphs.forEach(pText => {
+      let words = pText.split(' ');
+      let line = '';
+      for (let i = 0; i < words.length; i++) {
+        let test = line + words[i] + ' ';
+        if (CTX.measureText(test).width > wrapW) {
+          CTX.fillText(line, panelX + margin, curY);
+          line = words[i] + ' ';
+          curY += 18; // Line height
+        } else {
+          line = test;
+        }
+      }
+      CTX.fillText(line, panelX + margin, curY);
+      curY += 20; // Paragraph spacing
     });
+    curY += 15; // Bottom section margin
+  } else {
+    curY += 10; // Space between collapsed headers
+  }
+};
 
-    curY += 24;
-
-    if (!isCollapsed) {
-      CTX.font = "15px 'VT323', 'Courier New', monospace";
-      CTX.fillStyle = '#ced4da';
-
-      let lines = sec.body.split('\n');
-      lines.forEach(line => {
-        let displayLine = line.trim();
-        let indent = displayLine.startsWith('•') ? 20 : 10;
-        CTX.fillText(displayLine, panelX + margin + indent, curY);
-        curY += 22;
-      });
-      curY += 10;
-    }
-    curY += 8;
-  };
-
-  // Draw all sections
+  // ── RENDER SECTIONS ──
   welcomeSections.forEach((sec, i) => {
-    renderSection(sec, i);
+    printSection(i, sec.title, sec.content);
   });
 
   CTX.restore();
 
-  window._welcomeClickRegions = welcomeClickRegions;
-
-  // ── 6. SCROLLBAR ───────────────────────────────────────────────────────
-  let scrollMax = 1200;
-  let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
-  let barY = viewY + (scrollPercent * (viewH - 60));
-  CTX.fillStyle = 'rgba(26, 42, 68, 0.5)';
-  CTX.fillRect(stablePanelX + panelW - 12, viewY, 4, viewH);
-  CTX.fillStyle = '#8ba4bc';
-  CTX.fillRect(stablePanelX + panelW - 12, barY, 4, 60);
-
-  // ── 7. FOOTER ──────────────────────────────────────────────────────────
+  // ── FOOTER ──
   CTX.textAlign = 'center';
-  CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
-  CTX.fillStyle = '#6b8e23';
-  CTX.fillText('[ Click any Mode or Preset to the right to begin ]', W/2 + driftX, stablePanelY + panelH - 25);
-    
+  CTX.font = "14px 'VT323'";
+  CTX.fillStyle = '#00ff41';
+  CTX.fillText('[ Click any Mode or Preset to the right to begin ]', W/2 + driftX, panelY + panelH - 25);
 }
 
 
-  
   
   
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
@@ -12465,8 +12411,6 @@ function handleWelcomeClick(e) {
   if (S.mode !== 'welcome') return;
   
   let canvas = document.getElementById('gc');
-  if (!canvas) return;
-  
   let rect = canvas.getBoundingClientRect();
   let scaleX = canvas.width / rect.width;
   let scaleY = canvas.height / rect.height;
@@ -12480,14 +12424,14 @@ function handleWelcomeClick(e) {
         mouseY >= r.y && mouseY <= r.y + r.h) {
       if (r.type === 'toggle') {
         welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
-        window._st.rd(); // redraw canvas
+        
+        // Force a canvas refresh
+        if(window._st && window._st.rd) window._st.rd(); 
       }
       break;
     }
   }
 }
-
-// Attach the listener once (ensure it's not added multiple times)
 document.getElementById('gc').addEventListener('click', handleWelcomeClick);
   
 // ── WELCOME (scroll wheel) ─────────────────────────────────────────────────────────────────
@@ -12495,7 +12439,7 @@ window.addEventListener('wheel', function(e) {
   if (S.mode === 'welcome') {
     S.welcomeScroll += e.deltaY > 0 ? -40 : 40;
     // Increased lower limit to -1200 to allow room for new sections
-    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -1200)); 
+    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -2800));
     e.preventDefault();
   }
 }, { passive: false });
