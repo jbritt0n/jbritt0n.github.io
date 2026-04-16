@@ -2347,16 +2347,21 @@ let welcomeSections = [
   CTX.globalAlpha = 0.75;
   CTX.fillRect(0, 0, W, H);
   CTX.globalAlpha = 1.0;
-
-  // ── 3. ANIMATED PANEL ─────────────────────────────────────────────────
+    
+// ── 3. ANIMATED PANEL (visual only) ─────────────────────────────────────
   let driftX = Math.cos(t * 0.5) * 10;
   let driftY = Math.sin(t * 0.5) * 10;
   let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
 
   let panelW = Math.min(600, W * 0.9);
   let panelH = Math.min(500, H * 0.8);
-  let panelX = (W - panelW) / 2 + driftX + glitch;
-  let panelY = (H - panelH) / 2 + driftY + glitch;
+  // Stable position (no drift/glitch) for click detection
+  let stablePanelX = (W - panelW) / 2;
+  let stablePanelY = (H - panelH) / 2;
+  // Animated position for drawing
+  let panelX = stablePanelX + driftX + glitch;
+  let panelY = stablePanelY + driftY + glitch;
+
 
   CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
   CTX.beginPath();
@@ -2378,14 +2383,14 @@ let welcomeSections = [
   CTX.fillText('STUDIO_MANUAL v2.0', W/2 + driftX, panelY + 50);
 
   // ── 5. SCROLLING CONTENT (clipped) ────────────────────────────────────
-  let viewY = panelY + 90;
+  let viewY = stablePanelY + 90;          // use stable coordinates
   let viewH = panelH - 150;
   let margin = 40;
   let wrapW = panelW - (margin * 2);
 
   CTX.save();
   CTX.beginPath();
-  CTX.rect(panelX + 25, viewY, panelW - 50, viewH);
+  CTX.rect(stablePanelX + 25, viewY, panelW - 50, viewH);
   CTX.clip();
 
   let curY = viewY + 30 + (S.welcomeScroll || 0);
@@ -2397,6 +2402,7 @@ let welcomeSections = [
     CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
     CTX.fillStyle = '#e67e22';
     CTX.textAlign = 'left';
+    // Draw at animated X, but click region uses stable X
     CTX.fillText(toggleSymbol + ' ' + sec.title.toUpperCase(), panelX + margin, curY);
 
     let headerY = curY - 16;
@@ -2404,7 +2410,7 @@ let welcomeSections = [
     welcomeClickRegions.push({
       type: 'toggle',
       index: index,
-      x: panelX + margin,
+      x: stablePanelX + margin,          // stable!
       y: headerY,
       w: CTX.measureText(toggleSymbol + ' ' + sec.title.toUpperCase()).width,
       h: headerHeight
@@ -2442,15 +2448,16 @@ let welcomeSections = [
   let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
   let barY = viewY + (scrollPercent * (viewH - 60));
   CTX.fillStyle = 'rgba(26, 42, 68, 0.5)';
-  CTX.fillRect(panelX + panelW - 12, viewY, 4, viewH);
+  CTX.fillRect(stablePanelX + panelW - 12, viewY, 4, viewH);
   CTX.fillStyle = '#8ba4bc';
-  CTX.fillRect(panelX + panelW - 12, barY, 4, 60);
+  CTX.fillRect(stablePanelX + panelW - 12, barY, 4, 60);
 
   // ── 7. FOOTER ──────────────────────────────────────────────────────────
   CTX.textAlign = 'center';
   CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
   CTX.fillStyle = '#6b8e23';
-  CTX.fillText('[ Scroll to explore ]  [ Click any Mode to begin ]', W/2 + driftX, panelY + panelH - 25);
+  CTX.fillText('[ Click any Mode or Preset to the right to begin ]', W/2 + driftX, stablePanelY + panelH - 25);
+    
 }
 
 
