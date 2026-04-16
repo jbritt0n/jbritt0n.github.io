@@ -2367,8 +2367,7 @@ function drawWelcome(p, t) {
     CTX.font = "16px 'VT323'";
     CTX.fillStyle = '#d1d1d1';
     
-    // Split by actual new lines first, then wrap words
-    let paragraphs = body.split('\n');
+    let paragraphs = bodyText.split('\n');   // ← FIXED: body → bodyText
     
     paragraphs.forEach(pText => {
       let words = pText.split(' ');
