@@ -8101,111 +8101,81 @@ let _ynS = null; // scene state
  
 function initYandinsky(p) {
   let W = p.width, H = p.height;
-  let m = Math.min(W, H); // reference unit
- 
-  // Drift helper — returns a {driftAmt, phase, speed} block
+  let m = Math.min(W, H);
+
+  // Helper for drift config
   function driftCfg(dxFrac, dyFrac, phaseSeed) {
     return {
       dx: W * dxFrac, dy: H * dyFrac,
       phase: p.random(Math.PI * 2) + phaseSeed,
-      speed: 0.55 + p.random(0.35)   // relative speed multiplier, lerped against ynSpeed
+      speed: 0.55 + p.random(0.35)
     };
   }
- 
+
+  // Base scene object
   _ynS = {
     W, H,
- 
-    // ── Main large circle (black outline, the dominant anchor) ────────────
     circle: {
       cx: W * 0.435, cy: H * 0.455, r: m * 0.33,
       d: driftCfg(0.011, 0.009, 0.0)
     },
- 
-    // ── Blue-teal crescent arc (upper right) ─────────────────────────────
-    // Rendered as a very thick stroked arc to feel painterly
     arc: {
       cx: W * 0.715, cy: H * 0.275, r: m * 0.135,
       a0: -0.55, a1: 1.05, thickness: m * 0.058,
       d: driftCfg(0.009, 0.010, 1.1)
     },
- 
-    // ── Magenta filled rectangle (upper-left quadrant of circle) ─────────
     rectMag: {
       x: W * 0.255, y: H * 0.245, w: W * 0.118, h: H * 0.145,
       d: driftCfg(0.007, 0.011, 2.3)
     },
- 
-    // ── Pink/magenta dot (center) ─────────────────────────────────────────
     dot: {
       cx: W * 0.375, cy: H * 0.495, r: m * 0.052,
       d: driftCfg(0.014, 0.013, 3.7)
     },
- 
-    // ── Black vertical rectangle (left, tall) ────────────────────────────
     rectBlkV: {
       x: W * 0.270, y: H * 0.545, w: W * 0.058, h: H * 0.225,
       d: driftCfg(0.005, 0.009, 0.8)
     },
- 
-    // ── Dark horizontal band (main weight across lower half) ──────────────
     band: {
       x: W * 0.330, y: H * 0.625, w: W * 0.555, h: H * 0.078,
       d: driftCfg(0.004, 0.017, 1.6)
     },
- 
-    // ── Teal-blue thin band (inside/below the dark band) ─────────────────
     bandTeal: {
       x: W * 0.385, y: H * 0.668, w: W * 0.455, h: H * 0.034,
       d: driftCfg(0.004, 0.013, 2.9)
     },
- 
-    // ── Composite crosspiece: black column with magenta stripe ────────────
     cross: {
       x: W * 0.378, y: H * 0.595, w: W * 0.050, h: H * 0.108,
-      magStripeT: 0.32, magStripeH: 0.30, // as fraction of h
+      magStripeT: 0.32, magStripeH: 0.30,
       d: driftCfg(0.006, 0.010, 4.1)
     },
- 
-    // ── Red curved accent (lower center, small bold arc) ─────────────────
     redArc: {
       cx: W * 0.435, cy: H * 0.740, r: m * 0.068,
       a0: 0.08, a1: 1.02,
       d: driftCfg(0.008, 0.008, 0.5)
     },
- 
-    // ── Light highlight strokes inside the dark band ──────────────────────
     bandHighlight: {
-      d: driftCfg(0.004, 0.017, 1.6) // matches band drift so it moves with it
+      d: driftCfg(0.004, 0.017, 1.6)
     },
- 
-    // ── Three small black accent dots near the arc inside the circle ──────
     accentDots: [
       { cx: W * 0.505, cy: H * 0.555, r: m * 0.009, d: driftCfg(0.011, 0.009, 0.0) },
       { cx: W * 0.520, cy: H * 0.548, r: m * 0.006, d: driftCfg(0.011, 0.009, 0.0) },
       { cx: W * 0.532, cy: H * 0.542, r: m * 0.004, d: driftCfg(0.011, 0.009, 0.0) }
     ],
- 
-    // ── Structural thin lines — each oscillates PERPENDICULAR to its vector ─
-    // Vertical lines: warp left-right (perpendicular = horizontal).
-    // The mid-control-point shifts horizontally, bending the line.
     vLines: [
       { x: W * 0.210, y0: H * 0.070, y1: H * 0.795, w: 0.70, phase: p.random(Math.PI*2), spd: 0.90 },
       { x: W * 0.240, y0: H * 0.070, y1: H * 0.795, w: 0.80, phase: p.random(Math.PI*2), spd: 0.75 },
-      { x: W * 0.264, y0: H * 0.070, y1: H * 0.830, w: 1.30, phase: p.random(Math.PI*2), spd: 1.00 }, // slightly bolder centre line
+      { x: W * 0.264, y0: H * 0.070, y1: H * 0.830, w: 1.30, phase: p.random(Math.PI*2), spd: 1.00 },
       { x: W * 0.288, y0: H * 0.070, y1: H * 0.795, w: 0.75, phase: p.random(Math.PI*2), spd: 0.80 },
       { x: W * 0.310, y0: H * 0.070, y1: H * 0.780, w: 0.65, phase: p.random(Math.PI*2), spd: 0.95 }
     ],
-    vLineOscAmt: W * 0.016, // maximum perpendicular deflection
- 
-    // Horizontal lines: warp up-down (perpendicular = vertical).
+    vLineOscAmt: W * 0.016,
     hLines: [
       { y: H * 0.415, x0: W * 0.045, x1: W * 0.920, w: 0.60, phase: p.random(Math.PI*2), spd: 0.85 },
       { y: H * 0.620, x0: W * 0.045, x1: W * 0.920, w: 0.55, phase: p.random(Math.PI*2), spd: 0.70 },
       { y: H * 0.780, x0: W * 0.045, x1: W * 0.920, w: 0.50, phase: p.random(Math.PI*2), spd: 0.90 }
     ],
     hLineOscAmt: H * 0.011,
- 
-    // Triangle — three vertices each oscillate independently
     tri: {
       pts: [
         { bx: W * 0.058, by: H * 0.625 },
@@ -8215,17 +8185,68 @@ function initYandinsky(p) {
       phases: [p.random(Math.PI*2), p.random(Math.PI*2), p.random(Math.PI*2)],
       spd: 0.70,
       oscAmt: m * 0.014
+    },
+
+    // ---- Variation extras ----
+    extraRects: [],
+    extraLines: []
+  };
+
+  // Read parameters (with fallbacks)
+  let extraRectsCount = S.ynExtraRects ?? 0;
+  let extraLinesCount = S.ynExtraLines ?? 0;
+  let randomize = S.ynRandomize ?? false;
+
+  // Helper to jitter if randomize is on
+  function jitter(val, amount, min, max) {
+    if (!randomize) return val;
+    let j = val + (p.random() - 0.5) * amount;
+    return p.constrain(j, min, max);
+  }
+
+  // Generate extra rectangles
+  let rectColors = ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'];
+  for (let i = 0; i < extraRectsCount; i++) {
+    let baseX = p.random(W * 0.1, W * 0.8);
+    let baseY = p.random(H * 0.1, H * 0.8);
+    let w = p.random(W * 0.03, W * 0.15);
+    let h = p.random(H * 0.03, H * 0.12);
+    _ynS.extraRects.push({
+      x: jitter(baseX, W * 0.1, 0, W - w),
+      y: jitter(baseY, H * 0.1, 0, H - h),
+      w, h,
+      col: rectColors[Math.floor(p.random(rectColors.length))],
+      d: driftCfg(0.005 + p.random(0.01), 0.005 + p.random(0.01), i * 1.7)
+    });
+  }
+
+  // Generate extra lines (both vertical and horizontal)
+  for (let i = 0; i < extraLinesCount; i++) {
+    let isVertical = p.random() > 0.5;
+    if (isVertical) {
+      let x = jitter(p.random(W * 0.1, W * 0.9), W * 0.15, 0, W);
+      _ynS.extraLines.push({
+        type: 'v',
+        x: x,
+        y0: jitter(H * 0.05, H * 0.1, 0, H * 0.9),
+        y1: jitter(H * 0.95, H * 0.1, H * 0.1, H),
+        w: p.random(0.4, 1.2),
+        phase: p.random(Math.PI*2),
+        spd: p.random(0.5, 1.2)
+      });
+    } else {
+      let y = jitter(p.random(H * 0.1, H * 0.9), H * 0.15, 0, H);
+      _ynS.extraLines.push({
+        type: 'h',
+        y: y,
+        x0: jitter(W * 0.05, W * 0.1, 0, W * 0.9),
+        x1: jitter(W * 0.95, W * 0.1, W * 0.1, W),
+        w: p.random(0.4, 1.0),
+        phase: p.random(Math.PI*2),
+        spd: p.random(0.5, 1.2)
+      });
     }
-  };
-}
- 
-// ── Eased drift: given a drift config and global tick, return {dx, dy} ────────
-function _ynDrift(d, tick, driftScale) {
-  let t = tick * d.speed;
-  return {
-    x: Math.sin(d.phase + t) * d.dx * driftScale,
-    y: Math.cos(d.phase + t * 1.27) * d.dy * driftScale
-  };
+  }
 }
  
 // ── Main draw ─────────────────────────────────────────────────────────────────
@@ -8354,7 +8375,26 @@ function drawYandinsky(p, t) {
     CTX.stroke();
   }
   CTX.restore();
- 
+   // ── Extra lines (variation) ───────────────────────────────────────────────
+  Y.extraLines.forEach(function(ln) {
+    let oscAmt = (ln.type === 'v' ? Y.vLineOscAmt : Y.hLineOscAmt) * oscScale;
+    let oscT = Math.sin(ln.phase + tick * ln.spd) * oscAmt;
+    CTX.strokeStyle = 'rgba(28,18,8,0.5)';
+    CTX.lineWidth = lw * ln.w;
+    CTX.beginPath();
+    if (ln.type === 'v') {
+      CTX.moveTo(ln.x, ln.y0);
+      CTX.bezierCurveTo(ln.x + oscT, ln.y0 + (ln.y1 - ln.y0)*0.33,
+                        ln.x - oscT*0.5, ln.y0 + (ln.y1 - ln.y0)*0.67,
+                        ln.x, ln.y1);
+    } else {
+      CTX.moveTo(ln.x0, ln.y);
+      CTX.bezierCurveTo(ln.x0 + (ln.x1 - ln.x0)*0.33, ln.y + oscT,
+                        ln.x0 + (ln.x1 - ln.x0)*0.67, ln.y - oscT*0.5,
+                        ln.x1, ln.y);
+    }
+    CTX.stroke();
+  });
   // ── 3. Large circle (black outline, the primary geometric anchor) ─────────
   let cd = _ynDrift(Y.circle.d, tick, driftScale);
   CTX.save();
@@ -8472,7 +8512,20 @@ function drawYandinsky(p, t) {
   CTX.arc(ax, ay, Y.arc.r * 1.07, Y.arc.a0, Y.arc.a1);
   CTX.stroke();
   CTX.restore();
- 
+
+  // ── Extra rectangles (variation) ──────────────────────────────────────────
+  Y.extraRects.forEach(function(r) {
+    let rd = _ynDrift(r.d, tick, driftScale);
+    CTX.save();
+    CTX.fillStyle = r.col;
+    CTX.globalAlpha = 0.75;
+    CTX.fillRect(r.x + rd.x, r.y + rd.y, r.w, r.h);
+    CTX.strokeStyle = 'rgba(22,14,6,0.4)';
+    CTX.lineWidth = lw * 0.5;
+    CTX.strokeRect(r.x + rd.x, r.y + rd.y, r.w, r.h);
+    CTX.restore();
+  });
+  
   // ── 12. Red curved accent ─────────────────────────────────────────────────
   let rad = _ynDrift(Y.redArc.d, tick, driftScale);
   CTX.save();
@@ -8500,6 +8553,38 @@ function drawYandinsky(p, t) {
   CTX.moveTo(bx + Y.band.w * 0.10, by_ + Y.band.h * 0.70);
   CTX.lineTo(bx + Y.band.w * 0.35, by_ + Y.band.h * 0.80);
   CTX.stroke();
+
+
+  // ── Concrete texture overlay ──────────────────────────────────────────────
+  let concrete = S.ynConcrete ?? 0.3;
+  if (concrete > 0) {
+    CTX.save();
+    CTX.globalAlpha = concrete * 0.25;
+    CTX.fillStyle = '#3a3020';
+    for (let tx = 0; tx < W; tx += 3) {
+      for (let ty = 0; ty < H; ty += 3) {
+        let n = p.noise(tx * 0.03, ty * 0.03, tick * 0.01);
+        if (n > 0.68) {
+          CTX.fillRect(tx, ty, 1 + (n > 0.85 ? 1 : 0), 1);
+        }
+      }
+    }
+    // Additional fine scratches
+    CTX.globalAlpha = concrete * 0.12;
+    CTX.strokeStyle = '#2a2015';
+    CTX.lineWidth = 0.5;
+    for (let i = 0; i < 20; i++) {
+      let x = p.noise(i, tick) * W;
+      let y = p.noise(i + 100, tick) * H;
+      CTX.beginPath();
+      CTX.moveTo(x, y);
+      CTX.lineTo(x + p.noise(i, tick + 10) * 30 - 15, y + p.noise(i + 200, tick) * 20 - 10);
+      CTX.stroke();
+    }
+    CTX.restore();
+  }
+
+  
   CTX.restore();
 }
 
@@ -10329,6 +10414,21 @@ const PARAM_REGISTRY = {
       hint:'Intensity of the warm ochre washes and canvas-weave texture' },
     { type:'toggle', id:'ynShowGrid', label:'Canvas grid lines', def:true,
       hint:'Faint structural grid suggesting the physical canvas stretcher' },
+    { id: 'ynDrift',      label: 'Drift amount',      min: 0,   max: 2.0, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynOsc',        label: 'Line oscillation',  min: 0,   max: 2.0, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynSpeed',      label: 'Animation speed',   min: 0.1, max: 2.5, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynLineWeight', label: 'Line weight',       min: 0.3, max: 3.0, step: 0.1,  def: 1.0, scale: 1 },
+    { id: 'ynShowGrid',   label: 'Show grid',         type: 'toggle', def: true },
+    { id: 'ynTexture',    label: 'Texture strength',  min: 0,   max: 2.0, step: 0.1,  def: 1.0, scale: 1 },
+    // New variation controls
+    { id: 'ynExtraRects', label: 'Extra rectangles',  min: 0,   max: 8,   step: 1,    def: 0,   scale: 1,
+      hint: 'Add random colored rectangles to the composition' },
+    { id: 'ynExtraLines', label: 'Extra lines',       min: 0,   max: 12,  step: 1,    def: 0,   scale: 1,
+      hint: 'Add random oscillating lines' },
+    { id: 'ynRandomize',  label: 'Randomize layout',  type: 'toggle', def: false,
+      hint: 'When enabled, uses noise to jitter positions and colors' },
+    { id: 'ynConcrete',   label: 'Concrete grain',    min: 0,   max: 1.0, step: 0.05, def: 0.3, scale: 1,
+      hint: 'Adds a rough concrete texture overlay' },
   ],
   collageWash: [
     { id: 'colWidth', label: 'Strip Width', min: 20, max: 200, step: 10, def: 80 },
