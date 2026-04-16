@@ -8248,7 +8248,16 @@ function initYandinsky(p) {
     }
   }
 }
- 
+
+// ── Eased drift: given a drift config and global tick, return {dx, dy} ────────
+function _ynDrift(d, tick, driftScale) {
+  let t = tick * d.speed;
+  return {
+    x: Math.sin(d.phase + t) * d.dx * driftScale,
+    y: Math.cos(d.phase + t * 1.27) * d.dy * driftScale
+  };
+}
+  
 // ── Main draw ─────────────────────────────────────────────────────────────────
 function drawYandinsky(p, t) {
   // Re-init if canvas has been resized
@@ -8262,10 +8271,11 @@ function drawYandinsky(p, t) {
   // ── Read controls from S (all default to registry def*scale if not set) ──
   let driftScale  = S.ynDrift      ?? 1.0;
   let oscScale    = S.ynOsc        ?? 1.0;
-  let speed       = Math.max(0.01, S.ynSpeed ?? 1.0);
+  let speed       = S.ynSpeed      ?? 1.0;
   let lw          = S.ynLineWeight ?? 1.0;
-  let showGrid    = S.ynShowGrid   !== false; // toggle, default true
+  let showGrid    = S.ynShowGrid   ?? true;
   let textureAmt  = S.ynTexture    ?? 1.0;
+  let concrete    = S.ynConcrete   ?? 0.3;
  
   // Unified tick: t is p5 millis; convert to seconds then scale by speed
   let tick = (t * 0.001) * speed;
