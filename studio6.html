@@ -1374,7 +1374,8 @@ const PALETTES={
   rust:      ['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],
   copper:    ['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],
   aurora:    ['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],
-  mondrian:   ['#FAFAFA', '#212121', '#D32F2F', '#1A237E', '#FDD835', '#9E9E9E'],
+  mondrian:  ['#FAFAFA', '#212121', '#D32F2F', '#1A237E', '#FDD835', '#9E9E9E'],
+  yandinsky: ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'],
   brutalist: ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],
   risograph: ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],
   cyanotype: ['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],
@@ -12340,9 +12341,8 @@ const PRESETS={
   hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
   circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
   poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
-  kandinsky_composition: function() {ap({mode: 'kandinsky',font: 'courier', bg: '#FFD700', palette: 'site', accent: '#FF00FF',accentAmt: 0.3,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20, turb: 0.006,noiseType: 'simplex',kClusterCount: 14,kBurstElements: 10,kBurstSpread: 0.7,kLineCount: 24,kLineWidth: 0.8,kLineLength: 0.9,kGeomChars: true,kDrawShadows: true,});},
   numb_poem: function(){ap({mode: 'numbpoem',font: 'typewriter', bg: '#f2e8d5', palette: 'numb',accent: '#c94b1f',spacing: 12,maxSize: 18,density: 0.5,speed: 0.0015,wave: 8,turb: 0.004,numbPoemBlockMinW: 140,numbPoemBlockMaxW: 300,numbPoemBlockMinH: 120,numbPoemBlockMaxH: 280,numbPoemRotateChance: 0.3,numbPoemDriftSpeed: 0.25,numbPoemDriftX: 0.5,numbPoemDriftY: 0.4,numbPoemEdgeTear: 0.5,numbPoemPaperGrain: true,numbPoemInkBleed: 0.35,numbPoemTextColor: '#1a1a1a',numbPoemTextOpacity: 0.95,numbPoemBlockOpacity: 0.9,numbPoemTextSizeMin: 12,numbPoemTextSizeMax: 20,numbPoemLineSpacing: 1.4,numbPoemPadding: 14,});},
-  yandinsky_original: function() {ap({mode: 'yandinsky',bg: '#d4a828',palette: 'site',accent: '#e63946',accentAmt: 0.15,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20,turb: 0.006,noiseType: 'simplex',ynDrift: 1.0,ynOsc: 1.0,ynSpeed: 1.0,ynLineWeight: 1.0,ynShowGrid: true,ynTexture: 1.0,ynExtraRects: 0,ynExtraLines: 0,ynRandomize: false,ynConcrete: 0.3});},
+  yandinsky_original: function() {ap({mode: 'yandinsky',bg: '#d4a828',palette: 'yandinsky',accent: '#e63946',accentAmt: 0.15,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20,turb: 0.006,noiseType: 'simplex',ynDrift: 1.0,ynOsc: 1.0,ynSpeed: 1.0,ynLineWeight: 1.0,ynShowGrid: true,ynTexture: 1.0,ynExtraRects: 0,ynExtraLines: 0,ynRandomize: false,ynConcrete: 0.3});},
 
   
 };
