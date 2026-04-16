@@ -9006,7 +9006,7 @@ new p5(function(p){
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
     initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
-    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p)
+    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p); initNumbPoem(p);
     recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
     lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[]; 
@@ -9014,6 +9014,7 @@ new p5(function(p){
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
     if (typeof initNumbCollage === 'function') initNumbCollage(p);
+    if (S.mode === 'numbpoem' && typeof initNumbPoem === 'function') initNumbPoem(p);
     if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
     
