@@ -8089,101 +8089,418 @@ function drawCollageWash(p, t) {
 }  
 
 
-// ── YANDINSKY MODE ───────────────────────────────────────────────────────────
-// Inspired by Vasily Kandinsky: geometric clusters with vertical lines on yellow.
-
-function drawYandinsky(p, t) {
+// ── YANDINSKY ─────────────────────────────────────────────────────────────────
+// Yellow Kandinsky — geometric abstraction with drifting forms and oscillating lines.
+// Homage to Vasily Kandinsky. Each element hovers on its own phase+frequency;
+// structural lines warp along their vector (quadratic curve mid-point oscillates
+// perpendicular to the line's direction).
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+// ── Module state — rebuilt whenever canvas resizes ────────────────────────────
+let _ynS = null; // scene state
+ 
+function initYandinsky(p) {
   let W = p.width, H = p.height;
-  let sp = S.spacing || 15;
-
-  // Mode parameters (with defaults)
-  let clusterCount = Math.floor(S.kClusterCount ?? 12);
-  let burstElements = Math.floor(S.kBurstElements ?? 8);
-  let burstSpread  = S.kBurstSpread ?? 0.5;       // multiplier for distance from center
-  let lineCount    = Math.floor(S.kLineCount ?? 20);
-  let lineWidth    = S.kLineWidth ?? 1.0;
-  let lineLength   = S.kLineLength ?? 0.8;        // fraction of canvas height
-  let useGeomChars = S.kGeomChars ?? true;        // use particle/geometric chars
-
-  // Colors: we'll use palette colors, but the user expects yellow, blue, black, magenta.
-  // The preset will set an appropriate palette; here we just use pickColor.
-
-  // ── 1. Vertical lines (thin, semi‑transparent black) ──────────────────────
+  let m = Math.min(W, H); // reference unit
+ 
+  // Drift helper — returns a {driftAmt, phase, speed} block
+  function driftCfg(dxFrac, dyFrac, phaseSeed) {
+    return {
+      dx: W * dxFrac, dy: H * dyFrac,
+      phase: p.random(Math.PI * 2) + phaseSeed,
+      speed: 0.55 + p.random(0.35)   // relative speed multiplier, lerped against ynSpeed
+    };
+  }
+ 
+  _ynS = {
+    W, H,
+ 
+    // ── Main large circle (black outline, the dominant anchor) ────────────
+    circle: {
+      cx: W * 0.435, cy: H * 0.455, r: m * 0.33,
+      d: driftCfg(0.011, 0.009, 0.0)
+    },
+ 
+    // ── Blue-teal crescent arc (upper right) ─────────────────────────────
+    // Rendered as a very thick stroked arc to feel painterly
+    arc: {
+      cx: W * 0.715, cy: H * 0.275, r: m * 0.135,
+      a0: -0.55, a1: 1.05, thickness: m * 0.058,
+      d: driftCfg(0.009, 0.010, 1.1)
+    },
+ 
+    // ── Magenta filled rectangle (upper-left quadrant of circle) ─────────
+    rectMag: {
+      x: W * 0.255, y: H * 0.245, w: W * 0.118, h: H * 0.145,
+      d: driftCfg(0.007, 0.011, 2.3)
+    },
+ 
+    // ── Pink/magenta dot (center) ─────────────────────────────────────────
+    dot: {
+      cx: W * 0.375, cy: H * 0.495, r: m * 0.052,
+      d: driftCfg(0.014, 0.013, 3.7)
+    },
+ 
+    // ── Black vertical rectangle (left, tall) ────────────────────────────
+    rectBlkV: {
+      x: W * 0.270, y: H * 0.545, w: W * 0.058, h: H * 0.225,
+      d: driftCfg(0.005, 0.009, 0.8)
+    },
+ 
+    // ── Dark horizontal band (main weight across lower half) ──────────────
+    band: {
+      x: W * 0.330, y: H * 0.625, w: W * 0.555, h: H * 0.078,
+      d: driftCfg(0.004, 0.017, 1.6)
+    },
+ 
+    // ── Teal-blue thin band (inside/below the dark band) ─────────────────
+    bandTeal: {
+      x: W * 0.385, y: H * 0.668, w: W * 0.455, h: H * 0.034,
+      d: driftCfg(0.004, 0.013, 2.9)
+    },
+ 
+    // ── Composite crosspiece: black column with magenta stripe ────────────
+    cross: {
+      x: W * 0.378, y: H * 0.595, w: W * 0.050, h: H * 0.108,
+      magStripeT: 0.32, magStripeH: 0.30, // as fraction of h
+      d: driftCfg(0.006, 0.010, 4.1)
+    },
+ 
+    // ── Red curved accent (lower center, small bold arc) ─────────────────
+    redArc: {
+      cx: W * 0.435, cy: H * 0.740, r: m * 0.068,
+      a0: 0.08, a1: 1.02,
+      d: driftCfg(0.008, 0.008, 0.5)
+    },
+ 
+    // ── Light highlight strokes inside the dark band ──────────────────────
+    bandHighlight: {
+      d: driftCfg(0.004, 0.017, 1.6) // matches band drift so it moves with it
+    },
+ 
+    // ── Three small black accent dots near the arc inside the circle ──────
+    accentDots: [
+      { cx: W * 0.505, cy: H * 0.555, r: m * 0.009, d: driftCfg(0.011, 0.009, 0.0) },
+      { cx: W * 0.520, cy: H * 0.548, r: m * 0.006, d: driftCfg(0.011, 0.009, 0.0) },
+      { cx: W * 0.532, cy: H * 0.542, r: m * 0.004, d: driftCfg(0.011, 0.009, 0.0) }
+    ],
+ 
+    // ── Structural thin lines — each oscillates PERPENDICULAR to its vector ─
+    // Vertical lines: warp left-right (perpendicular = horizontal).
+    // The mid-control-point shifts horizontally, bending the line.
+    vLines: [
+      { x: W * 0.210, y0: H * 0.070, y1: H * 0.795, w: 0.70, phase: p.random(Math.PI*2), spd: 0.90 },
+      { x: W * 0.240, y0: H * 0.070, y1: H * 0.795, w: 0.80, phase: p.random(Math.PI*2), spd: 0.75 },
+      { x: W * 0.264, y0: H * 0.070, y1: H * 0.830, w: 1.30, phase: p.random(Math.PI*2), spd: 1.00 }, // slightly bolder centre line
+      { x: W * 0.288, y0: H * 0.070, y1: H * 0.795, w: 0.75, phase: p.random(Math.PI*2), spd: 0.80 },
+      { x: W * 0.310, y0: H * 0.070, y1: H * 0.780, w: 0.65, phase: p.random(Math.PI*2), spd: 0.95 }
+    ],
+    vLineOscAmt: W * 0.016, // maximum perpendicular deflection
+ 
+    // Horizontal lines: warp up-down (perpendicular = vertical).
+    hLines: [
+      { y: H * 0.415, x0: W * 0.045, x1: W * 0.920, w: 0.60, phase: p.random(Math.PI*2), spd: 0.85 },
+      { y: H * 0.620, x0: W * 0.045, x1: W * 0.920, w: 0.55, phase: p.random(Math.PI*2), spd: 0.70 },
+      { y: H * 0.780, x0: W * 0.045, x1: W * 0.920, w: 0.50, phase: p.random(Math.PI*2), spd: 0.90 }
+    ],
+    hLineOscAmt: H * 0.011,
+ 
+    // Triangle — three vertices each oscillate independently
+    tri: {
+      pts: [
+        { bx: W * 0.058, by: H * 0.625 },
+        { bx: W * 0.320, by: H * 0.285 },
+        { bx: W * 0.215, by: H * 0.860 }
+      ],
+      phases: [p.random(Math.PI*2), p.random(Math.PI*2), p.random(Math.PI*2)],
+      spd: 0.70,
+      oscAmt: m * 0.014
+    }
+  };
+}
+ 
+// ── Eased drift: given a drift config and global tick, return {dx, dy} ────────
+function _ynDrift(d, tick, driftScale) {
+  let t = tick * d.speed;
+  return {
+    x: Math.sin(d.phase + t) * d.dx * driftScale,
+    y: Math.cos(d.phase + t * 1.27) * d.dy * driftScale
+  };
+}
+ 
+// ── Main draw ─────────────────────────────────────────────────────────────────
+function drawYandinsky(p, t) {
+  // Re-init if canvas has been resized
+  if (!_ynS || _ynS.W !== p.width || _ynS.H !== p.height) {
+    initYandinsky(p);
+  }
+ 
+  let Y  = _ynS;
+  let W  = Y.W, H = Y.H;
+ 
+  // ── Read controls from S (all default to registry def*scale if not set) ──
+  let driftScale  = S.ynDrift      ?? 1.0;
+  let oscScale    = S.ynOsc        ?? 1.0;
+  let speed       = Math.max(0.01, S.ynSpeed ?? 1.0);
+  let lw          = S.ynLineWeight ?? 1.0;
+  let showGrid    = S.ynShowGrid   !== false; // toggle, default true
+  let textureAmt  = S.ynTexture    ?? 1.0;
+ 
+  // Unified tick: t is p5 millis; convert to seconds then scale by speed
+  let tick = (t * 0.001) * speed;
+ 
+  // ── 1. Background — warm ochre ground ────────────────────────────────────
+  let bg = S.bg || '#d4a828';
   CTX.save();
-  CTX.strokeStyle = '#000000';
-  CTX.lineWidth = lineWidth;
-  CTX.globalAlpha = 0.3;
-
-  for (let i = 0; i < lineCount; i++) {
-    let x = (i / lineCount) * W + (Math.sin(i * 1.3) * sp * 0.5);
-    let yStart = H * ((1 - lineLength) / 2);
-    let yEnd = H - yStart;
-    // Slight wobble
-    x += sampleNoise(p, i * 0.5, t * 0.1) * sp * 0.8;
-    CTX.beginPath();
-    CTX.moveTo(x, yStart);
-    CTX.lineTo(x, yEnd);
-    CTX.stroke();
-  }
-  CTX.globalAlpha = 1.0;
-  CTX.restore();
-
-  // ── 2. Geometric clusters ─────────────────────────────────────────────────
-  // Temporarily switch to particle mode if geometric characters are enabled
-  let originalParticleMode = S.useParticleMode;
-  let originalCharSet = S.charSet;
-
-  if (useGeomChars) {
-    S.useParticleMode = true;
-    // Rotate through geometric particle sets
-    let geomSets = ['slate', 'arch', 'petals', 'neural', 'husks', 'filaments'];
-    S.charSet = geomSets[Math.floor(t * 0.1) % geomSets.length];
-  }
-
-  for (let c = 0; c < clusterCount; c++) {
-    // Cluster center – driven by noise field for organic placement
-    let cx = sampleNoise(p, c * 0.15, t * 0.1, 0) * W;
-    let cy = sampleNoise(p, c * 0.2 + 50, t * 0.1, 0) * H;
-
-    // Base color for this cluster
-    let col = pickColor(p, cx, cy, t);
-
-    for (let i = 0; i < burstElements; i++) {
-      // Angle: spiral out from center with noise variation
-      let angle = (i / burstElements) * Math.PI * 2 + t * 0.02;
-      angle += sampleNoise(p, cx * 0.01, cy * 0.01, i * 0.1) * 1.5;
-
-      // Distance from center grows with i, scaled by burstSpread
-      let dist = i * sp * burstSpread;
-
-      let x = cx + Math.cos(angle) * dist;
-      let y = cy + Math.sin(angle) * dist;
-
-      if (x < 0 || x > W || y < 0 || y > H) continue;
-
-      // Character selection
-      let ch = pickChar(p, x, y, t);
-
-      // Size: varies with distance and noise
-      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.2);
-      let sz = p.map(n, 0, 1, S.maxSize * 0.5, S.maxSize);
-
-      dc(x, y, sz, angle, col, ch);
-
-      // Optional: draw a subtle shadow rectangle for depth (Webster style)
-      if (S.kDrawShadows) {
-        CTX.save();
-        CTX.globalAlpha = 0.15;
-        CTX.fillStyle = '#000000';
-        CTX.fillRect(x - sz * 0.3, y - sz * 0.3, sz * 0.6, sz * 0.6);
-        CTX.restore();
+  CTX.fillStyle = bg;
+  CTX.fillRect(0, 0, W, H);
+ 
+  // Subtle warm wash blobs (the orange-pink variation in the upper-left)
+  if (textureAmt > 0) {
+    let washes = [
+      { x: W*0.08,  y: H*0.12,  r: W*0.38, col: 'rgba(205,80,40,'  },
+      { x: W*0.72,  y: H*0.88,  r: W*0.30, col: 'rgba(210,90,30,'  },
+      { x: W*0.50,  y: H*0.50,  r: W*0.45, col: 'rgba(225,170,50,' }
+    ];
+    washes.forEach(function(w) {
+      let gr = CTX.createRadialGradient(w.x, w.y, 0, w.x, w.y, w.r);
+      gr.addColorStop(0,   w.col + (0.13 * textureAmt) + ')');
+      gr.addColorStop(0.6, w.col + (0.05 * textureAmt) + ')');
+      gr.addColorStop(1,   w.col + '0)');
+      CTX.fillStyle = gr;
+      CTX.fillRect(0, 0, W, H);
+    });
+    // Fine canvas-weave texture via tiny noise-placed marks
+    CTX.globalAlpha = 0.028 * textureAmt;
+    CTX.fillStyle   = '#7a5010';
+    for (let tx = 0; tx < W; tx += 4) {
+      for (let ty = 0; ty < H; ty += 4) {
+        let n = p.noise(tx * 0.06, ty * 0.06);
+        if (n > 0.60) CTX.fillRect(tx, ty, n > 0.78 ? 2 : 1, 1);
       }
     }
+    CTX.globalAlpha = 1;
   }
-
-  // Restore original character mode
-  S.useParticleMode = originalParticleMode;
-  S.charSet = originalCharSet;
+ 
+  // Faint structural grid (like canvas stretcher lines in the photo)
+  if (showGrid) {
+    CTX.strokeStyle = 'rgba(170,125,40,0.14)';
+    CTX.lineWidth   = 0.5;
+    for (let gx = 0; gx <= W; gx += W / 8) {
+      CTX.beginPath(); CTX.moveTo(gx, 0); CTX.lineTo(gx, H); CTX.stroke();
+    }
+    for (let gy = 0; gy <= H; gy += H / 8) {
+      CTX.beginPath(); CTX.moveTo(0, gy); CTX.lineTo(W, gy); CTX.stroke();
+    }
+  }
+  CTX.restore();
+ 
+  // ── 2. Oscillating structural lines ──────────────────────────────────────
+  CTX.save();
+  CTX.lineCap  = 'round';
+ 
+  // Vertical lines — warp mid-control-point horizontally (perpendicular to line)
+  Y.vLines.forEach(function(ln) {
+    let oscT  = Math.sin(ln.phase + tick * ln.spd) * Y.vLineOscAmt * oscScale;
+    // Two mid points at 1/3 and 2/3 height for an S-curve feel
+    let mid1  = Math.sin(ln.phase + tick * ln.spd + 0.8) * Y.vLineOscAmt * oscScale * 0.6;
+    CTX.strokeStyle = 'rgba(28,18,8,0.72)';
+    CTX.lineWidth   = lw * ln.w;
+    CTX.beginPath();
+    CTX.moveTo(ln.x, ln.y0);
+    // Bezier: start straight → bend at 1/3 → reverse at 2/3 → end
+    CTX.bezierCurveTo(
+      ln.x + oscT,  ln.y0 + (ln.y1 - ln.y0) * 0.33,
+      ln.x + mid1,  ln.y0 + (ln.y1 - ln.y0) * 0.67,
+      ln.x,         ln.y1
+    );
+    CTX.stroke();
+  });
+ 
+  // Horizontal lines — warp mid-control-point vertically
+  Y.hLines.forEach(function(ln) {
+    let oscT  = Math.sin(ln.phase + tick * ln.spd) * Y.hLineOscAmt * oscScale;
+    let mid1  = Math.sin(ln.phase + tick * ln.spd + 0.9) * Y.hLineOscAmt * oscScale * 0.5;
+    CTX.strokeStyle = 'rgba(28,18,8,0.48)';
+    CTX.lineWidth   = lw * ln.w;
+    CTX.beginPath();
+    CTX.moveTo(ln.x0, ln.y);
+    CTX.bezierCurveTo(
+      ln.x0 + (ln.x1 - ln.x0) * 0.33, ln.y + oscT,
+      ln.x0 + (ln.x1 - ln.x0) * 0.67, ln.y + mid1,
+      ln.x1, ln.y
+    );
+    CTX.stroke();
+  });
+ 
+  // Triangle — vertices drift independently; edges oscillate (quadratic warp)
+  let tri    = Y.tri;
+  let triPts = tri.pts.map(function(pt, i) {
+    let ph = tri.phases[i] + tick * tri.spd;
+    return {
+      x: pt.bx + Math.sin(ph)        * tri.oscAmt * oscScale,
+      y: pt.by + Math.cos(ph * 1.15) * tri.oscAmt * oscScale * 0.55
+    };
+  });
+  CTX.strokeStyle = 'rgba(28,18,8,0.42)';
+  CTX.lineWidth   = lw * 0.65;
+  for (let i = 0; i < 3; i++) {
+    let a  = triPts[i], b = triPts[(i + 1) % 3];
+    let mx = (a.x + b.x) * 0.5 + Math.sin(tri.phases[i] + tick * tri.spd + 1.2) * tri.oscAmt * oscScale * 0.4;
+    let my = (a.y + b.y) * 0.5;
+    CTX.beginPath();
+    CTX.moveTo(a.x, a.y);
+    CTX.quadraticCurveTo(mx, my, b.x, b.y);
+    CTX.stroke();
+  }
+  CTX.restore();
+ 
+  // ── 3. Large circle (black outline, the primary geometric anchor) ─────────
+  let cd = _ynDrift(Y.circle.d, tick, driftScale);
+  CTX.save();
+  CTX.strokeStyle = 'rgba(22,14,6,0.90)';
+  CTX.lineWidth   = lw * 2.4;
+  CTX.beginPath();
+  CTX.arc(Y.circle.cx + cd.x, Y.circle.cy + cd.y, Y.circle.r, 0, Math.PI * 2);
+  CTX.stroke();
+  CTX.restore();
+ 
+  // ── 4. Magenta filled rectangle ───────────────────────────────────────────
+  let rd = _ynDrift(Y.rectMag.d, tick, driftScale);
+  CTX.save();
+  CTX.fillStyle   = '#d4166e';
+  CTX.strokeStyle = 'rgba(22,14,6,0.55)';
+  CTX.lineWidth   = lw * 0.7;
+  let rmx = Y.rectMag.x + rd.x, rmy = Y.rectMag.y + rd.y;
+  CTX.fillRect(rmx, rmy, Y.rectMag.w, Y.rectMag.h);
+  CTX.strokeRect(rmx, rmy, Y.rectMag.w, Y.rectMag.h);
+  // Light cyan highlight fleck (visible in painting)
+  CTX.fillStyle = 'rgba(140,210,220,0.45)';
+  CTX.fillRect(rmx + Y.rectMag.w * 0.04, rmy + Y.rectMag.h * 0.62, Y.rectMag.w * 0.3, Y.rectMag.h * 0.08);
+  CTX.restore();
+ 
+  // ── 5. Pink / magenta dot ─────────────────────────────────────────────────
+  let dd = _ynDrift(Y.dot.d, tick, driftScale);
+  CTX.save();
+  // Slight glow halo
+  let dotGr = CTX.createRadialGradient(
+    Y.dot.cx + dd.x, Y.dot.cy + dd.y, 0,
+    Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r * 1.6
+  );
+  dotGr.addColorStop(0,   'rgba(230,20,100,0.22)');
+  dotGr.addColorStop(1,   'rgba(230,20,100,0)');
+  CTX.fillStyle = dotGr;
+  CTX.beginPath();
+  CTX.arc(Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r * 1.6, 0, Math.PI * 2);
+  CTX.fill();
+  // Solid magenta dot
+  CTX.fillStyle = '#e01870';
+  CTX.beginPath();
+  CTX.arc(Y.dot.cx + dd.x, Y.dot.cy + dd.y, Y.dot.r, 0, Math.PI * 2);
+  CTX.fill();
+  CTX.restore();
+ 
+  // ── 6. Black vertical rectangle ───────────────────────────────────────────
+  let bvd = _ynDrift(Y.rectBlkV.d, tick, driftScale);
+  CTX.save();
+  CTX.fillStyle = '#18120a';
+  CTX.fillRect(Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, Y.rectBlkV.w, Y.rectBlkV.h);
+  CTX.restore();
+ 
+  // ── 7. Dark horizontal band ────────────────────────────────────────────────
+  let bd = _ynDrift(Y.band.d, tick, driftScale);
+  let bx = Y.band.x + bd.x, by_ = Y.band.y + bd.y;
+  CTX.save();
+  CTX.fillStyle = '#1c1810';
+  CTX.fillRect(bx, by_, Y.band.w, Y.band.h);
+  CTX.restore();
+ 
+  // ── 8. Teal-blue accent band (inside/below dark band, shares drift) ───────
+  let tbd = _ynDrift(Y.bandTeal.d, tick, driftScale);
+  CTX.save();
+  CTX.fillStyle = '#3a7882';
+  CTX.fillRect(Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, Y.bandTeal.w, Y.bandTeal.h);
+  // Lighter highlight within the teal band
+  CTX.fillStyle = 'rgba(160,215,225,0.32)';
+  CTX.fillRect(Y.bandTeal.x + tbd.x + Y.bandTeal.w * 0.04, Y.bandTeal.y + tbd.y + Y.bandTeal.h * 0.25,
+               Y.bandTeal.w * 0.45, Y.bandTeal.h * 0.45);
+  CTX.restore();
+ 
+  // ── 9. Crosspiece column: black body + magenta stripe ─────────────────────
+  let crd = _ynDrift(Y.cross.d, tick, driftScale);
+  let cx_ = Y.cross.x + crd.x, cy_ = Y.cross.y + crd.y;
+  CTX.save();
+  CTX.fillStyle = '#18120a';
+  CTX.fillRect(cx_, cy_, Y.cross.w, Y.cross.h);
+  CTX.fillStyle = '#d4166e'; // magenta stripe
+  CTX.fillRect(cx_, cy_ + Y.cross.h * Y.cross.magStripeT, Y.cross.w, Y.cross.h * Y.cross.magStripeH);
+  CTX.restore();
+ 
+  // ── 10. Three small accent dots (inside circle near arc) ──────────────────
+  Y.accentDots.forEach(function(dt) {
+    // Dots share the circle's drift so they feel attached to it
+    let ddt = _ynDrift(dt.d, tick, driftScale);
+    CTX.save();
+    CTX.fillStyle = 'rgba(22,14,6,0.72)';
+    CTX.beginPath();
+    CTX.arc(dt.cx + ddt.x, dt.cy + ddt.y, dt.r, 0, Math.PI * 2);
+    CTX.fill();
+    CTX.restore();
+  });
+ 
+  // ── 11. Blue-teal crescent arc ────────────────────────────────────────────
+  let ard = _ynDrift(Y.arc.d, tick, driftScale);
+  let ax = Y.arc.cx + ard.x, ay = Y.arc.cy + ard.y;
+  CTX.save();
+  CTX.lineCap = 'round';
+  // Base teal-blue body (thick)
+  CTX.strokeStyle = '#3a7580';
+  CTX.lineWidth   = Y.arc.thickness;
+  CTX.beginPath();
+  CTX.arc(ax, ay, Y.arc.r, Y.arc.a0, Y.arc.a1);
+  CTX.stroke();
+  // Lighter inner highlight stripe — slightly smaller radius
+  CTX.strokeStyle = 'rgba(90,168,180,0.68)';
+  CTX.lineWidth   = Y.arc.thickness * 0.38;
+  CTX.beginPath();
+  CTX.arc(ax, ay, Y.arc.r * 0.86, Y.arc.a0 + 0.14, Y.arc.a1 - 0.10);
+  CTX.stroke();
+  // Darker outer edge
+  CTX.strokeStyle = 'rgba(22,55,60,0.40)';
+  CTX.lineWidth   = Y.arc.thickness * 0.25;
+  CTX.beginPath();
+  CTX.arc(ax, ay, Y.arc.r * 1.07, Y.arc.a0, Y.arc.a1);
+  CTX.stroke();
+  CTX.restore();
+ 
+  // ── 12. Red curved accent ─────────────────────────────────────────────────
+  let rad = _ynDrift(Y.redArc.d, tick, driftScale);
+  CTX.save();
+  CTX.strokeStyle = '#c02020';
+  CTX.lineWidth   = lw * 1.6;
+  CTX.lineCap     = 'round';
+  CTX.beginPath();
+  CTX.arc(Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, Y.redArc.r, Y.redArc.a0, Y.redArc.a1);
+  CTX.stroke();
+  CTX.restore();
+ 
+  // ── 13. Light highlight strokes inside the band (white/cream flecks) ──────
+  // These move with the band so they read as surface marks on the dark paint
+  CTX.save();
+  CTX.strokeStyle = 'rgba(230,215,185,0.40)';
+  CTX.lineWidth   = lw * 1.7;
+  CTX.lineCap     = 'round';
+  CTX.beginPath();
+  CTX.moveTo(bx + Y.band.w * 0.06, by_ + Y.band.h * 0.35);
+  CTX.lineTo(bx + Y.band.w * 0.52, by_ + Y.band.h * 0.55);
+  CTX.stroke();
+  CTX.strokeStyle = 'rgba(230,215,185,0.22)';
+  CTX.lineWidth   = lw * 0.9;
+  CTX.beginPath();
+  CTX.moveTo(bx + Y.band.w * 0.10, by_ + Y.band.h * 0.70);
+  CTX.lineTo(bx + Y.band.w * 0.35, by_ + Y.band.h * 0.80);
+  CTX.stroke();
+  CTX.restore();
 }
 
 
@@ -10000,14 +10317,18 @@ const PARAM_REGISTRY = {
     { id: 'poeticSeedNoiseScale', label: 'Bias scale', min: 0.001, max: 0.05, step: 0.002, def: 0.01, scale: 1, hint: 'Noise zoom for bias' },
   ],
    yandinsky: [
-    { id: 'kClusterCount',  label: 'Cluster count',   min: 3,  max: 30,  step: 1, def: 12, scale: 1 },
-    { id: 'kBurstElements', label: 'Burst elements',  min: 2,  max: 20,  step: 1, def: 8,  scale: 1 },
-    { id: 'kBurstSpread',   label: 'Burst spread',    min: 0.1, max: 2.0, step: 0.1, def: 0.5, scale: 1 },
-    { id: 'kLineCount',     label: 'Vertical lines',  min: 0,  max: 40,  step: 1, def: 20, scale: 1 },
-    { id: 'kLineWidth',     label: 'Line width',      min: 0.2, max: 3.0, step: 0.1, def: 1.0, scale: 1 },
-    { id: 'kLineLength',    label: 'Line length',     min: 0.2, max: 1.0, step: 0.05, def: 0.8, scale: 1 },
-    { id: 'kGeomChars',     label: 'Geometric chars', type: 'toggle', def: true },
-    { id: 'kDrawShadows',   label: 'Draw shadows',    type: 'toggle', def: false },
+    { id:'ynDrift',      label:'Shape drift',         min:0,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Amplitude of the floating hover motion for all shapes' },
+    { id:'ynOsc',        label:'Line oscillation',     min:0,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'How much the structural lines warp perpendicular to their vector' },
+    { id:'ynSpeed',      label:'Animation speed',      min:1,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Global animation speed multiplier' },
+    { id:'ynLineWeight', label:'Line weight',          min:3,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Base stroke width for all structural lines' },
+    { id:'ynTexture',    label:'Background texture',   min:0,  max:20, step:1,   def:10,  scale:0.1,
+      hint:'Intensity of the warm ochre washes and canvas-weave texture' },
+    { type:'toggle', id:'ynShowGrid', label:'Canvas grid lines', def:true,
+      hint:'Faint structural grid suggesting the physical canvas stretcher' },
   ],
   collageWash: [
     { id: 'colWidth', label: 'Strip Width', min: 20, max: 200, step: 10, def: 80 },
