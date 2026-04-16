@@ -10253,6 +10253,33 @@ p.draw = function() {
   }
 }; // closes p.draw
 
+
+  
+// Welcome mode mouseclick
+p.mousePressed = function() {
+  if (S.mode !== 'welcome') return;
+  
+  let regions = window._welcomeClickRegions || [];
+  if (!regions.length) return;
+  let mx = p.mouseX;
+  let my = p.mouseY;
+  
+  for (let r of regions) {
+    if (mx >= r.x && mx <= r.x + r.w &&
+        my >= r.y && my <= r.y + r.h) {
+      if (r.type === 'toggle') {
+        welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
+        // Force redraw
+        rd();
+      }
+      break;
+    }
+  }
+};
+
+
+
+  
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
@@ -12486,36 +12513,7 @@ let recordedChunks = [];
 
 
 // ── WELCOME CLICK - Expand/Collapse sections ─────────────────────────────────────────────────────────────────  
-function handleWelcomeClick(e) {
-  if (S.mode !== 'welcome') return;
-  
-  const canvas = document.getElementById('gc');
-  const rect = canvas.getBoundingClientRect();
-  
-  // Convert mouse pixels to internal canvas coordinates
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const mouseX = (e.clientX - rect.left) * scaleX;
-  const mouseY = (e.clientY - rect.top) * scaleY;
-  
-  const regions = window._welcomeClickRegions || [];
-  
-  for (let r of regions) {
-    if (mouseX >= r.x && mouseX <= r.x + r.w &&
-        mouseY >= r.y && mouseY <= r.y + r.h) {
-      
-      if (r.type === 'toggle') {
-        // Toggle the 'collapsed' property in your global array
-        welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
-        
-        // IMPORTANT: Force a p5 redraw if the loop is paused
-        if (window._st && window._st.rd) window._st.rd();
-      }
-      break; 
-    }
-  }
-}
-document.getElementById('gc').addEventListener('click', handleWelcomeClick);
+
   
 // ── WELCOME (scroll wheel) ─────────────────────────────────────────────────────────────────
 window.addEventListener('wheel', function(e) {
