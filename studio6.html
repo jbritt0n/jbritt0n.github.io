@@ -1615,6 +1615,11 @@ let _lastFont='',_lastSize=-1,_lastFill='';
     body: "You are not drawing; you are sculpting behavior. This studio is a 'shared resource' engine where mathematical noise fields guide the placement of characters. Every visual is a living system reacting to your input.",
     collapsed: false
   },
+    {
+    title: "Top Bar Controls",
+    body: "• Play/Pause — Starts or stops the animation. Keyboard: Space.\n• Regen — Generates a new random seed, reshuffling the composition. Keyboard: R.\n• Save PNG — Exports the current canvas as a high‑resolution PNG file. Keyboard: S.\n• Record GIF — Captures a 5‑second WebM video of the animation. Click again to stop early.\n• Reset All — Returns all settings to their default values.\n\nHeader buttons (top‑right of panel):\n• ⌂ Home — Return to the main index page.\n• Collapse / Expand — Collapse or expand all control sections in the right panel.\n• Chaos — Enables Chaos Monkey, which randomly tweaks a parameter every few seconds for unpredictable results.",
+    collapsed: true
+  }, 
   {
     title: "Presets & Modes",
     body: "Start here. Presets are curated 'snapshots' that instantly apply a complete visual style.\nModes are the generative engines—each creates a different kind of motion.\n• Try 'Bloom' for organic radiation\n• 'Wave' for flowing oscillations\n• 'Yandinsky' for bold, clashing geometric abstraction.",
@@ -1624,7 +1629,7 @@ let _lastFont='',_lastSize=-1,_lastFill='';
     title: "Global Controls – Overview",
     body: "The Global Controls panel contains sliders and toggles that affect every generative mode.\nThey are grouped into Motion, Field, Entropy & Glitch, and Rendering & Mapping.\nUnderstanding these will help you shape any composition to your liking.",
     collapsed: true
-  },
+  }, 
   {
     title: "Motion",
     body: "• Speed – How fast the pattern animates. Higher values create rapid evolution.\n• Wave Amplitude – Strength of displacement, ripples, and oscillations. Affects mountain height, warp intensity, and more.\n• Turbulence – Frequency multiplier for waves. Higher = tighter, more chaotic undulations.\n• Jitter – Random positional offset applied to each character. Adds a hand‑drawn, shaky feel.",
@@ -1647,17 +1652,17 @@ let _lastFont='',_lastSize=-1,_lastFill='';
   },
   {
     title: "Mode Parameters",
-    body: "When a mode is selected, unique sliders appear. These are the 'personality' controls for that engine—tweaking them fine-tunes the specific generative behavior, such as 'Stretch' in Tendril Engine or 'Clash' in Yandinsky.",
+    body: "When a mode is selected, unique sliders appear. These are the 'personality' controls for that engine. Tweaking these mode-specific parameters fine-tunes the specific generative behavior unique to that mode, such as 'Stretch' in Tendril Engine or 'Clash' in Yandinsky.",
+    collapsed: true
+  },
+  {
+    title: "Characters & Font",
+    body: "Choose a character set for typographical-based modes. Select from dozens of sets: Chinese, Kanji, Cyrillic, symbols, runes, Braille, and many more.\nSelect a font family to change the typographic voice. For maximum variety, try 'Rand Unicode' to explore the vast edges of the character map.",
     collapsed: true
   },
   {
     title: "Calligraphy & Ink",
     body: "The Calligraphy section lets you create sumi‑e paintings with a virtual brush.\nChoose from four sub‑modes: Random strokes, Character paths (永, 龍), Interactive drawing, and pre‑composed scenes like bamboo or mount fuji.\nAdjust brush taper and ink bleed for authentic atmospheric effects.",
-    collapsed: true
-  },
-  {
-    title: "Characters & Font",
-    body: "Choose the 'Ink' for your engine. Select from dozens of sets—Chinese, Kanji, Cyrillic, runes, or Braille.\nSelect a font family to change the typographic voice. For maximum variety, try 'Rand Unicode' to explore the vast edges of the character map.",
     collapsed: true
   },
   {
@@ -1687,7 +1692,7 @@ let _lastFont='',_lastSize=-1,_lastFill='';
   },
   {
     title: "My Presets",
-    body: "Save your favorite settings as named presets.\nClick 'Save' after tweaking parameters, then load them later with one click.\nYou can rename, export, or delete presets—perfect for building a personal library of styles.",
+    body: "Save your favorite settings as named presets in the bottom section of the control panel.\nClick 'Save' after tweaking parameters, then load them later with one click.\nYou can rename, export, or delete presets—perfect for building a personal library of styles.",
     collapsed: true
   },
   {
