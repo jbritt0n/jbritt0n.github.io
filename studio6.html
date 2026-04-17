@@ -9222,58 +9222,579 @@ function drawNumbCollage(p, t) {
   }
 }
   
-// ── Collage Wash (numb) ───────────────────────────────────────────────────────────
-function drawCollageWash(p, t) {
+// ── COLLAGE WASH v2 — Avant-Garde Chinese Newsprint Collage ──────────────────
+// Torn strips of Chinese newspaper paper stacked at oblique angles,
+// soaked by translucent ink-wash blobs of palette color. Body text flows
+// in authentic vertical columns; headline zones punch bold kanji; red
+// intaglio seals stamp the composition; halftone dots suggest photographs.
+//
+// Architecture:
+//   initCollageWash(p)     — generates randomised layout on first draw / regen
+//   drawCollageWash(p, t)  — composites all layers each frame; strips drift
+//   _cwClipStrip           — builds torn-edge polygon clip path in local space
+//   _cwContentStrip        — fills paper, columns, halftone, seal, masthead
+//   _cwDrawWashes          — paints translucent colour blobs (multiply + source-over)
+//
+// S properties consumed:
+//   Layout init (trigger re-init via PARAM_REGISTRY extra callback):
+//     cwStrips, cwRotation, cwTear, cwColSpacing, cwWashes, cwHeadlines
+//   Per-frame adjustable:
+//     cwBodySize, cwWashAlpha, cwDrift
+//   Toggle:
+//     cwStamps (red seals), cwHalftone (photo dots), cwDrips (ink runs)
+//   Global (from main panel):
+//     S.palette, S.bg, S.speed, S.entropy, S.wave, S.noiseScale
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+let _cwS = null;  // cached scene state; rebuilt on init or canvas resize
+ 
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function initCollageWash(p) {
   let W = p.width, H = p.height;
-  let colW = S.colWidth || 80;
-  let layers = S.colLayers || 2;
-  
-  // 1. Draw the "Painted Wash" Layer first (The Background stains)
-  // We use the green and orange from your palette
-  for (let l = 0; l < layers; l++) {
-    let washY = p.noise(l, t * 0.1) * H;
-    let washH = p.noise(l + 10, t * 0.05) * (H * 0.4);
-    
-    CTX.globalAlpha = S.colBleed || 0.4;
-    let washCol = S.palette[l % S.palette.length];
-    CTX.fillStyle = washCol;
-    CTX.fillRect(0, washY, W, washH);
-    CTX.globalAlpha = 1.0;
+  let m = Math.min(W, H);
+ 
+  // Read layout params (will trigger re-init when changed via registry extras)
+  let nStrips  = Math.max(4,  Math.round(S.cwStrips    ?? 14));
+  let maxAng   =              S.cwRotation ?? 22;     // degrees
+  let tearAmt  =              S.cwTear     ?? 1.0;    // roughness multiplier
+  let colSp    = Math.max(8,  Math.round(S.cwColSpacing ?? 14)); // px
+  let nWashes  = Math.max(1,  Math.round(S.cwWashes    ?? 4));
+  let hlFrac   =              S.cwHeadlines ?? 0.35;  // fraction of cols that are headlines
+ 
+  // Chinese character pools
+  // Body text — high-frequency newspaper characters
+  const BC = '的一是在人了有中大来上国年以要他时为就出会可也我这地说子下生对所过都后面而还之自日工学能长第他如已现政'.split('');
+  // Headline / masthead — impactful, high-stroke-count characters
+  const HC = '新日人报经济政治文化发展科学体育社会艺术观评特号外党民军界世界论评国报刊'.split('');
+  // Aged paper background tones (cream → tobacco)
+  const PT = ['#f0e8d0','#ede0c0','#e8d8b0','#f5f0e0','#ddd0a8','#e2d5b5','#eae0c8','#ddd5c0'];
+ 
+  // ── Generate strips ordered back → front ───────────────────────────────────
+  let rawStrips = [];
+  for (let i = 0; i < nStrips; i++) {
+    let sw = W * (0.28 + p.random(0.44));
+    let sh = H * (0.40 + p.random(0.50));
+    rawStrips.push({
+      w: sw, h: sh,
+      x: p.random(-sw * 0.14, W - sw * 0.62),
+      y: p.random(-sh * 0.10, H - sh * 0.58),
+      angle: (p.random(2) - 1) * maxAng,
+      paper: PT[Math.floor(p.random(PT.length))],
+      seed:  p.random(9999),
+      z:     p.random()       // sort key
+    });
   }
-
-  // 2. Draw the "Newspaper Strips" (The Columns)
-  for (let x = 0; x < W; x += colW) {
-    // Offset each column vertically to create the "Cut-Up" look
-    let yOffset = p.noise(x * 0.01, t * 0.05) * 50;
-    let sp = S.spacing || 12;
-    
-    for (let curY = 0; curY < H; curY += sp) {
-      // Logic: Only draw a character if it's within the "torn" edge of the strip
-      let stripNoise = p.noise(x * 0.05, (curY + yOffset) * 0.01, t * 0.1);
-      if (stripNoise < 0.2) continue; // "Torn" gap
-
-      // Pick a color based on whether the "Wash" is over this area
-      let n = getColorIndex(p, x, curY, t);
-      let col = S.palette[Math.floor(n * S.palette.length) % S.palette.length];
-      
-      // Webster-style: Darker text for the "printed" areas
-      if (stripNoise > 0.7) col = "#111111"; 
-
-      let ch = S.chars[Math.floor(p.noise(x, curY) * S.chars.length)];
-      let sz = S.maxSize * (0.8 + stripNoise * 0.4);
-
-      // Render the "ink"
-      dc(x + (p.noise(curY)*10), curY + yOffset, sz, 0, col, ch);
+  rawStrips.sort((a, b) => a.z - b.z);  // bottom strip first
+ 
+  // ── Tear-edge profile generator ────────────────────────────────────────────
+  // Returns an array of R+1 perpendicular displacement values.
+  // For horizontal edges: y displacement. For vertical edges: x displacement.
+  function mkTear(seedX, seedY, active) {
+    let R   = 24;   // sample resolution
+    let ts  = tearAmt * 13;
+    let arr = [];
+    for (let j = 0; j <= R; j++) {
+      let f = j / R;
+      let v = active ? (p.noise(seedX, f * 5 + seedY) - 0.5) * ts * 2 : 0;
+      // Occasional deep "nick" for realism
+      if (active && p.noise(seedX + 88, f * 9 + seedY) > 0.80) {
+        v += (p.noise(seedX + 200, f * 13 + seedY) - 0.5) * ts * 1.4;
+      }
+      arr.push(v);
     }
-    
-    // 3. Draw "Tear Lines" (Faint vertical borders)
-    CTX.strokeStyle = "rgba(255,255,255,0.1)";
-    CTX.beginPath();
-    CTX.moveTo(x, 0);
-    CTX.lineTo(x, H);
-    CTX.stroke();
+    return arr;
   }
-}  
+  const TEAR_RES = 24;
+ 
+  let strips = rawStrips.map((rs, si) => {
+    let { w, h, x, y, angle, paper, seed } = rs;
+ 
+    // Vertical columns: right-to-left order (authentic Chinese newspaper)
+    let nCols = Math.max(2, Math.floor(w / colSp) - 1);
+    let cols  = [];
+    for (let c = 0; c < nCols; c++) {
+      let isHL = c < 3 && p.random() < hlFrac;
+      cols.push({
+        cx:   colSp * (c + 0.65),   // x in local strip coords
+        seed: seed + c * 37.1,
+        isHL,
+        // Each column gets a deterministic ink colour
+        ink: p.random() < 0.04 ? '#8b1010'   // occasional red-ink column
+           : p.random() < 0.10 ? '#3a3a3a'   // faded/aged
+           : '#1a1a18'
+      });
+    }
+ 
+    // Decide which edges are torn vs cut (straight)
+    let doTL = p.random() < 0.58, doTR = p.random() < 0.55;
+    let doTT = p.random() < 0.30, doTB = p.random() < 0.50;
+ 
+    // Horizontal crease lines (fold marks)
+    let creases = [];
+    let nC = Math.floor(p.random(3));
+    for (let c2 = 0; c2 < nC; c2++) {
+      creases.push({ y: p.random(h * 0.2, h * 0.85), skew: (p.random(2)-1)*2.5 });
+    }
+ 
+    // Halftone photo zone (a rectangle of dots suggesting a photograph)
+    let hasHT = p.random() < (S.cwHalftone !== false ? 0.36 : 0);
+    let htW   = w * (0.22 + p.random(0.22));
+    let htH   = h * (0.14 + p.random(0.20));
+ 
+    // Masthead characters
+    let mC = [HC[Math.floor(p.random(HC.length))],
+              HC[Math.floor(p.random(HC.length))],
+              HC[Math.floor(p.random(HC.length))]];
+ 
+    // Slow drift animation params (all deterministic)
+    let dp = p.random(Math.PI * 2);
+    let ds = 0.45 + p.random(0.80);
+ 
+    return {
+      x, y, w, h, angle, paper, seed, cols, colSp,
+      tearL: mkTear(seed,    0, doTL), tearR: mkTear(seed+5,  1, doTR),
+      tearT: mkTear(seed+10, 2, doTT), tearB: mkTear(seed+15, 3, doTB),
+      tearRes: TEAR_RES,
+      creases,
+      hasHT,
+      htX: p.random(w*0.06, w*0.44), htY: p.random(h*0.08, h*0.52),
+      htW, htH,
+      hasSeal:  si > 0 && p.random() < (S.cwStamps !== false ? 0.48 : 0),
+      sealX: p.random(w*0.12, w*0.78), sealY: p.random(h*0.12, h*0.75),
+      mC,
+      hasMast:  si >= nStrips - 3 && p.random() < 0.72,
+      // Drift in local space (pivot = strip centre)
+      dPhase: dp, dSpeed: ds,
+      dAX: (p.random(2)-1) * 5.5,
+      dAY: (p.random(2)-1) * 3.5,
+      dAR: (p.random(2)-1) * 0.007   // radians
+    };
+  });
+ 
+  // ── Colour wash blobs ──────────────────────────────────────────────────────
+  let pal    = (S.palette && S.palette.length) ? S.palette : ['#e63946','#2a9d8f','#e9c46a','#264653'];
+  let washes = [];
+  for (let i = 0; i < nWashes; i++) {
+    let col = pal[i % pal.length];
+    washes.push({
+      cx: p.random(W * 0.05, W * 0.92),
+      cy: p.random(H * 0.05, H * 0.90),
+      rx: W * (0.16 + p.random(0.40)),
+      ry: H * (0.12 + p.random(0.32)),
+      rot:   p.random(Math.PI),
+      phase: p.random(Math.PI * 2),
+      speed: 0.22 + p.random(0.50),
+      col,
+      r:     parseInt(col.slice(1,3),16),
+      g:     parseInt(col.slice(3,5),16),
+      b:     parseInt(col.slice(5,7),16)
+    });
+  }
+ 
+  // ── Pre-baked drip marks (paint runs from strip edges) ────────────────────
+  let drips = [];
+  if (S.cwDrips !== false) {
+    strips.forEach((st, si) => {
+      let nd = 1 + Math.floor(p.random(3));
+      for (let d = 0; d < nd; d++) {
+        let ci = Math.floor(p.random(pal.length));
+        drips.push({
+          // In world-space, running downward from the strip region
+          x:   st.x + p.random(st.w * 0.15, st.w * 0.85),
+          y:   st.y + st.h * (0.58 + p.random(0.38)),
+          len: 18 + p.random(75),
+          lx:  (p.random(2)-1) * 4.5,  // slight lean
+          lw:  0.6 + p.random(1.8),
+          a:   0.18 + p.random(0.32),
+          col: pal[ci]
+        });
+      }
+    });
+  }
+ 
+  _cwS = { W, H, strips, washes, drips, BC, HC };
+}
+ 
+ 
+// ─── MAIN DRAW ────────────────────────────────────────────────────────────────
+function drawCollageWash(p, t) {
+  if (!_cwS || _cwS.W !== p.width || _cwS.H !== p.height) initCollageWash(p);
+ 
+  let { strips, washes, drips, BC, HC } = _cwS;
+  let W = _cwS.W, H = _cwS.H;
+ 
+  let tick      = t * 0.010;   // slow base clock for wash drift
+  let driftAmt  = S.cwDrift     ?? 1.0;
+  let washAlpha = S.cwWashAlpha ?? 0.35;
+  let bodySize  = Math.max(5, Math.round(S.cwBodySize ?? 9));
+ 
+  // ── 1. BACKGROUND — aged newsprint ─────────────────────────────────────────
+  CTX.save();
+  CTX.fillStyle = S.bg || '#ede5d0';
+  CTX.fillRect(0, 0, W, H);
+  // Subtle paper grain
+  CTX.globalAlpha = 0.055;
+  for (let gx = 0; gx < W; gx += 3) {
+    for (let gy = 0; gy < H; gy += 3) {
+      let n = p.noise(gx * 0.045, gy * 0.045);
+      if (n > 0.64) {
+        CTX.fillStyle = n > 0.82 ? '#7a6040' : '#a08050';
+        CTX.fillRect(gx, gy, n > 0.80 ? 2 : 1, 1);
+      }
+    }
+  }
+  CTX.globalAlpha = 1;
+  CTX.restore();
+ 
+  // ── 2. UNDER-WASHES — multiply blends into the paper ground ───────────────
+  _cwPaintWashes(p, washes, washAlpha, tick, true);
+ 
+  // ── 3. STRIPS — each newspaper fragment, back to front ────────────────────
+  strips.forEach(strip => {
+    _cwDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC);
+  });
+ 
+  // ── 4. OVER-WASHES — lighter bleed floating above the collage ─────────────
+  _cwPaintWashes(p, washes, washAlpha * 0.42, tick + 1.8, false);
+ 
+  // ── 5. INK DRIPS ──────────────────────────────────────────────────────────
+  if (S.cwDrips !== false) {
+    CTX.save();
+    let visAlpha = Math.min(1, washAlpha * 2.8);
+    drips.forEach(dr => {
+      CTX.globalAlpha = dr.a * visAlpha;
+      CTX.strokeStyle = dr.col;
+      CTX.fillStyle   = dr.col;
+      CTX.lineWidth   = dr.lw;
+      CTX.lineCap     = 'round';
+      CTX.beginPath();
+      CTX.moveTo(dr.x, dr.y);
+      CTX.bezierCurveTo(
+        dr.x + dr.lx * 0.3, dr.y + dr.len * 0.35,
+        dr.x + dr.lx * 0.7, dr.y + dr.len * 0.75,
+        dr.x + dr.lx,        dr.y + dr.len
+      );
+      CTX.stroke();
+      // Terminal blob
+      CTX.beginPath();
+      CTX.arc(dr.x + dr.lx, dr.y + dr.len, dr.lw * 1.4, 0, Math.PI * 2);
+      CTX.fill();
+    });
+    CTX.globalAlpha = 1;
+    CTX.restore();
+  }
+}
+ 
+ 
+// ─── WASH PAINTER ────────────────────────────────────────────────────────────
+// Renders all wash blobs with animated drift.
+// underMode=true → multiply (soaks into paper); false → source-over (floats above).
+function _cwPaintWashes(p, washes, alpha, tick, underMode) {
+  if (alpha <= 0) return;
+  CTX.save();
+  washes.forEach((w, wi) => {
+    // Alternate: even indexes under, odd over — but both rendered here since
+    // the caller controls which pass this is via underMode
+    // Just split them: first 60% go under, last 40% over
+    let isUnder = wi / washes.length < 0.6;
+    if (underMode !== isUnder) return;
+ 
+    let dt  = tick * w.speed;
+    let px  = w.cx + Math.sin(dt + w.phase)        * 30;
+    let py  = w.cy + Math.cos(dt * 0.73 + w.phase) * 22;
+    let rx  = w.rx * (1 + Math.sin(dt * 0.5 + w.phase + 1) * 0.12);
+    let ry  = w.ry * (1 + Math.cos(dt * 0.6 + w.phase + 2) * 0.10);
+    let rot = w.rot + dt * 0.025;
+    let rm  = Math.max(rx, ry);
+ 
+    CTX.globalCompositeOperation = underMode ? 'multiply' : 'source-over';
+    CTX.globalAlpha = alpha;
+ 
+    // Radial gradient for a true wash feel (dense centre, feathered edges)
+    let gr = CTX.createRadialGradient(px, py, 0, px, py, rm);
+    gr.addColorStop(0,    `rgba(${w.r},${w.g},${w.b},1)`);
+    gr.addColorStop(0.40, `rgba(${w.r},${w.g},${w.b},0.65)`);
+    gr.addColorStop(0.75, `rgba(${w.r},${w.g},${w.b},0.22)`);
+    gr.addColorStop(1,    `rgba(${w.r},${w.g},${w.b},0)`);
+    CTX.fillStyle = gr;
+ 
+    // Draw an ellipse by scaling the coordinate space
+    CTX.save();
+    CTX.translate(px, py);
+    CTX.rotate(rot);
+    CTX.scale(rx / rm, ry / rm);
+    CTX.beginPath();
+    CTX.arc(0, 0, rm, 0, Math.PI * 2);
+    CTX.fill();
+    CTX.restore();
+  });
+  CTX.globalCompositeOperation = 'source-over';
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+ 
+ 
+// ─── STRIP RENDERER ──────────────────────────────────────────────────────────
+function _cwDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
+  let { x, y, w, h, angle, paper, cols, colSp,
+        tearL, tearR, tearT, tearB, tearRes,
+        creases, hasHT, htX, htY, htW, htH,
+        hasSeal, sealX, sealY, mC, hasMast,
+        dPhase, dSpeed, dAX, dAY, dAR, seed } = strip;
+ 
+  // Animated hover — slow sinusoidal drift
+  let dT   = tick * dSpeed;
+  let offX = Math.sin(dT + dPhase)          * dAX * driftAmt;
+  let offY = Math.cos(dT * 1.15 + dPhase)   * dAY * driftAmt;
+  let offR = Math.sin(dT * 0.72 + dPhase)   * dAR * driftAmt;
+  let angR = (angle + offR * 57.296) * (Math.PI / 180);
+ 
+  CTX.save();
+ 
+  // Drop shadow (applied before clip)
+  CTX.shadowColor   = 'rgba(0,0,0,0.20)';
+  CTX.shadowBlur    = 10;
+  CTX.shadowOffsetX = 3;
+  CTX.shadowOffsetY = 5;
+ 
+  // Transform: rotate around strip centre
+  CTX.translate(x + w * 0.5 + offX, y + h * 0.5 + offY);
+  CTX.rotate(angR);
+  CTX.translate(-w * 0.5, -h * 0.5);
+ 
+  // ── Build torn-edge clipping polygon ──────────────────────────────────────
+  // Traces: top edge → right edge → bottom edge (reversed) → left edge (reversed)
+  let R = tearRes;
+  CTX.beginPath();
+  for (let j = 0; j <= R; j++) {
+    let fx = (j / R) * w;
+    let fy = tearT[j];   // vertical offset on the top edge
+    j === 0 ? CTX.moveTo(fx, fy) : CTX.lineTo(fx, fy);
+  }
+  for (let j = 0; j <= R; j++) {
+    CTX.lineTo(w + tearR[j], (j / R) * h);   // horizontal offset on right edge
+  }
+  for (let j = R; j >= 0; j--) {
+    CTX.lineTo((j / R) * w, h + tearB[j]);   // vertical offset on bottom edge
+  }
+  for (let j = R; j >= 0; j--) {
+    CTX.lineTo(tearL[j], (j / R) * h);       // horizontal offset on left edge
+  }
+  CTX.closePath();
+ 
+  // Fill the shadow shape first (before clip erases shadow pixels inside)
+  CTX.fillStyle = paper;
+  CTX.fill();
+ 
+  // Now clip and paint content with no shadow
+  CTX.clip();
+  CTX.shadowColor = 'transparent';
+  CTX.shadowBlur  = 0;
+  CTX.shadowOffsetX = 0;
+  CTX.shadowOffsetY = 0;
+ 
+  // ── Paper background ───────────────────────────────────────────────────────
+  CTX.fillStyle = paper;
+  CTX.fillRect(-4, -4, w + 8, h + 8);
+ 
+  // Subtle aging stain: slightly darker towards the edges (foxing effect)
+  let edgeGr = CTX.createLinearGradient(0, 0, 0, h);
+  edgeGr.addColorStop(0,   'rgba(110,80,30,0.06)');
+  edgeGr.addColorStop(0.5, 'rgba(110,80,30,0.01)');
+  edgeGr.addColorStop(1,   'rgba(110,80,30,0.08)');
+  CTX.fillStyle = edgeGr;
+  CTX.fillRect(0, 0, w, h);
+ 
+  // Random warm blotch (water stain / foxing)
+  let stX = p.noise(seed * 0.001) * w;
+  let stY = p.noise(seed * 0.001 + 5) * h;
+  let stR = w * (0.12 + p.noise(seed * 0.001 + 9) * 0.18);
+  let stGr = CTX.createRadialGradient(stX, stY, 0, stX, stY, stR);
+  stGr.addColorStop(0, 'rgba(140,100,40,0.07)');
+  stGr.addColorStop(1, 'rgba(140,100,40,0)');
+  CTX.fillStyle = stGr;
+  CTX.fillRect(0, 0, w, h);
+ 
+  // ── Faint column rule lines (vertical, like a printed grid) ───────────────
+  CTX.strokeStyle = 'rgba(0,0,0,0.055)';
+  CTX.lineWidth   = 0.4;
+  cols.forEach(col => {
+    if (col.cx > w - colSp * 0.45) return;
+    let rx = col.cx + colSp * 0.5;
+    CTX.beginPath(); CTX.moveTo(rx, 6); CTX.lineTo(rx, h - 5); CTX.stroke();
+  });
+ 
+  // Top masthead rule (bold horizontal line)
+  CTX.strokeStyle = 'rgba(0,0,0,0.28)';
+  CTX.lineWidth   = 1.0;
+  CTX.beginPath(); CTX.moveTo(4, 20); CTX.lineTo(w - 4, 20); CTX.stroke();
+  // Thin second rule 3px below
+  CTX.strokeStyle = 'rgba(0,0,0,0.12)';
+  CTX.lineWidth   = 0.4;
+  CTX.beginPath(); CTX.moveTo(4, 23); CTX.lineTo(w - 4, 23); CTX.stroke();
+ 
+  // ── Crease lines (horizontal fold marks) ──────────────────────────────────
+  creases.forEach(cr => {
+    CTX.strokeStyle = 'rgba(90,70,30,0.14)';
+    CTX.lineWidth   = 0.6;
+    CTX.beginPath(); CTX.moveTo(0, cr.y + cr.skew); CTX.lineTo(w, cr.y - cr.skew); CTX.stroke();
+    // Thin white highlight above the fold
+    CTX.strokeStyle = 'rgba(255,255,255,0.22)';
+    CTX.lineWidth   = 0.4;
+    CTX.beginPath(); CTX.moveTo(0, cr.y + cr.skew - 1); CTX.lineTo(w, cr.y - cr.skew - 1); CTX.stroke();
+  });
+ 
+  // ── HALFTONE PHOTO ZONE ────────────────────────────────────────────────────
+  if (hasHT && S.cwHalftone !== false) {
+    // Slightly darkened photo ground
+    CTX.fillStyle = 'rgba(70,60,50,0.07)';
+    CTX.fillRect(htX, htY, htW, htH);
+    // Dot grid
+    let dotSp = 3.2;
+    for (let dx = 0; dx < htW; dx += dotSp) {
+      for (let dy = 0; dy < htH; dy += dotSp) {
+        let n  = p.noise(seed * 0.001 + dx * 0.08, seed * 0.001 + dy * 0.08);
+        let dr = n * dotSp * 0.45;
+        if (dr < 0.22) continue;
+        let g  = (80 + n * 160) | 0;
+        CTX.fillStyle = `rgb(${g},${g},${g})`;
+        CTX.beginPath();
+        CTX.arc(htX + dx, htY + dy, dr, 0, Math.PI * 2);
+        CTX.fill();
+      }
+    }
+    // Photo border
+    CTX.strokeStyle = 'rgba(0,0,0,0.13)';
+    CTX.lineWidth   = 0.5;
+    CTX.strokeRect(htX, htY, htW, htH);
+  }
+ 
+  // ── CHARACTER COLUMNS ─────────────────────────────────────────────────────
+  CTX.save();
+  CTX.textAlign    = 'center';
+  CTX.textBaseline = 'top';
+  CTX.imageSmoothingEnabled = true;
+ 
+  cols.forEach(col => {
+    if (col.cx > w - colSp * 0.38) return;   // don't bleed past right edge
+ 
+    let cx     = col.cx;
+    let startY = 26;   // below the masthead rule
+ 
+    // ── HEADLINE COLUMN ─────────────────────────────────────────────────────
+    if (col.isHL) {
+      let hsz    = Math.min(Math.floor(colSp * 2.1), 40);
+      let nHead  = Math.min(5, Math.floor((h * 0.38) / (hsz * 1.14)));
+      CTX.font   = `900 ${hsz}px "Noto Serif SC","Songti SC","SimSun",serif`;
+      CTX.fillStyle   = '#0e0e0c';
+      CTX.globalAlpha = 1;
+      for (let r = 0; r < nHead; r++) {
+        let ci = Math.floor(p.noise(col.seed * 0.001, r + 8) * HC.length) % HC.length;
+        CTX.fillText(HC[ci], cx, startY + r * (hsz * 1.14));
+      }
+      startY += nHead * (hsz * 1.14) + 4;
+      // Thin separator below headline
+      CTX.strokeStyle = 'rgba(0,0,0,0.25)';
+      CTX.lineWidth   = 0.5;
+      CTX.beginPath();
+      CTX.moveTo(cx - colSp * 0.38, startY);
+      CTX.lineTo(cx + colSp * 0.38, startY);
+      CTX.stroke();
+      startY += 5;
+    }
+ 
+    // ── BODY TEXT ───────────────────────────────────────────────────────────
+    let rowH = bodySize * 1.30;
+    CTX.font = `${bodySize}px "Noto Serif SC","Songti SC","SimSun",serif`;
+    let nRows = Math.floor((h - startY - 6) / rowH);
+ 
+    for (let r = 0; r < nRows; r++) {
+      let cy = startY + r * rowH;
+      // Skip rows inside the halftone photo zone
+      if (hasHT && cx > htX && cx < htX + htW && cy > htY && cy < htY + htH) continue;
+ 
+      // Character selection: noise-driven for stable appearance + slow drift
+      let ci      = Math.floor(p.noise(col.seed * 0.01, r * 0.29, t * 0.0025) * BC.length) % BC.length;
+      // Per-character opacity: simulates faded/missing ink on aged paper
+      let fadeN   = p.noise(col.seed + 300, r * 0.42);
+      let alpha   = fadeN < 0.10 ? 0             // fully missing
+                  : fadeN > 0.75 ? 0.10 + (1 - fadeN) * 0.35  // faded
+                  : 0.68 + (1 - fadeN) * 0.28;  // normal printed range
+ 
+      if (alpha < 0.02) continue;
+      CTX.globalAlpha = alpha;
+      CTX.fillStyle   = col.ink;
+      CTX.fillText(BC[ci], cx, cy);
+    }
+    CTX.globalAlpha = 1;
+  });
+  CTX.restore();
+ 
+  // ── MASTHEAD BAR (for the top strips in the stack) ────────────────────────
+  if (hasMast) {
+    let msz = Math.min(Math.floor(w * 0.26), 52);
+    CTX.save();
+    CTX.font         = `900 ${msz}px "Noto Serif SC","Songti SC","SimSun",serif`;
+    CTX.fillStyle    = '#080808';
+    CTX.globalAlpha  = 0.90;
+    CTX.textAlign    = 'left';
+    CTX.textBaseline = 'top';
+    let ml   = 6;
+    let maxC = Math.min(mC.length, Math.floor((w - ml * 2) / (msz * 1.04)));
+    for (let ci2 = 0; ci2 < maxC; ci2++) {
+      CTX.fillText(mC[ci2], ml + ci2 * (msz * 1.04), 1);
+    }
+    CTX.restore();
+  }
+ 
+  // ── RED INTAGLIO SEAL ──────────────────────────────────────────────────────
+  if (hasSeal && S.cwStamps !== false) {
+    let ssz  = 26 + (seed % 13);  // deterministic size (22–38px)
+    let hssz = ssz * 0.5;
+    let tilt = -0.05 + (seed % 100) * 0.0009;  // slight deterministic tilt
+ 
+    CTX.save();
+    CTX.translate(sealX, sealY);
+    CTX.rotate(tilt);
+ 
+    // ── Cinnabar red body ──────────────────────────────────────────────────
+    CTX.globalAlpha = 0.82;
+    CTX.fillStyle   = '#c01515';
+    CTX.fillRect(-hssz, -hssz, ssz, ssz);
+ 
+    // ── Ink break-up (blotchy coverage) ───────────────────────────────────
+    // Small "missing ink" circles punched through with destination-out
+    // Use a temporary off-screen approach: just lighten some spots with paper colour
+    CTX.fillStyle   = paper;
+    CTX.globalAlpha = 0.25;
+    for (let di = 0; di < 5; di++) {
+      let bx = -hssz + p.noise(seed + di * 7) * ssz;
+      let by = -hssz + p.noise(seed + di * 7 + 99) * ssz;
+      let br = 1 + p.noise(seed + di * 7 + 33) * 2;
+      CTX.beginPath();
+      CTX.arc(bx, by, br, 0, Math.PI * 2);
+      CTX.fill();
+    }
+ 
+    // ── Inner border ──────────────────────────────────────────────────────
+    CTX.strokeStyle = 'rgba(190,25,25,0.7)';
+    CTX.lineWidth   = 0.7;
+    CTX.globalAlpha = 0.82;
+    CTX.strokeRect(-hssz + 2.5, -hssz + 2.5, ssz - 5, ssz - 5);
+ 
+    // ── Carved character in paper colour (negative/intaglio) ───────────────
+    CTX.globalAlpha  = 0.90;
+    CTX.fillStyle    = paper;
+    CTX.font         = `bold ${ssz * 0.52}px "Noto Serif SC","SimSun",serif`;
+    CTX.textAlign    = 'center';
+    CTX.textBaseline = 'middle';
+    CTX.fillText(mC[0] || '印', 0, 0);
+ 
+    CTX.restore();
+  }
+ 
+  CTX.restore();  // restore transform + clip
+}
 
 
 // ── YANDINSKY ─────────────────────────────────────────────────────────────────
@@ -11717,9 +12238,36 @@ const PARAM_REGISTRY = {
       hint: 'Adds a rough concrete texture overlay' },
   ],
   collageWash: [
-    { id: 'colWidth', label: 'Strip Width', min: 20, max: 200, step: 10, def: 80 },
-    { id: 'colBleed', label: 'Paint Bleed', min: 0, max: 1, step: 0.1, def: 0.4 },
-    { id: 'colLayers', label: 'Layers', min: 1, max: 5, step: 1, def: 2 }
+    { id:'cwStrips',     label:'Strip count',        min:4,  max:28, step:1, def:14, scale:1,
+      hint:'Number of torn newspaper fragments in the composition',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwRotation',   label:'Max rotation (deg)', min:0,  max:45, step:1, def:22, scale:1,
+      hint:'Maximum angle of strip rotation — 0 = all horizontal, 45 = chaotic',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwTear',       label:'Tear roughness',     min:0,  max:30, step:1, def:10, scale:0.1,
+      hint:'0 = all edges clean-cut, higher = more ragged torn edges',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwColSpacing', label:'Column width (px)',  min:8,  max:28, step:1, def:14, scale:1,
+      hint:'Spacing between newspaper print columns within each strip',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwWashes',     label:'Colour wash count',  min:1,  max:10, step:1, def:4,  scale:1,
+      hint:'Number of translucent colour blobs overlaid on the composition',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwHeadlines',  label:'Headline density',   min:0,  max:100,step:5, def:35, scale:0.01,
+      hint:'Fraction of columns that render as bold headline text instead of body copy',
+      extra: function(){ if(window._st) initCollageWash(window._st.p); } },
+    { id:'cwBodySize',   label:'Body text size (px)',min:5,  max:16, step:1, def:9,  scale:1,
+      hint:'Font size of the body text columns — smaller = denser, more authentic newsprint' },
+    { id:'cwWashAlpha',  label:'Wash opacity',       min:0,  max:100,step:2, def:35, scale:0.01,
+      hint:'Opacity of the colour wash blobs. Higher = more saturated, painterly' },
+    { id:'cwDrift',      label:'Float drift',        min:0,  max:30, step:1, def:10, scale:0.1,
+      hint:'Amplitude of the slow hover animation — 0 = perfectly static composition' },
+    { type:'toggle', id:'cwStamps',   label:'Red seals',        def:true,
+      hint:'Show cinnabar intaglio seals stamped over the strips' },
+    { type:'toggle', id:'cwHalftone', label:'Photo halftone zones', def:true,
+      hint:'Show halftone dot zones suggesting newspaper photographs' },
+    { type:'toggle', id:'cwDrips',    label:'Ink drip marks',   def:true,
+      hint:'Show ink runs and drip blobs at strip edges' },
   ],
   numbcollage: [
     { id: 'numbText',          label: 'Text',           type: 'text', def: '麻木的' },
