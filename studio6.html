@@ -4836,28 +4836,28 @@ function drawCalligraphy(p, t) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ── Updated Square Hanko Seal Renderer (Jonathan's Studio Version) ─────────────
+// ── Updated Large Transparent Hanko Seal ─────────────────────────────────────
 function _drawHanko(p, t, W, H) {
   if (S.mode !== 'calligraphy') return;
   CTX.save();
 
-  // 1. Setup: Proportions for a square rubber stamp
-  let stampSize = Math.min(48, W * 0.08); 
-  let stampX = 35;
-  let stampY = H - stampSize - 35;
+  // 1. Setup: Increased size for a bolder presence
+  let stampSize = Math.min(60, W * 0.12); 
+  let stampX = 40; // Slightly more padding from the edge
+  let stampY = H - stampSize - 40;
 
-  // Hand-stamped jitter: slight tilt and position shift
+  // Hand-stamped jitter
   CTX.translate(stampX + stampSize / 2, stampY + stampSize / 2);
   CTX.rotate((p.noise(t * 0.5) - 0.5) * 0.04);
   CTX.translate(-(stampX + stampSize / 2), -(stampY + stampSize / 2));
 
   // ── 2. The Stone/Rubber Base ───────────────────────────────────────────────
+  // We draw the red base first. 
   CTX.fillStyle = '#b32222';
-  CTX.globalAlpha = 0.9;
+  CTX.globalAlpha = 0.95; 
   CTX.beginPath();
-  let steps = 18, jitter = 1.6; // Increased jitter for rubber-cut feel
+  let steps = 20, jitter = 1.8; 
   
-  // Draw perimeter with Perlin noise edges
   for (let i = 0; i <= steps; i++) {
     let x = stampX + (i / steps) * stampSize;
     let y = stampY + (p.noise(x * 0.1, t) - 0.5) * jitter;
@@ -4881,46 +4881,44 @@ function _drawHanko(p, t, W, H) {
   CTX.closePath();
   CTX.fill();
 
-  // ── 3. Ink Break-up (Rubber "Chatter") ─────────────────────────────────────
+  // ── 3. Final Texture & Ink Pass (Multiply) ────────────────────────────────
+  // Moving this BEFORE the cut-out so the characters "punch" through the texture too
+  CTX.globalCompositeOperation = 'multiply';
+  CTX.globalAlpha = 0.15;
+  CTX.fillStyle = '#440000';
+  CTX.fillRect(stampX, stampY, stampSize, stampSize);
+
+  // ── 4. Transparency Pass (The "Cut-Out") ───────────────────────────────────
+  // Using destination-out here erases everything drawn above, showing the canvas
   CTX.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < 45; i++) {
-    CTX.globalAlpha = Math.random() * 0.5;
+  CTX.globalAlpha = 1.0;
+  
+  // A. Ink Break-up / Chatter
+  for (let i = 0; i < 50; i++) {
     let rx = stampX + Math.random() * stampSize;
     let ry = stampY + Math.random() * stampSize;
-    // Clump voids near edges to simulate thinner ink on the rubber shoulder
-    let edgeDist = Math.min(rx - stampX, stampX + stampSize - rx, ry - stampY, stampY + stampSize - ry);
-    let r = Math.random() * 2 + (edgeDist < 2 ? 1.5 : 0.5); 
-    
+    let r = Math.random() * 1.5 + 0.5;
     CTX.beginPath();
     CTX.arc(rx, ry, r, 0, Math.PI * 2);
     CTX.fill();
   }
 
-  // ── 4. Carve Glyphs (2x2 Grid: 喬納森印) ───────────────────────────────────
-  CTX.globalCompositeOperation = 'destination-out';
-  CTX.globalAlpha = 1.0;
+  // B. Carve Glyphs
   CTX.textAlign = 'center';
   CTX.textBaseline = 'middle';
-  // Use a slightly smaller font to fit the 2x2 grid
   CTX.font = `bold ${stampSize * 0.38}px "Ma Shan Zheng", "Noto Serif SC", serif`;
 
-  // Traditional order: Top-Right (喬), Bottom-Right (納), Top-Left (森), Bottom-Left (印)
+  // Grid matching your physical carving: 喬納森印
   const chars = [
-    { ch: '喬', x: 0.72, y: 0.28 }, { ch: '納', x: 0.72, y: 0.72 },
-    { ch: '森', x: 0.28, y: 0.28 }, { ch: '印', x: 0.28, y: 0.72 }
+    { ch: '喬', x: 0.73, y: 0.27 }, { ch: '納', x: 0.73, y: 0.73 },
+    { ch: '森', x: 0.27, y: 0.27 }, { ch: '印', x: 0.27, y: 0.73 }
   ];
 
   chars.forEach(c => {
-    let jx = (p.noise(c.x, c.y, t) - 0.5) * 1.2;
-    let jy = (p.noise(c.y, c.x, t) - 0.5) * 1.2;
+    let jx = (p.noise(c.x, c.y, t) - 0.5) * 1.5;
+    let jy = (p.noise(c.y, c.x, t) - 0.5) * 1.5;
     CTX.fillText(c.ch, stampX + stampSize * c.x + jx, stampY + stampSize * c.y + jy);
   });
-
-  // ── 5. Final Paper Bleed ──────────────────────────────────────────────────
-  CTX.globalCompositeOperation = 'multiply';
-  CTX.globalAlpha = 0.12;
-  CTX.fillStyle = '#440000';
-  CTX.fillRect(stampX, stampY, stampSize, stampSize);
 
   CTX.restore();
 }
