@@ -619,6 +619,7 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="hex" title="Hexadecimal digits (0-9, A-F)">Hex</button>
         <button class="cb" data-cs="ascii" title="Standard printable ASCII character set">ASCII</button>
         <button class="cb" data-cs="symbols" title="Miscellaneous UI and typographic symbols">Symbols</button>
+        <button class="cb" data-cs="letterpress" title="Letterpress">Letterpress</button>
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('chars-geo')">
@@ -635,6 +636,8 @@ select option{background:var(--ink)}
         <button class="cb" data-cs="crossstitch" title="X-shaped markers and stitches">Cross-stitch</button>
         <button class="cb" data-cs="daggers" title="Daggers, crosses, and pointed symbols">Daggers</button>
         <button class="cb" data-cs="hearts" title="Hearts">Hearts</button>
+        <button class="cb" data-cs="flowers" title="Hearts">Hearts</button>
+        <button class="cb" data-cs="fish" title="Fish">Fish</button>
         <button class="cb" data-cs="barcode" title="Vertical bars of varying widths">Barcode</button>
         <button class="cb" data-cs="void" title="Zero-width or invisible spacing characters">Void</button>
       </div>
@@ -1345,9 +1348,12 @@ const CHARSETS={
   squares:  '■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯'.split(''),
   crossstitch: '×•⨳╳✕'.split(''),
   circles:  '☻☺⊕⊗⊙○●◌˚¤°·֎֍◎◉◐◑◒◓'.split(''),
-  music: ['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓'],
+  music: ['♪','♫','♩','♬','𝅘𝅥𝅮','𝅗𝅥','𝅘𝅥𝅯','𝄞','𝄢','𝄡','𝆑','𝆒','𝆓''𝄪','𝄫'],
   daggers:  '†‡⸶⸸⸷✁✂✃✄'.split(''),
   hearts:  ['♡','❤︎⁠'],
+  flowers: ['✿','❀','✽','✼'],
+  fish:    ['𓆝', '𓆟', '𓆞', '𓆝', '𓆟'],
+  letterpress: ['❦','☙','❧'],
   dots:     '·.,;:…•‧⋅∙°˙⁘⁙⁚⁛'.split(''),
   lines:    '—|/\\─│╱╲┼╬╋┤├┴┬┘└┐┌╔╗╚╝╠╣╦╩═║'.split(''),
   void:     [' ', ' ', ' ', ' ', ' ', '​', '░', '▒', '▓'],
