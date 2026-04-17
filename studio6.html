@@ -4836,79 +4836,61 @@ function drawCalligraphy(p, t) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ── Updated Large Transparent Hanko Seal ─────────────────────────────────────
+// ── Masked Square Hanko Seal (True Cut-out Version) ───────────────────────────
 function _drawHanko(p, t, W, H) {
   if (S.mode !== 'calligraphy') return;
-  CTX.save();
-
-  // 1. Setup: Increased size for a bolder presence
-  let stampSize = Math.min(60, W * 0.12); 
-  let stampX = 40; // Slightly more padding from the edge
+  
+  // 1. Setup proportions
+  let stampSize = Math.min(65, W * 0.12); 
+  let stampX = 40;
   let stampY = H - stampSize - 40;
 
-  // Hand-stamped jitter
-  CTX.translate(stampX + stampSize / 2, stampY + stampSize / 2);
-  CTX.rotate((p.noise(t * 0.5) - 0.5) * 0.04);
-  CTX.translate(-(stampX + stampSize / 2), -(stampY + stampSize / 2));
-
-  // ── 2. The Stone/Rubber Base ───────────────────────────────────────────────
-  // We draw the red base first. 
-  CTX.fillStyle = '#b32222';
-  CTX.globalAlpha = 0.95; 
-  CTX.beginPath();
-  let steps = 20, jitter = 1.8; 
+  // 2. Create an offscreen buffer for the masking operation
+  // This acts like the physical rubber block
+  let pg = p.createGraphics(stampSize + 20, stampSize + 20);
+  let ctxG = pg.canvas.getContext('2d');
   
+  pg.push();
+  pg.translate(10, 10); // Padding for edge jitter
+
+  // ── DRAW RED BASE ON BUFFER ──
+  ctxG.fillStyle = '#b32222';
+  ctxG.beginPath();
+  let steps = 20, jitter = 1.8;
   for (let i = 0; i <= steps; i++) {
-    let x = stampX + (i / steps) * stampSize;
-    let y = stampY + (p.noise(x * 0.1, t) - 0.5) * jitter;
-    i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
+    let x = (i / steps) * stampSize;
+    let y = (p.noise(x * 0.1, t) - 0.5) * jitter;
+    i === 0 ? ctxG.moveTo(x, y) : ctxG.lineTo(x, y);
   }
   for (let i = 0; i <= steps; i++) {
-    let y = stampY + (i / steps) * stampSize;
-    let x = stampX + stampSize + (p.noise(t, y * 0.1) - 0.5) * jitter;
-    CTX.lineTo(x, y);
+    let y = (i / steps) * stampSize;
+    let x = stampSize + (p.noise(t, y * 0.1) - 0.5) * jitter;
+    ctxG.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
-    let x = stampX + (i / steps) * stampSize;
-    let y = stampY + stampSize + (p.noise(x * 0.1, t + 5) - 0.5) * jitter;
-    CTX.lineTo(x, y);
+    let x = (i / steps) * stampSize;
+    let y = stampSize + (p.noise(x * 0.1, t + 5) - 0.5) * jitter;
+    ctxG.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
-    let y = stampY + (i / steps) * stampSize;
-    let x = stampX + (p.noise(t + 5, y * 0.1) - 0.5) * jitter;
-    CTX.lineTo(x, y);
+    let y = (i / steps) * stampSize;
+    let x = (p.noise(t + 5, y * 0.1) - 0.5) * jitter;
+    ctxG.lineTo(x, y);
   }
-  CTX.closePath();
-  CTX.fill();
+  ctxG.closePath();
+  ctxG.fill();
 
-  // ── 3. Final Texture & Ink Pass (Multiply) ────────────────────────────────
-  // Moving this BEFORE the cut-out so the characters "punch" through the texture too
-  CTX.globalCompositeOperation = 'multiply';
-  CTX.globalAlpha = 0.15;
-  CTX.fillStyle = '#440000';
-  CTX.fillRect(stampX, stampY, stampSize, stampSize);
+  // ── ADD TEXTURE (MULTIPLY) ──
+  ctxG.globalCompositeOperation = 'multiply';
+  ctxG.fillStyle = 'rgba(68, 0, 0, 0.2)';
+  ctxG.fillRect(0, 0, stampSize, stampSize);
 
-  // ── 4. Transparency Pass (The "Cut-Out") ───────────────────────────────────
-  // Using destination-out here erases everything drawn above, showing the canvas
-  CTX.globalCompositeOperation = 'destination-out';
-  CTX.globalAlpha = 1.0;
-  
-  // A. Ink Break-up / Chatter
-  for (let i = 0; i < 50; i++) {
-    let rx = stampX + Math.random() * stampSize;
-    let ry = stampY + Math.random() * stampSize;
-    let r = Math.random() * 1.5 + 0.5;
-    CTX.beginPath();
-    CTX.arc(rx, ry, r, 0, Math.PI * 2);
-    CTX.fill();
-  }
+  // ── CARVE OUT CHARACTERS (DESTINATION-OUT ON BUFFER) ──
+  ctxG.globalCompositeOperation = 'destination-out';
+  ctxG.textAlign = 'center';
+  ctxG.textBaseline = 'middle';
+  ctxG.font = `bold ${stampSize * 0.38}px "Ma Shan Zheng", "Noto Serif SC", serif`;
 
-  // B. Carve Glyphs
-  CTX.textAlign = 'center';
-  CTX.textBaseline = 'middle';
-  CTX.font = `bold ${stampSize * 0.38}px "Ma Shan Zheng", "Noto Serif SC", serif`;
-
-  // Grid matching your physical carving: 喬納森印
   const chars = [
     { ch: '喬', x: 0.73, y: 0.27 }, { ch: '納', x: 0.73, y: 0.73 },
     { ch: '森', x: 0.27, y: 0.27 }, { ch: '印', x: 0.27, y: 0.73 }
@@ -4917,10 +4899,30 @@ function _drawHanko(p, t, W, H) {
   chars.forEach(c => {
     let jx = (p.noise(c.x, c.y, t) - 0.5) * 1.5;
     let jy = (p.noise(c.y, c.x, t) - 0.5) * 1.5;
-    CTX.fillText(c.ch, stampX + stampSize * c.x + jx, stampY + stampSize * c.y + jy);
+    ctxG.fillText(c.ch, stampSize * c.x + jx, stampSize * c.y + jy);
   });
+  
+  // Add some chatter/noise cutouts
+  for (let i = 0; i < 30; i++) {
+    ctxG.beginPath();
+    ctxG.arc(p.random(stampSize), p.random(stampSize), p.random(0.5, 1.5), 0, Math.PI * 2);
+    ctxG.fill();
+  }
+  pg.pop();
 
+  // 3. Stamp the buffer onto the main canvas
+  CTX.save();
+  // Apply the physical "stamping" tilt
+  CTX.translate(stampX + stampSize / 2, stampY + stampSize / 2);
+  CTX.rotate((p.noise(t * 0.5) - 0.5) * 0.04);
+  CTX.translate(-(stampX + stampSize / 2), -(stampY + stampSize / 2));
+  
+  // Draw the offscreen graphics onto the main context
+  CTX.drawImage(pg.canvas, stampX - 10, stampY - 10);
   CTX.restore();
+  
+  // Cleanup buffer to prevent memory leaks if this runs in a draw loop
+  pg.remove(); 
 }
 
 // ── Brush cursor (div-based circle indicator) ──────────────────────────────────
