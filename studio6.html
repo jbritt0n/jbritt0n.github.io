@@ -9976,7 +9976,7 @@ function drawNewspaper(p, t) {
  
   // ── §5.3 Strips — back to front ──────────────────────────────────────────
   strips.forEach(strip => {
-    _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, comradeMode, is1921);
+    _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, comradeMode, is1921, mastSize);
   });
  
   // ── §5.4 Over-washes ─────────────────────────────────────────────────────
@@ -10060,7 +10060,7 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, comradeMode, is1921
   let { x, y, w, h, angle, paper, cols, colSp,
         tearL, tearR, tearT, tearB, tearRes,
         creases, hasHT, htX, htY, htW, htH,
-        hasSeal, sealX, sealY, mC, hasMast,
+        hasSeal, sealX, sealY, mC, hasMast, mastSize, revStyle, paperAge, textDensity, inkFade,
         supremeQuote, dPhase, dSpeed, dAX, dAY, dAR,
         seed, sectionKey } = strip;
  
