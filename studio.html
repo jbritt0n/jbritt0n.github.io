@@ -128,7 +128,9 @@ select option{background:var(--ink)}
   .mb{font-size:.43rem;padding:.32rem .1rem}}
   
 #gc.calligraphy-interactive {cursor: none;}
-.drawing-mode {cursor: url('/cursor/cursor.cur') 16 16, crosshair;}
+.drawing-mode {
+  cursor: url('/cursor/cursor.cur') 16 16, url('/cursor/cursor.png') 16 16, crosshair;
+}
 .cb.active-submode {border-color: var(--gold);color: var(--gold);background: rgba(184,149,90,.07);}
   
 </style>
@@ -157,7 +159,6 @@ select option{background:var(--ink)}
     
   </div><!-- /canvas-wrap -->
   <!-- PANEL -->
-  <div id="brushCursor" style="position: fixed; pointer-events: none; display: none; z-index: 9999; border: 2px solid rgba(80,60,20,0.7); border-radius: 50%; transform: translate(-50%, -50%);"></div>
   <div id="panel">
     <div class="ph">
       <div class="pt">Studio</div>
@@ -203,6 +204,7 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="diagonal_dense" title="Dense character lanes">Diagonal</button>
         <button class="pbar-btn" data-preset="scatter_bloom" title="Scattered character points">Scatter</button>
         <button class="pbar-btn" data-preset="kintsugi_breaks" title="Repaired pottery patterns">Kintsugi</button>
+        <button class="pbar-btn" data-preset="numbpoem" title="numb poem">Numb</button>
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('pre-topo')">
@@ -249,6 +251,9 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="hypertype_mode" title="Hypertype — large glyphs on pattern backgrounds">Hypertype</button>
         <button class="pbar-btn" data-preset="hypertype_hearts" title="Hypertype — sentiment data feel (heart + word mix)">♥ Hypertype</button>
         <button class="pbar-btn" data-preset="circle_field_warm" title="Circle field — Strange Loops ms_092 style">Circle Field</button>
+        <button class="pbar-btn" data-preset="yandinsky_original" title="Yandinsky">Yandinsky OG</button>
+        
+        
       </div>
     </div>
     <div class="sl2" onclick="toggleSec('pre-atmos')">
@@ -313,6 +318,8 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="warp" title="Local space distortion and stretching">Warp</button>
         <button class="mb" data-mode="webster" title="Classic terminal-style block character layout">Blocks</button>
         <button class="mb" data-mode="glitch" title="Intentional pixel sorting and data corruption">Glitch</button>
+        <button class="mb" data-mode="hexcrt" title="Hexagonal grid with CRT glitch and scanlines">📺 Hex CRT</button>
+        <button class="mb" data-mode="crtstripes" title="Glitchy RGB stripe bands with chromatic shift">📺 CRT Stripes</button>
         <button class="mb" data-mode="orbit" title="Characters circling around gravitational points">Orbit</button>
         <button class="mb" data-mode="spiral" title="Infinite expanding character coils">Spiral</button>
         <button class="mb" data-mode="matrix" title="Digital rain code-stream aesthetic">Matrix</button>
@@ -345,6 +352,12 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="flowerspin" title="Symmetry-based floral particle spinning">Flower Spin</button>
         <button class="mb" data-mode="wfc" title="Wave Function Collapse inspired tile logic">WFC Tiles</button>
         <button class="mb" data-mode="trabeculum" title="Voronoi‑like border fields with glowing isolines">🧬 Trabeculum</button>
+        <button class="mb" data-mode="poetictendrils" title="Tendrils of longing – Webster‑style poem with neural strands">🌿 Poetic Tendrils</button>
+        <button class="mb" data-mode="collagewash" title="Collage Wash - Numb">Collage Wash</button>
+        <button class="mb" data-mode="numbcollage" title="Collage of drifting paper rectangles with Chinese text '麻木的'">📰 Numb Collage</button>
+        <button class="mb" data-mode="numbpoem" title="Each stanza of the poem drifts on its own paper block">📜 Numb Poem</button>
+        <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
+        <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
       </div>
     </div>
     
@@ -376,7 +389,6 @@ select option{background:var(--ink)}
     <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
       <div class="mg">
         <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
-
         <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
         <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
@@ -472,6 +484,12 @@ select option{background:var(--ink)}
       Entropy &amp; Glitch <span class="sec-arrow" id="arr-sub-entropy">›</span>
     </div>
     <div class="sec-body collapsed" id="body-sub-entropy" style="padding:0 0 .5rem 0">
+      <div class="sl2">Global Glitch</div>
+      <div class="rw"><div class="rl"><span class="rn">Glitch intensity</span><span class="rv" id="vGlitchInt">0</span></div>
+        <input type="range" id="sGlitchInt" min="0" max="100" value="0" step="2" title="Global displacement strength (0 = off)"></div>
+      <div class="tr"><span class="tl">Chromatic shift</span><button class="tb" id="btnGlitchChromatic" title="Offset R/G/B channels separately">Off</button></div>
+      <div class="tr"><span class="tl">Scanlines</span><button class="tb" id="btnGlitchScanlines" title="Add dark scanlines">Off</button></div>
+      <div class="tr"><span class="tl">Pixelate</span><button class="tb" id="btnGlitchPixelate" title="Blocky low‑res look">Off</button></div>
       <div class="rw"><div class="rl"><span class="rn">Entropy</span><span class="rv" id="vEntropy">0</span></div><input type="range" id="sEntropy" min="0" max="100" value="0" step="2" title="Replaces characters with random glitch symbols at this probability"></div>
       <div class="rw"><div class="rl"><span class="rn">Case glitch</span><span class="rv" id="vCase">0</span></div><input type="range" id="sCase" min="0" max="100" value="0" step="2" title="Randomly flips character case (uppercase ↔ lowercase)"></div>
       <div class="rw"><div class="rl"><span class="rn">Mirror chance</span><span class="rv" id="vFlipChance">0</span></div><input type="range" id="sFlipChance" min="0" max="100" value="0" step="2" title="Probability of flipping a character horizontally or vertically"></div>
@@ -709,12 +727,14 @@ select option{background:var(--ink)}
           <div class="pb" data-pal="infrared"    title="Infrared"      style="background:linear-gradient(135deg,#ff0055,#00ff88)"></div>
           <div class="pb" data-pal="amberterm"   title="Amber Term"    style="background:linear-gradient(135deg,#1a0a00,#ffb000)"></div>
           <div class="pb" data-pal="mondrian" title="Piet Mondrian" style="background:linear-gradient(135deg,#FAFAFA,#212121,#D32F2F,#1A237E,#FDD835)"></div>
+          <div class="pb" data-pal="yandinsky" title="Yandinsky" style="background:linear-gradient(135deg,#d4166e,#3a7882,#18120a,#c02020,#e0a030,#4a6a2a)"></div>
           <!-- Green -->
           <div class="pb" data-pal="jade"        title="Jade"          style="background:linear-gradient(135deg,#4a8a5a,#8ac87a)"></div>
           <div class="pb" data-pal="moss"        title="Moss"          style="background:linear-gradient(135deg,#2d6a4f,#95d5b2)"></div>
           <div class="pb" data-pal="biolum"      title="Bioluminescence"style="background:linear-gradient(135deg,#003322,#00FFAA)"></div>
           <div class="pb" data-pal="moldavite"   title="Moldavite"     style="background:linear-gradient(135deg,#0a2a1a,#8aeaba)"></div>
           <div class="pb" data-pal="oxcopper"    title="Oxidized Copper"style="background:linear-gradient(135deg,#1e2a12,#8fbc6e)"></div>
+          <div class="pb" data-pal="numb"        title="Numb"          style="background:linear-gradient(135deg,#1e2a12,#8fbc6e)"></div>
           <div class="pb" data-pal="radioactive" title="Radioactive"   style="background:linear-gradient(135deg,#003300,#ccff00)"></div>
           <div class="pb" data-pal="siliconvalley" title="Silicon Valley"style="background:linear-gradient(135deg,#1a1a1a,#00ff41)"></div>
           <div class="pb" data-pal="matrix"      title="Matrix"        style="background:linear-gradient(135deg,#003300,#00cc00)"></div>
@@ -913,6 +933,9 @@ select option{background:var(--ink)}
       <button class="cb" data-charset="rain">雨 Rain</button>
       <button class="cb" data-charset="river">川 River</button>
       <button class="cb" data-charset="zen">☯ Zen</button>
+      <button class="cb" data-charset="koi">🐟 Koi</button>
+      <button class="cb" data-charset="crane">🕊️ Crane</button>
+      <button class="cb" data-charset="lotus">🌸 Lotus</button>
     </div>
 
     <!-- Composition picker (visible only in composition mode) -->
@@ -1333,67 +1356,88 @@ const RARE_CHARSETS = ['hieroglyphs', 'alchemy', 'gothic', 'runes', 'celtic', 'a
   
 // ── PALETTES ─────────────────────────────────────────────────────────────────
 const PALETTES={
-  site:      ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038'],
-  ember:     ['#c8632a','#e08040','#f0a060','#a84820','#784030'],
-  frost:     ['#8aaccc','#b0c8e0','#6080a0','#c8d8ec','#405870'],
-  jade:      ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830'],
-  dusk:      ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858'],
-  mono:      ['#808078','#a0a098','#606058','#c0c0b8','#404038'],
-  fire:      ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703'],
-  ghost:     ['#f8f9fa','#dee2e6','#adb5bd','#6c757d','#495057'],
-  abyss:     ['#000814','#001d3d','#003566','#ffc300','#ffd60a'],
-  sakura:    ['#ffb7c5','#ff99ac','#f1e4e8','#ceb1be','#b97375'],
-  moss:      ['#2d6a4f','#409167','#52b788','#74c69d','#95d5b2'],
-  neon:      ['#f72585','#7209b7','#3a0ca3','#4361ee','#4cc9f0'],
-  terracotta:['#e27396','#ea9ab2','#efcfe3','#eaf2d7','#b3dee2'],
-  white:     ['#e8e0d4','#ffffff','#d0c8bc','#f8f4ee','#b8b0a4'],
-  matrix:    ['#003300','#006600','#00aa00','#00ff00','#88ff88'],
-  paper:     ['#2e2820','#5a4a38','#8a7060','#c4b8a8','#e8e0d4'],
-  navy:      ['#0a1628','#1a3050','#2a5080','#4a7fb5','#8ab8e0'],
-  rust:      ['#8b2500','#c04020','#e86040','#e8a87c','#f5d8c0'],
-  copper:    ['#6b3a18','#b87333','#d4a050','#e8c880','#f9e4b7'],
-  aurora:    ['#845ec2','#00c9a7','#4caaff','#ff6b6b','#ffd93d'],
-  mondrian:   ['#FAFAFA', '#212121', '#D32F2F', '#1A237E', '#FDD835', '#9E9E9E'],
-  brutalist: ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555'],
-  risograph: ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166'],
-  cyanotype: ['#003f88','#0077b6','#0096c7','#a8d8ea','#caf0f8'],
-  infrared:  ['#ff0055','#ff6600','#00ff88','#00ffcc','#ffff00'],
-  oxidized:  ['#3d6b4f','#5a8a6a','#8ab89a','#c8a96e','#e8d4a8'],
-  velvet:    ['#2d0a31','#5a1a6a','#8b3a9a','#c77dff','#e0aaff'],
-  tidal:     ['#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef'],
-  solaris:   ['#ff9500','#ff6000','#ff2d55','#ff375f','#ffd60a'],
-  // Warm & Fire
-  volcanic:   ['#FF4500','#8B0000','#FF8C00','#2F0A00','#5C1A00'],
-  lava:       ['#ff1493','#ff8c00','#ffd700','#ff4500','#8b008b'],
-  adobesunset:['#e85d04','#f48c06','#faa307','#ffba08','#dc2f02','#9d0208'],
-  pumpkin:    ['#e65100','#ff8c00','#ffb300','#ffe082','#3e2723'],
-  burnedpaper:['#2b1e12','#4a3320','#6b4c2e','#8c663c','#ad804a','#cfaa70'],
-  // Cool & Ocean
-  biolum:     ['#00FFAA','#00CC88','#003322','#66FFCC','#004422'],
-  lagoon:     ['#001f3f','#005a6b','#009688','#4db6ac','#b2dfdb'],
-  glacier:    ['#e0f0ff','#b0d4ff','#80b8ff','#4a90e2','#1e5a99','#0a2a4a'],
-  deepnebula: ['#0b0b2a','#1a1a4a','#3a2a6a','#7a4a8a','#c86aaa','#ffaad4'],
-  midnightrain:['#0f172a','#1e293b','#334155','#475569','#64748b','#94a3b8'],
-  moldavite:  ['#0a2a1a','#1a5a3a','#2a8a5a','#5aba8a','#8aeaba'],
-  // Purple & Synth
-  electricsheep:['#2a0a4a','#5a1a7a','#aa2e8e','#ea5a9e','#f2a2be'],
-  vaporwave:  ['#ff71ce','#01cdfe','#05ffa1','#b967ff','#fffb96'],
-  neonpastel: ['#FFB3BA','#C5E99B','#B5EAD7','#A0E7E5','#C7CEEA'],
-  retro80s:   ['#FF0055','#00E5FF','#FFDD00','#9900FF','#FF5500'],
-  // Gold & Earth
-  kintsugi:   ['#1a0a05','#3a2a1a','#6a4a2a','#aa7a4a','#e8b87a','#f5d7b3'],
-  incense:    ['#D4A373','#B5835A','#8A5A44','#CC8B65','#E6C7A0'],
-  mushroom:   ['#d9bf77','#b88a5c','#7c4a3a','#4a2a1a','#2a1a0a','#8a6e4a'],
-  // Mono & Technical
-  spectral:   ['#FF0000','#FF7700','#FFFF00','#00FF00','#0000FF','#8B00FF'],
-  plasma:     ['#FFFFFF','#AAAAAA','#555555','#222222','#000000'],
-  phantom:    ['#f0f0f0','#c0c0c0','#808080','#404040','#000000'],
-  radioactive:['#ccff00','#99ff00','#66ff00','#33ff00','#00ff00','#00cc00'],
-  siliconvalley:['#00ff41','#00cc33','#009926','#006614','#003300','#1a1a1a'],
-  amberterm:  ['#ffb000','#e69500','#cc7a00','#b35f00','#994400','#7f2a00','#1a0a00'],
-  sakurasnow: ['#fff0f5','#ffe4e1','#ffc0cb','#ffb7c5','#ff99cc','#e68ab8'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Warm Neutrals & Earth Tones
+  // ──────────────────────────────────────────────────────────────────────────
+  site:        ['#c4bcb0','#b8955a','#8a8078','#ede9e2','#7a6038','#5a4a30'],
+  burnedpaper: ['#2b1e12','#cfaa70','#8b5a2b','#d4b58a','#4a2e1a','#e8d0b0'],
+  kintsugi:    ['#1a0a05','#f5d7b3','#e8b87a','#aa7a4a','#6a4a2a','#3a2a1a'],
+  incense:     ['#8A5A44','#E6C7A0','#B5835A','#CC8B65','#D4A373','#f0dcc8'],
+  mushroom:    ['#2a1a0a','#d9bf77','#b88a5c','#7c4a3a','#4a2a1a','#8a6e4a'],
+  copper:      ['#6b3a18','#f9e4b7','#b87333','#d4a050','#e8c880','#c49450'],
+  rust:        ['#8b2500','#e8a87c','#c04020','#e86040','#f5d8c0','#a04020'],
+  paper:       ['#f5efe0','#2e2820','#5a4a38','#8a7060','#c4b8a8','#e8e0d4'],
+  terracotta:  ['#e27396','#b3dee2','#ea9ab2','#efcfe3','#eaf2d7','#d15b7a'],
+  oxidized:    ['#3d6b4f','#c8a96e','#5a8a6a','#8ab89a','#e8d4a8','#2a4a35'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Fire, Orange & Warm Sunsets
+  // ──────────────────────────────────────────────────────────────────────────
+  ember:       ['#c8632a','#e08040','#f0a060','#a84820','#784030','#e8b090'],
+  fire:        ['#e63946','#f4a261','#e76f51','#c1121f','#ffb703','#ffd166'],
+  volcanic:    ['#8B0000','#FF4500','#FF8C00','#2F0A00','#5C1A00','#cc3300'],
+  adobesunset: ['#9d0208','#ffba08','#e85d04','#f48c06','#faa307','#dc2f02'],
+  pumpkin:     ['#3e2723','#e65100','#ff8c00','#ffb300','#ffe082','#bf360c'],
+  solaris:     ['#ff9500','#ff2d55','#ff6000','#ff375f','#ffd60a','#ff9f00'],
+  lava:        ['#8b008b','#ff1493','#ff8c00','#ffd700','#ff4500','#da70d6'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Yellow & Warm Light
+  // ──────────────────────────────────────────────────────────────────────────
+  abyss:       ['#003566','#ffd60a','#001d3d','#000814','#ffc300','#00509e'],
+  infrared:    ['#ff0055','#00ff88','#ff6600','#00ffcc','#ffff00','#ff3377'],
+  amberterm:   ['#1a0a00','#ffb000','#e69500','#cc7a00','#b35f00','#994400'],
+  // ──────────────────────────────────────────────────────────────────────────
   // Green & Organic
-  oxcopper:   ['#4a5d23','#6b8e23','#8fbc6e','#b5d88c','#2e3b1f','#1e2a12'],
+  // ──────────────────────────────────────────────────────────────────────────
+  jade:        ['#4a8a5a','#8ac87a','#306040','#b0e0a0','#204830','#60a070'],
+  moss:        ['#2d6a4f','#95d5b2','#409167','#52b788','#74c69d','#1b4332'],
+  biolum:      ['#003322','#00FFAA','#00CC88','#66FFCC','#004422','#009966'],
+  moldavite:   ['#0a2a1a','#8aeaba','#1a5a3a','#2a8a5a','#5aba8a','#0d3b25'],
+  oxcopper:    ['#1e2a12','#8fbc6e','#4a5d23','#6b8e23','#b5d88c','#2e3b1f'],
+  numb:        ['#1e2a12','#8fbc6e','#1f5f3a','#2f7d4f','#4c9a6a','#e85c2a'],
+  radioactive: ['#003300','#ccff00','#99ff00','#66ff00','#33ff00','#00ff00'],
+  siliconvalley:['#1a1a1a','#00ff41','#00cc33','#009926','#006614','#003300'],
+  matrix:      ['#003300','#00cc00','#006600','#00aa00','#00ff00','#88ff88'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Cyan, Teal & Ocean
+  // ──────────────────────────────────────────────────────────────────────────
+  tidal:       ['#0077b6','#90e0ef','#0096c7','#00b4d8','#48cae4','#023e8a'],
+  lagoon:      ['#001f3f','#4db6ac','#005a6b','#009688','#88ccca','#006064'],
+  frost:       ['#8aaccc','#c8d8ec','#6080a0','#b0c8e0','#405870','#a0b8d0'],
+  glacier:     ['#0a2a4a','#e0f0ff','#b0d4ff','#80b8ff','#4a90e2','#1e5a99'],
+  cyanotype:   ['#003f88','#a8d8ea','#0077b6','#0096c7','#caf0f8','#03045e'],
+  navy:        ['#0a1628','#4a7fb5','#1a3050','#2a5080','#8ab8e0','#1b3a5c'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Purple, Pink & Synthwave
+  // ──────────────────────────────────────────────────────────────────────────
+  dusk:        ['#7a5a8a','#c890d8','#503870','#e0b8f0','#382858','#b085c0'],
+  velvet:      ['#2d0a31','#c77dff','#5a1a6a','#8b3a9a','#e0aaff','#4a0e5a'],
+  deepnebula:  ['#0b0b2a','#ffaad4','#1a1a4a','#3a2a6a','#7a4a8a','#c86aaa'],
+  electricsheep:['#2a0a4a','#f2a2be','#5a1a7a','#aa2e8e','#ea5a9e','#c77dff'],
+  neon:        ['#f72585','#4cc9f0','#7209b7','#3a0ca3','#4361ee','#b5179e'],
+  vaporwave:   ['#ff71ce','#fffb96','#01cdfe','#05ffa1','#b967ff','#ff9f1c'],
+  retro80s:    ['#FF0055','#9900FF','#00E5FF','#FFDD00','#FF5500','#FF00CC'],
+  neonpastel:  ['#FFB3BA','#C7CEEA','#C5E99B','#B5EAD7','#A0E7E5','#E2B4BD'],
+  sakura:      ['#ffb7c5','#b97375','#ff99ac','#f1e4e8','#ceb1be','#e8a0b0'],
+  sakurasnow:  ['#fff0f5','#e68ab8','#ffe4e1','#ffc0cb','#ffb7c5','#ff99cc'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Rainbow, Multi & Artistic
+  // ──────────────────────────────────────────────────────────────────────────
+  spectral:    ['#FF0000','#FFFF00','#00FF00','#0000FF','#FF7700','#8B00FF'],
+  aurora:      ['#00c9a7','#845ec2','#4caaff','#ff6b6b','#ffd93d','#00b4d8'],
+  risograph:   ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166','#ff0055'],
+  mondrian:    ['#FAFAFA','#212121','#D32F2F','#1A237E','#FDD835','#9E9E9E'],
+  yandinsky:   ['#d4166e','#3a7882','#18120a','#c02020','#e0a030','#4a6a2a'],
+  // ──────────────────────────────────────────────────────────────────────────
+  // Monochrome & Greyscale
+  // ──────────────────────────────────────────────────────────────────────────
+  mono:        ['#505048','#a0a098','#808078','#606058','#c0c0b8','#404038'],
+  ghost:       ['#f8f9fa','#495057','#dee2e6','#adb5bd','#6c757d','#ced4da'],
+  plasma:      ['#FFFFFF','#000000','#AAAAAA','#555555','#222222','#888888'],
+  phantom:     ['#f0f0f0','#000000','#c0c0c0','#808080','#404040','#e0e0e0'],
+  white:       ['#e8e0d4','#ffffff','#d0c8bc','#f8f4ee','#b8b0a4','#f0ece4'],
+  brutalist:   ['#1a1a1a','#f5f500','#ffffff','#e8e8e8','#555555','#cccc00'],
+  midnightrain:['#0f172a','#94a3b8','#1e293b','#334155','#475569','#64748b'],
+
 };
 
 const FONTS={
@@ -1439,12 +1483,18 @@ const COMP_PALETTES={
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let S={
-  mode:'bloom',chars:CHARSETS.chinese,palette:PALETTES.site,
+  mode:'welcome',chars:CHARSETS.chinese,palette:PALETTES.site,
   accent:'#e63946',accentAmt:.10,accent2:'none',accentAmt2:0,
+  welcomeScroll: 0,
+  welcomeOpenSection: 0,
   previousFont: 'courier',   // default
   bg:'#0d0c0a',speed:.004,wave:30,turb:.005,density:.45,
   spacing:12,maxSize:20,noiseScale:.01,charRotation:0,
   entropy:0,caseGlitch:0,flipChance:0,flipHMirror:false,flipVMirror:false,
+  glitchIntensity: 0.0,        // 0 = off, 1 = max displacement
+  glitchChromatic: false,      // whether to offset R/G/B channels separately
+  glitchScanlines: false,      // overlay dark scanlines
+  glitchPixelate: false,       // blocky/pixelated rendering
   fontKey:'courier',fontStack:"'Courier New',Courier,monospace",charRotRad:0,
   blendMode: 'source-over',
   colorMapMode: 'noise', // Default mode
@@ -1542,6 +1592,98 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
 
+  
+
+// ── WELCOME SECTIONS ─────────────────────────────────────────────────────
+ let welcomeSections = [
+  {
+    title: "The Generative Philosophy",
+    body: "You are not drawing; you are sculpting behavior. This studio is a 'shared resource' engine where mathematical noise fields guide the placement of characters. Every visual is a living system reacting to your input.",
+    collapsed: false
+  },
+  {
+    title: "Presets & Modes",
+    body: "Start here. Presets are curated 'snapshots' that instantly apply a complete visual style.\nModes are the generative engines—each creates a different kind of motion.\n• Try 'Bloom' for organic radiation\n• 'Wave' for flowing oscillations\n• 'Yandinsky' for bold, clashing geometric abstraction.",
+    collapsed: false
+  },
+  {
+    title: "Global Controls – Overview",
+    body: "The Global Controls panel contains sliders and toggles that affect every generative mode.\nThey are grouped into Motion, Field, Entropy & Glitch, and Rendering & Mapping.\nUnderstanding these will help you shape any composition to your liking.",
+    collapsed: true
+  },
+  {
+    title: "Motion",
+    body: "• Speed – How fast the pattern animates. Higher values create rapid evolution.\n• Wave Amplitude – Strength of displacement, ripples, and oscillations. Affects mountain height, warp intensity, and more.\n• Turbulence – Frequency multiplier for waves. Higher = tighter, more chaotic undulations.\n• Jitter – Random positional offset applied to each character. Adds a hand‑drawn, shaky feel.",
+    collapsed: true
+  },
+  {
+    title: "Field",
+    body: "• Density – Threshold for placing characters. Lower values = more characters (denser field).\n• Spacing – Grid distance between character positions. Larger spacing creates airy compositions.\n• Max Size – Upper limit for character font size. Many modes map noise to this range.\n• Noise Scale – Controls the zoom level of the noise field. Lower = larger, smoother blobs; higher = fine texture.\n• Char Variation – How quickly the selected character changes across the canvas. High values give mottled, diverse text.\n• Rotation – Global rotation offset (in degrees) applied to all characters.",
+    collapsed: true
+  },
+  {
+    title: "Entropy & Glitch",
+    body: "These controls add happy accidents and digital artifacts.\n• Glitch Intensity – Global displacement strength. At 0, glitch is off; higher values warp the image more.\n• Chromatic Shift – Offsets red, green, and blue channels separately for a colour‑fringed effect.\n• Scanlines – Overlays dark horizontal lines, mimicking a CRT monitor.\n• Pixelate – Renders at a lower resolution for a blocky, retro look.\n• Entropy – Probability of replacing a character with a glitch symbol (like █ or _).\n• Case Glitch – Randomly flips character case (upper ↔ lower).\n• Mirror Chance – Probability of flipping a character horizontally or vertically.\n• Flip H / Flip V – Toggles global horizontal or vertical mirroring for all characters.\n• Trail Persistence – How much of the previous frame remains, creating motion blur or smear effects.\n• Signal Collapse – Triggers a temporary scan‑line glitch across the canvas.",
+    collapsed: true
+  },
+  {
+    title: "Rendering & Mapping",
+    body: "Canvas Blending:\nDetermines how characters and shapes composite with the background. 'Screen' lightens and creates neon glows; 'Multiply' darkens like ink on paper; 'Overlay' and 'Hard Light' boost contrast; 'Difference' gives psychedelic inversions.\n\nNoise Type:\nSelects the underlying noise algorithm used for organic patterns.\n• Perlin – Classic smooth, cloud‑like noise.\n• Simplex – Similar to Perlin but with less visible grid artifacts.\n• Ridged – Sharp bright ridges with dark valleys (good for lightning or terrain).\n• Billow – Soft rounded domes with dark cuts.\n• Cellular (Worley) – Creates cell‑like clusters; characters gather at cell centres.\n• Value – Blockier, more grid‑aligned noise.\n• Marble – Sine veining driven by turbulence; mimics polished stone.\n• Domain Warp – Noise that warps its own coordinates, producing swirly, organic forms.\n• Checker – Animated hard‑edge checkerboard cells.\n\nNoise Detail (fBm):\n• Octaves – Number of noise layers stacked together. More octaves = richer detail (but slower).\n• Falloff – How quickly each octave's amplitude decreases. Lower values create sharper, more detailed layers.\n\nColor Mapping:\nDefines how the palette colours are distributed across the canvas.\n• Noise – Colour varies with the organic noise field (default).\n• Radial – Concentric rings from the centre.\n• Angular – Rotating pie‑slice colour wheel.\n• Diamond – Manhattan distance creates diamond‑shaped colour zones.\n• Tunnel – Logarithmic zoom rings that pulse inward.\n• Spiral – Hypnotic spinning colour gradient.\n• Axial – Bidirectional sine wave interference.\n• Plasma – Demoscene‑style rich multicolour interference.\n• Scan – Horizontal animated bands (like a barcode scanner).\n• Stepped – Hard, quantized colour bands (set the number of bands with the slider).\n• Vortex – Spiral plus noise for an organic spinning field.\n• Mosaic – Colour locks to grid tiles, creating blocky colour patterns.",
+    collapsed: true
+  },
+  {
+    title: "Mode Parameters",
+    body: "When a mode is selected, unique sliders appear. These are the 'personality' controls for that engine—tweaking them fine-tunes the specific generative behavior, such as 'Stretch' in Tendril Engine or 'Clash' in Yandinsky.",
+    collapsed: true
+  },
+  {
+    title: "Calligraphy & Ink",
+    body: "The Calligraphy section lets you create sumi‑e paintings with a virtual brush.\nChoose from four sub‑modes: Random strokes, Character paths (永, 龍), Interactive drawing, and pre‑composed scenes like bamboo or mount fuji.\nAdjust brush taper and ink bleed for authentic atmospheric effects.",
+    collapsed: true
+  },
+  {
+    title: "Characters & Font",
+    body: "Choose the 'Ink' for your engine. Select from dozens of sets—Chinese, Kanji, Cyrillic, runes, or Braille.\nSelect a font family to change the typographic voice. For maximum variety, try 'Rand Unicode' to explore the vast edges of the character map.",
+    collapsed: true
+  },
+  {
+    title: "Palette & Colors",
+    body: "Click a swatch to change the entire mood. Colors are mapped to noise fields, creating organic gradients.\nUse Accent 1 and 2 for pops of contrast, and use the Background selector to set the canvas base—light grounds for ink‑wash, dark for neon and glitch.",
+    collapsed: true
+  },
+  {
+    title: "Image → Text",
+    body: "Upload an image to convert it into generative ASCII art. The system interprets brightness as density instructions, allowing you to 'paint' with typography using styles like hatch, stipple, or edge rendering.",
+    collapsed: true
+  },
+  {
+    title: "Shape & Text Overlays",
+    body: "Add geometric forms (stars, polygons, rings) or scrolling text 'crawls' that float above the main engine.\nThese act as structural anchors or narrative fragments, perfect for adding poetry that moves independently of the underlying generative flow.",
+    collapsed: true
+  },
+  {
+    title: "Chaos Monkey",
+    body: "Feeling adventurous? Turn on Chaos Monkey. Every few seconds it randomly shifts a parameter—speed, palette, or mode—triggering a cascade of unexpected and often beautiful phase shifts.",
+    collapsed: true
+  },
+  {
+    title: "Canvas Size",
+    body: "Resize the canvas to fit your needs. Choose from presets like 800×800, 1080×1080, or full‑panel responsive.\nCustom dimensions let you export exactly the resolution you want.",
+    collapsed: true
+  },
+  {
+    title: "My Presets",
+    body: "Save your favorite settings as named presets.\nClick 'Save' after tweaking parameters, then load them later with one click.\nYou can rename, export, or delete presets—perfect for building a personal library of styles.",
+    collapsed: true
+  },
+  {
+    title: "Keyboard Shortcuts",
+    body: "• SPACE: Play / Pause\n• R: Regenerate Field\n• S: Save high‑res PNG\n• Use the Mouse Wheel to scroll this manual.\nSmall slider tweaks produce the most intentional art.",
+    collapsed: false
+  }
+]; 
+
+  
 // ── NOISE IMPLEMENTATIONS ─────────────────────────────────────────────────────
 
 function worleyNoise(x, y, t) {
@@ -1960,6 +2102,68 @@ function pickColor(p, x, y, t) {
 
 function pcc(p,x,y,t){return {ch:pickChar(p,x,y,t),col:pickColor(p,x,y,t)};}
 
+
+// ── Global Glitch Helpers ─────────────────────────────────────────────────────
+/**
+ * Apply glitch displacement to a coordinate.
+ * @param {p5} p - p5 instance
+ * @param {number} x - original x
+ * @param {number} y - original y
+ * @param {number} t - time
+ * @param {number} [intensity] - override global intensity (optional)
+ * @returns {{x: number, y: number}} displaced coordinates
+ */
+function applyGlitchOffset(p, x, y, t, intensity = null) {
+  let int = intensity !== null ? intensity : (S.glitchIntensity || 0);
+  if (int <= 0) return { x, y };
+  // Use sampleNoise so noiseType and octaves affect the glitch pattern
+  let nx = sampleNoise(p, x * 0.01, y * 0.01, t * 2) * 2 - 1;
+  let ny = sampleNoise(p, x * 0.01 + 10, y * 0.01 + 10, t * 1.7) * 2 - 1;
+  let amt = int * 20 * (1 + S.wave * 0.01);
+  return {
+    x: x + nx * amt,
+    y: y + ny * amt
+  };
+}
+/**
+ * Apply chromatic glitch – returns three displaced coordinates for R,G,B.
+ * @param {p5} p - p5 instance
+ * @param {number} x - original x
+ * @param {number} y - original y
+ * @param {number} t - time
+ * @returns {{r: {x,y}, g: {x,y}, b: {x,y}}}
+ */
+function applyChromaticGlitch(p, x, y, t) {
+  let int = S.glitchIntensity || 0;
+  return {
+    r: applyGlitchOffset(p, x, y, t, int),
+    g: applyGlitchOffset(p, x, y, t, int * 1.2),
+    b: applyGlitchOffset(p, x, y, t, int * 1.4)
+  };
+}
+
+/**
+ * Draw a scanline effect over a rectangular area.
+ * Call this after drawing a pixel block, or use as a post‑process.
+ * @param {number} x - block x
+ * @param {number} y - block y
+ * @param {number} w - block width
+ * @param {number} h - block height
+ * @param {number} row - current row index (for scanline parity)
+ */
+function applyScanline(x, y, w, h, row) {
+  if (!S.glitchScanlines) return;
+  CTX.save();
+  CTX.globalAlpha = 0.25;
+  CTX.fillStyle = '#000000';
+  if (row % 2 === 0) {
+    CTX.fillRect(x, y, w, h * 0.5);
+  }
+  CTX.restore();
+}
+
+
+  
 // ── INIT HELPERS ─────────────────────────────────────────────────────────────
 // INIT RAIN (used by Rain1 and Rain2)
 function initRain(W, H) {
@@ -2085,6 +2289,206 @@ function buildComp(preset,W,H){
   else{compBlocks=[];for(let i=0;i<3+Math.floor(Math.random()*4);i++) compBlocks.push({x:Math.random()*W*.5,y:Math.random()*H*.5,w:W*(.2+Math.random()*.4),h:H*(.2+Math.random()*.4),col:p[Math.floor(Math.random()*p.length)],op:.5+Math.random()*.35});}
 }
 
+
+
+  
+// ── WELCOME MODE (Terminal + Rain + Dashed Border) ─────────────────────────
+function drawWelcome(p, t) {
+  let W = p.width, H = p.height;
+  let welcomeClickRegions = [];
+
+  // ── 1. RAIN BACKGROUND ─────────────────────────────────────────────────
+  if (!window._welcomeRain) {
+    let colCount = Math.floor(W / 15) + 1;
+    window._welcomeRain = [];
+    for (let i = 0; i < colCount; i++) {
+      window._welcomeRain.push({
+        x: i * 15 + 7,
+        y: Math.random() * -H,
+        speed: 1.5 + Math.random() * 3,
+        chars: [],
+        length: 5 + Math.floor(Math.random() * 15)
+      });
+    }
+  }
+
+  if (S.playing) {
+    window._welcomeRain.forEach(d => {
+      d.y += d.speed * (S.speed * 200 + 1);
+      if (d.y > H + 50) {
+        d.y = Math.random() * -100;
+        d.speed = 1.5 + Math.random() * 3;
+        d.length = 5 + Math.floor(Math.random() * 15);
+      }
+      if (Math.random() < 0.3) {
+        d.chars.push(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)));
+        if (d.chars.length > d.length) d.chars.shift();
+      }
+    });
+  }
+
+  CTX.save();
+  CTX.font = '14px "VT323", "Courier New", monospace';
+  CTX.textAlign = 'center';
+  window._welcomeRain.forEach(d => {
+    for (let i = 0; i < d.chars.length; i++) {
+      let y = d.y - i * 16;
+      if (y < 0 || y > H) continue;
+      let alpha = 1 - (i / d.chars.length) * 0.8;
+      CTX.fillStyle = i === 0 ? '#80d0ff' : '#2060a0';
+      CTX.globalAlpha = alpha * 0.35;
+      CTX.fillText(d.chars[i] || '0', d.x, y);
+    }
+  });
+  CTX.restore();
+
+  // ── 2. DARK OVERLAY ────────────────────────────────────────────────────
+  CTX.fillStyle = '#050a14';
+  CTX.globalAlpha = 0.75;
+  CTX.fillRect(0, 0, W, H);
+  CTX.globalAlpha = 1.0;
+
+  // ── 3. ANIMATED PANEL ─────────────────────────────────────────────────
+  let driftX = Math.cos(t * 0.5) * 10;
+  let driftY = Math.sin(t * 0.5) * 10;
+  let glitch = (p.noise(t * 15) > 0.97) ? (Math.random() - 0.5) * 8 : 0;
+  let panelW = Math.min(600, W * 0.9);
+  let panelH = Math.min(500, H * 0.8);
+  let panelX = (W - panelW) / 2 + driftX + glitch;
+  let panelY = (H - panelH) / 2 + driftY + glitch;
+  CTX.fillStyle = 'rgba(12, 25, 48, 0.98)';
+  CTX.beginPath();
+  CTX.rect(panelX, panelY, panelW, panelH);
+  CTX.fill();
+  CTX.save();
+  CTX.strokeStyle = '#1a2a44';
+  CTX.lineWidth = 3;
+  CTX.setLineDash([12, 10]);
+  CTX.lineDashOffset = -t * 15;
+  CTX.strokeRect(panelX, panelY, panelW, panelH);
+  CTX.restore();
+
+  // ── 4. TITLE ───────────────────────────────────────────────────────────
+  CTX.textAlign = 'center';
+  CTX.font = "bold 24px 'VT323', 'Courier New', monospace";
+  CTX.fillStyle = '#80d0ff';
+  CTX.fillText('STUDIO_MANUAL v2.0', W/2 + driftX, panelY + 50);
+
+  // ── 5. SCROLLING CONTENT (clipped) ────────────────────────────────────
+  let viewY = panelY + 90;
+  let viewH = panelH - 150;
+  let margin = 40;
+  let wrapW = panelW - (margin * 2);
+  CTX.save();
+  CTX.beginPath();
+  CTX.rect(panelX + 25, viewY, panelW - 50, viewH);
+  CTX.clip();
+  let curY = viewY + 30 + (S.welcomeScroll || 0);
+  // Helper to wrap text into lines that fit within maxWidth
+  function wrapText(text, maxWidth) {
+    let words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+    for (let word of words) {
+      let testLine = currentLine ? currentLine + ' ' + word : word;
+      let metrics = CTX.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  const renderSection = (sec, index) => {
+  let isCollapsed = sec.collapsed;
+  let toggleSymbol = isCollapsed ? '▶' : '▼';
+  let headerText = toggleSymbol + ' ' + sec.title.toUpperCase();
+  
+  CTX.font = "bold 16px 'VT323', 'Courier New', monospace";
+  CTX.fillStyle = '#e67e22';
+  CTX.textAlign = 'left';
+  CTX.textBaseline = 'top'; // Use 'top' for consistent y coordinate
+  
+  let headerX = panelX + margin;
+  let headerY = curY;
+    // Shadowblur
+  if (!isCollapsed && Math.floor(t * 2) % 2 === 0) {
+    CTX.shadowBlur = 1;
+    CTX.shadowColor = '#e67e22';
+  } else {
+    CTX.shadowBlur = 0;
+  }  
+  CTX.fillText(headerText, headerX, headerY);
+  
+  // Measure text for accurate hit region
+  let metrics = CTX.measureText(headerText);
+  let textWidth = metrics.width;
+  let textHeight = 24; // Approximate height for 16px font
+  
+  welcomeClickRegions.push({
+    type: 'toggle',
+    index: index,
+    x: headerX,
+    y: headerY,
+    w: panelW - (margin * 2), // Make the whole line clickable for better UX
+    h: textHeight + 5
+  });
+  
+  curY += textHeight + 4; // Move down for next section
+  
+  if (!isCollapsed) {
+    CTX.font = "15px 'VT323', 'Courier New', monospace";
+    CTX.fillStyle = '#ced4da';
+    CTX.textBaseline = 'top';
+    
+    let paragraphs = sec.body.split('\n');
+    paragraphs.forEach(para => {
+      if (para.trim() === '') {
+        curY += 10;
+        return;
+      }
+      let wrappedLines = wrapText(para, wrapW - 20);
+      wrappedLines.forEach(line => {
+        let indent = line.startsWith('•') ? 20 : 10;
+        CTX.fillText(line, panelX + margin + indent, curY);
+        curY += 22;
+      });
+    });
+    curY += 10;
+  }
+  curY += 8;
+};
+
+   
+  // Draw all sections
+  welcomeSections.forEach((sec, i) => {
+    renderSection(sec, i);
+  });
+  CTX.restore();
+
+  window._welcomeClickRegions = welcomeClickRegions;
+
+  // ── 6. SCROLLBAR ───────────────────────────────────────────────────────
+  let scrollMax = 1200;
+  let scrollPercent = Math.abs(S.welcomeScroll || 0) / scrollMax;
+  let barY = viewY + (scrollPercent * (viewH - 60));
+  CTX.fillStyle = 'rgba(26, 42, 68, 0.5)';
+  CTX.fillRect(panelX + panelW - 12, viewY, 4, viewH);
+  CTX.fillStyle = '#8ba4bc';
+  CTX.fillRect(panelX + panelW - 12, barY, 4, 60);
+
+  // ── 7. FOOTER ──────────────────────────────────────────────────────────
+  CTX.textAlign = 'center';
+  CTX.font = "italic 15px 'VT323', 'Courier New', monospace";
+  CTX.fillStyle = '#6b8e23';
+  CTX.fillText('[ Click any Mode or Preset in the control bar to the right to begin ]', W/2 + driftX, panelY + panelH - 25);
+}
+  
+  
 // ── BLOOM 2.0 - updated 4/13/26 ──────────────────────────────────────────────────
 function drawBloom(p, t) {
   let sp  = S.spacing || 12;
@@ -2345,6 +2749,182 @@ function drawGlitch(p, t) {
   CTX.globalAlpha = 1;
 }
 
+// ── HEX-GRID CRT MODE (Refactored) ──────────────────────────────────────────
+function drawHexCRT(p, t) {
+  let W = p.width, H = p.height;
+
+  // Mode parameters (from registry)
+  let hexSize     = S.hexSize ?? 30;          // size of hex cells
+  let layers      = S.hexLayers ?? 4;         // noise layers for complexity
+  let glitchChance= S.hexGlitch ?? 0.1;       // probability of horizontal tear
+  let rotSpeed    = S.hexRotation ?? 0.5;     // rotation speed multiplier
+
+  // Global glitch integration
+  let glitchInt   = S.glitchIntensity ?? 0.0;
+  let chromatic   = S.glitchChromatic ?? false;
+  let scanlines   = S.glitchScanlines ?? false;
+  let pixelate    = S.glitchPixelate ?? false;
+
+  // Hex grid constants (pointy-top)
+  const sqrt3 = Math.sqrt(3);
+  let hexW = hexSize * 2;
+  let hexH = sqrt3 * hexSize;
+  let vSpacing = hexSize * 1.5;  // vertical distance between rows
+
+  // Step for pixelation
+  let step = pixelate ? Math.max(2, Math.floor(S.spacing * 0.8)) : 1;
+
+  // Rotation angle (time‑varying)
+  let rot = t * rotSpeed * 0.005;
+
+  CTX.save();
+  if (pixelate) CTX.imageSmoothingEnabled = false;
+
+  for (let y = 0; y < H + vSpacing; y += vSpacing) {
+    let row = Math.floor(y / vSpacing);
+    let xOff = (row % 2 === 0) ? 0 : hexSize;
+
+    for (let x = xOff; x < W + hexSize; x += hexW) {
+      for (let sy = 0; sy < vSpacing; sy += step) {
+        for (let sx = 0; sx < hexW; sx += step) {
+          let px = x + sx;
+          let py = y + sy;
+          if (px < 0 || px >= W || py < 0 || py >= H) continue;
+
+          // Apply global glitch offset
+          let pos = applyGlitchOffset(p, px, py, t, glitchInt);
+          let gx = pos.x, gy = pos.y;
+
+          // Horizontal tear (additional glitch)
+          let g = sampleNoise(p, 0, gy * 0.1, t * 0.01);
+          if (g < glitchChance) gx += (W * 0.1) * (g - 0.5);
+
+          // Rotate coordinates for layered noise
+          let cosR = Math.cos(rot), sinR = Math.sin(rot);
+          let nx = (gx * cosR - gy * sinR) * 0.005;
+          let ny = (gx * sinR + gy * cosR) * 0.005;
+
+          // Accumulate brightness from multiple noise layers
+          let bright = 0;
+          for (let i = 1; i <= layers; i++) {
+            let factor = 0.4 / i;
+            let n = sampleNoise(p, nx * i, ny * i, t * 0.0005);
+            bright += n * factor;
+          }
+
+          // Threshold to create distinct hex cells
+          if (bright > 0.18) {
+            let col = pickColor(p, gx, gy, t);
+            // Map brightness to character size
+            let sz = p.map(bright, 0.18, 1, S.maxSize * 0.4, S.maxSize);
+            let ch = pickChar(p, gx, gy, t);
+            dc(gx, gy, sz, 0, col, ch);
+          }
+        }
+      }
+    }
+  }
+
+  // Scanline overlay (global)
+  if (scanlines) {
+    CTX.fillStyle = '#000000';
+    for (let y = 0; y < H; y += 4) {
+      CTX.globalAlpha = 0.15;
+      CTX.fillRect(0, y, W, 2);
+    }
+    CTX.globalAlpha = 1.0;
+  }
+
+  CTX.restore();
+}
+
+
+// ── CRT STRIPES MODE (Refactored) ───────────────────────────────────────────
+function drawCrtStripes(p, t) {
+  let W = p.width, H = p.height;
+
+  // Mode parameters
+  let gridX       = S.crtGridX ?? 60;
+  let gridY       = S.crtGridY ?? 40;
+  let speed       = S.crtSpeed ?? 1.5;
+  let threshold   = S.crtThreshold ?? 0.5;
+  let aberration  = S.crtAberration ?? 20;
+
+  // Global glitch
+  let glitchInt   = S.glitchIntensity ?? 0.0;
+  let chromatic   = S.glitchChromatic ?? true;
+  let scanlines   = S.glitchScanlines ?? true;
+  let pixelate    = S.glitchPixelate ?? false;
+
+  let cellW = W / gridX;
+  let cellH = H / gridY;
+  let step = pixelate ? Math.max(2, Math.floor(cellW * 0.8)) : 1;
+
+  // Simple deterministic random for pattern
+  function rand(seed) {
+    return Math.abs(Math.sin(seed * 127.1 + seed * 311.7) * 43758.5453) % 1;
+  }
+
+  CTX.save();
+  if (pixelate) CTX.imageSmoothingEnabled = false;
+
+  for (let gy = 0; gy < gridY; gy++) {
+    let yBase = gy * cellH;
+
+    // Row‑based velocity (from original shader)
+    let rowRand = rand(gy * 0.01);
+    let vel = t * 0.05 * speed * gridX * (-0.5 * rowRand);
+
+    for (let gx = 0; gx < gridX; gx++) {
+      let xBase = gx * cellW;
+
+      // Pattern value using noise
+      let n = sampleNoise(p, (gx + vel) * 0.02, gy * 0.02, 0);
+      if (n <= threshold) continue;
+
+      for (let dy = 0; dy < cellH; dy += step) {
+        for (let dx = 0; dx < cellW; dx += step) {
+          let x = xBase + dx;
+          let y = yBase + dy;
+
+          // Apply glitch offset
+          let pos = applyGlitchOffset(p, x, y, t, glitchInt);
+          let px = pos.x, py = pos.y;
+
+          let col = pickColor(p, px, py, t);
+          let ch = pickChar(p, px, py, t);
+          let sz = cellW * 0.8;
+
+          if (chromatic && aberration > 0) {
+            // Red channel offset
+            let offR = applyGlitchOffset(p, x + aberration, y, t, glitchInt * 1.2);
+            let colR = p.color(255, 0, 0, 180);
+            dc(offR.x, offR.y, sz, 0, colR, ch);
+            // Blue channel offset
+            let offB = applyGlitchOffset(p, x - aberration, y, t, glitchInt * 1.4);
+            let colB = p.color(0, 255, 255, 180);
+            dc(offB.x, offB.y, sz, 0, colB, ch);
+          }
+          // Main character
+          dc(px, py, sz, 0, col, ch);
+        }
+      }
+    }
+  }
+
+  // Scanlines
+  if (scanlines) {
+    CTX.fillStyle = '#000000';
+    for (let y = 0; y < H; y += 4) {
+      CTX.globalAlpha = 0.2;
+      CTX.fillRect(0, y, W, 2);
+    }
+    CTX.globalAlpha = 1.0;
+  }
+
+  CTX.restore();
+}
+  
 // ── WEBSTER 2.0 Refactored 4/13/26 ───────────────────────────────────────────
 function drawWebster(p, t) {
   let sp = S.spacing;
@@ -3409,7 +3989,7 @@ function drawVoronoi(p, t) {
   }
 }
 
-// ── TRABECULUM MODE - Refactored 4/14/26 ──────────────────────────────────────────────────────────
+// ── TRABECULUM MODE (Enhanced) ─────────────────────────────────────────────
 let trabePoints = [];
 
 function initTrabeculum(W, H) {
@@ -3429,71 +4009,119 @@ function initTrabeculum(W, H) {
 function drawTrabeculum(p, t) {
   let W = p.width, H = p.height;
   if (trabePoints.length === 0) initTrabeculum(W, H);
-  // Update points
-  if (S.playing) {
-    let speed = S.trabeSpeed ?? 1.0;
-    for (let pt of trabePoints) {
-      pt.x += pt.vx * speed * (S.speed * 100);
-      pt.y += pt.vy * speed * (S.speed * 100);
-      if (pt.x < 0) pt.x = W;
-      if (pt.x > W) pt.x = 0;
-      if (pt.y < 0) pt.y = H;
-      if (pt.y > H) pt.y = 0;
-    }
-  }
   // Parameters with defaults
+  let speed       = S.trabeSpeed ?? 1.0;
+  let count       = S.trabeCount ?? 40;
   let thickness   = S.trabeThickness ?? 0.05;
   let smooth      = S.trabeSmooth ?? 0.02;
   let pulse       = S.trabePulse ?? false;
   let lineWidth   = S.trabeLineWidth ?? 1.5;
   let useChars    = S.trabeUseChars ?? true;
   let showIso     = S.trabeShowIso ?? true;
-  let isoFreq     = S.trabeFreq ?? 10;
-  let isoOpacity  = S.trabeIsoOpacity ?? 0.15;
-  let borderColor = S.trabeStroke ?? '#ff9900';
   let isoColor    = S.trabeIsoCol ?? '#444444';
-  // Normalisation factor
+  let attract     = S.trabeAttract ?? 0.0;      // negative = attract, positive = repel
+  let stretch     = S.trabeStretch ?? 1.0;      // 1.0 = circular, >1 = horizontal oval, <1 = vertical
+  let fillCells   = S.trabeFillCells ?? false;
+  let fillOpacity = S.trabeFillOpacity ?? 0.3;
+  // Update points with attraction/repulsion
+  if (S.playing) {
+    // Apply mutual forces (simple Coulomb-like)
+    let force = attract * 0.005;
+    for (let i = 0; i < trabePoints.length; i++) {
+      let p1 = trabePoints[i];
+      for (let j = i + 1; j < trabePoints.length; j++) {
+        let p2 = trabePoints[j];
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        let dist = Math.hypot(dx, dy) + 0.1;
+        let f = force / (dist * dist);
+        let fx = dx * f;
+        let fy = dy * f;
+        p1.vx -= fx;
+        p1.vy -= fy;
+        p2.vx += fx;
+        p2.vy += fy;
+      }
+    }
+    // Move points
+    for (let pt of trabePoints) {
+      pt.x += pt.vx * speed * (S.speed * 100);
+      pt.y += pt.vy * speed * (S.speed * 100);
+      // Wrap or bounce
+      if (pt.x < 0) { pt.x = 0; pt.vx *= -0.5; }
+      if (pt.x > W) { pt.x = W; pt.vx *= -0.5; }
+      if (pt.y < 0) { pt.y = 0; pt.vy *= -0.5; }
+      if (pt.y > H) { pt.y = H; pt.vy *= -0.5; }
+      // Damping
+      pt.vx *= 0.99;
+      pt.vy *= 0.99;
+    }
+  }
+  // Precompute cell colors if fill enabled
+  let cellColors = [];
+  if (fillCells) {
+    for (let i = 0; i < trabePoints.length; i++) {
+      let pt = trabePoints[i];
+      let col = pickColor(p, pt.x, pt.y, t);
+      cellColors.push(col);
+    }
+  }
+  // Normalisation factor for distance field
   let normFactor = (S.maxSize / 10) || 2.0;
-  // Grid resolution for line extraction (lower = finer, but slower)
+  // Build distance field (to nearest point) with stretch distortion
   let res = Math.max(2, Math.floor(S.spacing * 0.5));
   let cols = Math.ceil(W / res) + 1;
   let rows = Math.ceil(H / res) + 1;
-  // Build distance field (to nearest point) using sampleNoise for optional perturbation
   let field = new Float32Array(cols * rows);
+  let cellId = new Int32Array(cols * rows); // which point is closest
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       let x = c * res;
       let y = r * res;
       let minD = Infinity;
-      for (let pt of trabePoints) {
-        let d = Math.hypot(x - pt.x, y - pt.y);
-        if (d < minD) minD = d;
+      let id = 0;
+      for (let i = 0; i < trabePoints.length; i++) {
+        let pt = trabePoints[i];
+        // Apply stretch distortion to distance
+        let dx = (x - pt.x) * stretch;
+        let dy = (y - pt.y) / stretch;
+        let d = Math.hypot(dx, dy);
+        if (d < minD) { minD = d; id = i; }
       }
-      // Add subtle noise perturbation to field (respects noise type)
-      let n = sampleNoise(p, x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.3);
-      field[r * cols + c] = minD + n * 2;
+      field[r * cols + c] = minD;
+      cellId[r * cols + c] = id;
     }
   }
-  // Normalise field to [0,1] based on max distance
+  // Normalise field
   let maxD = 0;
   for (let i = 0; i < field.length; i++) if (field[i] > maxD) maxD = field[i];
   maxD = maxD || 1;
   for (let i = 0; i < field.length; i++) field[i] /= maxD;
-  // Draw isolines via marching squares
+  // ---- Draw cell fills (solid color behind isolines) ----
+  if (fillCells) {
+    CTX.save();
+    for (let r = 0; r < rows - 1; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        let id = cellId[r * cols + c];
+        let col = cellColors[id] || S.palette[0];
+        CTX.fillStyle = col;
+        CTX.globalAlpha = fillOpacity;
+        CTX.fillRect(c * res, r * res, res, res);
+      }
+    }
+    CTX.restore();
+  }
+  // ---- Draw isolines (marching squares) ----
   if (showIso) {
     CTX.save();
     CTX.lineCap = 'round';
     CTX.lineJoin = 'round';
-    let levels = 8; // number of contour levels
+    let levels = 8;
     for (let lv = 0; lv < levels; lv++) {
       let threshold = (lv + 1) / (levels + 1);
       if (pulse) threshold += Math.sin(t * 0.05) * 0.01;
-      // Color for this contour: use palette + mapping
-      let col = pickColor(p, 0, 0, t); // placeholder; we'll refine per segment
-      // For consistent line color, we can use borderColor or palette
-      let lineCol = borderColor;
+      let lineCol = isoColor;
       if (S.colorMapMode !== 'noise') {
-        // Use mapping to vary line color
         let ci = Math.floor(threshold * S.palette.length);
         lineCol = S.palette[ci % S.palette.length];
       }
@@ -3501,7 +4129,6 @@ function drawTrabeculum(p, t) {
       CTX.strokeStyle = lineCol;
       CTX.lineWidth = lineWidth * (lv === 0 ? 1.8 : 1.0);
       CTX.globalAlpha = 0.6 + 0.3 * (1 - Math.abs(lv - levels/2) / levels);
-      // Marching squares edge extraction
       for (let r = 0; r < rows - 1; r++) {
         for (let c = 0; c < cols - 1; c++) {
           let a = field[r * cols + c];
@@ -3509,7 +4136,6 @@ function drawTrabeculum(p, t) {
           let d = field[(r + 1) * cols + c];
           let e = field[(r + 1) * cols + c + 1];
           let x0 = c * res, y0 = r * res;
-          // Linear interpolation along edges
           let pts = [];
           if ((a < threshold) !== (b < threshold))
             pts.push({ x: x0 + res * (threshold - a) / (b - a), y: y0 });
@@ -3536,22 +4162,13 @@ function drawTrabeculum(p, t) {
     }
     CTX.restore();
   }
-  // Character fill inside cells (optional)
+  // ---- Character fill (optional) ----
   if (useChars) {
     let step = S.spacing;
     for (let x = 0; x < W; x += step) {
       for (let y = 0; y < H; y += step) {
-        // Determine cell index (nearest point)
-        let minD = Infinity, idx = 0;
-        for (let i = 0; i < trabePoints.length; i++) {
-          let d = Math.hypot(x - trabePoints[i].x, y - trabePoints[i].y);
-          if (d < minD) { minD = d; idx = i; }
-        }
-        // Use sampleNoise for density gating (global S.density)
         let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.5);
         if (n < S.density) continue;
-        // Check if we are near the border? (optional: skip characters too close to edges)
-        // For simplicity, place characters everywhere inside cells.
         let col = pickColor(p, x, y, t);
         let ch = pickChar(p, x, y, t);
         let sz = p.map(n, 0, 1, S.maxSize * 0.4, S.maxSize);
@@ -3894,7 +4511,7 @@ function drawCalligraphy(p, t) {
   let count      = Math.max(1, Math.floor(S.calligCount   ?? 5));
   let minLen     = (S.calligMinLen    ?? 0.3) * Math.min(W, H);
   let maxLen     = (S.calligMaxLen    ?? 0.8) * Math.min(W, H);
-  let baseWidth  = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let baseWidth  = Math.max(1, S.calligWidth ?? 20);
   let taper      = S.calligTaper      ?? 0.5;
   let bleed      = S.calligBleed      ?? 0.5;
   let fibers     = Math.max(1, Math.floor(S.calligFibers ?? 6));
@@ -3906,27 +4523,26 @@ function drawCalligraphy(p, t) {
   let splatter   = S.calligSplatter   ?? 0.2;
   let grain      = S.calligPaperGrain ?? true;
 
-    // ── Auto-spawn (non-interactive modes only) ───────────────────────────────
-  if (subMode !== 'interactive' && S.playing) {
-      // Only spawn a new composition when none is active, and wait a bit between finished ones
+    // ── Auto-spawn — branched strictly by subMode ────────────────────────────
+  if (subMode === 'composition' && S.playing) {
+      // Sumi-e composition: spawn one composition at a time, then auto-respawn
       if (!calligActiveComp) {
         let compKey = S.calligComposition || 'bamboo_branch';
-        // Scale to ~75% of the smaller canvas dimension – fills most of the canvas
-        let scale = Math.min(W, H) * 0.75;
-        _spawnSumieComposition(p, compKey,
-          W / 2, H / 2, scale);
+        let scale   = Math.min(W, H) * 0.75;
+        _spawnSumieComposition(p, compKey, W / 2, H / 2, scale);
       }
       if (calligActiveComp) {
         _updateCompositionSequence(p);
       }
-    } else {
-      // 'random' or 'character' — periodic stroke spawning
+    } else if ((subMode === 'random' || subMode === 'character') && S.playing) {
+      // Periodic stroke/character spawning
       let interval = Math.max(6, Math.round(80 / count));
       if (_calligClock % interval === 0) {
         let useChars = (subMode === 'character');
         _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, useChars, charSet);
       }
     }
+    // 'interactive' — no auto-spawning; all drawing comes from pointer events
   
 
   // ── Render growing stroke queue → ink buffer ──────────────────────────────
@@ -4089,14 +4705,18 @@ function _syncBrushCursorSize(subMode) {
 // Sets the CSS cursor on the canvas element and manages the div cursor visibility.
 function _refreshCanvasCursor() {
   let canvas = document.getElementById('gc');
+  let wrap   = document.getElementById('canvas-wrap');
   if (!canvas) return;
   let interactive = (S.calligSubMode === 'interactive') && S.mode === 'calligraphy';
   if (interactive) {
-    // Try the custom .cur file; fall back to crosshair
-    canvas.style.cursor = 'url(/cursor/cursor.cur) 16 16, crosshair';
+    // Apply to both the canvas and its wrapper so the cursor shows over the whole area
+    let cursorVal = "url('/cursor/cursor.cur') 16 16, url('/cursor/cursor.png') 16 16, crosshair";
+    canvas.style.cursor = cursorVal;
+    if (wrap) wrap.style.cursor = cursorVal;
     canvas.classList.add('drawing-mode');
   } else {
     canvas.style.cursor = '';
+    if (wrap) wrap.style.cursor = '';
     canvas.classList.remove('drawing-mode');
   }
 }
@@ -4121,17 +4741,17 @@ function initBrushCursor() {}
 function _spawnSumieComposition(p, compKey, ox, oy, scale) {
   let comp = SUMIE_COMPOSITIONS[compKey];
   if (!comp) { console.warn('Unknown composition:', compKey); return; }
-  // Cancel any existing composition to prevent overlapping
-  calligActiveComp = null;
-  calligStrokes = calligStrokes.filter(s => s.lifespan > 0); // optional: keep old strokes?
-  calligActiveComp = {
-    key: compKey,
-    segments: comp.segments,
-    transform: { ox, oy, scale }
-  };
+  ox    = ox    ?? p.width  / 2;
+  oy    = oy    ?? p.height / 2;
+  scale = scale ?? Math.min(p.width, p.height) * 0.78;
+  calligStrokes   = [];
   calligSegIdx    = 0;
   calligStrokeIdx = 0;
   calligLastBirth = _calligClock;
+  calligActiveComp = {
+    segments:  comp.segments,
+    transform: { ox, oy, scale }
+  };
 }
 
 // Releases one stroke every interStrokeDelay frames, advancing through segments.
@@ -4140,8 +4760,11 @@ function _updateCompositionSequence(p) {
   if (!calligActiveComp) return;
   if (calligSegIdx >= calligActiveComp.segments.length) {
     calligActiveComp = null;   // composition finished
+    // Auto-respawn: clear ink, wait 90 ticks, then redraw same or new composition
+    calligLastBirth = _calligClock; // reuse as pause timer
     return;
   }
+
 
   let interStrokeDelay = 15;
   if (_calligClock - calligLastBirth < interStrokeDelay) return;
@@ -4161,7 +4784,7 @@ function _updateCompositionSequence(p) {
   S.calligTaper  = origTaper  * (beh.taper  || 1);
   S.calligWobble = origWobble * (beh.wobble || 1);
 
-  let baseWidth = Math.max(3, S.calligWidth * (S.maxSize / 20));
+  let baseWidth  = Math.max(1, S.calligWidth ?? 20);
 
   // Cumulative distances along the raw path
   let cumDist = 0, dists = [0];
@@ -4179,7 +4802,6 @@ function _updateCompositionSequence(p) {
   }));
   pts = _densify(pts, 6);
   pts = _applyChaikin(pts, 3);
-  _assignSpeeds(pts, T.scale);
 
   calligStrokes.push({
     pts,
@@ -4226,7 +4848,7 @@ function _spawnCharacter(p, W, H, minLen, maxLen, baseWidth, charMode, charSet) 
   } else {
     // 'random' — single abstract line
     let angle = p.random(Math.PI * 2);
-    let pts   = _genLinePoints(p, ox, oy, len, angle, 0.3);
+    let pts   = _genLinePoints(p, ox, oy, len, angle, S.calligWobble ?? 0.3);
     if (!pts || pts.length < 2) return;
     _assignSpeeds(pts, len);
     calligStrokes.push({
@@ -4256,8 +4878,9 @@ function _buildStroke(p, rawPts, ox, oy, len, col, baseWidth) {
   }));
   pts = _densify(pts, 6);
   pts = _applyChaikin(pts, 2);
+  _wobblePts(pts, len, S.calligWobble ?? 0.15);
   _assignSpeeds(pts, len);
-  return { pts, col, baseWidth, birth: _calligClock };
+  return { pts, col, baseWidth };
 }
 
 
@@ -4270,7 +4893,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   calligMouseVelocity = Math.min(3, dist / 8);
   calligMouseAngle    = Math.atan2(y2 - y1, x2 - x1);
 
-  let baseWidth = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
+  let baseWidth = Math.max(1, S.calligWidth ?? 20);
   let col       = pickColor(p, x1, y1, 0);
   let taper     = S.calligTaper ?? 0.5;
 
@@ -4308,8 +4931,8 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   for (let j = 0; j < pts.length; j++) {
     let pf = Math.sin(pts[j].prog * Math.PI);
     let sf = Math.pow(1 / Math.max(0.1, pts[j].speed || 1), 0.4);
-    pts[j].w = Math.max(0.5,
-      eff * Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
+    pts[j].w = Math.max(2,
+      eff * Math.pow(Math.max(0.35, pf) * sf, 1 / Math.max(0.1, taper)));
   }
 
   // Paint directly to the offscreen ink buffer (no grow-in delay)
@@ -4323,7 +4946,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   _renderSumiE(p, pts, col,
     S.calligBleed    ?? 0.5,
     Math.max(1, Math.floor(S.calligFibers ?? 6)),
-    S.calligInk      ?? 0.9,
+    Math.min(1, (S.calligInk ?? 0.9) * 1.25),
     S.calligDrips    ?? true,
     S.calligPooling  ?? true,
     S.calligSplatter ?? 0.2,
@@ -4355,32 +4978,31 @@ function calligRedraw(p) {
   if (!p || !p.width) p = window._st && window._st.p;
   if (!p) return;
   clearInkBuffer();
-  let W = p.width, H = p.height;
+  let W      = p.width, H = p.height;
   let subMode = S.calligSubMode ?? 'character';
-  let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
-  let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
-  let bw = Math.max(2, (S.calligWidth ?? 2.0) * (S.maxSize / 20));
-  let count = Math.max(1, Math.floor(S.calligCount ?? 5));
-  let charSet = S.calligCharSet ?? 'eternal';
 
   if (subMode === 'composition') {
-    let compKey = S.calligComposition || 'bamboo_branch';
-    let scale = Math.min(W, H) * 0.75;
-    _spawnSumieComposition(p, compKey, W / 2, H / 2, scale);
+    calligLastBirth = 0; // reset pause so it spawns immediately
+    _spawnSumieComposition(p, S.calligComposition || 'bamboo_branch',
+                            W / 2, H / 2, Math.min(W, H) * 0.78);
   } else {
-    // 'random' or 'character' — spawn individual strokes
+    let bw    = Math.max(1, S.calligWidth ?? 20);
+    let count = Math.max(1, Math.floor(S.calligCount ?? 5));
+    let minLen = (S.calligMinLen ?? 0.3) * Math.min(W, H);
+    let maxLen = (S.calligMaxLen ?? 0.8) * Math.min(W, H);
     for (let i = 0; i < count; i++) {
-      _spawnCharacter(p, W, H, minLen, maxLen, bw, subMode === 'character', charSet);
+      _spawnCharacter(p, W, H, minLen, maxLen, bw,
+                      subMode === 'character', S.calligCharSet ?? 'eternal');
     }
   }
-  if (typeof showToast === 'function') showToast('Redrawn');
+  showToast('Redrawn');
 }
 
 // ── Pointer event setup ────────────────────────────────────────────────────────
 // Uses Pointer Events API only (covers mouse, touch, and stylus uniformly).
 // Must be called once when the calligraphy mode is activated.
 function setupCalligraphyInteraction(p) {
-  let canvas = document.getElementById('gc');
+  let canvas = p.drawingContext.canvas;
   if (!canvas) { console.error('[calligraphy] Canvas #gc not found'); return; }
 
   // Tear down previous handlers to prevent duplicates
@@ -4650,134 +5272,256 @@ function _genLinePoints(p, ox, oy, len, angle, wobble) {
   return _applyChaikin(pts, 2);
 }
 
+function _wobblePts(pts, len, amount) {
+  if (!amount || amount < 0.01) return;
+  for (let i = 1; i < pts.length - 1; i++) {
+    let perp = Math.atan2(
+      pts[i+1 < pts.length ? i+1 : i].y - pts[i-1].y,
+      pts[i+1 < pts.length ? i+1 : i].x - pts[i-1].x
+    ) + Math.PI / 2;
+    let offset = (Math.random() - 0.5) * amount * len * 0.12;
+    pts[i].x += Math.cos(perp) * offset;
+    pts[i].y += Math.sin(perp) * offset;
+  }
+}  
 
 // ── CHARACTER_PATHS ────────────────────────────────────────────────────────────
 // Normalised [0,1] coordinates; centred on 0.5, 0.5.
 const CHARACTER_PATHS = {
 
-  'eternal': [   // 永 — the eight canonical calligraphy strokes
-    [{x:0.48,y:0.12},{x:0.52,y:0.18},{x:0.55,y:0.24},{x:0.56,y:0.32},{x:0.54,y:0.38}],
-    [{x:0.18,y:0.28},{x:0.32,y:0.26},{x:0.48,y:0.24},{x:0.65,y:0.26},{x:0.82,y:0.28}],
-    [{x:0.48,y:0.28},{x:0.5,y:0.42},{x:0.51,y:0.56},{x:0.49,y:0.7},{x:0.42,y:0.82},{x:0.35,y:0.86}],
-    [{x:0.5,y:0.44},{x:0.4,y:0.5},{x:0.28,y:0.6},{x:0.22,y:0.68}],
-    [{x:0.5,y:0.48},{x:0.62,y:0.58},{x:0.72,y:0.68},{x:0.78,y:0.76}],
-    [{x:0.48,y:0.62},{x:0.52,y:0.66},{x:0.56,y:0.7}]
+  // 永 — Eternity (eight principles of calligraphy)
+  'eternal': [
+    // dot (側)
+    [{x:0.48,y:0.10},{x:0.50,y:0.12},{x:0.52,y:0.11},{x:0.51,y:0.14},{x:0.49,y:0.15}],
+    // horizontal (勒)
+    [{x:0.18,y:0.28},{x:0.25,y:0.26},{x:0.35,y:0.25},{x:0.45,y:0.24},{x:0.55,y:0.25},{x:0.65,y:0.26},{x:0.75,y:0.27},{x:0.82,y:0.28}],
+    // vertical (努)
+    [{x:0.48,y:0.25},{x:0.49,y:0.35},{x:0.50,y:0.45},{x:0.51,y:0.55},{x:0.50,y:0.65},{x:0.48,y:0.75},{x:0.45,y:0.82},{x:0.40,y:0.86},{x:0.35,y:0.88}],
+    // hook (趯)
+    [{x:0.50,y:0.44},{x:0.45,y:0.48},{x:0.40,y:0.52},{x:0.34,y:0.56},{x:0.28,y:0.60},{x:0.24,y:0.64},{x:0.22,y:0.68}],
+    // left sweep (掠)
+    [{x:0.50,y:0.48},{x:0.55,y:0.52},{x:0.62,y:0.56},{x:0.68,y:0.62},{x:0.74,y:0.68},{x:0.78,y:0.74}],
+    // right sweep (啄)
+    [{x:0.48,y:0.62},{x:0.50,y:0.64},{x:0.53,y:0.67},{x:0.56,y:0.70}],
+    // additional nuance strokes
+    [{x:0.38,y:0.68},{x:0.42,y:0.72},{x:0.46,y:0.76},{x:0.48,y:0.80}],
+    [{x:0.62,y:0.68},{x:0.60,y:0.72},{x:0.56,y:0.76},{x:0.52,y:0.80}]
   ],
 
-  'dragon': [    // 龍 — serpentine, complex
-    [{x:0.25,y:0.2},{x:0.32,y:0.18},{x:0.4,y:0.22},{x:0.45,y:0.28},{x:0.48,y:0.36}],
-    [{x:0.48,y:0.36},{x:0.52,y:0.44},{x:0.58,y:0.5},{x:0.66,y:0.52},{x:0.74,y:0.5}],
-    [{x:0.74,y:0.5},{x:0.78,y:0.46},{x:0.8,y:0.4}],
-    [{x:0.3,y:0.42},{x:0.38,y:0.44},{x:0.46,y:0.48},{x:0.54,y:0.52},{x:0.62,y:0.56}],
-    [{x:0.62,y:0.56},{x:0.64,y:0.64},{x:0.62,y:0.72},{x:0.56,y:0.78},{x:0.48,y:0.82}],
-    [{x:0.22,y:0.58},{x:0.3,y:0.6},{x:0.38,y:0.64},{x:0.44,y:0.68}],
-    [{x:0.44,y:0.68},{x:0.46,y:0.76},{x:0.44,y:0.82},{x:0.38,y:0.86}],
-    [{x:0.52,y:0.78},{x:0.58,y:0.8},{x:0.66,y:0.78},{x:0.72,y:0.74}]
+  // 龍 — Dragon (dynamic, serpentine)
+  'dragon': [
+    // left dot
+    [{x:0.22,y:0.18},{x:0.25,y:0.20},{x:0.28,y:0.19},{x:0.26,y:0.22},{x:0.24,y:0.23}],
+    // head stroke
+    [{x:0.30,y:0.22},{x:0.35,y:0.25},{x:0.40,y:0.30},{x:0.44,y:0.36},{x:0.46,y:0.42}],
+    // body curve
+    [{x:0.46,y:0.42},{x:0.48,y:0.50},{x:0.52,y:0.58},{x:0.58,y:0.64},{x:0.66,y:0.66},{x:0.74,y:0.64}],
+    // tail whip
+    [{x:0.74,y:0.64},{x:0.78,y:0.58},{x:0.80,y:0.52},{x:0.80,y:0.45},{x:0.78,y:0.40}],
+    // inner scale lines
+    [{x:0.38,y:0.38},{x:0.42,y:0.42},{x:0.46,y:0.46},{x:0.50,y:0.50},{x:0.54,y:0.54},{x:0.58,y:0.58}],
+    [{x:0.58,y:0.58},{x:0.60,y:0.64},{x:0.58,y:0.70},{x:0.54,y:0.74},{x:0.48,y:0.76}],
+    // legs / claws
+    [{x:0.32,y:0.52},{x:0.36,y:0.56},{x:0.40,y:0.60},{x:0.44,y:0.64}],
+    [{x:0.44,y:0.64},{x:0.42,y:0.70},{x:0.40,y:0.74},{x:0.38,y:0.78}],
+    [{x:0.60,y:0.66},{x:0.64,y:0.70},{x:0.68,y:0.74},{x:0.72,y:0.76}]
   ],
 
-  'mountain': [  // 山
-    [{x:0.5,y:0.15},{x:0.5,y:0.35},{x:0.5,y:0.55},{x:0.5,y:0.75},{x:0.5,y:0.88}],
-    [{x:0.18,y:0.42},{x:0.24,y:0.52},{x:0.32,y:0.62},{x:0.42,y:0.72},{x:0.5,y:0.78}],
-    [{x:0.82,y:0.42},{x:0.76,y:0.52},{x:0.68,y:0.62},{x:0.58,y:0.72},{x:0.5,y:0.78}],
-    [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.74}],
-    [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.74}]
+  // 山 — Mountain
+  'mountain': [
+    [{x:0.50,y:0.12},{x:0.50,y:0.25},{x:0.50,y:0.40},{x:0.50,y:0.55},{x:0.50,y:0.70},{x:0.50,y:0.88}],
+    [{x:0.20,y:0.48},{x:0.25,y:0.55},{x:0.32,y:0.62},{x:0.40,y:0.70},{x:0.48,y:0.76}],
+    [{x:0.80,y:0.48},{x:0.75,y:0.55},{x:0.68,y:0.62},{x:0.60,y:0.70},{x:0.52,y:0.76}],
+    // texture lines
+    [{x:0.35,y:0.65},{x:0.38,y:0.68},{x:0.42,y:0.72},{x:0.46,y:0.75}],
+    [{x:0.65,y:0.65},{x:0.62,y:0.68},{x:0.58,y:0.72},{x:0.54,y:0.75}],
+    [{x:0.30,y:0.58},{x:0.36,y:0.64},{x:0.42,y:0.68}],
+    [{x:0.70,y:0.58},{x:0.64,y:0.64},{x:0.58,y:0.68}]
   ],
 
-  'water': [     // 水 — flowing curves
-    [{x:0.22,y:0.28},{x:0.3,y:0.34},{x:0.38,y:0.38},{x:0.46,y:0.36},{x:0.52,y:0.32}],
-    [{x:0.52,y:0.32},{x:0.58,y:0.38},{x:0.66,y:0.42},{x:0.74,y:0.4},{x:0.78,y:0.34}],
-    [{x:0.3,y:0.48},{x:0.38,y:0.54},{x:0.46,y:0.58},{x:0.54,y:0.56},{x:0.6,y:0.5}],
-    [{x:0.6,y:0.5},{x:0.66,y:0.54},{x:0.72,y:0.58},{x:0.78,y:0.56}],
-    [{x:0.38,y:0.66},{x:0.44,y:0.72},{x:0.5,y:0.76},{x:0.56,y:0.74},{x:0.6,y:0.68}],
-    [{x:0.6,y:0.68},{x:0.64,y:0.72},{x:0.68,y:0.76},{x:0.72,y:0.74}]
+  // 水 — Water (flowing curves)
+  'water': [
+    [{x:0.22,y:0.30},{x:0.30,y:0.35},{x:0.38,y:0.38},{x:0.46,y:0.36},{x:0.52,y:0.32}],
+    [{x:0.52,y:0.32},{x:0.58,y:0.36},{x:0.66,y:0.40},{x:0.74,y:0.38},{x:0.78,y:0.34}],
+    [{x:0.30,y:0.48},{x:0.38,y:0.52},{x:0.46,y:0.56},{x:0.54,y:0.54},{x:0.60,y:0.50}],
+    [{x:0.60,y:0.50},{x:0.66,y:0.54},{x:0.72,y:0.58},{x:0.78,y:0.56}],
+    [{x:0.38,y:0.66},{x:0.44,y:0.70},{x:0.50,y:0.74},{x:0.56,y:0.72},{x:0.60,y:0.68}],
+    [{x:0.60,y:0.68},{x:0.64,y:0.72},{x:0.68,y:0.76},{x:0.72,y:0.74}],
+    // ripple accents
+    [{x:0.20,y:0.42},{x:0.26,y:0.44},{x:0.32,y:0.46}],
+    [{x:0.68,y:0.62},{x:0.72,y:0.64},{x:0.76,y:0.66}]
   ],
 
-  'fire': [      // 火 — rising flames
-    [{x:0.5,y:0.18},{x:0.48,y:0.28},{x:0.44,y:0.4},{x:0.38,y:0.52},{x:0.32,y:0.62}],
-    [{x:0.5,y:0.18},{x:0.52,y:0.28},{x:0.56,y:0.4},{x:0.62,y:0.52},{x:0.68,y:0.62}],
-    [{x:0.5,y:0.18},{x:0.5,y:0.3},{x:0.5,y:0.44},{x:0.5,y:0.58},{x:0.5,y:0.72},{x:0.48,y:0.84}],
-    [{x:0.32,y:0.62},{x:0.38,y:0.68},{x:0.44,y:0.72}],
-    [{x:0.68,y:0.62},{x:0.62,y:0.68},{x:0.56,y:0.72}]
+  // 火 — Fire (rising flames)
+  'fire': [
+    [{x:0.50,y:0.15},{x:0.48,y:0.25},{x:0.46,y:0.35},{x:0.42,y:0.45},{x:0.38,y:0.55},{x:0.34,y:0.62}],
+    [{x:0.50,y:0.15},{x:0.52,y:0.25},{x:0.54,y:0.35},{x:0.58,y:0.45},{x:0.62,y:0.55},{x:0.66,y:0.62}],
+    [{x:0.50,y:0.15},{x:0.50,y:0.28},{x:0.50,y:0.42},{x:0.50,y:0.56},{x:0.50,y:0.70},{x:0.48,y:0.82}],
+    // flame tips
+    [{x:0.34,y:0.62},{x:0.30,y:0.66},{x:0.28,y:0.70}],
+    [{x:0.66,y:0.62},{x:0.70,y:0.66},{x:0.72,y:0.70}],
+    // inner glow lines
+    [{x:0.42,y:0.35},{x:0.46,y:0.45},{x:0.48,y:0.55}],
+    [{x:0.58,y:0.35},{x:0.54,y:0.45},{x:0.52,y:0.55}]
   ],
 
-  'tree': [      // 木 — trunk with branches
-    [{x:0.5,y:0.12},{x:0.5,y:0.28},{x:0.5,y:0.44},{x:0.5,y:0.6},{x:0.5,y:0.76},{x:0.5,y:0.88}],
-    [{x:0.5,y:0.28},{x:0.4,y:0.34},{x:0.32,y:0.38},{x:0.26,y:0.4}],
-    [{x:0.5,y:0.28},{x:0.6,y:0.34},{x:0.68,y:0.38},{x:0.74,y:0.4}],
-    [{x:0.5,y:0.44},{x:0.42,y:0.5},{x:0.36,y:0.54},{x:0.32,y:0.56}],
-    [{x:0.5,y:0.44},{x:0.58,y:0.5},{x:0.64,y:0.54},{x:0.68,y:0.56}],
-    [{x:0.5,y:0.6},{x:0.44,y:0.64},{x:0.4,y:0.68}],
-    [{x:0.5,y:0.6},{x:0.56,y:0.64},{x:0.6,y:0.68}]
+  // 木 — Tree
+  'tree': [
+    [{x:0.50,y:0.10},{x:0.50,y:0.25},{x:0.50,y:0.40},{x:0.50,y:0.55},{x:0.50,y:0.70},{x:0.50,y:0.88}],
+    // main branches
+    [{x:0.50,y:0.30},{x:0.42,y:0.34},{x:0.34,y:0.38},{x:0.28,y:0.40}],
+    [{x:0.50,y:0.30},{x:0.58,y:0.34},{x:0.66,y:0.38},{x:0.72,y:0.40}],
+    [{x:0.50,y:0.48},{x:0.44,y:0.52},{x:0.38,y:0.56},{x:0.34,y:0.58}],
+    [{x:0.50,y:0.48},{x:0.56,y:0.52},{x:0.62,y:0.56},{x:0.66,y:0.58}],
+    // secondary twigs
+    [{x:0.34,y:0.38},{x:0.30,y:0.36},{x:0.26,y:0.35}],
+    [{x:0.66,y:0.38},{x:0.70,y:0.36},{x:0.74,y:0.35}],
+    [{x:0.38,y:0.56},{x:0.34,y:0.60},{x:0.30,y:0.63}],
+    [{x:0.62,y:0.56},{x:0.66,y:0.60},{x:0.70,y:0.63}]
   ],
 
-  'heart': [     // 心 — organic, three-dot form
-    [{x:0.2,y:0.5},{x:0.22,y:0.56},{x:0.26,y:0.62},{x:0.32,y:0.66},{x:0.38,y:0.68}],
-    [{x:0.38,y:0.68},{x:0.44,y:0.66},{x:0.48,y:0.62},{x:0.5,y:0.56},{x:0.5,y:0.48}],
-    [{x:0.5,y:0.48},{x:0.5,y:0.56},{x:0.52,y:0.62},{x:0.56,y:0.66},{x:0.62,y:0.68}],
-    [{x:0.62,y:0.68},{x:0.68,y:0.66},{x:0.74,y:0.62},{x:0.78,y:0.56},{x:0.8,y:0.5}],
-    [{x:0.2,y:0.5},{x:0.28,y:0.44},{x:0.38,y:0.4},{x:0.5,y:0.42},{x:0.62,y:0.4},{x:0.72,y:0.44},{x:0.8,y:0.5}],
-    [{x:0.38,y:0.68},{x:0.42,y:0.74},{x:0.46,y:0.78},{x:0.5,y:0.8}],
-    [{x:0.62,y:0.68},{x:0.58,y:0.74},{x:0.54,y:0.78},{x:0.5,y:0.8}]
+  // 心 — Heart
+  'heart': [
+    [{x:0.20,y:0.50},{x:0.22,y:0.55},{x:0.26,y:0.60},{x:0.32,y:0.64},{x:0.38,y:0.66}],
+    [{x:0.38,y:0.66},{x:0.44,y:0.64},{x:0.48,y:0.60},{x:0.50,y:0.54},{x:0.50,y:0.48}],
+    [{x:0.50,y:0.48},{x:0.50,y:0.54},{x:0.52,y:0.60},{x:0.56,y:0.64},{x:0.62,y:0.66}],
+    [{x:0.62,y:0.66},{x:0.68,y:0.64},{x:0.74,y:0.60},{x:0.78,y:0.55},{x:0.80,y:0.50}],
+    // top connecting curve
+    [{x:0.20,y:0.50},{x:0.28,y:0.44},{x:0.38,y:0.40},{x:0.50,y:0.42},{x:0.62,y:0.40},{x:0.72,y:0.44},{x:0.80,y:0.50}],
+    // bottom drops
+    [{x:0.38,y:0.66},{x:0.42,y:0.72},{x:0.46,y:0.76},{x:0.50,y:0.78}],
+    [{x:0.62,y:0.66},{x:0.58,y:0.72},{x:0.54,y:0.76},{x:0.50,y:0.78}]
   ],
 
-  'bamboo': [    // 竹 — segmented double stalk
-    [{x:0.28,y:0.16},{x:0.28,y:0.34},{x:0.28,y:0.52},{x:0.28,y:0.7},{x:0.28,y:0.88}],
-    [{x:0.28,y:0.26},{x:0.38,y:0.24},{x:0.48,y:0.26}],
-    [{x:0.28,y:0.42},{x:0.38,y:0.4},{x:0.48,y:0.42}],
-    [{x:0.28,y:0.58},{x:0.38,y:0.56},{x:0.48,y:0.58}],
-    [{x:0.28,y:0.74},{x:0.38,y:0.72},{x:0.48,y:0.74}],
-    [{x:0.68,y:0.16},{x:0.68,y:0.34},{x:0.68,y:0.52},{x:0.68,y:0.7},{x:0.68,y:0.88}],
-    [{x:0.68,y:0.26},{x:0.78,y:0.24},{x:0.88,y:0.26}],
-    [{x:0.68,y:0.42},{x:0.78,y:0.4},{x:0.88,y:0.42}],
-    [{x:0.68,y:0.58},{x:0.78,y:0.56},{x:0.88,y:0.58}],
-    [{x:0.68,y:0.74},{x:0.78,y:0.72},{x:0.88,y:0.74}]
+  // 竹 — Bamboo
+  'bamboo': [
+    [{x:0.28,y:0.14},{x:0.28,y:0.30},{x:0.28,y:0.46},{x:0.28,y:0.62},{x:0.28,y:0.78},{x:0.28,y:0.90}],
+    [{x:0.68,y:0.14},{x:0.68,y:0.30},{x:0.68,y:0.46},{x:0.68,y:0.62},{x:0.68,y:0.78},{x:0.68,y:0.90}],
+    // nodes (joints)
+    [{x:0.28,y:0.30},{x:0.38,y:0.28},{x:0.48,y:0.30}],
+    [{x:0.28,y:0.46},{x:0.38,y:0.44},{x:0.48,y:0.46}],
+    [{x:0.28,y:0.62},{x:0.38,y:0.60},{x:0.48,y:0.62}],
+    [{x:0.28,y:0.78},{x:0.38,y:0.76},{x:0.48,y:0.78}],
+    [{x:0.68,y:0.30},{x:0.78,y:0.28},{x:0.88,y:0.30}],
+    [{x:0.68,y:0.46},{x:0.78,y:0.44},{x:0.88,y:0.46}],
+    [{x:0.68,y:0.62},{x:0.78,y:0.60},{x:0.88,y:0.62}],
+    [{x:0.68,y:0.78},{x:0.78,y:0.76},{x:0.88,y:0.78}],
+    // leaves
+    [{x:0.28,y:0.46},{x:0.18,y:0.40},{x:0.12,y:0.35}],
+    [{x:0.28,y:0.62},{x:0.18,y:0.58},{x:0.12,y:0.55}],
+    [{x:0.68,y:0.30},{x:0.78,y:0.24},{x:0.88,y:0.20}],
+    [{x:0.68,y:0.46},{x:0.78,y:0.42},{x:0.88,y:0.38}]
   ],
 
-  'wind': [      // 風 — swirling, dynamic
-    [{x:0.18,y:0.22},{x:0.32,y:0.2},{x:0.48,y:0.22},{x:0.64,y:0.26},{x:0.78,y:0.32},{x:0.84,y:0.38}],
-    [{x:0.84,y:0.38},{x:0.82,y:0.46},{x:0.76,y:0.52},{x:0.68,y:0.56},{x:0.58,y:0.58}],
-    [{x:0.58,y:0.58},{x:0.62,y:0.66},{x:0.7,y:0.72},{x:0.78,y:0.76},{x:0.84,y:0.78}],
-    [{x:0.36,y:0.42},{x:0.44,y:0.44},{x:0.52,y:0.48},{x:0.58,y:0.54}],
-    [{x:0.58,y:0.54},{x:0.56,y:0.62},{x:0.5,y:0.68},{x:0.42,y:0.72},{x:0.34,y:0.74}],
-    [{x:0.48,y:0.32},{x:0.5,y:0.4},{x:0.5,y:0.48},{x:0.48,y:0.56}]
+  // 風 — Wind (swirling)
+  'wind': [
+    [{x:0.18,y:0.24},{x:0.30,y:0.22},{x:0.44,y:0.24},{x:0.58,y:0.28},{x:0.72,y:0.34},{x:0.82,y:0.40}],
+    [{x:0.82,y:0.40},{x:0.80,y:0.48},{x:0.74,y:0.54},{x:0.66,y:0.58},{x:0.56,y:0.60}],
+    [{x:0.56,y:0.60},{x:0.60,y:0.66},{x:0.68,y:0.72},{x:0.76,y:0.76},{x:0.82,y:0.78}],
+    [{x:0.36,y:0.44},{x:0.44,y:0.46},{x:0.52,y:0.50},{x:0.58,y:0.56}],
+    [{x:0.58,y:0.56},{x:0.54,y:0.64},{x:0.48,y:0.70},{x:0.40,y:0.74},{x:0.32,y:0.76}],
+    [{x:0.48,y:0.34},{x:0.50,y:0.42},{x:0.50,y:0.50},{x:0.48,y:0.58}],
+    // swirl accents
+    [{x:0.22,y:0.36},{x:0.28,y:0.38},{x:0.34,y:0.40}],
+    [{x:0.70,y:0.46},{x:0.76,y:0.48},{x:0.80,y:0.50}]
   ],
 
-  'rain': [      // 雨 — vertical streaks under horizontal beams
-    [{x:0.2,y:0.18},{x:0.36,y:0.2},{x:0.52,y:0.22},{x:0.68,y:0.2},{x:0.8,y:0.18}],
-    [{x:0.2,y:0.32},{x:0.36,y:0.34},{x:0.52,y:0.36},{x:0.68,y:0.34},{x:0.8,y:0.32}],
-    [{x:0.36,y:0.2},{x:0.36,y:0.34},{x:0.36,y:0.5},{x:0.36,y:0.68},{x:0.36,y:0.84}],
-    [{x:0.52,y:0.22},{x:0.52,y:0.36},{x:0.52,y:0.52},{x:0.52,y:0.7},{x:0.52,y:0.86}],
-    [{x:0.68,y:0.2},{x:0.68,y:0.34},{x:0.68,y:0.5},{x:0.68,y:0.68},{x:0.68,y:0.84}],
-    [{x:0.28,y:0.48},{x:0.28,y:0.6},{x:0.28,y:0.72}],
+  // 雨 — Rain
+  'rain': [
+    // top horizontal lines
+    [{x:0.22,y:0.18},{x:0.36,y:0.20},{x:0.52,y:0.22},{x:0.68,y:0.20},{x:0.78,y:0.18}],
+    [{x:0.22,y:0.30},{x:0.36,y:0.32},{x:0.52,y:0.34},{x:0.68,y:0.32},{x:0.78,y:0.30}],
+    // vertical rain streaks
+    [{x:0.36,y:0.22},{x:0.36,y:0.36},{x:0.36,y:0.52},{x:0.36,y:0.68},{x:0.36,y:0.84}],
+    [{x:0.52,y:0.24},{x:0.52,y:0.38},{x:0.52,y:0.54},{x:0.52,y:0.70},{x:0.52,y:0.86}],
+    [{x:0.68,y:0.22},{x:0.68,y:0.36},{x:0.68,y:0.52},{x:0.68,y:0.68},{x:0.68,y:0.84}],
+    // shorter drops
+    [{x:0.28,y:0.48},{x:0.28,y:0.60},{x:0.28,y:0.72}],
     [{x:0.44,y:0.44},{x:0.44,y:0.56},{x:0.44,y:0.68}],
-    [{x:0.6,y:0.44},{x:0.6,y:0.56},{x:0.6,y:0.68}],
-    [{x:0.76,y:0.48},{x:0.76,y:0.6},{x:0.76,y:0.72}]
+    [{x:0.60,y:0.44},{x:0.60,y:0.56},{x:0.60,y:0.68}],
+    [{x:0.76,y:0.48},{x:0.76,y:0.60},{x:0.76,y:0.72}]
   ],
 
-  'river': [     // 川 — meandering flow
-    [{x:0.18,y:0.22},{x:0.16,y:0.38},{x:0.18,y:0.54},{x:0.2,y:0.7},{x:0.18,y:0.86}],
-    [{x:0.4,y:0.28},{x:0.38,y:0.44},{x:0.4,y:0.6},{x:0.42,y:0.76},{x:0.4,y:0.88}],
-    [{x:0.62,y:0.22},{x:0.64,y:0.38},{x:0.62,y:0.54},{x:0.6,y:0.7},{x:0.62,y:0.86}],
-    [{x:0.82,y:0.28},{x:0.84,y:0.44},{x:0.82,y:0.6},{x:0.8,y:0.76},{x:0.82,y:0.88}],
-    [{x:0.18,y:0.38},{x:0.3,y:0.4},{x:0.4,y:0.44}],
-    [{x:0.4,y:0.6},{x:0.5,y:0.62},{x:0.62,y:0.6}],
-    [{x:0.62,y:0.38},{x:0.72,y:0.4},{x:0.82,y:0.44}],
-    [{x:0.2,y:0.7},{x:0.3,y:0.72},{x:0.42,y:0.76}],
-    [{x:0.6,y:0.7},{x:0.7,y:0.72},{x:0.8,y:0.76}]
+  // 川 — River
+  'river': [
+    [{x:0.18,y:0.22},{x:0.16,y:0.38},{x:0.18,y:0.54},{x:0.20,y:0.70},{x:0.18,y:0.86}],
+    [{x:0.40,y:0.28},{x:0.38,y:0.44},{x:0.40,y:0.60},{x:0.42,y:0.76},{x:0.40,y:0.88}],
+    [{x:0.62,y:0.22},{x:0.64,y:0.38},{x:0.62,y:0.54},{x:0.60,y:0.70},{x:0.62,y:0.86}],
+    [{x:0.82,y:0.28},{x:0.84,y:0.44},{x:0.82,y:0.60},{x:0.80,y:0.76},{x:0.82,y:0.88}],
+    // connecting flows
+    [{x:0.18,y:0.38},{x:0.30,y:0.40},{x:0.40,y:0.44}],
+    [{x:0.40,y:0.60},{x:0.50,y:0.62},{x:0.62,y:0.60}],
+    [{x:0.62,y:0.38},{x:0.72,y:0.40},{x:0.82,y:0.44}],
+    [{x:0.20,y:0.70},{x:0.30,y:0.72},{x:0.42,y:0.76}],
+    [{x:0.60,y:0.70},{x:0.70,y:0.72},{x:0.80,y:0.76}],
+    // surface ripples
+    [{x:0.28,y:0.52},{x:0.32,y:0.54},{x:0.36,y:0.53}],
+    [{x:0.50,y:0.68},{x:0.54,y:0.70},{x:0.58,y:0.69}]
   ],
 
-  'zen': [       // Abstract meditative grid
-    [{x:0.2,y:0.3},{x:0.3,y:0.28},{x:0.4,y:0.32},{x:0.5,y:0.38},{x:0.6,y:0.36},{x:0.7,y:0.3},{x:0.8,y:0.28}],
-    [{x:0.2,y:0.5},{x:0.3,y:0.48},{x:0.4,y:0.52},{x:0.5,y:0.58},{x:0.6,y:0.56},{x:0.7,y:0.5},{x:0.8,y:0.48}],
-    [{x:0.2,y:0.7},{x:0.3,y:0.68},{x:0.4,y:0.72},{x:0.5,y:0.78},{x:0.6,y:0.76},{x:0.7,y:0.7},{x:0.8,y:0.68}],
-    [{x:0.35,y:0.2},{x:0.35,y:0.86}],
-    [{x:0.5,y:0.2},{x:0.5,y:0.86}],
-    [{x:0.65,y:0.2},{x:0.65,y:0.86}],
-    [{x:0.2,y:0.35},{x:0.8,y:0.35}],
-    [{x:0.2,y:0.65},{x:0.8,y:0.65}]
+  // New: 魚 — Fish (koi)
+  'koi': [
+    [{x:0.30,y:0.50},{x:0.35,y:0.45},{x:0.42,y:0.42},{x:0.50,y:0.40},{x:0.58,y:0.42},{x:0.65,y:0.45},{x:0.70,y:0.50}],
+    [{x:0.70,y:0.50},{x:0.68,y:0.55},{x:0.65,y:0.58},{x:0.60,y:0.60},{x:0.55,y:0.58},{x:0.50,y:0.55}],
+    [{x:0.50,y:0.55},{x:0.48,y:0.60},{x:0.50,y:0.65},{x:0.55,y:0.68},{x:0.60,y:0.65},{x:0.58,y:0.60}],
+    // fins
+    [{x:0.42,y:0.42},{x:0.38,y:0.38},{x:0.35,y:0.35}],
+    [{x:0.58,y:0.42},{x:0.62,y:0.38},{x:0.65,y:0.35}],
+    // tail
+    [{x:0.30,y:0.50},{x:0.25,y:0.48},{x:0.22,y:0.52},{x:0.25,y:0.56},{x:0.30,y:0.54}],
+    // eye
+    [{x:0.65,y:0.48},{x:0.67,y:0.47},{x:0.66,y:0.49}]
+  ],
+
+  // New: 鳥 — Bird (crane)
+  'crane': [
+    [{x:0.50,y:0.25},{x:0.48,y:0.30},{x:0.45,y:0.35},{x:0.42,y:0.40},{x:0.40,y:0.45}],
+    [{x:0.50,y:0.25},{x:0.52,y:0.30},{x:0.55,y:0.35},{x:0.58,y:0.40},{x:0.60,y:0.45}],
+    [{x:0.50,y:0.25},{x:0.50,y:0.32},{x:0.50,y:0.38},{x:0.50,y:0.45}],
+    // wings
+    [{x:0.40,y:0.45},{x:0.30,y:0.40},{x:0.22,y:0.35},{x:0.18,y:0.30}],
+    [{x:0.60,y:0.45},{x:0.70,y:0.40},{x:0.78,y:0.35},{x:0.82,y:0.30}],
+    // legs
+    [{x:0.45,y:0.50},{x:0.45,y:0.60},{x:0.44,y:0.70}],
+    [{x:0.55,y:0.50},{x:0.55,y:0.60},{x:0.56,y:0.70}],
+    // eye
+    [{x:0.48,y:0.28},{x:0.49,y:0.27},{x:0.50,y:0.28}]
+  ],
+
+  // New: 花 — Flower (lotus)
+  'lotus': [
+    // center
+    [{x:0.50,y:0.50},{x:0.48,y:0.48},{x:0.50,y:0.47},{x:0.52,y:0.48},{x:0.50,y:0.50}],
+    // petals
+    [{x:0.50,y:0.50},{x:0.45,y:0.42},{x:0.42,y:0.35},{x:0.40,y:0.28}],
+    [{x:0.50,y:0.50},{x:0.55,y:0.42},{x:0.58,y:0.35},{x:0.60,y:0.28}],
+    [{x:0.50,y:0.50},{x:0.42,y:0.48},{x:0.35,y:0.46},{x:0.28,y:0.44}],
+    [{x:0.50,y:0.50},{x:0.58,y:0.48},{x:0.65,y:0.46},{x:0.72,y:0.44}],
+    [{x:0.50,y:0.50},{x:0.45,y:0.55},{x:0.40,y:0.60},{x:0.35,y:0.65}],
+    [{x:0.50,y:0.50},{x:0.55,y:0.55},{x:0.60,y:0.60},{x:0.65,y:0.65}],
+    // leaf
+    [{x:0.50,y:0.65},{x:0.40,y:0.70},{x:0.30,y:0.75},{x:0.25,y:0.80}],
+    [{x:0.50,y:0.65},{x:0.60,y:0.70},{x:0.70,y:0.75},{x:0.75,y:0.80}],
+    [{x:0.50,y:0.65},{x:0.50,y:0.75},{x:0.50,y:0.85}]
+  ],
+
+  // Zen remains as before (grid) but with more lines
+  'zen': [
+    [{x:0.20,y:0.30},{x:0.30,y:0.28},{x:0.40,y:0.32},{x:0.50,y:0.38},{x:0.60,y:0.36},{x:0.70,y:0.30},{x:0.80,y:0.28}],
+    [{x:0.20,y:0.50},{x:0.30,y:0.48},{x:0.40,y:0.52},{x:0.50,y:0.58},{x:0.60,y:0.56},{x:0.70,y:0.50},{x:0.80,y:0.48}],
+    [{x:0.20,y:0.70},{x:0.30,y:0.68},{x:0.40,y:0.72},{x:0.50,y:0.78},{x:0.60,y:0.76},{x:0.70,y:0.70},{x:0.80,y:0.68}],
+    [{x:0.35,y:0.20},{x:0.35,y:0.86}],
+    [{x:0.50,y:0.20},{x:0.50,y:0.86}],
+    [{x:0.65,y:0.20},{x:0.65,y:0.86}],
+    [{x:0.20,y:0.35},{x:0.80,y:0.35}],
+    [{x:0.20,y:0.65},{x:0.80,y:0.65}],
+    // additional enso circles
+    [{x:0.50,y:0.50},{x:0.45,y:0.55},{x:0.40,y:0.58},{x:0.35,y:0.55},{x:0.33,y:0.50},{x:0.35,y:0.45},{x:0.40,y:0.42},{x:0.45,y:0.45},{x:0.50,y:0.50}]
   ]
 
+   
 };
+
 
 
 // ── SUMIE_COMPOSITIONS ─────────────────────────────────────────────────────────
@@ -4785,348 +5529,509 @@ const CHARACTER_PATHS = {
 // and an array of strokes (arrays of normalised {x,y} points).
 const SUMIE_COMPOSITIONS = {
 
-  // 富士山 — Mount Fuji with pines, mist, and water reflection
+  // 富士山 — Mount Fuji (enhanced with mist layers and more pines)
   'mount_fuji': {
     segments: [
       {
         name: 'distant_fuji',
-        behavior: { w: 2.0, taper: 0.3, wobble: 0.1 },
+        behavior: { w: 2.2, taper: 0.25, wobble: 0.08 },
         strokes: [
-          [{x:0.2,y:0.45},{x:0.35,y:0.2},{x:0.5,y:0.15},{x:0.65,y:0.2},{x:0.8,y:0.45}],
-          [{x:0.3,y:0.4},{x:0.4,y:0.25},{x:0.5,y:0.22},{x:0.6,y:0.25},{x:0.7,y:0.4}]
+          [{x:0.18,y:0.48},{x:0.30,y:0.22},{x:0.42,y:0.16},{x:0.50,y:0.14},{x:0.58,y:0.16},{x:0.70,y:0.22},{x:0.82,y:0.48}],
+          [{x:0.25,y:0.42},{x:0.35,y:0.24},{x:0.45,y:0.20},{x:0.50,y:0.19},{x:0.55,y:0.20},{x:0.65,y:0.24},{x:0.75,y:0.42}],
+          [{x:0.32,y:0.38},{x:0.40,y:0.26},{x:0.48,y:0.23},{x:0.52,y:0.23},{x:0.60,y:0.26},{x:0.68,y:0.38}]
         ]
       },
       {
         name: 'snow_cap',
-        behavior: { w: 0.8, taper: 0.7, wobble: 0.2 },
+        behavior: { w: 0.6, taper: 0.9, wobble: 0.2 },
         strokes: [
-          [{x:0.4,y:0.25},{x:0.45,y:0.18},{x:0.5,y:0.15},{x:0.55,y:0.18},{x:0.6,y:0.25}],
-          [{x:0.42,y:0.22},{x:0.48,y:0.17},{x:0.52,y:0.17},{x:0.58,y:0.22}]
+          [{x:0.40,y:0.26},{x:0.45,y:0.20},{x:0.50,y:0.18},{x:0.55,y:0.20},{x:0.60,y:0.26}],
+          [{x:0.42,y:0.24},{x:0.47,y:0.21},{x:0.50,y:0.20},{x:0.53,y:0.21},{x:0.58,y:0.24}]
         ]
       },
       {
         name: 'mist_clouds',
-        behavior: { w: 1.2, taper: 0.5, wobble: 0.4 },
+        behavior: { w: 1.4, taper: 0.6, wobble: 0.5 },
         strokes: [
-          [{x:0.15,y:0.5},{x:0.25,y:0.48},{x:0.35,y:0.52},{x:0.45,y:0.49}],
-          [{x:0.55,y:0.49},{x:0.65,y:0.52},{x:0.75,y:0.48},{x:0.85,y:0.5}],
-          [{x:0.2,y:0.55},{x:0.3,y:0.53},{x:0.4,y:0.56}],
-          [{x:0.6,y:0.56},{x:0.7,y:0.53},{x:0.8,y:0.55}]
+          [{x:0.10,y:0.52},{x:0.20,y:0.49},{x:0.30,y:0.52},{x:0.40,y:0.50},{x:0.50,y:0.53},{x:0.60,y:0.50},{x:0.70,y:0.52},{x:0.80,y:0.49},{x:0.90,y:0.52}],
+          [{x:0.15,y:0.58},{x:0.25,y:0.55},{x:0.35,y:0.58},{x:0.45,y:0.56},{x:0.55,y:0.59},{x:0.65,y:0.56},{x:0.75,y:0.58},{x:0.85,y:0.55}],
+          [{x:0.20,y:0.64},{x:0.30,y:0.61},{x:0.40,y:0.64},{x:0.50,y:0.62},{x:0.60,y:0.64},{x:0.70,y:0.61}]
         ]
       },
       {
         name: 'pine_trees_left',
-        behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
+        behavior: { w: 1.2, taper: 0.7, wobble: 0.4 },
         strokes: [
-          [{x:0.12,y:0.65},{x:0.12,y:0.55},{x:0.12,y:0.45}],
-          [{x:0.12,y:0.55},{x:0.18,y:0.52}],
-          [{x:0.12,y:0.55},{x:0.06,y:0.52}],
-          [{x:0.12,y:0.48},{x:0.18,y:0.46}],
-          [{x:0.12,y:0.48},{x:0.06,y:0.46}],
-          [{x:0.12,y:0.58},{x:0.2,y:0.56}],
-          [{x:0.12,y:0.58},{x:0.04,y:0.56}]
+          [{x:0.10,y:0.68},{x:0.10,y:0.58},{x:0.10,y:0.48}],
+          [{x:0.10,y:0.58},{x:0.16,y:0.55}],
+          [{x:0.10,y:0.58},{x:0.04,y:0.55}],
+          [{x:0.10,y:0.52},{x:0.16,y:0.50}],
+          [{x:0.10,y:0.52},{x:0.04,y:0.50}],
+          [{x:0.10,y:0.62},{x:0.18,y:0.60}],
+          [{x:0.10,y:0.62},{x:0.02,y:0.60}],
+          // additional needles
+          [{x:0.10,y:0.48},{x:0.14,y:0.44}],
+          [{x:0.10,y:0.48},{x:0.06,y:0.44}]
         ]
       },
       {
         name: 'pine_trees_right',
-        behavior: { w: 1.0, taper: 0.8, wobble: 0.5 },
+        behavior: { w: 1.2, taper: 0.7, wobble: 0.4 },
         strokes: [
-          [{x:0.88,y:0.7},{x:0.88,y:0.6},{x:0.88,y:0.5}],
-          [{x:0.88,y:0.6},{x:0.94,y:0.57}],
-          [{x:0.88,y:0.6},{x:0.82,y:0.57}],
-          [{x:0.88,y:0.53},{x:0.94,y:0.51}],
-          [{x:0.88,y:0.53},{x:0.82,y:0.51}],
-          [{x:0.88,y:0.63},{x:0.96,y:0.61}],
-          [{x:0.88,y:0.63},{x:0.8,y:0.61}]
+          [{x:0.90,y:0.72},{x:0.90,y:0.62},{x:0.90,y:0.52}],
+          [{x:0.90,y:0.62},{x:0.96,y:0.59}],
+          [{x:0.90,y:0.62},{x:0.84,y:0.59}],
+          [{x:0.90,y:0.56},{x:0.96,y:0.54}],
+          [{x:0.90,y:0.56},{x:0.84,y:0.54}],
+          [{x:0.90,y:0.66},{x:0.98,y:0.64}],
+          [{x:0.90,y:0.66},{x:0.82,y:0.64}],
+          [{x:0.90,y:0.52},{x:0.94,y:0.48}],
+          [{x:0.90,y:0.52},{x:0.86,y:0.48}]
         ]
       },
       {
         name: 'foreground_rocks',
-        behavior: { w: 1.8, taper: 0.4, wobble: 0.3 },
+        behavior: { w: 2.0, taper: 0.35, wobble: 0.3 },
         strokes: [
-          [{x:0.1,y:0.85},{x:0.15,y:0.78},{x:0.22,y:0.8},{x:0.18,y:0.87},{x:0.1,y:0.85}],
-          [{x:0.75,y:0.88},{x:0.8,y:0.82},{x:0.87,y:0.84},{x:0.82,y:0.9},{x:0.75,y:0.88}],
-          [{x:0.3,y:0.9},{x:0.35,y:0.86},{x:0.42,y:0.88},{x:0.38,y:0.92}]
+          [{x:0.08,y:0.86},{x:0.14,y:0.78},{x:0.22,y:0.80},{x:0.18,y:0.88},{x:0.08,y:0.86}],
+          [{x:0.72,y:0.88},{x:0.78,y:0.80},{x:0.86,y:0.82},{x:0.82,y:0.90},{x:0.72,y:0.88}],
+          [{x:0.28,y:0.90},{x:0.34,y:0.84},{x:0.42,y:0.86},{x:0.38,y:0.92}],
+          // rock texture
+          [{x:0.14,y:0.80},{x:0.18,y:0.82},{x:0.20,y:0.78}],
+          [{x:0.78,y:0.82},{x:0.82,y:0.84},{x:0.84,y:0.80}]
         ]
       },
       {
         name: 'water_reflection',
-        behavior: { w: 0.5, taper: 0.9, wobble: 0.2 },
+        behavior: { w: 0.6, taper: 0.8, wobble: 0.15 },
         strokes: [
-          [{x:0.35,y:0.92},{x:0.4,y:0.91},{x:0.45,y:0.92}],
-          [{x:0.5,y:0.93},{x:0.55,y:0.92},{x:0.6,y:0.93}],
-          [{x:0.4,y:0.96},{x:0.45,y:0.95},{x:0.5,y:0.96}],
-          [{x:0.55,y:0.97},{x:0.6,y:0.96},{x:0.65,y:0.97}]
+          [{x:0.35,y:0.93},{x:0.40,y:0.92},{x:0.45,y:0.93}],
+          [{x:0.50,y:0.94},{x:0.55,y:0.93},{x:0.60,y:0.94}],
+          [{x:0.40,y:0.96},{x:0.45,y:0.95},{x:0.50,y:0.96}],
+          [{x:0.55,y:0.97},{x:0.60,y:0.96},{x:0.65,y:0.97}],
+          [{x:0.42,y:0.98},{x:0.48,y:0.97},{x:0.54,y:0.98}]
         ]
       },
       {
         name: 'birds_distant',
-        behavior: { w: 0.3, taper: 1.0, wobble: 0.1 },
+        behavior: { w: 0.4, taper: 1.0, wobble: 0.1 },
         strokes: [
-          [{x:0.3,y:0.28},{x:0.32,y:0.26},{x:0.34,y:0.28}],
-          [{x:0.6,y:0.32},{x:0.62,y:0.3},{x:0.64,y:0.32}],
-          [{x:0.4,y:0.22},{x:0.41,y:0.21},{x:0.42,y:0.22}]
+          [{x:0.30,y:0.26},{x:0.32,y:0.24},{x:0.34,y:0.26}],
+          [{x:0.60,y:0.30},{x:0.62,y:0.28},{x:0.64,y:0.30}],
+          [{x:0.40,y:0.20},{x:0.41,y:0.19},{x:0.42,y:0.20}],
+          [{x:0.70,y:0.22},{x:0.71,y:0.21},{x:0.72,y:0.22}]
         ]
       }
     ]
   },
 
-  // 竹 — Bamboo branch
+  // 竹 — Bamboo branch (richer leaves)
   'bamboo_branch': {
     segments: [
       {
         name: 'stalk',
-        behavior: { w: 2.2, taper: 0.1, wobble: 0.05 },
+        behavior: { w: 2.4, taper: 0.1, wobble: 0.04 },
         strokes: [
-          [{x:0.4,y:0.9},{x:0.4,y:0.75}],
-          [{x:0.4,y:0.75},{x:0.4,y:0.6}],
-          [{x:0.4,y:0.6},{x:0.4,y:0.45}]
+          [{x:0.40,y:0.92},{x:0.40,y:0.78}],
+          [{x:0.40,y:0.78},{x:0.40,y:0.64}],
+          [{x:0.40,y:0.64},{x:0.40,y:0.50}],
+          [{x:0.40,y:0.50},{x:0.40,y:0.36}]
+        ]
+      },
+      {
+        name: 'joints',
+        behavior: { w: 1.0, taper: 0.5, wobble: 0.1 },
+        strokes: [
+          [{x:0.40,y:0.78},{x:0.48,y:0.77},{x:0.55,y:0.78}],
+          [{x:0.40,y:0.64},{x:0.48,y:0.63},{x:0.55,y:0.64}],
+          [{x:0.40,y:0.50},{x:0.48,y:0.49},{x:0.55,y:0.50}]
         ]
       },
       {
         name: 'leaves',
-        behavior: { w: 0.8, taper: 0.9, wobble: 0.3 },
+        behavior: { w: 0.9, taper: 0.85, wobble: 0.3 },
         strokes: [
-          [{x:0.4,y:0.6},{x:0.6,y:0.5}],
-          [{x:0.4,y:0.6},{x:0.2,y:0.5}],
-          [{x:0.4,y:0.45},{x:0.7,y:0.35}],
-          [{x:0.4,y:0.45},{x:0.1,y:0.35}]
+          // upper leaves
+          [{x:0.40,y:0.50},{x:0.55,y:0.42},{x:0.70,y:0.36},{x:0.80,y:0.32}],
+          [{x:0.40,y:0.50},{x:0.25,y:0.42},{x:0.15,y:0.36},{x:0.10,y:0.32}],
+          // middle leaves
+          [{x:0.40,y:0.64},{x:0.58,y:0.58},{x:0.72,y:0.54}],
+          [{x:0.40,y:0.64},{x:0.22,y:0.58},{x:0.10,y:0.54}],
+          // lower leaves
+          [{x:0.40,y:0.78},{x:0.60,y:0.72},{x:0.75,y:0.68}],
+          [{x:0.40,y:0.78},{x:0.20,y:0.72},{x:0.08,y:0.68}],
+          // secondary leaf strokes for texture
+          [{x:0.55,y:0.42},{x:0.60,y:0.38}],
+          [{x:0.25,y:0.42},{x:0.20,y:0.38}],
+          [{x:0.58,y:0.58},{x:0.65,y:0.55}],
+          [{x:0.22,y:0.58},{x:0.15,y:0.55}]
         ]
       }
     ]
   },
 
-  // 松 — Sumi pine
+  // 松 — Sumi pine (more needle clusters)
   'sumi_pine': {
     segments: [
       {
         name: 'trunk',
-        behavior: { w: 3.5, taper: 0.3, wobble: 0.25 },
+        behavior: { w: 3.8, taper: 0.25, wobble: 0.2 },
         strokes: [
-          [{x:0.5,y:0.9},{x:0.4,y:0.7},{x:0.6,y:0.5},{x:0.4,y:0.3}]
+          [{x:0.50,y:0.92},{x:0.42,y:0.72},{x:0.58,y:0.52},{x:0.40,y:0.32}],
+          [{x:0.42,y:0.72},{x:0.30,y:0.60},{x:0.22,y:0.50}],
+          [{x:0.58,y:0.52},{x:0.70,y:0.42},{x:0.78,y:0.34}]
         ]
       },
       {
         name: 'needles',
-        behavior: { w: 0.4, taper: 1.0, wobble: 0.6 },
+        behavior: { w: 0.5, taper: 0.95, wobble: 0.5 },
         strokes: [
-          [{x:0.6,y:0.5},{x:0.75,y:0.5}],
-          [{x:0.6,y:0.5},{x:0.7,y:0.55}],
-          [{x:0.4,y:0.3},{x:0.55,y:0.3}],
-          [{x:0.4,y:0.3},{x:0.5,y:0.25}]
+          // clusters around the top
+          [{x:0.40,y:0.32},{x:0.30,y:0.28},{x:0.22,y:0.24}],
+          [{x:0.40,y:0.32},{x:0.50,y:0.26},{x:0.58,y:0.22}],
+          [{x:0.40,y:0.32},{x:0.35,y:0.26},{x:0.32,y:0.20}],
+          [{x:0.40,y:0.32},{x:0.45,y:0.26},{x:0.50,y:0.20}],
+          // middle branch needles
+          [{x:0.58,y:0.52},{x:0.68,y:0.48},{x:0.76,y:0.44}],
+          [{x:0.58,y:0.52},{x:0.64,y:0.46},{x:0.70,y:0.40}],
+          [{x:0.58,y:0.52},{x:0.50,y:0.48},{x:0.44,y:0.44}],
+          // lower branch needles
+          [{x:0.30,y:0.60},{x:0.22,y:0.56},{x:0.16,y:0.52}],
+          [{x:0.30,y:0.60},{x:0.26,y:0.55},{x:0.22,y:0.50}]
         ]
       }
     ]
   },
 
-  // 梅 — Plum blossom
+  // 梅 — Plum blossom (more blossoms and branch details)
   'plum_blossom': {
     segments: [
       {
         name: 'trunk',
-        behavior: { w: 3.8, taper: 0.25, wobble: 0.4 },
+        behavior: { w: 4.0, taper: 0.2, wobble: 0.35 },
         strokes: [
-          [{x:0.5,y:0.9},{x:0.45,y:0.7},{x:0.55,y:0.55},{x:0.5,y:0.4}],
-          [{x:0.5,y:0.55},{x:0.35,y:0.45},{x:0.25,y:0.35}],
-          [{x:0.5,y:0.7},{x:0.65,y:0.6},{x:0.75,y:0.5}]
+          [{x:0.50,y:0.92},{x:0.46,y:0.72},{x:0.54,y:0.56},{x:0.50,y:0.40}],
+          [{x:0.50,y:0.56},{x:0.36,y:0.46},{x:0.26,y:0.36}],
+          [{x:0.50,y:0.72},{x:0.64,y:0.62},{x:0.74,y:0.52}],
+          [{x:0.36,y:0.46},{x:0.28,y:0.40},{x:0.22,y:0.34}]
         ]
       },
       {
         name: 'branches',
-        behavior: { w: 1.2, taper: 0.7, wobble: 0.2 },
+        behavior: { w: 1.4, taper: 0.6, wobble: 0.25 },
         strokes: [
-          [{x:0.25,y:0.35},{x:0.2,y:0.25},{x:0.15,y:0.18}],
-          [{x:0.75,y:0.5},{x:0.82,y:0.42},{x:0.88,y:0.35}],
-          [{x:0.35,y:0.45},{x:0.28,y:0.38},{x:0.22,y:0.32}]
+          [{x:0.26,y:0.36},{x:0.20,y:0.26},{x:0.16,y:0.18}],
+          [{x:0.74,y:0.52},{x:0.80,y:0.44},{x:0.86,y:0.36}],
+          [{x:0.36,y:0.46},{x:0.30,y:0.38},{x:0.26,y:0.32}],
+          [{x:0.64,y:0.62},{x:0.70,y:0.56},{x:0.76,y:0.50}]
         ]
       },
       {
         name: 'blossoms',
-        behavior: { w: 0.5, taper: 1.0, wobble: 0.8 },
+        behavior: { w: 0.6, taper: 0.95, wobble: 0.7 },
         strokes: [
-          [{x:0.25,y:0.35},{x:0.22,y:0.28}],
-          [{x:0.25,y:0.35},{x:0.3,y:0.3}],
-          [{x:0.25,y:0.35},{x:0.28,y:0.4}],
-          [{x:0.25,y:0.35},{x:0.2,y:0.4}],
-          [{x:0.75,y:0.5},{x:0.72,y:0.43}],
-          [{x:0.75,y:0.5},{x:0.8,y:0.45}],
-          [{x:0.75,y:0.5},{x:0.78,y:0.55}],
-          [{x:0.75,y:0.5},{x:0.7,y:0.55}],
-          [{x:0.5,y:0.4},{x:0.47,y:0.33}],
-          [{x:0.5,y:0.4},{x:0.55,y:0.35}],
-          [{x:0.5,y:0.4},{x:0.53,y:0.45}]
+          // blossom 1
+          [{x:0.26,y:0.36},{x:0.22,y:0.30}],
+          [{x:0.26,y:0.36},{x:0.30,y:0.30}],
+          [{x:0.26,y:0.36},{x:0.28,y:0.40}],
+          [{x:0.26,y:0.36},{x:0.22,y:0.40}],
+          [{x:0.26,y:0.36},{x:0.26,y:0.32}],
+          // blossom 2
+          [{x:0.74,y:0.52},{x:0.70,y:0.46}],
+          [{x:0.74,y:0.52},{x:0.78,y:0.46}],
+          [{x:0.74,y:0.52},{x:0.76,y:0.56}],
+          [{x:0.74,y:0.52},{x:0.70,y:0.56}],
+          [{x:0.74,y:0.52},{x:0.74,y:0.48}],
+          // blossom 3
+          [{x:0.50,y:0.40},{x:0.46,y:0.34}],
+          [{x:0.50,y:0.40},{x:0.54,y:0.34}],
+          [{x:0.50,y:0.40},{x:0.52,y:0.44}],
+          [{x:0.50,y:0.40},{x:0.48,y:0.44}],
+          // blossom 4 (small)
+          [{x:0.36,y:0.46},{x:0.34,y:0.42}],
+          [{x:0.36,y:0.46},{x:0.38,y:0.42}],
+          [{x:0.36,y:0.46},{x:0.37,y:0.48}]
         ]
       }
     ]
   },
 
-  // 蘭 — Orchid
+  // 蘭 — Orchid (more elegant, cascading leaves)
   'orchid': {
     segments: [
       {
         name: 'leaves',
-        behavior: { w: 1.5, taper: 0.85, wobble: 0.6 },
+        behavior: { w: 1.8, taper: 0.8, wobble: 0.5 },
         strokes: [
-          [{x:0.3,y:0.8},{x:0.2,y:0.55},{x:0.15,y:0.3},{x:0.25,y:0.15}],
-          [{x:0.45,y:0.85},{x:0.4,y:0.6},{x:0.45,y:0.35},{x:0.6,y:0.2}],
-          [{x:0.6,y:0.82},{x:0.65,y:0.58},{x:0.75,y:0.4},{x:0.85,y:0.25}],
-          [{x:0.35,y:0.78},{x:0.3,y:0.5},{x:0.35,y:0.28}]
+          [{x:0.30,y:0.85},{x:0.20,y:0.60},{x:0.15,y:0.35},{x:0.25,y:0.18}],
+          [{x:0.45,y:0.88},{x:0.40,y:0.62},{x:0.45,y:0.38},{x:0.60,y:0.22}],
+          [{x:0.60,y:0.85},{x:0.65,y:0.60},{x:0.75,y:0.40},{x:0.85,y:0.26}],
+          [{x:0.35,y:0.82},{x:0.30,y:0.55},{x:0.35,y:0.32}],
+          // secondary leaf veins
+          [{x:0.20,y:0.60},{x:0.18,y:0.50},{x:0.17,y:0.40}],
+          [{x:0.40,y:0.62},{x:0.42,y:0.52},{x:0.44,y:0.42}],
+          [{x:0.65,y:0.60},{x:0.67,y:0.50},{x:0.69,y:0.40}]
         ]
       },
       {
         name: 'flower_stem',
-        behavior: { w: 0.7, taper: 0.3, wobble: 0.1 },
+        behavior: { w: 0.9, taper: 0.3, wobble: 0.1 },
         strokes: [
-          [{x:0.5,y:0.45},{x:0.48,y:0.3},{x:0.45,y:0.18}]
+          [{x:0.50,y:0.50},{x:0.48,y:0.35},{x:0.45,y:0.22}]
         ]
       },
       {
         name: 'petals',
-        behavior: { w: 0.4, taper: 0.95, wobble: 0.5 },
+        behavior: { w: 0.5, taper: 0.9, wobble: 0.5 },
         strokes: [
-          [{x:0.45,y:0.18},{x:0.38,y:0.12}],
-          [{x:0.45,y:0.18},{x:0.5,y:0.1}],
-          [{x:0.45,y:0.18},{x:0.52,y:0.14}],
-          [{x:0.45,y:0.18},{x:0.4,y:0.2}],
-          [{x:0.48,y:0.3},{x:0.42,y:0.26}],
-          [{x:0.48,y:0.3},{x:0.55,y:0.27}]
+          [{x:0.45,y:0.22},{x:0.38,y:0.16}],
+          [{x:0.45,y:0.22},{x:0.50,y:0.14}],
+          [{x:0.45,y:0.22},{x:0.52,y:0.18}],
+          [{x:0.45,y:0.22},{x:0.40,y:0.24}],
+          [{x:0.48,y:0.35},{x:0.42,y:0.30}],
+          [{x:0.48,y:0.35},{x:0.55,y:0.32}],
+          // inner petal details
+          [{x:0.45,y:0.22},{x:0.44,y:0.20}],
+          [{x:0.48,y:0.35},{x:0.47,y:0.33}]
         ]
       }
     ]
   },
 
-  // 菊 — Chrysanthemum
+  // 菊 — Chrysanthemum (more layered petals)
   'chrysanthemum': {
     segments: [
       {
         name: 'stems',
-        behavior: { w: 2.0, taper: 0.4, wobble: 0.2 },
+        behavior: { w: 2.2, taper: 0.35, wobble: 0.2 },
         strokes: [
-          [{x:0.5,y:0.85},{x:0.48,y:0.65},{x:0.52,y:0.45}],
-          [{x:0.52,y:0.45},{x:0.6,y:0.35}],
-          [{x:0.48,y:0.65},{x:0.38,y:0.55}]
+          [{x:0.50,y:0.88},{x:0.48,y:0.68},{x:0.52,y:0.48}],
+          [{x:0.52,y:0.48},{x:0.60,y:0.38}],
+          [{x:0.48,y:0.68},{x:0.38,y:0.58}],
+          [{x:0.38,y:0.58},{x:0.32,y:0.50}]
         ]
       },
       {
         name: 'leaves',
-        behavior: { w: 1.2, taper: 0.7, wobble: 0.4 },
+        behavior: { w: 1.4, taper: 0.65, wobble: 0.4 },
         strokes: [
-          [{x:0.6,y:0.35},{x:0.68,y:0.38},{x:0.72,y:0.32},{x:0.66,y:0.28}],
-          [{x:0.38,y:0.55},{x:0.3,y:0.58},{x:0.26,y:0.52},{x:0.32,y:0.48}]
+          [{x:0.60,y:0.38},{x:0.68,y:0.42},{x:0.74,y:0.36},{x:0.68,y:0.30},{x:0.60,y:0.34}],
+          [{x:0.38,y:0.58},{x:0.30,y:0.62},{x:0.26,y:0.56},{x:0.32,y:0.52}],
+          [{x:0.32,y:0.50},{x:0.26,y:0.54},{x:0.22,y:0.50},{x:0.28,y:0.46}]
         ]
       },
       {
         name: 'flower_center',
-        behavior: { w: 1.0, taper: 0.5, wobble: 0.3 },
+        behavior: { w: 1.2, taper: 0.4, wobble: 0.25 },
         strokes: [
-          [{x:0.52,y:0.45},{x:0.5,y:0.43},{x:0.48,y:0.45},{x:0.5,y:0.47},{x:0.52,y:0.45}]
+          [{x:0.52,y:0.48},{x:0.50,y:0.46},{x:0.48,y:0.48},{x:0.50,y:0.50},{x:0.52,y:0.48}],
+          [{x:0.50,y:0.47},{x:0.51,y:0.49},{x:0.49,y:0.49}]
         ]
       },
       {
         name: 'petals_outer',
-        behavior: { w: 0.6, taper: 0.9, wobble: 0.7 },
+        behavior: { w: 0.7, taper: 0.85, wobble: 0.6 },
         strokes: [
-          [{x:0.5,y:0.45},{x:0.42,y:0.38}],
-          [{x:0.5,y:0.45},{x:0.58,y:0.38}],
-          [{x:0.5,y:0.45},{x:0.62,y:0.48}],
-          [{x:0.5,y:0.45},{x:0.58,y:0.55}],
-          [{x:0.5,y:0.45},{x:0.42,y:0.55}],
-          [{x:0.5,y:0.45},{x:0.38,y:0.48}]
+          [{x:0.50,y:0.48},{x:0.42,y:0.40}],
+          [{x:0.50,y:0.48},{x:0.58,y:0.40}],
+          [{x:0.50,y:0.48},{x:0.64,y:0.50}],
+          [{x:0.50,y:0.48},{x:0.58,y:0.58}],
+          [{x:0.50,y:0.48},{x:0.42,y:0.58}],
+          [{x:0.50,y:0.48},{x:0.36,y:0.50}],
+          // secondary outer petals
+          [{x:0.50,y:0.48},{x:0.48,y:0.38}],
+          [{x:0.50,y:0.48},{x:0.52,y:0.38}],
+          [{x:0.50,y:0.48},{x:0.62,y:0.44}],
+          [{x:0.50,y:0.48},{x:0.62,y:0.52}],
+          [{x:0.50,y:0.48},{x:0.52,y:0.60}],
+          [{x:0.50,y:0.48},{x:0.48,y:0.60}],
+          [{x:0.50,y:0.48},{x:0.38,y:0.52}],
+          [{x:0.50,y:0.48},{x:0.38,y:0.44}]
         ]
       },
       {
         name: 'petals_inner',
-        behavior: { w: 0.4, taper: 0.95, wobble: 0.8 },
+        behavior: { w: 0.5, taper: 0.95, wobble: 0.7 },
         strokes: [
-          [{x:0.5,y:0.45},{x:0.46,y:0.4}],
-          [{x:0.5,y:0.45},{x:0.54,y:0.4}],
-          [{x:0.5,y:0.45},{x:0.56,y:0.47}],
-          [{x:0.5,y:0.45},{x:0.54,y:0.52}],
-          [{x:0.5,y:0.45},{x:0.46,y:0.52}],
-          [{x:0.5,y:0.45},{x:0.44,y:0.47}]
+          [{x:0.50,y:0.48},{x:0.46,y:0.42}],
+          [{x:0.50,y:0.48},{x:0.54,y:0.42}],
+          [{x:0.50,y:0.48},{x:0.56,y:0.49}],
+          [{x:0.50,y:0.48},{x:0.54,y:0.54}],
+          [{x:0.50,y:0.48},{x:0.46,y:0.54}],
+          [{x:0.50,y:0.48},{x:0.44,y:0.49}]
         ]
       }
     ]
   },
 
-  // 石 — Rock with moss
+  // 石 — Rock (more texture)
   'rock': {
     segments: [
       {
         name: 'outline',
-        behavior: { w: 2.5, taper: 0.2, wobble: 0.4 },
+        behavior: { w: 2.8, taper: 0.2, wobble: 0.45 },
         strokes: [
-          [{x:0.3,y:0.7},{x:0.25,y:0.55},{x:0.28,y:0.4},{x:0.38,y:0.3},
-           {x:0.5,y:0.25},{x:0.62,y:0.3},{x:0.72,y:0.4},{x:0.75,y:0.55},
-           {x:0.7,y:0.7},{x:0.6,y:0.75},{x:0.5,y:0.78},{x:0.4,y:0.75},{x:0.3,y:0.7}]
+          [{x:0.28,y:0.72},{x:0.22,y:0.56},{x:0.26,y:0.40},{x:0.38,y:0.30},
+           {x:0.50,y:0.25},{x:0.62,y:0.30},{x:0.74,y:0.40},{x:0.78,y:0.56},
+           {x:0.72,y:0.72},{x:0.60,y:0.78},{x:0.50,y:0.80},{x:0.40,y:0.78},{x:0.28,y:0.72}]
         ]
       },
       {
         name: 'cracks_and_creases',
-        behavior: { w: 1.0, taper: 0.6, wobble: 0.3 },
+        behavior: { w: 1.2, taper: 0.5, wobble: 0.35 },
         strokes: [
-          [{x:0.4,y:0.4},{x:0.45,y:0.5},{x:0.5,y:0.55}],
-          [{x:0.6,y:0.45},{x:0.55,y:0.52},{x:0.58,y:0.6}],
-          [{x:0.35,y:0.6},{x:0.42,y:0.62},{x:0.48,y:0.65}]
+          [{x:0.38,y:0.42},{x:0.44,y:0.50},{x:0.50,y:0.56}],
+          [{x:0.62,y:0.46},{x:0.56,y:0.54},{x:0.58,y:0.62}],
+          [{x:0.34,y:0.62},{x:0.42,y:0.64},{x:0.48,y:0.68}],
+          [{x:0.66,y:0.64},{x:0.58,y:0.66},{x:0.52,y:0.70}],
+          // additional texture lines
+          [{x:0.42,y:0.36},{x:0.48,y:0.40}],
+          [{x:0.60,y:0.38},{x:0.54,y:0.42}],
+          [{x:0.30,y:0.50},{x:0.36,y:0.52}],
+          [{x:0.70,y:0.52},{x:0.64,y:0.54}]
         ]
       },
       {
         name: 'moss_dots',
-        behavior: { w: 0.8, taper: 1.0, wobble: 0.2 },
+        behavior: { w: 1.0, taper: 1.0, wobble: 0.2 },
         strokes: [
-          [{x:0.32,y:0.48},{x:0.34,y:0.47}],
-          [{x:0.68,y:0.52},{x:0.7,y:0.51}],
-          [{x:0.45,y:0.3},{x:0.47,y:0.29}],
-          [{x:0.55,y:0.32},{x:0.57,y:0.31}]
+          [{x:0.30,y:0.48},{x:0.32,y:0.47}],
+          [{x:0.70,y:0.52},{x:0.72,y:0.51}],
+          [{x:0.44,y:0.32},{x:0.46,y:0.31}],
+          [{x:0.56,y:0.34},{x:0.58,y:0.33}],
+          [{x:0.26,y:0.60},{x:0.28,y:0.59}],
+          [{x:0.74,y:0.62},{x:0.76,y:0.61}]
         ]
       }
     ]
   },
 
-  // 山水 — Landscape with mountain, rocks, boat, and fisherman
+  // 山水 — Landscape (more detailed)
   'landscape': {
     segments: [
       {
         name: 'distant_mountains',
-        behavior: { w: 1.2, taper: 0.5, wobble: 0.1 },
+        behavior: { w: 1.4, taper: 0.5, wobble: 0.1 },
         strokes: [
-          [{x:0.1,y:0.5},{x:0.2,y:0.4},{x:0.3,y:0.45},{x:0.4,y:0.35},{x:0.5,y:0.4}],
-          [{x:0.5,y:0.4},{x:0.6,y:0.3},{x:0.7,y:0.35},{x:0.8,y:0.25},{x:0.9,y:0.3}]
+          [{x:0.10,y:0.52},{x:0.20,y:0.40},{x:0.30,y:0.46},{x:0.40,y:0.36},{x:0.50,y:0.42}],
+          [{x:0.50,y:0.42},{x:0.60,y:0.32},{x:0.70,y:0.38},{x:0.80,y:0.26},{x:0.90,y:0.32}],
+          [{x:0.25,y:0.44},{x:0.35,y:0.38},{x:0.45,y:0.40}],
+          [{x:0.65,y:0.34},{x:0.75,y:0.30},{x:0.85,y:0.28}]
         ]
       },
       {
         name: 'nearby_rocks',
-        behavior: { w: 2.2, taper: 0.3, wobble: 0.35 },
+        behavior: { w: 2.4, taper: 0.3, wobble: 0.35 },
         strokes: [
-          [{x:0.15,y:0.7},{x:0.2,y:0.6},{x:0.3,y:0.65},{x:0.25,y:0.75},{x:0.15,y:0.7}],
-          [{x:0.7,y:0.8},{x:0.75,y:0.7},{x:0.85,y:0.75},{x:0.8,y:0.85},{x:0.7,y:0.8}]
+          [{x:0.14,y:0.72},{x:0.20,y:0.62},{x:0.30,y:0.66},{x:0.26,y:0.76},{x:0.14,y:0.72}],
+          [{x:0.70,y:0.80},{x:0.76,y:0.70},{x:0.86,y:0.74},{x:0.82,y:0.84},{x:0.70,y:0.80}],
+          [{x:0.40,y:0.78},{x:0.45,y:0.70},{x:0.52,y:0.74},{x:0.48,y:0.82}]
         ]
       },
       {
         name: 'water_ripples',
-        behavior: { w: 0.6, taper: 0.7, wobble: 0.2 },
+        behavior: { w: 0.7, taper: 0.7, wobble: 0.15 },
         strokes: [
-          [{x:0.2,y:0.82},{x:0.3,y:0.8},{x:0.4,y:0.83}],
-          [{x:0.5,y:0.85},{x:0.6,y:0.82},{x:0.7,y:0.84}],
-          [{x:0.35,y:0.88},{x:0.45,y:0.86},{x:0.55,y:0.89}]
+          [{x:0.20,y:0.84},{x:0.30,y:0.82},{x:0.40,y:0.85}],
+          [{x:0.50,y:0.86},{x:0.60,y:0.84},{x:0.70,y:0.86}],
+          [{x:0.35,y:0.90},{x:0.45,y:0.88},{x:0.55,y:0.91}],
+          [{x:0.25,y:0.93},{x:0.35,y:0.92},{x:0.45,y:0.94}],
+          [{x:0.55,y:0.94},{x:0.65,y:0.93},{x:0.75,y:0.95}]
         ]
       },
       {
         name: 'boat',
-        behavior: { w: 0.9, taper: 0.4, wobble: 0.1 },
+        behavior: { w: 1.1, taper: 0.4, wobble: 0.1 },
         strokes: [
-          [{x:0.45,y:0.78},{x:0.55,y:0.78},{x:0.6,y:0.8},
-           {x:0.5,y:0.82},{x:0.4,y:0.8},{x:0.45,y:0.78}],
-          [{x:0.5,y:0.78},{x:0.5,y:0.72},{x:0.53,y:0.7}]
+          [{x:0.45,y:0.80},{x:0.55,y:0.80},{x:0.60,y:0.82},
+           {x:0.50,y:0.84},{x:0.40,y:0.82},{x:0.45,y:0.80}],
+          [{x:0.50,y:0.80},{x:0.50,y:0.74},{x:0.53,y:0.72}],
+          [{x:0.48,y:0.80},{x:0.48,y:0.76}]
         ]
       },
       {
         name: 'fisherman',
-        behavior: { w: 0.4, taper: 0.9, wobble: 0.2 },
+        behavior: { w: 0.5, taper: 0.9, wobble: 0.2 },
         strokes: [
-          [{x:0.5,y:0.72},{x:0.5,y:0.68}],
-          [{x:0.5,y:0.68},{x:0.48,y:0.65}],
-          [{x:0.5,y:0.68},{x:0.52,y:0.66}]
+          [{x:0.50,y:0.74},{x:0.50,y:0.70}],
+          [{x:0.50,y:0.70},{x:0.48,y:0.67}],
+          [{x:0.50,y:0.70},{x:0.52,y:0.68}],
+          [{x:0.50,y:0.72},{x:0.53,y:0.71}]
+        ]
+      }
+    ]
+  },
+
+  // New: 蓮 — Lotus (elegant flower with leaf)
+  'lotus': {
+    segments: [
+      {
+        name: 'leaf',
+        behavior: { w: 3.0, taper: 0.2, wobble: 0.15 },
+        strokes: [
+          [{x:0.50,y:0.75},{x:0.40,y:0.70},{x:0.30,y:0.72},{x:0.25,y:0.78},{x:0.30,y:0.82},{x:0.40,y:0.84},{x:0.50,y:0.85},{x:0.60,y:0.84},{x:0.70,y:0.82},{x:0.75,y:0.78},{x:0.70,y:0.72},{x:0.60,y:0.70},{x:0.50,y:0.75}],
+          [{x:0.50,y:0.75},{x:0.45,y:0.72},{x:0.40,y:0.74}],
+          [{x:0.50,y:0.75},{x:0.55,y:0.72},{x:0.60,y:0.74}]
+        ]
+      },
+      {
+        name: 'stem',
+        behavior: { w: 2.0, taper: 0.3, wobble: 0.1 },
+        strokes: [
+          [{x:0.50,y:0.75},{x:0.50,y:0.60},{x:0.48,y:0.48}]
+        ]
+      },
+      {
+        name: 'petals',
+        behavior: { w: 0.8, taper: 0.85, wobble: 0.4 },
+        strokes: [
+          [{x:0.48,y:0.48},{x:0.42,y:0.40},{x:0.38,y:0.34}],
+          [{x:0.48,y:0.48},{x:0.54,y:0.40},{x:0.58,y:0.34}],
+          [{x:0.48,y:0.48},{x:0.44,y:0.52},{x:0.42,y:0.58}],
+          [{x:0.48,y:0.48},{x:0.52,y:0.52},{x:0.54,y:0.58}],
+          [{x:0.48,y:0.48},{x:0.48,y:0.42},{x:0.48,y:0.38}],
+          [{x:0.48,y:0.48},{x:0.50,y:0.56},{x:0.52,y:0.62}],
+          [{x:0.48,y:0.48},{x:0.40,y:0.46},{x:0.36,y:0.44}],
+          [{x:0.48,y:0.48},{x:0.56,y:0.46},{x:0.60,y:0.44}]
+        ]
+      }
+    ]
+  },
+
+  // New: 鯉 — Koi fish (graceful arcs)
+  'koi': {
+    segments: [
+      {
+        name: 'body',
+        behavior: { w: 2.5, taper: 0.4, wobble: 0.2 },
+        strokes: [
+          [{x:0.30,y:0.50},{x:0.38,y:0.45},{x:0.48,y:0.42},{x:0.58,y:0.44},{x:0.66,y:0.50},{x:0.70,y:0.56}],
+          [{x:0.70,y:0.56},{x:0.68,y:0.62},{x:0.62,y:0.66},{x:0.54,y:0.68},{x:0.46,y:0.66},{x:0.40,y:0.60},{x:0.36,y:0.54}]
+        ]
+      },
+      {
+        name: 'fins',
+        behavior: { w: 1.0, taper: 0.8, wobble: 0.3 },
+        strokes: [
+          [{x:0.48,y:0.44},{x:0.44,y:0.38},{x:0.42,y:0.34}],
+          [{x:0.58,y:0.46},{x:0.62,y:0.40},{x:0.64,y:0.36}],
+          [{x:0.36,y:0.54},{x:0.30,y:0.52},{x:0.26,y:0.50}],
+          [{x:0.66,y:0.60},{x:0.72,y:0.58},{x:0.76,y:0.56}]
+        ]
+      },
+      {
+        name: 'tail',
+        behavior: { w: 1.2, taper: 0.6, wobble: 0.4 },
+        strokes: [
+          [{x:0.30,y:0.50},{x:0.25,y:0.48},{x:0.22,y:0.52},{x:0.25,y:0.56},{x:0.30,y:0.54}],
+          [{x:0.28,y:0.50},{x:0.24,y:0.47},{x:0.26,y:0.53}]
+        ]
+      },
+      {
+        name: 'eye',
+        behavior: { w: 0.3, taper: 1.0, wobble: 0.1 },
+        strokes: [
+          [{x:0.66,y:0.52},{x:0.68,y:0.51},{x:0.67,y:0.53}]
         ]
       }
     ]
@@ -6870,6 +7775,1299 @@ function drawMonogrid(p, t) {
     }
   });  // closes monogridBlocks.forEach
 }      // closes drawMonogrid function
+
+
+// ── NUMBPOEM MODE ────────────────────────────────────────────────────────────
+// Each stanza from the poem is placed on a separate drifting block.
+// Text is word‑wrapped and confined to the block using clipping.
+
+let poemBlocks = [];
+
+// Parse the poem into stanzas (split by blank lines)
+function parsePoemStanzas() {
+  const poemText = S.numbPoemText || `my mother birthed a question mark
+it never matured into a full stop
+only broken syntax and
+bleeding ink
+麻木的
+
+my grandfather died when i was young
+i never attended the funeral
+he never registered as dead, 
+just disappeared like the vapor of old memories
+麻木的
+
+my sibling disowned me for keeping my parents' surname
+she shed the family like a skin
+i wear it like a thrift store sweater
+ill-fitting and untailored,
+neither noose nor anchor
+麻木的
+
+i keep a potted rose by the kitchen window
+it died last winter, 
+crumbling crusty leaves of brown,
+but still I water it hoping it will bloom again
+麻木的
+
+i tried to leave a message but God's voicemail was full
+he never returned my call,
+so i ghosted him back
+麻木的
+
+i answer emails with a dead grimace
+trying my best to sound like i have a heartbeat
+the cursor blinks after "Hi All," 
+i forgot what i was going to type
+麻木的
+
+i attend meetings with camera off
+something about KPIs and synergies
+a brown circle with my initials lights up
+"sorry, can you repeat that? my audio cut out"
+(i wasn't listening) 
+麻木的
+
+i write unfinished poems like diary entries 
+each line a stale breadcrumb 
+leading nowhere 
+in a wild meandering circle
+麻木的 
+
+the bookshelf sags under the weight
+of books I meant to read
+a life of intentions
+spine out, gathering dust
+麻木的
+
+i ran into my younger self while buying $4 wine in Trader Joe's
+he asked if we ever became someone
+i said "sort of" in a tentative voice
+he looked disappointed,
+but i had no time to explain
+麻木的
+
+i meant to call my best friend to wish him well, 
+to chat about the weather,
+to tell him about all of the ideas stagnating in my mind
+but the phone keeps slipping out of my hand
+and my voice cracks when i open my mouth
+麻木的
+
+the national anthem is an advertisement jingle
+playing relentlessly on repeat
+so loudly that it drowns out 
+the sirens and curfew warnings
+麻木的
+
+potatoes in pinstripe suits
+sprout white noise into microphones
+something about national pride, or was it tariffs?
+"kitchen table issues", Venezuelan cartels in fishing boats 
+spinning a scarf long enough to strangle coherence
+麻木的
+
+i picked up a newspaper yesterday
+the riddles smeared across 
+each section made my hands tacky
+every line was written in blood  
+麻木的
+
+i scroll past headlines daily
+obituaries for democracy
+each more outrageous than the last
+shame no longer has a place to hang its head
+麻木的
+
+i'm Bill Murray sleepwalking through another day
+alarmed at unrelenting feelings of déjà vu
+yearning for a tomorrow that never comes
+麻木的
+
+someone once asked me what i wanted to be
+i'm still opening my mouth
+麻木的`;
+
+  // Split by one or more blank lines
+  return poemText.split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length > 0);
+}
+function initNumbPoem(p) {
+  if (!p) p = window._st?.p;
+  if (!p) return;
+  poemBlocks = [];
+  let stanzas = parsePoemStanzas();
+  let count = stanzas.length;
+
+  // Read parameters with fallbacks
+  let useNoise = S.numbPoemUseNoisePos ?? false;
+  let noiseScale = S.numbPoemNoiseScale ?? 0.01;
+  let noiseStrength = S.numbPoemNoiseStrength ?? 0.5;
+  let sizeMult = S.numbPoemBlockSizeMult ?? 1.0;
+  let minW = S.numbPoemBlockMinW ?? 120;
+  let maxW = S.numbPoemBlockMaxW ?? 280;
+  let minH = S.numbPoemBlockMinH ?? 100;
+  let maxH = S.numbPoemBlockMaxH ?? 300;
+  let padding = S.numbPoemPadding ?? 12;
+  let textSizeFactor = 1.0; // will be randomized per block
+  for (let i = 0; i < count; i++) {
+    let stanzaText = stanzas[i];
+    // Randomize text size factor for variety
+    textSizeFactor = p.random(0.8, 1.2);
+    let baseFontSize = p.map(textSizeFactor, 0.8, 1.2,
+      S.numbPoemTextSizeMin ?? 11, S.numbPoemTextSizeMax ?? 18);
+    // --- Calculate required block dimensions to fit the wrapped text ---
+    // Use a temporary canvas context to measure text.
+    let tempCtx = p.drawingContext;
+    tempCtx.save();
+    tempCtx.font = `${baseFontSize}px ${S.fontStack}`;
+    // Word wrap the stanza to get line count and max line width
+    let words = stanzaText.split(' ');
+    let lines = [];
+    let currentLine = words[0] || '';
+    let maxLineWidth = 0;
+    for (let j = 1; j < words.length; j++) {
+      let testLine = currentLine + ' ' + words[j];
+      let metrics = tempCtx.measureText(testLine);
+      if (metrics.width > maxW - padding * 2 && currentLine.length > 0) {
+        lines.push(currentLine);
+        maxLineWidth = Math.max(maxLineWidth, tempCtx.measureText(currentLine).width);
+        currentLine = words[j];
+      } else {
+        currentLine = testLine;
+      }
+    }
+    lines.push(currentLine);
+    maxLineWidth = Math.max(maxLineWidth, tempCtx.measureText(currentLine).width);
+    let lineHeight = baseFontSize * (S.numbPoemLineSpacing ?? 1.3);
+    let requiredWidth = maxLineWidth + padding * 2;
+    let requiredHeight = lines.length * lineHeight + padding * 2;
+    // Clamp to min/max while respecting size multiplier
+    let w = p.constrain(requiredWidth * sizeMult, minW, maxW);
+    let h = p.constrain(requiredHeight * sizeMult, minH, maxH);
+    tempCtx.restore();
+    // --- Rotation ---
+    let rot = 0;
+    if (p.random() < (S.numbPoemRotateChance ?? 0.4)) {
+      let opts = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+      rot = p.random(opts);
+    }
+    // --- Position (with optional noise‑driven placement) ---
+    let x, y;
+    if (useNoise) {
+      // Use Perlin noise to create clustered, organic positions
+      let t = p.frameCount * S.speed;
+      let nx = i * 0.2; // spread across noise space
+      let ny = i * 0.3 + 100;
+      let noiseValX = sampleNoise(p, nx * noiseScale, 0, t);
+      let noiseValY = sampleNoise(p, 0, ny * noiseScale, t);
+      // Mix with uniform random; strength controls influence
+      x = p.lerp(p.random(p.width), p.width * noiseValX, noiseStrength);
+      y = p.lerp(p.random(p.height), p.height * noiseValY, noiseStrength);
+    } else {
+      x = p.random(p.width);
+      y = p.random(p.height);
+    }
+    poemBlocks.push({
+      x, y, w, h, rot,
+      vx: (p.random() - 0.5) * (S.numbPoemDriftSpeed ?? 0.3),
+      vy: (p.random() - 0.5) * (S.numbPoemDriftSpeed ?? 0.3),
+      text: stanzaText,
+      textSizeFactor: textSizeFactor,
+      z: p.random()
+    });
+  }
+  console.log('NumbPoem initialized:', poemBlocks.length, 'stanzas');
+}
+
+function drawNumbPoem(p, t) {
+  let W = p.width, H = p.height;
+
+  // Lazy init
+  if (!poemBlocks || poemBlocks.length === 0) {
+    initNumbPoem(p);
+  }
+  if (!poemBlocks.length) return;
+  // Parameters with defaults
+  let driftX = S.numbPoemDriftX ?? 0.4;
+  let driftY = S.numbPoemDriftY ?? 0.6;
+  let edgeTear = S.numbPoemEdgeTear ?? 0.4;
+  let paperGrain = S.numbPoemPaperGrain ?? true;
+  let inkBleed = S.numbPoemInkBleed ?? 0.3;
+  let sortByY = S.numbPoemSortByY ?? true;
+  let textColor = S.numbPoemTextColor ?? '#1a1a1a';
+  let textOpacity = S.numbPoemTextOpacity ?? 0.9;
+  let blockOpacity = S.numbPoemBlockOpacity ?? 0.85;
+  let lineSpacing = S.numbPoemLineSpacing ?? 1.3;
+  let padding = S.numbPoemPadding ?? 12;
+  // Sort blocks
+  if (sortByY) {
+    poemBlocks.sort((a, b) => a.y - b.y);
+  } else {
+    poemBlocks.sort((a, b) => a.z - b.z);
+  }
+  // Update positions
+  if (S.playing) {
+    for (let b of poemBlocks) {
+      b.x += b.vx * driftX * S.speed * 60;
+      b.y += b.vy * driftY * S.speed * 60;
+      if (b.x > W + b.w) b.x = -b.w;
+      if (b.x < -b.w) b.x = W + b.w;
+      if (b.y > H + b.h) b.y = -b.h;
+      if (b.y < -b.h) b.y = H + b.h;
+    }
+  }
+  for (let b of poemBlocks) {
+    // Safe color retrieval
+    let col = pickColor(p, b.x, b.y, t);
+    if (!col || typeof col !== 'string') {
+      col = '#c4bcb0'; // fallback to studio pale
+    }
+    let c = p.color(col);
+    let r = p.red(c) || 0;
+    let g = p.green(c) || 0;
+    let bVal = p.blue(c) || 0;
+    // Clamp opacity between 0 and 1
+    let alpha = Math.min(1, Math.max(0, blockOpacity));
+    let rgba = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(bVal)}, ${alpha})`;
+    CTX.save();
+    CTX.translate(b.x + b.w / 2, b.y + b.h / 2);
+    CTX.rotate(b.rot);
+    let hw = b.w / 2, hh = b.h / 2;
+    // Draw torn rectangle
+    CTX.beginPath();
+    if (edgeTear > 0) {
+      let steps = 8;
+      let tearAmt = edgeTear * 5;
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = -hh + (sampleNoise(p, b.x + x, b.y - hh, t * 0.1) - 0.5) * tearAmt;
+        if (i === 0) CTX.moveTo(x, y); else CTX.lineTo(x, y);
+      }
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x + hw, b.y - hh + prog * b.h, t * 0.1 + 1) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = hh + (sampleNoise(p, b.x + x, b.y + hh, t * 0.1 + 2) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x - hw, b.y - hh + prog * b.h, t * 0.1 + 3) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      CTX.closePath();
+    } else {
+      CTX.rect(-hw, -hh, b.w, b.h);
+    }
+    CTX.fillStyle = rgba;
+    CTX.fill();
+    // Paper grain
+    if (paperGrain) {
+      CTX.save();
+      CTX.clip();
+      CTX.globalAlpha = 0.06;
+      for (let i = 0; i < b.w * b.h * 0.008; i++) {
+        let gx = -hw + Math.random() * b.w;
+        let gy = -hh + Math.random() * b.h;
+        let grain = sampleNoise(p, b.x + gx, b.y + gy, t * 0.2);
+        if (grain > 0.65) {
+          CTX.fillStyle = grain > 0.85 ? '#000000' : '#ffffff';
+          CTX.fillRect(gx, gy, 1.5, 1.5);
+        }
+      }
+      CTX.restore();
+    }
+    // Draw text (clipped)
+    CTX.save();
+    CTX.clip();
+    let baseSize = p.map(b.textSizeFactor, 0.8, 1.2,
+      (S.numbPoemTextSizeMin ?? 11), (S.numbPoemTextSizeMax ?? 18));
+    // Ensure font is set before measuring
+    CTX.font = `${baseSize}px ${S.fontStack}`;
+    CTX.fillStyle = textColor;
+    CTX.globalAlpha = textOpacity;
+    CTX.textAlign = 'left';
+    CTX.textBaseline = 'top';
+    let maxWidth = b.w - padding * 2;
+    // Word wrap
+    let words = b.text.split(' ');
+    let lines = [];
+    let currentLine = words[0] || '';
+    for (let i = 1; i < words.length; i++) {
+      let word = words[i];
+      let testLine = currentLine + ' ' + word;
+      let metrics = CTX.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine.length > 0) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine.length > 0) lines.push(currentLine);
+    let lineHeight = baseSize * lineSpacing;
+    // Ink bleed pass (optional)
+    if (inkBleed > 0) {
+      CTX.save();
+      CTX.filter = `blur(${inkBleed * 2}px)`;
+      CTX.globalAlpha = textOpacity * 0.25;
+      for (let i = 0; i < lines.length; i++) {
+        CTX.fillText(lines[i], -hw + padding, -hh + padding + i * lineHeight);
+      }
+      CTX.restore();
+    }
+
+    // Main text
+    for (let i = 0; i < lines.length; i++) {
+      CTX.fillText(lines[i], -hw + padding, -hh + padding + i * lineHeight);
+    }
+    CTX.restore(); // clip
+    CTX.restore(); // transform
+  }
+}
+  
+
+// ── NUMB COLLAGE ──────────────────────────────
+let collageBlocks = [];
+let collageBgBlocks = []; // larger background rectangles
+
+function initNumbCollage(p) {
+  if (!p) p = window._st?.p;
+  if (!p) return;
+
+  collageBlocks = [];
+  collageBgBlocks = [];
+  let count = Math.floor(S.numbBlockCount ?? 40);
+  let minW = S.numbBlockMinSize ?? 60;
+  let maxW = S.numbBlockMaxSize ?? 180;
+  let minH = S.numbBlockMinSize ?? 50;
+  let maxH = S.numbBlockMaxSize ?? 140;
+  let bgScale = S.numbBgScale ?? 1.8; // how much larger background rects are
+  for (let i = 0; i < count; i++) {
+    let w = p.random(minW, maxW);
+    let h = p.random(minH, maxH);
+    let rot = 0;
+    if (p.random() < (S.numbRotateChance ?? 0.5)) {
+      let opts = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+      rot = p.random(opts);
+    }
+    // Main foreground block
+    collageBlocks.push({
+      x: p.random(p.width),
+      y: p.random(p.height),
+      w, h, rot,
+      vx: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5),
+      vy: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5),
+      textDensity: p.random(0.6, 1.4),
+      textSizeFactor: p.random(0.7, 1.3),
+      z: p.random()
+    });
+    // Background block (same position, larger, lower opacity)
+    if (S.numbShowBgBlocks) {
+      collageBgBlocks.push({
+        x: p.random(p.width),
+        y: p.random(p.height),
+        w: w * bgScale,
+        h: h * bgScale,
+        rot: rot + (p.random() - 0.5) * 0.3, // slightly offset rotation
+        vx: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5) * 0.7,
+        vy: (p.random() - 0.5) * (S.numbDriftSpeed ?? 0.5) * 0.7,
+        z: p.random() - 0.5 // ensure behind
+      });
+    }
+  }
+  console.log('Numb Collage initialized:', collageBlocks.length, 'blocks');
+}
+function drawNumbCollage(p, t) {
+  let W = p.width, H = p.height;
+  // Lazy init
+  if (!collageBlocks || collageBlocks.length === 0) {
+    initNumbCollage(p);
+  }
+  // Parameters with defaults
+  let driftX = S.numbDriftX ?? 0.5;
+  let driftY = S.numbDriftY ?? 0.8;
+  let edgeTear = S.numbEdgeTear ?? 0.5;
+  let paperGrain = S.numbPaperGrain ?? true;
+  let inkBleed = S.numbInkBleed ?? 0.4;
+  let sortByY = S.numbSortByY ?? true;
+  let textColor = S.numbTextColor ?? '#1a1a1a';
+  let textOpacity = S.numbTextOpacity ?? 0.85;
+  let blockOpacity = S.numbBlockOpacity ?? 0.9;
+  let showText = S.numbShowText ?? true;
+  let showBgBlocks = S.numbShowBgBlocks ?? true;
+  let bgOpacity = S.numbBgOpacity ?? 0.25;
+  // Ensure text is a string
+  let rawText = S.numbText;
+  if (!rawText || rawText === 'undefined' || typeof rawText !== 'string') {
+    rawText = '麻木的';
+  }
+  let tokens = rawText.split('');
+  // Update positions
+  if (S.playing) {
+    for (let b of collageBlocks) {
+      b.x += b.vx * driftX * S.speed * 60;
+      b.y += b.vy * driftY * S.speed * 60;
+      if (b.x > W + b.w) b.x = -b.w;
+      if (b.x < -b.w) b.x = W + b.w;
+      if (b.y > H + b.h) b.y = -b.h;
+      if (b.y < -b.h) b.y = H + b.h;
+    }
+    for (let b of collageBgBlocks) {
+      b.x += b.vx * driftX * S.speed * 60;
+      b.y += b.vy * driftY * S.speed * 60;
+      if (b.x > W + b.w) b.x = -b.w;
+      if (b.x < -b.w) b.x = W + b.w;
+      if (b.y > H + b.h) b.y = -b.h;
+      if (b.y < -b.h) b.y = H + b.h;
+    }
+  }
+  // Helper to draw a single block (used for both fg and bg)
+  function drawBlock(b, opacity, isBg = false) {
+    let col = pickColor(p, b.x, b.y, t);
+    let c = p.color(col);
+    let r = p.red(c);
+    let g = p.green(c);
+    let bVal = p.blue(c);
+    let rgba = `rgba(${r}, ${g}, ${bVal}, ${opacity})`;
+    CTX.save();
+    CTX.translate(b.x + b.w / 2, b.y + b.h / 2);
+    CTX.rotate(b.rot);
+    let hw = b.w / 2, hh = b.h / 2;
+    // Edge tearing
+    CTX.beginPath();
+    if (edgeTear > 0 && !isBg) { // only tear foreground blocks
+      let steps = 8;
+      let tearAmt = edgeTear * 6;
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = -hh + (sampleNoise(p, b.x + x, b.y - hh, t * 0.1) - 0.5) * tearAmt;
+        if (i === 0) CTX.moveTo(x, y); else CTX.lineTo(x, y);
+      }
+      for (let i = 0; i <= steps; i++) {
+        let prog = i / steps;
+        let x = hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x + hw, b.y - hh + prog * b.h, t * 0.1 + 1) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw + prog * b.w;
+        let y = hh + (sampleNoise(p, b.x + x, b.y + hh, t * 0.1 + 2) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        let prog = i / steps;
+        let x = -hw;
+        let y = -hh + prog * b.h + (sampleNoise(p, b.x - hw, b.y - hh + prog * b.h, t * 0.1 + 3) - 0.5) * tearAmt;
+        CTX.lineTo(x, y);
+      }
+      CTX.closePath();
+    } else {
+      CTX.rect(-hw, -hh, b.w, b.h);
+    }
+    CTX.fillStyle = rgba;
+    CTX.fill();
+    // Paper grain (foreground only)
+    if (paperGrain && !isBg) {
+      CTX.save();
+      CTX.clip();
+      CTX.globalAlpha = 0.08;
+      for (let i = 0; i < b.w * b.h * 0.01; i++) {
+        let gx = -hw + Math.random() * b.w;
+        let gy = -hh + Math.random() * b.h;
+        let grain = sampleNoise(p, b.x + gx, b.y + gy, t * 0.2);
+        if (grain > 0.6) {
+          CTX.fillStyle = grain > 0.8 ? '#000000' : '#ffffff';
+          CTX.fillRect(gx, gy, 1.5, 1.5);
+        }
+      }
+      CTX.restore();
+    }
+    // Text (foreground only, clipped)
+    if (showText && !isBg) {
+      CTX.save();
+      CTX.clip(); // <-- confine text to rectangle
+      let baseSize = p.map(b.textSizeFactor || 1.0, 0.7, 1.3,
+        (S.numbTextSizeMin ?? 12), (S.numbTextSizeMax ?? 24));
+      let step = baseSize * (S.numbTextDensity ?? 1.0) * (b.textDensity || 1.0);
+      let jitterAmt = S.numbJitter ?? 1.5;
+      CTX.fillStyle = textColor;
+      CTX.globalAlpha = textOpacity;
+      CTX.font = `${baseSize}px ${S.fontStack}`;
+      CTX.textAlign = 'center';
+      CTX.textBaseline = 'middle';
+      for (let xx = -hw + step / 2; xx < hw; xx += step) {
+        for (let yy = -hh + step / 2; yy < hh; yy += step) {
+          let jx = (Math.random() - 0.5) * jitterAmt;
+          let jy = (Math.random() - 0.5) * jitterAmt;
+          let idx = (Math.floor(xx / step) + Math.floor(yy / step)) % tokens.length;
+          let ch = tokens[idx];
+          let sz = baseSize * p.random(0.8, 1.2);
+          CTX.font = `${sz}px ${S.fontStack}`;
+          // Ink bleed
+          if (inkBleed > 0) {
+            CTX.save();
+            CTX.filter = `blur(${inkBleed * 3}px)`;
+            CTX.globalAlpha = textOpacity * 0.3;
+            CTX.fillText(ch, xx + jx, yy + jy);
+            CTX.restore();
+          }
+          CTX.fillText(ch, xx + jx, yy + jy);
+        }
+      }
+      CTX.restore();
+    }
+    CTX.restore();
+  }
+  // Sort all blocks by z or y for proper layering
+  let allBlocks = [];
+  if (showBgBlocks) {
+    allBlocks = [...collageBgBlocks, ...collageBlocks];
+  } else {
+    allBlocks = collageBlocks;
+  }
+
+  if (sortByY) {
+    allBlocks.sort((a, b) => a.y - b.y);
+  } else {
+    allBlocks.sort((a, b) => (a.z || 0) - (b.z || 0));
+  }
+  // Draw all blocks
+  for (let b of allBlocks) {
+    let isBg = collageBgBlocks.includes(b);
+    let opacity = isBg ? bgOpacity : blockOpacity;
+    drawBlock(b, opacity, isBg);
+  }
+}
+  
+// ── Collage Wash (numb) ───────────────────────────────────────────────────────────
+function drawCollageWash(p, t) {
+  let W = p.width, H = p.height;
+  let colW = S.colWidth || 80;
+  let layers = S.colLayers || 2;
+  
+  // 1. Draw the "Painted Wash" Layer first (The Background stains)
+  // We use the green and orange from your palette
+  for (let l = 0; l < layers; l++) {
+    let washY = p.noise(l, t * 0.1) * H;
+    let washH = p.noise(l + 10, t * 0.05) * (H * 0.4);
+    
+    CTX.globalAlpha = S.colBleed || 0.4;
+    let washCol = S.palette[l % S.palette.length];
+    CTX.fillStyle = washCol;
+    CTX.fillRect(0, washY, W, washH);
+    CTX.globalAlpha = 1.0;
+  }
+
+  // 2. Draw the "Newspaper Strips" (The Columns)
+  for (let x = 0; x < W; x += colW) {
+    // Offset each column vertically to create the "Cut-Up" look
+    let yOffset = p.noise(x * 0.01, t * 0.05) * 50;
+    let sp = S.spacing || 12;
+    
+    for (let curY = 0; curY < H; curY += sp) {
+      // Logic: Only draw a character if it's within the "torn" edge of the strip
+      let stripNoise = p.noise(x * 0.05, (curY + yOffset) * 0.01, t * 0.1);
+      if (stripNoise < 0.2) continue; // "Torn" gap
+
+      // Pick a color based on whether the "Wash" is over this area
+      let n = getColorIndex(p, x, curY, t);
+      let col = S.palette[Math.floor(n * S.palette.length) % S.palette.length];
+      
+      // Webster-style: Darker text for the "printed" areas
+      if (stripNoise > 0.7) col = "#111111"; 
+
+      let ch = S.chars[Math.floor(p.noise(x, curY) * S.chars.length)];
+      let sz = S.maxSize * (0.8 + stripNoise * 0.4);
+
+      // Render the "ink"
+      dc(x + (p.noise(curY)*10), curY + yOffset, sz, 0, col, ch);
+    }
+    
+    // 3. Draw "Tear Lines" (Faint vertical borders)
+    CTX.strokeStyle = "rgba(255,255,255,0.1)";
+    CTX.beginPath();
+    CTX.moveTo(x, 0);
+    CTX.lineTo(x, H);
+    CTX.stroke();
+  }
+}  
+
+
+// ── YANDINSKY ─────────────────────────────────────────────────────────────────
+// Yellow Kandinsky — geometric abstraction with drifting forms and oscillating lines.
+// Homage to Vasily Kandinsky. Each element hovers on its own phase+frequency;
+// structural lines warp along their vector (quadratic curve mid-point oscillates
+// perpendicular to the line's direction).
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+// ── Module state — rebuilt whenever canvas resizes ────────────────────────────
+let _ynS = null; // scene state
+ 
+function initYandinsky(p) {
+  let W = p.width, H = p.height;
+  let m = Math.min(W, H);
+  let rectColors = S.palette && S.palette.length ? S.palette.slice(0, 6) : ['#d4166e', '#3a7882', '#18120a', '#c02020', '#e0a030', '#4a6a2a'];
+
+  // Helper for drift config
+  function driftCfg(dxFrac, dyFrac, phaseSeed) {
+    return {
+      dx: W * dxFrac, dy: H * dyFrac,
+      phase: p.random(Math.PI * 2) + phaseSeed,
+      speed: 0.55 + p.random(0.35)
+    };
+  }
+
+  // Base scene object
+  _ynS = {
+    W, H,
+    circle: {
+      cx: W * 0.435, cy: H * 0.455, r: m * 0.33,
+      d: driftCfg(0.011, 0.009, 0.0)
+    },
+    arc: {
+      cx: W * 0.715, cy: H * 0.275, r: m * 0.135,
+      a0: -0.55, a1: 1.05, thickness: m * 0.058,
+      d: driftCfg(0.009, 0.010, 1.1)
+    },
+    rectMag: {
+      x: W * 0.255, y: H * 0.245, w: W * 0.118, h: H * 0.145,
+      d: driftCfg(0.007, 0.011, 2.3)
+    },
+    dot: {
+      cx: W * 0.375, cy: H * 0.495, r: m * 0.052,
+      d: driftCfg(0.014, 0.013, 3.7)
+    },
+    rectBlkV: {
+      x: W * 0.270, y: H * 0.545, w: W * 0.058, h: H * 0.225,
+      d: driftCfg(0.005, 0.009, 0.8)
+    },
+    band: {
+      x: W * 0.330, y: H * 0.625, w: W * 0.555, h: H * 0.078,
+      d: driftCfg(0.004, 0.017, 1.6)
+    },
+    bandTeal: {
+      x: W * 0.385, y: H * 0.668, w: W * 0.455, h: H * 0.034,
+      d: driftCfg(0.004, 0.013, 2.9)
+    },
+    cross: {
+      x: W * 0.378, y: H * 0.595, w: W * 0.050, h: H * 0.108,
+      magStripeT: 0.32, magStripeH: 0.30,
+      d: driftCfg(0.006, 0.010, 4.1)
+    },
+    redArc: {
+      cx: W * 0.435, cy: H * 0.740, r: m * 0.068,
+      a0: 0.08, a1: 1.02,
+      d: driftCfg(0.008, 0.008, 0.5)
+    },
+    bandHighlight: {
+      d: driftCfg(0.004, 0.017, 1.6)
+    },
+    accentDots: [
+      { cx: W * 0.505, cy: H * 0.555, r: m * 0.009, d: driftCfg(0.011, 0.009, 0.0) },
+      { cx: W * 0.520, cy: H * 0.548, r: m * 0.006, d: driftCfg(0.011, 0.009, 0.0) },
+      { cx: W * 0.532, cy: H * 0.542, r: m * 0.004, d: driftCfg(0.011, 0.009, 0.0) }
+    ],
+    vLines: [
+      { x: W * 0.210, y0: H * 0.070, y1: H * 0.795, w: 0.70, phase: p.random(Math.PI*2), spd: 0.90 },
+      { x: W * 0.240, y0: H * 0.070, y1: H * 0.795, w: 0.80, phase: p.random(Math.PI*2), spd: 0.75 },
+      { x: W * 0.264, y0: H * 0.070, y1: H * 0.830, w: 1.30, phase: p.random(Math.PI*2), spd: 1.00 },
+      { x: W * 0.288, y0: H * 0.070, y1: H * 0.795, w: 0.75, phase: p.random(Math.PI*2), spd: 0.80 },
+      { x: W * 0.310, y0: H * 0.070, y1: H * 0.780, w: 0.65, phase: p.random(Math.PI*2), spd: 0.95 }
+    ],
+    vLineOscAmt: W * 0.016,
+    hLines: [
+      { y: H * 0.415, x0: W * 0.045, x1: W * 0.920, w: 0.60, phase: p.random(Math.PI*2), spd: 0.85 },
+      { y: H * 0.620, x0: W * 0.045, x1: W * 0.920, w: 0.55, phase: p.random(Math.PI*2), spd: 0.70 },
+      { y: H * 0.780, x0: W * 0.045, x1: W * 0.920, w: 0.50, phase: p.random(Math.PI*2), spd: 0.90 }
+    ],
+    hLineOscAmt: H * 0.011,
+    tri: {
+      pts: [
+        { bx: W * 0.058, by: H * 0.625 },
+        { bx: W * 0.320, by: H * 0.285 },
+        { bx: W * 0.215, by: H * 0.860 }
+      ],
+      phases: [p.random(Math.PI*2), p.random(Math.PI*2), p.random(Math.PI*2)],
+      spd: 0.70,
+      oscAmt: m * 0.014
+    },
+
+    // ---- Variation extras ----
+    extraRects: [],
+    extraLines: []
+  };
+
+  // Read parameters (with fallbacks)
+  let extraRectsCount = S.ynExtraRects ?? 0;
+  let extraLinesCount = S.ynExtraLines ?? 0;
+  let randomize = S.ynRandomize ?? false;
+
+  // Helper to jitter if randomize is on
+  function jitter(val, amount, min, max) {
+    if (!randomize) return val;
+    let j = val + (p.random() - 0.5) * amount;
+    return p.constrain(j, min, max);
+  }
+
+  // Generate extra rectangles
+  for (let i = 0; i < extraRectsCount; i++) {
+    let baseX = p.random(W * 0.1, W * 0.8);
+    let baseY = p.random(H * 0.1, H * 0.8);
+    let w = p.random(W * 0.03, W * 0.15);
+    let h = p.random(H * 0.03, H * 0.12);
+    _ynS.extraRects.push({
+      x: jitter(baseX, W * 0.1, 0, W - w),
+      y: jitter(baseY, H * 0.1, 0, H - h),
+      w, h,
+      col: rectColors[Math.floor(p.random(rectColors.length))],
+      d: driftCfg(0.005 + p.random(0.01), 0.005 + p.random(0.01), i * 1.7)
+    });
+  }
+
+  // Generate extra lines (both vertical and horizontal)
+  for (let i = 0; i < extraLinesCount; i++) {
+    let isVertical = p.random() > 0.5;
+    if (isVertical) {
+      let x = jitter(p.random(W * 0.1, W * 0.9), W * 0.15, 0, W);
+      _ynS.extraLines.push({
+        type: 'v',
+        x: x,
+        y0: jitter(H * 0.05, H * 0.1, 0, H * 0.9),
+        y1: jitter(H * 0.95, H * 0.1, H * 0.1, H),
+        w: p.random(0.4, 1.2),
+        phase: p.random(Math.PI*2),
+        spd: p.random(0.5, 1.2)
+      });
+    } else {
+      let y = jitter(p.random(H * 0.1, H * 0.9), H * 0.15, 0, H);
+      _ynS.extraLines.push({
+        type: 'h',
+        y: y,
+        x0: jitter(W * 0.05, W * 0.1, 0, W * 0.9),
+        x1: jitter(W * 0.95, W * 0.1, W * 0.1, W),
+        w: p.random(0.4, 1.0),
+        phase: p.random(Math.PI*2),
+        spd: p.random(0.5, 1.2)
+      });
+    }
+  }
+}
+
+// ── Eased drift with noise variation ─────────────────────────────────────────
+function _ynDrift(p, d, tick, driftScale) {
+  let t = tick * d.speed;
+  let nx = sampleNoise(p, d.phase + t, 0, 0);
+  let ny = sampleNoise(p, 0, d.phase + t * 1.27, 0);
+  return {
+    x: Math.sin(nx * Math.PI * 2) * d.dx * driftScale,
+    y: Math.cos(ny * Math.PI * 2) * d.dy * driftScale
+  };
+}
+  
+// ── Main draw ─────────────────────────────────────────────────────────────────
+function drawYandinsky(p, t) {
+  // Re-init if canvas has been resized
+  if (!_ynS || _ynS.W !== p.width || _ynS.H !== p.height) {
+    initYandinsky(p);
+  }
+ 
+  let Y  = _ynS;
+  let W  = Y.W, H = Y.H;
+ 
+  // ── Read controls from S (all default to registry def*scale if not set) ──
+  let driftScale  = S.ynDrift      ?? 1.0;
+  let oscScale    = S.ynOsc        ?? 1.0;
+  let speed       = S.ynSpeed      ?? 1.0;
+  let lw          = S.ynLineWeight ?? 1.0;
+  let showGrid    = S.ynShowGrid   ?? true;
+  let textureAmt  = S.ynTexture    ?? 1.0;
+  
+  // Use p5 millis for continuous animation
+  let tick = (p.millis() * 0.001) * speed;
+ 
+  // ── 1. Background — warm ochre ground ────────────────────────────────────
+  let bg = S.bg || '#d4a828';
+  CTX.save();
+  CTX.fillStyle = bg;
+  CTX.fillRect(0, 0, W, H);
+ 
+  // Subtle warm wash blobs (the orange-pink variation in the upper-left)
+  if (textureAmt > 0) {
+    let washes = [
+      { x: W*0.08,  y: H*0.12,  r: W*0.38, col: 'rgba(205,80,40,'  },
+      { x: W*0.72,  y: H*0.88,  r: W*0.30, col: 'rgba(210,90,30,'  },
+      { x: W*0.50,  y: H*0.50,  r: W*0.45, col: 'rgba(225,170,50,' }
+    ];
+    washes.forEach(function(w) {
+      let gr = CTX.createRadialGradient(w.x, w.y, 0, w.x, w.y, w.r);
+      gr.addColorStop(0,   w.col + (0.13 * textureAmt) + ')');
+      gr.addColorStop(0.6, w.col + (0.05 * textureAmt) + ')');
+      gr.addColorStop(1,   w.col + '0)');
+      CTX.fillStyle = gr;
+      CTX.fillRect(0, 0, W, H);
+    });
+    // Fine canvas-weave texture via tiny noise-placed marks
+    CTX.globalAlpha = 0.028 * textureAmt;
+    CTX.fillStyle   = '#7a5010';
+    for (let tx = 0; tx < W; tx += 4) {
+      for (let ty = 0; ty < H; ty += 4) {
+        let n = p.noise(tx * 0.06, ty * 0.06);
+        if (n > 0.60) CTX.fillRect(tx, ty, n > 0.78 ? 2 : 1, 1);
+      }
+    }
+    CTX.globalAlpha = 1;
+  }
+ 
+  // Faint structural grid (like canvas stretcher lines in the photo)
+  if (showGrid) {
+    CTX.strokeStyle = 'rgba(170,125,40,0.14)';
+    CTX.lineWidth   = 0.5;
+    for (let gx = 0; gx <= W; gx += W / 8) {
+      CTX.beginPath(); CTX.moveTo(gx, 0); CTX.lineTo(gx, H); CTX.stroke();
+    }
+    for (let gy = 0; gy <= H; gy += H / 8) {
+      CTX.beginPath(); CTX.moveTo(0, gy); CTX.lineTo(W, gy); CTX.stroke();
+    }
+  }
+  CTX.restore();
+ 
+  // ── 2. Oscillating structural lines ──────────────────────────────────────
+  CTX.save();
+  CTX.lineCap  = 'round';
+ 
+  // Vertical lines — warp mid-control-point horizontally (perpendicular to line)
+  Y.vLines.forEach(function(ln) {
+    let oscT  = Math.sin(ln.phase + tick * ln.spd) * Y.vLineOscAmt * oscScale;
+    // Two mid points at 1/3 and 2/3 height for an S-curve feel
+    let mid1  = Math.sin(ln.phase + tick * ln.spd + 0.8) * Y.vLineOscAmt * oscScale * 0.6;
+    CTX.strokeStyle = 'rgba(28,18,8,0.72)';
+    CTX.lineWidth   = lw * ln.w;
+    CTX.beginPath();
+    CTX.moveTo(ln.x, ln.y0);
+    // Bezier: start straight → bend at 1/3 → reverse at 2/3 → end
+    CTX.bezierCurveTo(
+      ln.x + oscT,  ln.y0 + (ln.y1 - ln.y0) * 0.33,
+      ln.x + mid1,  ln.y0 + (ln.y1 - ln.y0) * 0.67,
+      ln.x,         ln.y1
+    );
+    CTX.stroke();
+  });
+ 
+  // Horizontal lines — warp mid-control-point vertically
+  Y.hLines.forEach(function(ln) {
+    let oscT  = Math.sin(ln.phase + tick * ln.spd) * Y.hLineOscAmt * oscScale;
+    let mid1  = Math.sin(ln.phase + tick * ln.spd + 0.9) * Y.hLineOscAmt * oscScale * 0.5;
+    CTX.strokeStyle = 'rgba(28,18,8,0.48)';
+    CTX.lineWidth   = lw * ln.w;
+    CTX.beginPath();
+    CTX.moveTo(ln.x0, ln.y);
+    CTX.bezierCurveTo(
+      ln.x0 + (ln.x1 - ln.x0) * 0.33, ln.y + oscT,
+      ln.x0 + (ln.x1 - ln.x0) * 0.67, ln.y + mid1,
+      ln.x1, ln.y
+    );
+    CTX.stroke();
+  });
+ 
+  // Triangle — vertices drift independently; edges oscillate (quadratic warp)
+  let tri    = Y.tri;
+  let triPts = tri.pts.map(function(pt, i) {
+    let ph = tri.phases[i] + tick * tri.spd;
+    return {
+      x: pt.bx + Math.sin(ph)        * tri.oscAmt * oscScale,
+      y: pt.by + Math.cos(ph * 1.15) * tri.oscAmt * oscScale * 0.55
+    };
+  });
+  CTX.strokeStyle = 'rgba(28,18,8,0.42)';
+  CTX.lineWidth   = lw * 0.65;
+  for (let i = 0; i < 3; i++) {
+    let a  = triPts[i], b = triPts[(i + 1) % 3];
+    let mx = (a.x + b.x) * 0.5 + Math.sin(tri.phases[i] + tick * tri.spd + 1.2) * tri.oscAmt * oscScale * 0.4;
+    let my = (a.y + b.y) * 0.5;
+    CTX.beginPath();
+    CTX.moveTo(a.x, a.y);
+    CTX.quadraticCurveTo(mx, my, b.x, b.y);
+    CTX.stroke();
+  }
+  CTX.restore();
+   // ── Extra lines (variation) ───────────────────────────────────────────────
+  Y.extraLines.forEach(function(ln) {
+    let oscAmt = (ln.type === 'v' ? Y.vLineOscAmt : Y.hLineOscAmt) * oscScale;
+    let oscT = Math.sin(ln.phase + tick * ln.spd) * oscAmt;
+    CTX.strokeStyle = 'rgba(28,18,8,0.5)';
+    CTX.lineWidth = lw * ln.w;
+    CTX.beginPath();
+    if (ln.type === 'v') {
+      CTX.moveTo(ln.x, ln.y0);
+      CTX.bezierCurveTo(ln.x + oscT, ln.y0 + (ln.y1 - ln.y0)*0.33,
+                        ln.x - oscT*0.5, ln.y0 + (ln.y1 - ln.y0)*0.67,
+                        ln.x, ln.y1);
+    } else {
+      CTX.moveTo(ln.x0, ln.y);
+      CTX.bezierCurveTo(ln.x0 + (ln.x1 - ln.x0)*0.33, ln.y + oscT,
+                        ln.x0 + (ln.x1 - ln.x0)*0.67, ln.y - oscT*0.5,
+                        ln.x1, ln.y);
+    }
+    CTX.stroke();
+  });
+  // ── 3. Large circle (black outline, the primary geometric anchor) ─────────
+  let cd = _ynDrift(p, Y.circle.d, tick, driftScale);
+  let gPos = applyGlitchOffset(p, Y.circle.cx + cd.x, Y.circle.cy + cd.y, tick);
+  CTX.save();
+  CTX.translate(W/2, H/2);
+  CTX.rotate(S.charRotRad);
+  CTX.translate(-W/2, -H/2);
+  CTX.strokeStyle = S.palette[0] || 'rgba(22,14,6,0.90)';
+  CTX.lineWidth   = lw * 2.4;
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.circle.r, 0, Math.PI * 2);
+  CTX.stroke();
+  CTX.restore();
+  
+ 
+  // ── 4. Magenta filled rectangle ───────────────────────────────────────────
+  let rd = _ynDrift(p, Y.rectMag.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.rectMag.x + rd.x, Y.rectMag.y + rd.y, tick);
+  CTX.save();
+  CTX.fillStyle   = S.palette[0] || '#d4166e';
+  CTX.strokeStyle = S.palette[1] || 'rgba(22,14,6,0.55)';
+  CTX.lineWidth   = lw * 0.7;
+  CTX.fillRect(gPos.x, gPos.y, Y.rectMag.w, Y.rectMag.h);
+  CTX.strokeRect(gPos.x, gPos.y, Y.rectMag.w, Y.rectMag.h);
+  // Light cyan highlight (use accent or palette[2])
+  CTX.fillStyle = S.accent || 'rgba(140,210,220,0.45)';
+  CTX.fillRect(gPos.x + Y.rectMag.w * 0.04, gPos.y + Y.rectMag.h * 0.62, Y.rectMag.w * 0.3, Y.rectMag.h * 0.08);
+  CTX.restore();
+ 
+  // ── 5. Pink / magenta dot ─────────────────────────────────────────────────
+  let dd = _ynDrift(p, Y.dot.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.dot.cx + dd.x, Y.dot.cy + dd.y, tick);
+  CTX.save();
+  // Glow halo
+  let dotGr = CTX.createRadialGradient(gPos.x, gPos.y, 0, gPos.x, gPos.y, Y.dot.r * 1.6);
+  dotGr.addColorStop(0,   'rgba(230,20,100,0.22)');
+  dotGr.addColorStop(1,   'rgba(230,20,100,0)');
+  CTX.fillStyle = dotGr;
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.dot.r * 1.6, 0, Math.PI * 2);
+  CTX.fill();
+  // Solid dot
+  CTX.fillStyle = S.palette[0] || '#e01870';
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.dot.r, 0, Math.PI * 2);
+  CTX.fill();
+  CTX.restore();
+ 
+  // ── 6. Black vertical rectangle ───────────────────────────────────────────
+  let bvd = _ynDrift(p, Y.rectBlkV.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.rectBlkV.x + bvd.x, Y.rectBlkV.y + bvd.y, tick);
+  CTX.save();
+  CTX.fillStyle = S.palette[2] || '#18120a';
+  CTX.fillRect(gPos.x, gPos.y, Y.rectBlkV.w, Y.rectBlkV.h);
+  CTX.restore();
+ 
+  // ── 7. Dark horizontal band ────────────────────────────────────────────────
+  let bd = _ynDrift(p, Y.band.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.band.x + bd.x, Y.band.y + bd.y, tick);
+  CTX.save();
+  CTX.fillStyle = S.palette[2] || '#1c1810';
+  CTX.fillRect(gPos.x, gPos.y, Y.band.w, Y.band.h);
+  CTX.restore();
+ 
+  // ── 8. Teal-blue accent band (inside/below dark band, shares drift) ───────
+  let tbd = _ynDrift(p, Y.bandTeal.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.bandTeal.x + tbd.x, Y.bandTeal.y + tbd.y, tick);
+  CTX.save();
+  CTX.fillStyle = S.palette[1] || '#3a7882';
+  CTX.fillRect(gPos.x, gPos.y, Y.bandTeal.w, Y.bandTeal.h);
+  // Highlight
+  CTX.fillStyle = S.accent2 || 'rgba(160,215,225,0.32)';
+  CTX.fillRect(gPos.x + Y.bandTeal.w * 0.04, gPos.y + Y.bandTeal.h * 0.25,
+               Y.bandTeal.w * 0.45, Y.bandTeal.h * 0.45);
+  CTX.restore();
+ 
+  // ── 9. Crosspiece column: black body + magenta stripe ─────────────────────
+  let crd = _ynDrift(p, Y.cross.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.cross.x + crd.x, Y.cross.y + crd.y, tick);
+  CTX.save();
+  CTX.fillStyle = S.palette[2] || '#18120a';
+  CTX.fillRect(gPos.x, gPos.y, Y.cross.w, Y.cross.h);
+  CTX.fillStyle = S.palette[0] || '#d4166e';
+  CTX.fillRect(gPos.x, gPos.y + Y.cross.h * Y.cross.magStripeT, Y.cross.w, Y.cross.h * Y.cross.magStripeH);
+  CTX.restore();
+ 
+  // ── 10. Three small accent dots (inside circle near arc) ──────────────────
+  Y.accentDots.forEach(function(dt) {
+    let ddt = _ynDrift(p, dt.d, tick, driftScale);
+    gPos = applyGlitchOffset(p, dt.cx + ddt.x, dt.cy + ddt.y, tick);
+    CTX.save();
+    CTX.fillStyle = S.accent || 'rgba(22,14,6,0.72)';
+    CTX.beginPath();
+    CTX.arc(gPos.x, gPos.y, dt.r, 0, Math.PI * 2);
+    CTX.fill();
+    CTX.restore();
+  });
+ 
+  // ── 11. Blue-teal crescent arc ────────────────────────────────────────────
+  let ard = _ynDrift(p, Y.arc.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.arc.cx + ard.x, Y.arc.cy + ard.y, tick);
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.strokeStyle = S.palette[1] || '#3a7580';
+  CTX.lineWidth   = Y.arc.thickness;
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.arc.r, Y.arc.a0, Y.arc.a1);
+  CTX.stroke();
+  CTX.strokeStyle = S.accent || 'rgba(90,168,180,0.68)';
+  CTX.lineWidth   = Y.arc.thickness * 0.38;
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.arc.r * 0.86, Y.arc.a0 + 0.14, Y.arc.a1 - 0.10);
+  CTX.stroke();
+  CTX.strokeStyle = S.palette[2] || 'rgba(22,55,60,0.40)';
+  CTX.lineWidth   = Y.arc.thickness * 0.25;
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.arc.r * 1.07, Y.arc.a0, Y.arc.a1);
+  CTX.stroke();
+  CTX.restore();
+
+  // ── Extra rectangles (variation) ──────────────────────────────────────────
+  Y.extraRects.forEach(function(r) {
+  let rd = _ynDrift(p, r.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, r.x + rd.x, r.y + rd.y, tick);
+  CTX.save();
+  CTX.fillStyle = r.col; // already uses palette
+  CTX.globalAlpha = 0.75;
+  CTX.fillRect(gPos.x, gPos.y, r.w, r.h);
+  CTX.strokeStyle = S.palette[2] || 'rgba(22,14,6,0.4)';
+  CTX.lineWidth = lw * 0.5;
+  CTX.strokeRect(gPos.x, gPos.y, r.w, r.h);
+  CTX.restore();
+});
+  
+  // ── 12. Red curved accent ─────────────────────────────────────────────────
+  let rad = _ynDrift(p, Y.redArc.d, tick, driftScale);
+  gPos = applyGlitchOffset(p, Y.redArc.cx + rad.x, Y.redArc.cy + rad.y, tick);
+  CTX.save();
+  CTX.strokeStyle = S.accent || '#c02020';
+  CTX.lineWidth   = lw * 1.6;
+  CTX.lineCap     = 'round';
+  CTX.beginPath();
+  CTX.arc(gPos.x, gPos.y, Y.redArc.r, Y.redArc.a0, Y.redArc.a1);
+  CTX.stroke();
+  CTX.restore();
+ 
+  // ── 13. Light highlight strokes inside the band (white/cream flecks) ──────
+  // These move with the band so they read as surface marks on the dark paint
+  let bd2 = _ynDrift(p, Y.band.d, tick, driftScale);
+  let bx = Y.band.x + bd2.x, by_ = Y.band.y + bd2.y;
+  CTX.save();
+  CTX.strokeStyle = S.accent || 'rgba(230,215,185,0.40)';
+  CTX.lineWidth   = lw * 1.7;
+  CTX.lineCap     = 'round';
+  CTX.beginPath();
+  CTX.moveTo(bx + Y.band.w * 0.06, by_ + Y.band.h * 0.35);
+  CTX.lineTo(bx + Y.band.w * 0.52, by_ + Y.band.h * 0.55);
+  CTX.stroke();
+  CTX.strokeStyle = S.accent2 || 'rgba(230,215,185,0.22)';
+  CTX.lineWidth   = lw * 0.9;
+  CTX.beginPath();
+  CTX.moveTo(bx + Y.band.w * 0.10, by_ + Y.band.h * 0.70);
+  CTX.lineTo(bx + Y.band.w * 0.35, by_ + Y.band.h * 0.80);
+  CTX.stroke();
+  CTX.restore();
+
+
+  // ── Concrete texture overlay ──────────────────────────────────────────────
+  concrete = S.ynConcrete ?? 0.3;
+  if (concrete > 0) {
+    CTX.save();
+    CTX.globalAlpha = concrete * 0.25;
+    CTX.fillStyle = S.palette[5] || '#3a3020';
+    for (let tx = 0; tx < W; tx += 3) {
+      for (let ty = 0; ty < H; ty += 3) {
+        let n = p.noise(tx * 0.03, ty * 0.03, tick * 0.01);
+        if (n > 0.68) {
+          CTX.fillRect(tx, ty, 1 + (n > 0.85 ? 1 : 0), 1);
+        }
+      }
+    }
+    // Additional fine scratches
+    CTX.globalAlpha = concrete * 0.12;
+    CTX.strokeStyle = S.palette[5] || '#2a2015';
+    CTX.lineWidth = 0.5;
+    for (let i = 0; i < 20; i++) {
+      let x = p.noise(i, tick) * W;
+      let y = p.noise(i + 100, tick) * H;
+      CTX.beginPath();
+      CTX.moveTo(x, y);
+      CTX.lineTo(x + p.noise(i, tick + 10) * 30 - 15, y + p.noise(i + 200, tick) * 20 - 10);
+      CTX.stroke();
+    }
+    CTX.restore();
+  }
+
+  
+  CTX.restore();
+}
+
+
+  
+  
+// ── POETIC TENDRILS MODE (Enhanced with line spacing & noise bias) ────────────
+function drawPoeticTendrils(p, t) {
+  let W = p.width, H = p.height;
+
+  // Text parameters
+  let textSize      = S.poeticTextSize ?? 0.8;
+  let textWrap      = S.poeticTextWrap ?? true;
+  let wrapWidth     = S.poeticWrapWidth ?? 0.8;
+  let offsetX       = S.poeticOffsetX ?? 0;
+  let offsetY       = S.poeticOffsetY ?? 0;
+  let textGlitch    = S.poeticTextGlitch ?? false;
+  let lineSpacing   = S.poeticLineSpacing ?? 1.0;    // multiplier of char height
+
+  // Tendril parameters
+  let tendrilCount  = S.poeticCount ?? 80;
+  let tendrilLength = S.poeticLength ?? 6;
+  let tendrilCurve  = S.poeticCurve ?? 0.5;
+  let tendrilWidth  = S.poeticWidth ?? 1.2;
+  let glowIntensity = S.poeticGlow ?? 0.6;
+  let pulseSpeed    = S.poeticPulse ?? 0.8;
+  let seedDensity   = S.poeticSeedDensity ?? 0.4;
+  let seedSpread    = S.poeticSeedSpread ?? 1.0;
+  let seedBias      = S.poeticSeedBias ?? 0.0;       // 0 = uniform, 1 = noise‑driven clusters
+  let seedNoiseScale= S.poeticSeedNoiseScale ?? 0.01;
+
+  // ── 1. Background poem text ───────────────────────────────────────────────
+  let rawText = S.poeticPoemText;
+  if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
+    rawText = 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.';
+  }
+  let tokens = rawText.split('');
+  let sz = Math.max(2, S.spacing * textSize);
+  let charW = sz * 0.63;
+  let charH = sz * 1.05;
+  let rowH = charH * lineSpacing;   // line spacing applied
+
+  if (textWrap) {
+    let colW = W * wrapWidth;
+    let startX = (W - colW) / 2 + offsetX;
+    let x = startX;
+    let y = rowH + offsetY;
+    let tokIdx = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
+
+    while (y < H) {
+      let ch = tokens[tokIdx % tokens.length];
+      let col = pickColor(p, x, y, t);
+      if (textGlitch && S.entropy > 0 && Math.random() < S.entropy) {
+        ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+      }
+      dc(x, y, sz, 0, col, ch);
+      tokIdx++;
+      x += charW;
+      if (x + charW > startX + colW) {
+        x = startX;
+        y += rowH;
+      }
+    }
+  } else {
+    let tokOff = Math.floor(S.fc * S.speed * 0.2) % tokens.length;
+    for (let y = sz + offsetY; y < H + sz; y += rowH) {
+      for (let x = offsetX; x < W + charW; x += charW) {
+        let n = sampleNoise(p, x * S.noiseScale * 0.8, y * S.noiseScale * 0.8, t * 0.2);
+        if (n < 0.25) continue;
+        let col = pickColor(p, x, y, t);
+        let idx = (tokOff + Math.floor(x / charW) + Math.floor(y / rowH)) % tokens.length;
+        let ch = tokens[idx];
+        if (textGlitch && S.entropy > 0 && Math.random() < S.entropy) {
+          ch = GLITCH[Math.floor(Math.random() * GLITCH.length)];
+        }
+        dc(x, y, sz, 0, col, ch);
+      }
+    }
+  }
+
+  // ── 2. Tendril overlay ────────────────────────────────────────────────────
+  let step = S.spacing;
+  let seedPoints = [];
+
+  for (let y = step; y < H - step; y += step * 1.5) {
+    for (let x = step; x < W - step; x += step * 1.5) {
+      // Base probability from density
+      let prob = seedDensity;
+
+      // Edge bias (seedSpread < 1)
+      if (seedSpread < 1.0) {
+        let dx = Math.abs(x - W/2) / (W/2);
+        let dy = Math.abs(y - H/2) / (H/2);
+        let edgeFactor = Math.max(dx, dy);
+        prob *= (seedSpread + (1 - seedSpread) * edgeFactor);
+      }
+
+      // Perlin‑noise bias (seedBias > 0)
+      if (seedBias > 0) {
+        let n = sampleNoise(p, x * seedNoiseScale, y * seedNoiseScale, t * 0.1);
+        // Map noise 0..1 to a factor: low noise = lower prob, high noise = higher prob
+        let noiseFactor = p.map(n, 0, 1, 1 - seedBias, 1 + seedBias);
+        prob *= noiseFactor;
+      }
+
+      if (Math.random() > prob) continue;
+      seedPoints.push({ x, y });
+    }
+  }
+
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+  CTX.lineWidth = tendrilWidth;
+
+  for (let i = 0; i < Math.min(tendrilCount, seedPoints.length); i++) {
+    let pt = seedPoints[i % seedPoints.length];
+    let x = pt.x, y = pt.y;
+
+    CTX.beginPath();
+    CTX.moveTo(x, y);
+
+    for (let seg = 0; seg < tendrilLength; seg++) {
+      let angle = sampleNoise(p, x * S.noiseScale * 2, y * S.noiseScale * 2, t * 0.5 + seg) * Math.PI * 2;
+      angle += Math.sin(seg * 1.5 + t * pulseSpeed) * tendrilCurve;
+
+      let nx = x + Math.cos(angle) * step * 0.9;
+      let ny = y + Math.sin(angle) * step * 0.9;
+
+      if (nx < 0 || nx > W) angle = Math.PI - angle;
+      if (ny < 0 || ny > H) angle = -angle;
+      nx = Math.min(W, Math.max(0, x + Math.cos(angle) * step * 0.9));
+      ny = Math.min(H, Math.max(0, y + Math.sin(angle) * step * 0.9));
+
+      CTX.lineTo(nx, ny);
+      x = nx; y = ny;
+    }
+
+    let baseCol = pickColor(p, pt.x, pt.y, t);
+    let accentCol = S.accent !== 'none' ? S.accent : S.palette[0];
+    let pulse = 0.5 + 0.5 * Math.sin(t * 2 + i * 0.5);
+    let lineCol = p.lerpColor(p.color(baseCol), p.color(accentCol), pulse * glowIntensity);
+    CTX.strokeStyle = lineCol;
+    CTX.globalAlpha = 0.4 + 0.3 * pulse;
+    CTX.stroke();
+  }
+
+  CTX.restore();
+  _lastFill = '';
+}
+
   
 // ── BOIDS (updated 4/10 for rebuildModeUI) ────────────────────────────────────────────────────────
 // Reynolds flocking: separation, alignment, cohesion.
@@ -7675,7 +9873,7 @@ function drawOverlay(p, t) {
 // ── DEFAULT STATE (for Reset All) ─────────────────────────────────────────────────────────────────
 const DEFAULT_STATE = {
   // ========== CORE / MODE ==========
-  mode: 'bloom',                     // Active visual mode (bloom, wave, matrix, etc.)
+  mode: 'welcome',                     // Active visual mode (bloom, wave, matrix, etc.)
   chars: CHARSETS.chinese,           // Character set for text rendering
   palette: PALETTES.site,            // Active color palette
   bg: '#0d0c0a',                     // Background color (canvas clear color)
@@ -7710,6 +9908,10 @@ const DEFAULT_STATE = {
   // ========== ENTROPY & GLITCH ==========
   entropy: 0,                        // Probability (0–1) of replacing char with glitch symbol
   caseGlitch: 0,                     // Probability (0–1) of toggling character case
+  glitchIntensity: 0.0,        // 0 = off, 1 = max displacement
+  glitchChromatic: false,      // whether to offset R/G/B channels separately
+  glitchScanlines: false,      // overlay dark scanlines
+  glitchPixelate: false,       // blocky/pixelated rendering
   // ========== FONT ==========
   fontKey: 'courier',                // Identifier for selected font
   fontStack: "'Courier New',Courier,monospace",  // CSS font-family string
@@ -7811,15 +10013,16 @@ new p5(function(p){
     p.randomSeed(Math.random() * 99999);
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
-    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); 
-    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H);
-    recRects=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
+    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); initYandinsky(p);
+    initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p); initNumbPoem(p);
+    recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
     lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[]; 
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
-    
+    if (typeof initNumbCollage === 'function') initNumbCollage(p);
+    if (S.mode === 'numbpoem' && typeof initNumbPoem === 'function') initNumbPoem(p);
     if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
     
@@ -7886,6 +10089,7 @@ function rd() {
     if (CTX) CTX.globalCompositeOperation = S.blendMode || 'source-over';
     switch (S.mode) {
       case 'calligraphy': drawCalligraphy(p, t); break;
+      case 'welcome': drawWelcome(p, t); break;  
       case 'bloom': drawBloom(p, t); break;
       case 'wave': drawWave(p, t); break;
       case 'rain1': drawRain1(p, t); break;
@@ -7896,6 +10100,8 @@ function rd() {
       case 'tess': drawTess(p, t); break;
       case 'warp': drawWarp(p, t); break;
       case 'glitch': drawGlitch(p, t); break;
+      case 'hexcrt': drawHexCRT(p, t); break;
+      case 'crtstripes': drawCrtStripes(p, t); break;  
       case 'webster': drawWebster(p, t); break;
       case 'matrix': drawMatrix(p, t); break;
       case 'orbit': drawOrbit(p, t); break;
@@ -7954,8 +10160,12 @@ function rd() {
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
       case 'trabeculum':     drawTrabeculum(p, t);     break;  
-
-  
+      case 'poetictendrils': drawPoeticTendrils(p, t); break;
+      case 'yandinsky': drawYandinsky(p, t); break;  
+      case 'collagewash': drawCollageWash(p, t); break; 
+      case 'numbcollage': drawNumbCollage(p, t); break;
+      case 'numbpoem': drawNumbPoem(p, t); break;
+      
     } // closes switch
 } // closes drawScene function
     
@@ -8043,6 +10253,33 @@ p.draw = function() {
   }
 }; // closes p.draw
 
+
+  
+// Welcome mode mouseclick
+p.mousePressed = function() {
+  if (S.mode !== 'welcome') return;
+  
+  let regions = window._welcomeClickRegions || [];
+  if (!regions.length) return;
+  let mx = p.mouseX;
+  let my = p.mouseY;
+  
+  for (let r of regions) {
+    if (mx >= r.x && mx <= r.x + r.w &&
+        my >= r.y && my <= r.y + r.h) {
+      if (r.type === 'toggle') {
+        welcomeSections[r.index].collapsed = !welcomeSections[r.index].collapsed;
+        // Force redraw
+        rd();
+      }
+      break;
+    }
+  }
+};
+
+
+
+  
 }); // <--- THIS CLOSES THE new p5(function(p){ ... }) INSTANCE
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg){
@@ -8069,13 +10306,13 @@ function toggleSec(id) {
 const modeSubSecs = ['mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored'];
 const charSubSecs = ['chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles'];
 const globalSubSecs = ['sub-motion', 'sub-field', 'sub-entropy', 'sub-render'];  
-const ALL_SECS = ['presets', 'userpresets', 'global', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...globalSubSecs, ...modeSubSecs, ...charSubSecs];
+const ALL_SECS = ['presets', 'userpresets', 'global', 'render', 'mode', 'chars', 'font', 'motion', 'field', 'entropy', 'palette', 'calligraphy', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', ...globalSubSecs, ...modeSubSecs, ...charSubSecs];
 
 // Collapse All
 [  'presets', 'pre-typo', 'pre-topo', 'pre-geo', 'pre-atmos', 'pre-tech',
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio', 'mode-refactored',
   'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic', 'chars-particles',
-  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size'
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'calligraphy', 'shapes', 'overlay', 'img', 'size'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
@@ -8173,6 +10410,19 @@ const PARAM_REGISTRY = {
     { id: 'glitchRGBSpeed',      label: 'RGB flicker',     min: 1,   max: 15,  step: 1,   def: 6,   scale: 1 },
     { id: 'glitchMinSize',       label: 'Min char size',   min: 2,   max: 20,  step: 1,   def: 4,   scale: 1 },
     { id: 'glitchMaxSizeMult',   label: 'Max size mult',   min: 0.3, max: 1,   step: 0.05,def: 0.65,scale: 1 },
+  ],
+  hexcrt: [
+    { id: 'hexSize',    label: 'Hex size',       min: 10, max: 80, step: 2, def: 30, scale: 1 },
+    { id: 'hexLayers',  label: 'Complexity',     min: 1,  max: 12, step: 1, def: 4,  scale: 1 },
+    { id: 'hexGlitch',  label: 'Glitch chance',  min: 0,  max: 0.5, step: 0.01, def: 0.1, scale: 1 },
+    { id: 'hexRotation',label: 'Spin speed',     min: 0,  max: 2,  step: 0.1, def: 0.5, scale: 1 },
+  ],
+  crtstripes: [
+    { id: 'crtGridX',      label: 'Grid columns',   min: 10, max: 200, step: 5, def: 60,  scale: 1 },
+    { id: 'crtGridY',      label: 'Grid rows',      min: 5,  max: 120, step: 5, def: 40,  scale: 1 },
+    { id: 'crtSpeed',      label: 'Scroll speed',   min: 0,  max: 3,   step: 0.1, def: 1.5, scale: 1 },
+    { id: 'crtThreshold',  label: 'Stripe density', min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'crtAberration', label: 'RGB separation', min: 0,  max: 100, step: 1,   def: 20,  scale: 1 },
   ],
   webster: [
     { id: 'websterNoiseFreq',      label: 'Wave freq',       min: 0.002, max: 0.03, step: 0.001, def: 0.008, scale: 1 },
@@ -8358,19 +10608,23 @@ const PARAM_REGISTRY = {
     { id:'vorSpeedMult',   label:'Site speed mult', min:0,  max:2, step:0.1, def:1.0, scale:1 },
   ],
     trabeculum: [
-    { id: 'trabeCount',   label: 'Point count',     min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
+    { id: 'trabeCount',      label: 'Point count',       min: 5,  max: 120, step: 5,  def: 40,   scale: 1,
       extra: function() { if (window._st) initTrabeculum(window._st.w(), window._st.h()); } },
-    { id: 'trabeSpeed',   label: 'Move speed',      min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
-    { id: 'trabeThickness', label: 'Border thickness', min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
-    { id: 'trabeSmooth',  label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
-    { id: 'trabeLineWidth', label: 'Line width',     min: 0.5, max: 5,   step: 0.5, def: 1.5,  scale: 1 },
-    { id: 'trabePulse',   label: 'Pulse border',    type: 'toggle', def: false },
-    { id: 'trabeStroke',  label: 'Border color',    type: 'color', def: '#ff9900' },
-    { id: 'trabeShowIso', label: 'Show isolines',   type: 'toggle', def: true },
-    { id: 'trabeFreq',    label: 'Iso frequency',   min: 1,  max: 30,  step: 1,   def: 10,   scale: 1 },
-    { id: 'trabeIsoOpacity', label: 'Iso opacity',  min: 0,  max: 0.5, step: 0.02, def: 0.15, scale: 1 },
-    { id: 'trabeIsoCol',  label: 'Iso color',       type: 'color', def: '#444444' },
-    { id: 'trabeUseChars',label: 'Fill with characters', type: 'toggle', def: true },
+    { id: 'trabeSpeed',      label: 'Move speed',        min: 0,  max: 3,   step: 0.1, def: 1.0,  scale: 1 },
+    { id: 'trabeAttract',    label: 'Attract/Repel',     min: -20, max: 20,  step: 1,  def: 0,    scale: 1,
+      hint: 'Negative = attract, positive = repel' },
+    { id: 'trabeStretch',    label: 'Cell stretch',      min: 0.5, max: 2.0, step: 0.05, def: 1.0, scale: 1,
+      hint: '1.0 = circular, >1 = horizontal ovals, <1 = vertical' },
+    { id: 'trabeThickness',  label: 'Border thickness',  min: 0.01, max: 0.2, step: 0.01, def: 0.05, scale: 1 },
+    { id: 'trabeSmooth',     label: 'Border smoothness', min: 0.0, max: 0.1, step: 0.005, def: 0.02, scale: 1 },
+    { id: 'trabeLineWidth',  label: 'Line width',        min: 0.5, max: 5,   step: 0.5, def: 1.5,  scale: 1 },
+    { id: 'trabePulse',      label: 'Pulse border',      type: 'toggle', def: false },
+    { id: 'trabeStroke',     label: 'Border color',      type: 'color', def: '#ff9900' },
+    { id: 'trabeShowIso',    label: 'Show isolines',     type: 'toggle', def: true },
+    { id: 'trabeIsoCol',     label: 'Iso color',         type: 'color', def: '#444444' },
+    { id: 'trabeFillCells',  label: 'Fill cells',        type: 'toggle', def: false },
+    { id: 'trabeFillOpacity',label: 'Fill opacity',      min: 0,  max: 1,   step: 0.05, def: 0.3,  scale: 1 },
+    { id: 'trabeUseChars',   label: 'Fill with characters', type: 'toggle', def: true },
   ],
   reaction: [
     { id: 'reactFeed',    label: 'Feed rate',    min: 10, max: 100, step: 1, def: 35, scale: 0.001 },
@@ -8487,8 +10741,115 @@ const PARAM_REGISTRY = {
     { id:'sandSizeMin',   label:'Min size (px)',  min:0.5, max:5,  step:0.5, def:1.5, scale:1 },
     { id:'sandSizeRange', label:'Size range',     min:1,   max:15, step:1,   def:6,   scale:1 },
   ],
-  
-  
+  poetictendrils: [
+    { id: 'poeticPoemText', label: 'Poem text', type: 'text', def: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.' },
+    { id: 'poeticTextSize',  label: 'Text size',      min: 0.3, max: 1.5, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'poeticTextWrap',  label: 'Wrap text',      type: 'toggle', def: true },
+    { id: 'poeticWrapWidth', label: 'Wrap width',     min: 0.2, max: 1.0, step: 0.05, def: 0.8, scale: 1 },
+    { id: 'poeticOffsetX',   label: 'Offset X',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
+    { id: 'poeticOffsetY',   label: 'Offset Y',       min: -200, max: 200, step: 5, def: 0, scale: 1 },
+    { id: 'poeticLineSpacing', label: 'Line spacing', min: 0.5, max: 3.0, step: 0.1, def: 1.0, scale: 1 },
+    { id: 'poeticTextGlitch',label: 'Apply entropy to text', type: 'toggle', def: true },
+    { id: 'poeticCount',     label: 'Tendril count',  min: 10, max: 200, step: 5, def: 80, scale: 1 },
+    { id: 'poeticLength',    label: 'Tendril length', min: 2,  max: 20,  step: 1, def: 6,  scale: 1 },
+    { id: 'poeticCurve',     label: 'Curvature',      min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'poeticWidth',     label: 'Line width',     min: 0.5, max: 4,   step: 0.1, def: 1.2, scale: 1 },
+    { id: 'poeticGlow',      label: 'Glow intensity', min: 0,  max: 1,   step: 0.05, def: 0.6, scale: 1 },
+    { id: 'poeticPulse',     label: 'Pulse speed',    min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
+    { id: 'poeticSeedDensity', label: 'Seed density', min: 0.05, max: 1.0, step: 0.05, def: 0.4, scale: 1 },
+    { id: 'poeticSeedSpread', label: 'Seed spread',   min: 0,   max: 1.0, step: 0.1, def: 1.0, scale: 1, hint: '0 = edges only, 1 = full canvas' },
+    { id: 'poeticSeedBias',   label: 'Noise bias',    min: 0,   max: 1.0, step: 0.05, def: 0.0, scale: 1, hint: 'Strength of Perlin noise clustering' },
+    { id: 'poeticSeedNoiseScale', label: 'Bias scale', min: 0.001, max: 0.05, step: 0.002, def: 0.01, scale: 1, hint: 'Noise zoom for bias' },
+  ],
+   yandinsky: [
+    { id:'ynDrift',      label:'Shape drift',         min:0,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Amplitude of the floating hover motion for all shapes' },
+    { id:'ynOsc',        label:'Line oscillation',     min:0,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'How much the structural lines warp perpendicular to their vector' },
+    { id:'ynSpeed',      label:'Animation speed',      min:1,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Global animation speed multiplier' },
+    { id:'ynLineWeight', label:'Line weight',          min:3,  max:30, step:1,   def:10,  scale:0.1,
+      hint:'Base stroke width for all structural lines' },
+    { id:'ynTexture',    label:'Background texture',   min:0,  max:20, step:1,   def:10,  scale:0.1,
+      hint:'Intensity of the warm ochre washes and canvas-weave texture' },
+    { type:'toggle', id:'ynShowGrid', label:'Canvas grid lines', def:true,
+      hint:'Faint structural grid suggesting the physical canvas stretcher' },
+    { id: 'ynDrift',      label: 'Drift amount',      min: 0,   max: 2.0, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynOsc',        label: 'Line oscillation',  min: 0,   max: 2.0, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynSpeed',      label: 'Animation speed',   min: 0.1, max: 2.5, step: 0.05, def: 1.0, scale: 1 },
+    { id: 'ynLineWeight', label: 'Line weight',       min: 0.3, max: 3.0, step: 0.1,  def: 1.0, scale: 1 },
+    { id: 'ynShowGrid',   label: 'Show grid',         type: 'toggle', def: true },
+    { id: 'ynTexture',    label: 'Texture strength',  min: 0,   max: 2.0, step: 0.1,  def: 1.0, scale: 1 },
+    // New variation controls
+    { id: 'ynExtraRects', label: 'Extra rectangles',  min: 0,   max: 8,   step: 1,    def: 0,   scale: 1,
+      hint: 'Add random colored rectangles to the composition' },
+    { id: 'ynExtraLines', label: 'Extra lines',       min: 0,   max: 12,  step: 1,    def: 0,   scale: 1,
+      hint: 'Add random oscillating lines' },
+    { id: 'ynRandomize',  label: 'Randomize layout',  type: 'toggle', def: false,
+      hint: 'When enabled, uses noise to jitter positions and colors' },
+    { id: 'ynConcrete',   label: 'Concrete grain',    min: 0,   max: 1.0, step: 0.05, def: 0.3, scale: 1,
+      hint: 'Adds a rough concrete texture overlay' },
+  ],
+  collageWash: [
+    { id: 'colWidth', label: 'Strip Width', min: 20, max: 200, step: 10, def: 80 },
+    { id: 'colBleed', label: 'Paint Bleed', min: 0, max: 1, step: 0.1, def: 0.4 },
+    { id: 'colLayers', label: 'Layers', min: 1, max: 5, step: 1, def: 2 }
+  ],
+  numbcollage: [
+    { id: 'numbText',          label: 'Text',           type: 'text', def: '麻木的' },
+    { id: 'numbBlockCount',    label: 'Block count',    min: 5,  max: 100, step: 5,  def: 40, scale: 1,
+      extra: function() { if (window._st) initNumbCollage(window._st.p); } },
+    { id: 'numbBlockMinSize',  label: 'Min block size', min: 20, max: 200, step: 5, def: 60, scale: 1 },
+    { id: 'numbBlockMaxSize',  label: 'Max block size', min: 40, max: 400, step: 10, def: 140, scale: 1 },
+    { id: 'numbRotateChance',  label: 'Rotate chance',  min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'numbDriftSpeed',    label: 'Drift speed',    min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'numbDriftX',        label: 'Drift X',        min: 0,  max: 2,   step: 0.1, def: 0.5, scale: 1 },
+    { id: 'numbDriftY',        label: 'Drift Y',        min: 0,  max: 2,   step: 0.1, def: 0.8, scale: 1 },
+    { id: 'numbEdgeTear',      label: 'Edge tear',      min: 0,  max: 1,   step: 0.05, def: 0.5, scale: 1 },
+    { id: 'numbPaperGrain',    label: 'Paper grain',    type: 'toggle', def: true },
+    { id: 'numbInkBleed',      label: 'Ink bleed',      min: 0,  max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbSortByY',       label: 'Sort by Y (back to front)', type: 'toggle', def: true },
+    { id: 'numbTextColor',     label: 'Text color',     type: 'color', def: '#1a1a1a' },
+    { id: 'numbTextOpacity',   label: 'Text opacity',   min: 0,  max: 1,   step: 0.05, def: 0.85, scale: 1 },
+    { id: 'numbBlockOpacity',  label: 'Block opacity',  min: 0,  max: 1,   step: 0.05, def: 0.9, scale: 1 },
+    { id: 'numbShowText',      label: 'Show text',      type: 'toggle', def: true },
+    { id: 'numbTextSizeMin',   label: 'Min text size',  min: 6,  max: 30,  step: 1, def: 12, scale: 1 },
+    { id: 'numbTextSizeMax',   label: 'Max text size',  min: 10, max: 50,  step: 2, def: 24, scale: 1 },
+    { id: 'numbTextDensity',   label: 'Text density',   min: 0.5, max: 2.5, step: 0.1, def: 1.0, scale: 1 },
+    { id: 'numbJitter',        label: 'Text jitter',    min: 0,  max: 8,   step: 0.5, def: 1.5, scale: 1 },
+    // New background block parameters
+    { id: 'numbShowBgBlocks',  label: 'Background blocks', type: 'toggle', def: true },
+    { id: 'numbBgScale',       label: 'BG block scale', min: 1.0, max: 3.0, step: 0.1, def: 1.8, scale: 1 },
+    { id: 'numbBgOpacity',     label: 'BG block opacity', min: 0, max: 1, step: 0.05, def: 0.25, scale: 1 },
+  ],
+   numbpoem: [
+    { id: 'numbPoemText',        label: 'Poem text',       type: 'text', def: '' }, // long default handled in parse
+    { id: 'numbPoemBlockMinW',   label: 'Min block width', min: 60,  max: 300, step: 10, def: 120, scale: 1 },
+    { id: 'numbPoemBlockMaxW',   label: 'Max block width', min: 100, max: 500, step: 10, def: 280, scale: 1 },
+    { id: 'numbPoemBlockMinH',   label: 'Min block height',min: 60,  max: 300, step: 10, def: 100, scale: 1 },
+    { id: 'numbPoemBlockMaxH',   label: 'Max block height',min: 100, max: 500, step: 10, def: 300, scale: 1 },
+    { id: 'numbPoemRotateChance',label: 'Rotate chance',   min: 0,   max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbPoemDriftSpeed',  label: 'Drift speed',     min: 0,   max: 1.5, step: 0.05, def: 0.3, scale: 1 },
+    { id: 'numbPoemDriftX',      label: 'Drift X',         min: 0,   max: 2,   step: 0.1, def: 0.4, scale: 1 },
+    { id: 'numbPoemDriftY',      label: 'Drift Y',         min: 0,   max: 2,   step: 0.1, def: 0.6, scale: 1 },
+    { id: 'numbPoemEdgeTear',    label: 'Edge tear',       min: 0,   max: 1,   step: 0.05, def: 0.4, scale: 1 },
+    { id: 'numbPoemPaperGrain',  label: 'Paper grain',     type: 'toggle', def: true },
+    { id: 'numbPoemInkBleed',    label: 'Ink bleed',       min: 0,   max: 1,   step: 0.05, def: 0.3, scale: 1 },
+    { id: 'numbPoemSortByY',     label: 'Sort by Y',       type: 'toggle', def: true },
+    { id: 'numbPoemTextColor',   label: 'Text color',      type: 'color', def: '#400040' },
+    { id: 'numbPoemTextOpacity', label: 'Text opacity',    min: 0,   max: 1,   step: 0.05, def: 0.9, scale: 1 },
+    { id: 'numbPoemBlockOpacity',label: 'Block opacity',   min: 0,   max: 1,   step: 0.05, def: 0.85, scale: 1 },
+    { id: 'numbPoemTextSizeMin', label: 'Min text size',   min: 6,   max: 24,  step: 1, def: 11, scale: 1 },
+    { id: 'numbPoemTextSizeMax', label: 'Max text size',   min: 10,  max: 36,  step: 1, def: 18, scale: 1 },
+    { id: 'numbPoemLineSpacing', label: 'Line spacing',    min: 1.0, max: 2.0, step: 0.1, def: 1.3, scale: 1 },
+    { id: 'numbPoemPadding',     label: 'Text padding',    min: 4,   max: 30,  step: 2, def: 12, scale: 1 },
+    { id: 'numbPoemUseNoisePos',   label: 'Noise‑driven placement', type: 'toggle', def: false },
+    { id: 'numbPoemNoiseScale',    label: 'Placement noise scale', min: 0.001, max: 0.05, step: 0.001, def: 0.01, scale: 1,
+      hint: 'Lower = larger position clusters' },
+    { id: 'numbPoemNoiseStrength', label: 'Noise strength',       min: 0, max: 1, step: 0.05, def: 0.5, scale: 1 },
+    { id: 'numbPoemBlockSizeMult', label: 'Block size multiplier', min: 0.8, max: 2.0, step: 0.05, def: 1.0, scale: 1,
+      hint: 'Scales the auto‑calculated block dimensions' },
+  ], 
   //to be refactored
   hatch: [
     { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
@@ -8823,6 +11184,7 @@ wireSlider('sOvSpeed','vOvSpeed','overlaySpeed');
 wireSlider('sOvSize','vOvSize','overlaySize');
 wireSlider('sOvAlpha','vOvAlpha','overlayAlpha');
 wireSlider('sOvWave','vOvWave','overlayWave');
+wireSlider('sGlitchInt', 'vGlitchInt', 'glitchIntensity', v => v / 100);  
 wireSlider('sOvEntropy','vOvEntropy','overlayEntropy',function(v){return v;});
 wireSlider('sOvDistort','vOvDistort','overlayDistort',function(v){return v;});
 wireSlider('sReactFeed', 'vReactFeed', 'reactFeed', v => v * 0.001);
@@ -9037,6 +11399,26 @@ document.getElementById('btnSignalCollapse').addEventListener('click', function(
     document.getElementById('btnPlay').textContent = '⏸ Pause';
   }
   showToast('Signal collapse');
+});
+
+// ── Global Glitch Wiring ───────────────────────────────────────────────────────
+document.getElementById('btnGlitchChromatic').addEventListener('click', function() {
+  S.glitchChromatic = !S.glitchChromatic;
+  this.textContent = S.glitchChromatic ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchChromatic);
+  window._st.rd();
+});
+document.getElementById('btnGlitchScanlines').addEventListener('click', function() {
+  S.glitchScanlines = !S.glitchScanlines;
+  this.textContent = S.glitchScanlines ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchScanlines);
+  window._st.rd();
+});
+document.getElementById('btnGlitchPixelate').addEventListener('click', function() {
+  S.glitchPixelate = !S.glitchPixelate;
+  this.textContent = S.glitchPixelate ? 'On' : 'Off';
+  this.classList.toggle('on', S.glitchPixelate);
+  window._st.rd();
 });
   
 // ── PALETTE LISTENERS ───────────────────────────────────────────────────────────────────
@@ -9761,9 +12143,22 @@ function initCalligraphySection() {
   let subModeBtns = document.querySelectorAll('#calligSubModeRow .cb');
   subModeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+      let previousSubMode = S.calligSubMode;
       subModeBtns.forEach(b => b.classList.remove('active-submode'));
       btn.classList.add('active-submode');
       S.calligSubMode = btn.dataset.submode;
+
+      // ── Full state reset on every sub-mode switch ──
+      // Stop any active composition sequence
+      calligActiveComp = null;
+      calligSegIdx     = 0;
+      calligStrokeIdx  = 0;
+      // Clear in-flight strokes so previous mode's marks don't bleed in
+      calligStrokes = [];
+      // Reset the clock so intervals fire immediately
+      _calligClock = 0;
+      calligIsDrawing = false;
+
       // Show/hide mode‑specific controls
       let isCharMode = (S.calligSubMode === 'character');
       let isCompMode = (S.calligSubMode === 'composition');
@@ -9778,16 +12173,19 @@ function initCalligraphySection() {
       document.getElementById('sCalligMinLen').parentElement.style.display = showStroke ? 'block' : 'none';
       document.getElementById('sCalligMaxLen').parentElement.style.display = showStroke ? 'block' : 'none';
       
-      // For interactive mode, ensure cursor and handlers
+      // For interactive mode, ensure cursor and handlers are wired
       if (S.calligSubMode === 'interactive') {
-        setupCalligraphyInteraction(window._st.p);
+        setupCalligraphyInteraction(window._st.p); // wires pointer events + calls _refreshCanvasCursor
         showBrushCursor(true);
         if (!S.playing) { S.playing = true; window._st.p.loop(); document.getElementById('btnPlay').textContent = '⏸ Pause'; }
       } else {
+        // Leaving interactive mode: remove cursor styling explicitly
+        _refreshCanvasCursor(); // S.calligSubMode is already updated, so this clears the cursor
         showBrushCursor(false);
+        // Hide the div cursor too
+        let bc = document.getElementById('brushCursor');
+        if (bc) bc.style.display = 'none';
       }
-      // Reset composition state when leaving composition mode
-      if (S.calligSubMode !== 'composition') calligActiveComp = null;
       setCalligraphyMode();
     });
   });
@@ -9885,7 +12283,6 @@ document.addEventListener('DOMContentLoaded', initCalligraphySection);
 
 
 // ── CALLIGRAPHY ENABLE/DISABLE TOGGLE ──────────────────────────────────────
-// ── CALLIGRAPHY ENABLE/DISABLE TOGGLE ──────────────────────────────────────
 let calligraphyToggle = document.getElementById('btnCalligraphyEnable');
 if (calligraphyToggle) {
   // Set initial state
@@ -9954,6 +12351,8 @@ if (calligraphyToggle) {
       });
       // Hide brush cursor
       showBrushCursor(false);
+      let wrap = document.getElementById('canvas-wrap');
+      if (wrap) wrap.style.cursor = '';
       // Redraw
       window._st.rd();
       showToast('Calligraphy disabled – restored previous mode');
@@ -10110,8 +12509,23 @@ document.getElementById('btnReset').addEventListener('click',function(){resetAll
 
 let mediaRecorder;
 let recordedChunks = [];
-let recordingTimeout;
 
+
+
+// ── WELCOME CLICK - Expand/Collapse sections ─────────────────────────────────────────────────────────────────  
+
+  
+// ── WELCOME (scroll wheel) ─────────────────────────────────────────────────────────────────
+window.addEventListener('wheel', function(e) {
+  if (S.mode === 'welcome') {
+    S.welcomeScroll += e.deltaY > 0 ? -40 : 40;
+    // Increased lower limit to -1200 to allow room for new sections
+    S.welcomeScroll = Math.min(0, Math.max(S.welcomeScroll, -3500));
+    e.preventDefault();
+  }
+}, { passive: false });
+
+  
 // ── RECORDER ─────────────────────────────────────────────────────────────────
 document.getElementById('btnRecordGif').addEventListener('click', function() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -10279,7 +12693,11 @@ const PRESETS={
   hypertype_mode: function() {ap({ mode:'hypertype', font:'courier', entropy:.04, speed:.004,wave:15, bg:'#f5f0ea', spacing:18, maxSize:24,noiseScale:.01, palette:'neon', compEnabled:false,chars: CHARSETS.ascii });hypertypeGrid = [];},
   hypertype_hearts: function() {ap({ mode:'hypertype', font:'times', entropy:.03, speed:.003,wave:10, bg:'#f0eeff', spacing:20, maxSize:22,noiseScale:.009, palette:'dusk', compEnabled:false,chars: ['♥','♡','●','○','◉','◎','•','·'].concat('such daily life social emotion '.split('')) });hypertypeGrid = [];},
   circle_field_warm: function() {ap({ mode:'circlefield', font:'courier', entropy:.03, speed:.003,wave:20, bg:'#f8f5ee', spacing:12, maxSize:12,noiseScale:.01, palette:'pumpkin', compEnabled:false });},
-    
+  poetic_tendrils: function() {ap({mode: 'poetictendrils',font: 'typewriter',bg: '#0a0c14',palette: 'deepnebula',accent: '#ffaad4',accentAmt: 0.3,spacing: 10,maxSize: 14,density: 0.6,speed: 0.002, wave: 15, turb: 0.008,noiseType: 'simplex',poeticPoemText: 'Tendrils of longing stretch out from every atom and idea Feeling Yearning seeking out a single dormant neuron to spark against, to sound its note, to grant a pulse, within the mad and desperate engine of the senile universe revealing itself to itself.',poeticTextSize: 0.8,poeticCount: 90,poeticLength: 7,poeticCurve: 0.6,poeticWidth: 1.4,poeticGlow: 0.8,poeticPulse: 0.9,overlayEnabled: true,overlayStreams: [{ text: '⚡ spark against ⚡', color: '#ffaad4', offset: 0 }], overlaySpeed: 2,overlaySize: 12,overlayAlpha: 30,});},  
+  numb_poem: function(){ap({mode: 'numbpoem',font: 'typewriter', bg: '#f2e8d5', palette: 'numb',accent: '#c94b1f',spacing: 12,maxSize: 18,density: 0.5,speed: 0.0015,wave: 8,turb: 0.004,numbPoemBlockMinW: 140,numbPoemBlockMaxW: 300,numbPoemBlockMinH: 120,numbPoemBlockMaxH: 280,numbPoemRotateChance: 0.3,numbPoemDriftSpeed: 0.25,numbPoemDriftX: 0.5,numbPoemDriftY: 0.4,numbPoemEdgeTear: 0.5,numbPoemPaperGrain: true,numbPoemInkBleed: 0.35,numbPoemTextColor: '#1a1a1a',numbPoemTextOpacity: 0.95,numbPoemBlockOpacity: 0.9,numbPoemTextSizeMin: 12,numbPoemTextSizeMax: 20,numbPoemLineSpacing: 1.4,numbPoemPadding: 14,});},
+  yandinsky_original: function() {ap({mode: 'yandinsky',bg: '#d4a828',palette: 'yandinsky',accent: '#e63946',accentAmt: 0.15,spacing: 14,maxSize: 18,density: 0.5,speed: 0.003,wave: 20,turb: 0.006,noiseType: 'simplex',ynDrift: 1.0,ynOsc: 1.0,ynSpeed: 1.0,ynLineWeight: 1.0,ynShowGrid: true,ynTexture: 1.0,ynExtraRects: 0,ynExtraLines: 0,ynRandomize: false,ynConcrete: 0.3});},
+
+  
 };
 
  // ── CORNER LABELS UI HELPER ──────────────────────────────────────────────────────── 
@@ -10331,7 +12749,7 @@ document.getElementById('body-presets').addEventListener('click', function(e) {
   'mode', 'mode-fluid', 'mode-struct', 'mode-geo', 'mode-topo', 'mode-bio',
   'chars', 'chars-scripts', 'chars-arcane', 'chars-geo', 'chars-custom', 'chars-organic',
   'global', 'sub-motion', 'sub-field', 'sub-entropy', 'sub-render',
-  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'shapes', 'overlay', 'img', 'size', 'userpresets'
+  'font', 'motion', 'field', 'entropy', 'palette', 'blend', 'comp', 'calligraphy', 'shapes', 'overlay', 'img', 'size', 'userpresets'
 ].forEach(function(id) {
   let body = document.getElementById('body-' + id);
   let arrow = document.getElementById('arr-' + id);
@@ -10651,3 +13069,101 @@ function togglePanel() {
 </script>
 </body>
 </html>
+
+
+// APPENDIX
+// ─────────────────────────────────────────────────────────────────────────────
+// MODE REFACTORING INSTRUCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// 🧠 When refactoring a legacy drawXXX(p, t) function, follow this checklist.
+// Use the current state object S (defined in DEFAULT_STATE and extended by
+// PARAM_REGISTRY). Keep the original character and structure intact – only
+// replace hardcoded constants with variable references where appropriate.
+//
+// 1. Global Field & Motion Parameters (always available)
+//    ┌─────────────────────┬──────────────────────────────────────────────────┐
+//    │ Variable            │ Use instead of hardcoded value                   │
+//    ├─────────────────────┼──────────────────────────────────────────────────┤
+//    │ S.spacing           │ Grid step (pixels)                               │
+//    │ S.maxSize           │ Maximum font size                                │
+//    │ S.density           │ Threshold for character placement (0..1)         │
+//    │ S.speed             │ Time multiplier (already applied to t)           │
+//    │ S.wave              │ Amplitude for displacements, pulse strength      │
+//    │ S.turb              │ Frequency multiplier for waves, turbulence       │
+//    │ S.noiseScale        │ Scale for Perlin/simplex noise fields            │
+//    │ S.charNoiseScale    │ Scale for character selection noise (mottling)   │
+//    │ S.jitter            │ Random position jitter (handled in dc)           │
+//    │ S.entropy           │ Glitch probability (already in pickChar)         │
+//    │ S.caseGlitch        │ Case flipping probability (already in pickChar)  │
+//    │ S.flipChance        │ Mirror probability (already in dc)               │
+//    │ S.flipHMirror       │ Global horizontal mirror toggle (in dc)          │
+//    │ S.flipVMirror       │ Global vertical mirror toggle (in dc)            │
+//    │ S.charRotation      │ Global character rotation (degrees → rad in dc)  │
+//    │ S.fontStack         │ Font family (already in dc)                      │
+//    │ S.blendMode         │ Canvas composite operation (set globally)        │
+//    │ S.trailPersist      │ Frame persistence (handled in p.draw)            │
+//    │ S.bg                │ Background colour (canvas clear)                 │
+//    │ S.palette           │ Active colour palette (used by pickColor)        │
+//    │ S.accent / Amt      │ Primary accent colour & probability              │
+//    │ S.accent2 / Amt2    │ Secondary accent colour & probability            │
+//    │ S.colorMapMode      │ Colour mapping strategy (noise, radial, etc.)    │
+//    │ S.noiseType         │ Noise texture (perlin, cellular, etc.)           │
+//    │ S.noiseOctaves      │ fBm octave count                                 │
+//    │ S.noiseFalloff      │ Amplitude falloff per octave                     │
+//    └─────────────────────┴──────────────────────────────────────────────────┘
+//
+// 1b. Global Glitch Parameters (available for any mode)
+//    ┌──────────────────────┬─────────────────────────────────────────────────┐
+//    │ Variable             │ Description                                     │
+//    ├──────────────────────┼─────────────────────────────────────────────────┤
+//    │ S.glitchIntensity    │ Displacement strength (0 = off, 1 = max)        │
+//    │ S.glitchChromatic    │ Offset R/G/B channels separately (boolean)      │
+//    │ S.glitchScanlines    │ Overlay dark scanlines (boolean)                │
+//    │ S.glitchPixelate     │ Blocky low‑res rendering (boolean)              │
+//    └──────────────────────┴─────────────────────────────────────────────────┘
+//
+//    Helper functions (callable from any mode):
+//      applyGlitchOffset(p, x, y, t, [intensity]) → {x, y}
+//      applyChromaticGlitch(p, x, y, t) → {r:{x,y}, g:{x,y}, b:{x,y}}
+//      applyScanline(x, y, w, h, row)   // draws scanline on CTX
+//
+// 2. Mode‑Specific Parameters (defined in PARAM_REGISTRY[mode])
+//    For the mode being refactored, look up its entry in PARAM_REGISTRY.
+//    Each parameter has an id that maps to S[id]. Replace hardcoded values
+//    with S[id] (with a fallback to the original default).
+//
+// 3. Noise Calls – Migration to sampleNoise
+//    Use sampleNoise(p, nx, ny, nt) for density gates, colour mapping,
+//    and any organic field that should respect noiseType, noiseOctaves, etc.
+//    Keep raw p.noise() for purely geometric offsets unless you want them
+//    to also change with noise type.
+//
+// 4. Character Selection – Already modernised (pickChar)
+//
+// 5. Drawing Characters – Use dc()
+//    All character drawing must go through dc(x, y, size, rotation, colour, char).
+//
+// 6. Reinitialisation – State Arrays
+//    Modes with persistent arrays (rainDrops, tessGrid, etc.) are re‑initialised
+//    automatically by ri() when relevant parameters change.
+//
+// 7. Step‑by‑Step Refactoring Workflow
+//    • Identify the mode.
+//    • Look up PARAM_REGISTRY[mode] for custom parameters.
+//    • Replace hardcoded multipliers with S.param || default.
+//    • Replace density/colour noise with sampleNoise where appropriate.
+//    • Test with various slider settings.
+//
+// 8. Do NOT Change
+//    • Overall loop structure.
+//    • Core mathematical relationships.
+//    • The way pcc or pickColor is used.
+//
+// 9. After Refactoring
+//    • Add mode parameters to PARAM_REGISTRY.
+//    • Update init function if needed.
+//    • Test thoroughly.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
