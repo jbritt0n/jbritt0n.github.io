@@ -9475,7 +9475,7 @@ const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
  
 function initNewspaper(p) {
   let W = p.width, H = p.height;
- 
+  _npS = null;  // clear old cache
   // ── Read layout params from S ──────────────────────────────────────────────
   let nStrips      = Math.max(3,  Math.round(S.npStrips      ?? 14));
   let maxAng       =              S.npRotation    ?? 22;
@@ -12375,7 +12375,7 @@ new p5(function(p){
     p.randomSeed(Math.random() * 99999);
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
-    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); initYandinsky(p);
+    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); initYandinsky(p); initNewspaper(p);
     initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p); initNumbPoem(p);
     recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
@@ -12383,8 +12383,9 @@ new p5(function(p){
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
-    if (typeof initNumbCollage === 'function') initNumbCollage(p);
-    if (S.mode === 'numbpoem' && typeof initNumbPoem === 'function') initNumbPoem(p);
+    if (S.mode === 'newspaper') initNewspaper(p);
+    if (S.mode === 'numbcollage') initNumbCollage(p);
+    if (S.mode === 'numbpoem') initNumbPoem(p);
     if(typeof initBoids === 'function') initBoids(W, H);
     if(S.compEnabled) buildComp(S.compPreset,W,H);
     
