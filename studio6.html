@@ -9476,6 +9476,7 @@ const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
 function initNewspaper(p) {
   let W = p.width, H = p.height;
   _npS = null;  // clear old cache
+
   // ── Read layout params from S ──────────────────────────────────────────────
   let nStrips      = Math.max(3,  Math.round(S.npStrips      ?? 14));
   let maxAng       =              S.npRotation    ?? 22;
@@ -9499,7 +9500,12 @@ function initNewspaper(p) {
   let revStyle     =              S.npRevolutionaryStyle ?? false;
  
   if (layoutSeed > 0) p.randomSeed(layoutSeed);
- 
+     // Reset random seed for true randomness when layoutSeed === 0
+  if (layoutSeed === 0) {
+    p.randomSeed(Math.random() * 999999);
+  } else {
+    p.randomSeed(layoutSeed);
+  }
   // ── Detect special seeds ──────────────────────────────────────────────────
   let is1949  = layoutSeed === 1949;    // PRC birthday
   let is1921  = layoutSeed === 1921;    // CCP founding
@@ -9721,11 +9727,13 @@ function initNewspaper(p) {
  
   // ── Stash everything the draw loop needs ─────────────────────────────────
   _npS = {
-    W, H, strips, washes, drips, pal,
-    paperAge, textDensity, inkFade, mastSize,
-    revStyle, comradeMode: comrade,
-    is1949, is1921, is1966,
+  W, H, 
+  strips: JSON.parse(JSON.stringify(strips)),
+  washes: JSON.parse(JSON.stringify(washes)),
+  drips: JSON.parse(JSON.stringify(drips)),
+  BC, HC, pal, paperAge, textDensity, inkFade, mastSize, revStyle, comradeMode 
   };
+
  
   // Set up mouse/key interaction if not already done
   if (!window._npInteractionReady) _npSetupInteraction();
