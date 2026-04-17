@@ -9250,9 +9250,12 @@ function drawNumbCollage(p, t) {
 //   Global (from main panel):
 //     S.palette, S.bg, S.speed
 // ─────────────────────────────────────────────────────────────────────────────
+// ─── NEWSPAPER v3 — Customizable Chinese Newsprint Collage ────────────────────
+// ... (full header comments as before) ...
+// ─────────────────────────────────────────────────────────────────────────────
 
-let _npS = null;               // cached scene state
-let _npEasterEggState = {      // persistent for easter eggs
+let _npS = null;
+let _npEasterEggState = {
   dazibaoActive: false,
   dazibaoTimer: 0,
   starClickTime: 0,
@@ -9264,9 +9267,9 @@ function initNewspaper(p) {
   let W = p.width, H = p.height;
   let m = Math.min(W, H);
 
-  // ── Read layout params ─────────────────────────────────────────────────────
+  // Read layout params
   let nStrips      = Math.max(3,  Math.round(S.npStrips      ?? 14));
-  let maxAng       =             S.npRotation    ?? 22;      // degrees
+  let maxAng       =             S.npRotation    ?? 22;
   let tearAmt      =             S.npTear        ?? 1.0;
   let colSp        = Math.max(8, Math.round(S.npColSpacing  ?? 14));
   let nWashes      = Math.max(0, Math.round(S.npWashes      ?? 4));
@@ -9286,17 +9289,13 @@ function initNewspaper(p) {
   let chaos        =             S.npChaos        ?? 0.0;
   let revStyle     =             S.npRevolutionaryStyle ?? false;
 
-  // Seed the random generator if a seed is provided
   if (layoutSeed > 0) p.randomSeed(layoutSeed);
-  // Create a seeded random function alias for clarity
   const rng = p;
 
-  // Chinese character pools
   const BC = '的一是在人了有中大来上国年以要他时为就出会可也我这地说子下生对所过都后面而还之自日工学能长第他如已现政'.split('');
   const HC = '新日人报经济政治文化发展科学体育社会艺术观评特号外党民军界世界论评国报刊'.split('');
   const PT = ['#f0e8d0','#ede0c0','#e8d8b0','#f5f0e0','#ddd0a8','#e2d5b5','#eae0c8','#ddd5c0'];
 
-  // ── Realistic Headline Templates (including 2026 current events) ───────────
   const HEADLINE_TEMPLATES = [
     ()=>`${['习近平','总书记','国家主席'][Math.floor(rng.random(3))]}${['发表','作出','强调'][Math.floor(rng.random(3))]}重要${['讲话','指示','论述'][Math.floor(rng.random(3))]}`,
     ()=>`${['中央','政治局','国务院'][Math.floor(rng.random(3))]}召开会议 ${['研究','部署','审议'][Math.floor(rng.random(3))]}${['经济工作','深化改革','国家安全'][Math.floor(rng.random(3))]}`,
@@ -9322,23 +9321,19 @@ function initNewspaper(p) {
     ()=>`江山就是人民 人民就是江山`,
   ];
 
-  // Masthead names for revolutionary style
   const MASTHEAD_NAMES = ['人民日报', '红星报', '解放日报', '光明日报', '中国青年报'];
 
-  // ── Colour wash palette transformation ────────────────────────────────────
   let pal = (S.palette && S.palette.length) ? S.palette : ['#e63946','#2a9d8f','#e9c46a','#264653'];
   if (paletteMode === 'mono') pal = ['#2b2b2b', '#4a4a4a', '#1a1a1a', '#333333'];
   else if (paletteMode === 'sepia') pal = ['#8b5a2b', '#a0522d', '#cd853f', '#8b4513'];
 
-  // Comrade Mode easter egg: seed 1949 or 1921 + revStyle + chaos=0
   let comradeMode = (revStyle && chaos === 0 && (layoutSeed === 1949 || layoutSeed === 1921));
   _npEasterEggState.comradeModeActive = comradeMode;
   if (comradeMode) {
-    pal = ['#cc0000', '#FFD700', '#8B0000', '#DAA520'];  // red and gold only
+    pal = ['#cc0000', '#FFD700', '#8B0000', '#DAA520'];
     console.log('为人民服务');
   }
 
-  // ── Generate strips ordered back → front ───────────────────────────────────
   let rawStrips = [];
   for (let i = 0; i < nStrips; i++) {
     let sw = W * (0.28 + rng.random(0.44));
@@ -9355,7 +9350,6 @@ function initNewspaper(p) {
   }
   rawStrips.sort((a, b) => a.z - b.z);
 
-  // ── Tear‑edge profile generator ────────────────────────────────────────────
   function mkTear(seedX, seedY, active) {
     let R   = 24;
     let ts  = tearAmt * 13;
@@ -9409,7 +9403,6 @@ function initNewspaper(p) {
     let htW   = w * (0.22 + rng.random(0.22));
     let htH   = h * (0.14 + rng.random(0.20));
 
-    // Masthead characters (revolutionary style uses fixed names)
     let mC;
     if (revStyle) {
       let chosen = MASTHEAD_NAMES[Math.floor(rng.random(MASTHEAD_NAMES.length))];
@@ -9446,7 +9439,6 @@ function initNewspaper(p) {
     };
   });
 
-  // ── Colour wash blobs ──────────────────────────────────────────────────────
   let washes = [];
   for (let i = 0; i < nWashes; i++) {
     let col = pal[i % pal.length];
@@ -9465,7 +9457,6 @@ function initNewspaper(p) {
     });
   }
 
-  // ── Ink drips ──────────────────────────────────────────────────────────────
   let drips = [];
   if (S.npDrips !== false) {
     strips.forEach((st, si) => {
@@ -9500,10 +9491,8 @@ function drawNewspaper(p, t) {
   let washAlpha = S.npWashAlpha ?? 0.35;
   let bodySize  = Math.max(5, Math.round(S.npBodySize ?? 9));
 
-  // Apply easter eggs (may modify global state)
   _npApplyEasterEggs(p, t);
 
-  // ── 1. BACKGROUND — aged newsprint ─────────────────────────────────────────
   CTX.save();
   CTX.fillStyle = S.bg || '#ede5d0';
   CTX.fillRect(0, 0, W, H);
@@ -9519,27 +9508,21 @@ function drawNewspaper(p, t) {
   }
   CTX.globalAlpha = 1;
 
-  // Background fireworks for National Day / Party Day (easter egg)
   let now = new Date();
   let month = now.getMonth() + 1, day = now.getDate();
   if ((month === 7 && day === 1) || (month === 10 && day === 1)) {
     _npDrawFireworks(p, tick, W, H);
   }
-
   CTX.restore();
 
-  // ── 2. UNDER‑WASHES ───────────────────────────────────────────────────────
   _npPaintWashes(p, washes, washAlpha, tick, true);
 
-  // ── 3. STRIPS ─────────────────────────────────────────────────────────────
   strips.forEach(strip => {
     _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC);
   });
 
-  // ── 4. OVER‑WASHES ────────────────────────────────────────────────────────
   _npPaintWashes(p, washes, washAlpha * 0.42, tick + 1.8, false);
 
-  // ── 5. INK DRIPS ──────────────────────────────────────────────────────────
   if (S.npDrips !== false) {
     CTX.save();
     let visAlpha = Math.min(1, washAlpha * 2.8);
@@ -9565,7 +9548,6 @@ function drawNewspaper(p, t) {
     CTX.restore();
   }
 
-  // ── 6. DAZIBAO OVERLAY (Shift+D easter egg) ───────────────────────────────
   if (_npEasterEggState.dazibaoActive) {
     let elapsed = p.millis() - _npEasterEggState.dazibaoTimer;
     if (elapsed < 5000) {
@@ -9640,7 +9622,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
   let angR = (angle + offR * 57.296) * (Math.PI / 180);
 
   CTX.save();
-
   CTX.shadowColor   = 'rgba(0,0,0,0.20)';
   CTX.shadowBlur    = 10;
   CTX.shadowOffsetX = 3;
@@ -9650,7 +9631,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
   CTX.rotate(angR);
   CTX.translate(-w * 0.5, -h * 0.5);
 
-  // ── Build torn‑edge clipping polygon ──────────────────────────────────────
   let R = tearRes;
   CTX.beginPath();
   for (let j = 0; j <= R; j++) {
@@ -9671,14 +9651,12 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
 
   CTX.fillStyle = paper;
   CTX.fill();
-
   CTX.clip();
   CTX.shadowColor = 'transparent';
   CTX.shadowBlur  = 0;
   CTX.shadowOffsetX = 0;
   CTX.shadowOffsetY = 0;
 
-  // ── Paper background ───────────────────────────────────────────────────────
   CTX.fillStyle = paper;
   CTX.fillRect(-4, -4, w + 8, h + 8);
 
@@ -9698,9 +9676,7 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
   CTX.fillStyle = stGr;
   CTX.fillRect(0, 0, w, h);
 
-  // ── Revolutionary Style additions ─────────────────────────────────────────
   if (_npS.revStyle || _npS.comradeMode) {
-    // Red banner behind masthead
     if (hasMast) {
       CTX.fillStyle = '#cc0000';
       CTX.globalAlpha = 0.9;
@@ -9711,7 +9687,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
       CTX.globalAlpha = 1;
     }
 
-    // Yellow star(s)
     if (hasMast || p.random() < 0.4) {
       let starX = w - 24, starY = 12;
       _npDrawStar(CTX, starX, starY, 5, 9, 4.5, '#FFD700');
@@ -9721,7 +9696,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
       }
     }
 
-    // Revolutionary slogan
     if (hasMast) {
       CTX.save();
       CTX.font = `bold ${_npS.mastSize * 0.45}px "Noto Serif SC", "KaiTi", serif`;
@@ -9732,7 +9706,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
       CTX.restore();
     }
 
-    // Double red rule lines
     CTX.strokeStyle = '#cc0000';
     CTX.lineWidth = 2.5;
     CTX.beginPath(); CTX.moveTo(4, 20); CTX.lineTo(w - 4, 20); CTX.stroke();
@@ -9740,7 +9713,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.beginPath(); CTX.moveTo(4, 24); CTX.lineTo(w - 4, 24); CTX.stroke();
   }
 
-  // ── Column rule lines ─────────────────────────────────────────────────────
   CTX.strokeStyle = 'rgba(0,0,0,0.055)';
   CTX.lineWidth   = 0.4;
   cols.forEach(col => {
@@ -9749,7 +9721,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.beginPath(); CTX.moveTo(rx, 6); CTX.lineTo(rx, h - 5); CTX.stroke();
   });
 
-  // Masthead rule (if not overridden by revolutionary style)
   if (!_npS.revStyle && !_npS.comradeMode) {
     CTX.strokeStyle = 'rgba(0,0,0,0.28)';
     CTX.lineWidth   = 1.0;
@@ -9759,7 +9730,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.beginPath(); CTX.moveTo(4, 23); CTX.lineTo(w - 4, 23); CTX.stroke();
   }
 
-  // Crease lines
   creases.forEach(cr => {
     CTX.strokeStyle = 'rgba(90,70,30,0.14)';
     CTX.lineWidth   = 0.6;
@@ -9769,7 +9739,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.beginPath(); CTX.moveTo(0, cr.y + cr.skew - 1); CTX.lineTo(w, cr.y - cr.skew - 1); CTX.stroke();
   });
 
-  // ── HALFTONE PHOTO ZONE ────────────────────────────────────────────────────
   if (hasHT && S.npHalftone !== false) {
     CTX.fillStyle = 'rgba(70,60,50,0.07)';
     CTX.fillRect(htX, htY, htW, htH);
@@ -9791,13 +9760,11 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.strokeRect(htX, htY, htW, htH);
   }
 
-  // ── CHARACTER COLUMNS ─────────────────────────────────────────────────────
   CTX.save();
   CTX.textAlign    = 'center';
   CTX.textBaseline = 'top';
   CTX.imageSmoothingEnabled = true;
 
-  // Easter egg: hidden slogan at specific parameters
   let sloganEgg = (Math.abs(S.npInkFade - 0.88) < 0.01 && Math.abs(S.npTextDensity - 1.28) < 0.01);
   let sloganChars = '实现中华民族伟大复兴'.split('');
 
@@ -9807,7 +9774,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     let cx     = col.cx;
     let startY = 26;
 
-    // Headline (using template text)
     if (col.isHL && col.headlineText) {
       let hsz    = Math.min(Math.floor(colSp * 2.1), 40);
       let chars  = col.headlineText.split('');
@@ -9828,7 +9794,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
       startY += 5;
     }
 
-    // Body text
     let rowH = bodySize * 1.30;
     let baseRows = Math.floor((h - startY - 6) / rowH);
     let nRows = Math.floor(baseRows * _npS.textDensity);
@@ -9859,7 +9824,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
   });
   CTX.restore();
 
-  // Masthead
   if (hasMast) {
     let msz = Math.min(Math.floor(w * 0.26), _npS.mastSize);
     CTX.save();
@@ -9876,7 +9840,6 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
     CTX.restore();
   }
 
-  // Red seal
   if (hasSeal && S.npStamps !== false) {
     let ssz  = 26 + (seed % 13);
     let hssz = ssz * 0.5;
@@ -9943,16 +9906,13 @@ function _npDrawStar(ctx, cx, cy, spikes, outerR, innerR, color) {
 
 // ─── EASTER EGGS ─────────────────────────────────────────────────────────────
 function _npApplyEasterEggs(p, t) {
-  // Keyboard shortcut: Shift+D triggers Dazibao overlay
-  if (typeof keyIsDown === 'function' && keyIsDown(16) && keyIsDown(68)) { // Shift + D
+  // Shift+D triggers Dazibao overlay (if keyIsDown is available)
+  if (typeof keyIsDown === 'function' && keyIsDown(16) && keyIsDown(68)) {
     if (!_npEasterEggState.dazibaoActive) {
       _npEasterEggState.dazibaoActive = true;
       _npEasterEggState.dazibaoTimer = p.millis();
     }
   }
-
-  // Click on a star? (Could be implemented with mouse detection if needed)
-  // For simplicity, we'll skip the audio easter egg due to browser autoplay restrictions.
 }
 
 // ─── FIREWORKS (for July 1 / Oct 1) ─────────────────────────────────────────
@@ -9975,15 +9935,16 @@ function _npDrawFireworks(p, tick, W, H) {
   CTX.restore();
 }
 
-  
-
 // ─── EXPOSE TO GLOBAL SCOPE ─────────────────────────────────────────────────
-// (Assuming this is loaded in a p5.js sketch where these functions are called)
 window.initNewspaper = initNewspaper;
 window.drawNewspaper = drawNewspaper;
-}
 
 
+
+
+
+
+  
 // ── YANDINSKY ─────────────────────────────────────────────────────────────────
 // Yellow Kandinsky — geometric abstraction with drifting forms and oscillating lines.
 // Homage to Vasily Kandinsky. Each element hovers on its own phase+frequency;
