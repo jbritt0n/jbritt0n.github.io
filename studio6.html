@@ -5159,19 +5159,19 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   } else {
     pts = _genLinePoints(p, x1, y1, Math.max(20, dist * 1.5), calligMouseAngle, 0.12);
   }
-
-  if (!pts || pts.length < 2) return;
-  pts = _densify(pts, 6);
+  
+pts = _densify(pts, 6);
   pts = _applyChaikin(pts, 2);
-  _assignSpeeds(pts, dist * 1.5);
+  let truelen = 0;
+  for (let k = 1; k < pts.length; k++) truelen += Math.hypot(pts[k].x - pts[k-1].x, pts[k].y - pts[k-1].y);
+  _assignSpeeds(pts, truelen);
 
   // Pressure-sensitive width
-  let eff = baseWidth * (0.5 + 1.0 / (calligMouseVelocity * 0.5 + 1));
-  for (let j = 0; j < pts.length; j++) {
+for (let j = 0; j < pts.length; j++) {
     let pf = Math.sin(pts[j].prog * Math.PI);
     let sf = Math.pow(1 / Math.max(0.1, pts[j].speed || 1), 0.4);
-    pts[j].w = Math.max(2,
-      eff * Math.pow(Math.max(0.35, pf) * sf, 1 / Math.max(0.1, taper)));
+    pts[j].w = Math.max(0.5, baseWidth *
+      Math.pow(Math.max(0, pf * sf), 1 / Math.max(0.1, taper)));
   }
 
   // Paint directly to the offscreen ink buffer (no grow-in delay)
@@ -5185,7 +5185,7 @@ function _pushInteractiveStroke(p, x1, y1, x2, y2) {
   _renderSumiE(p, pts, col,
     S.calligBleed    ?? 0.5,
     Math.max(1, Math.floor(S.calligFibers ?? 6)),
-    Math.min(1, (S.calligInk ?? 0.9) * 1.25),
+    S.calligInk      ?? 0.9,
     S.calligDrips    ?? true,
     S.calligPooling  ?? true,
     S.calligSplatter ?? 0.2,
