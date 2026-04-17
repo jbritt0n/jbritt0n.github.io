@@ -4836,81 +4836,94 @@ function drawCalligraphy(p, t) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ── Hanko seal renderer ────────────────────────────────────────────────────────
+// ── Updated Square Hanko Seal Renderer (Jonathan's Studio Version) ─────────────
 function _drawHanko(p, t, W, H) {
   if (S.mode !== 'calligraphy') return;
   CTX.save();
 
-  let stampW = Math.min(34, W * 0.05);
-  let stampH = stampW * 2.4;
+  // 1. Setup: Proportions for a square rubber stamp
+  let stampSize = Math.min(48, W * 0.08); 
   let stampX = 35;
-  let stampY = H - stampH - 35;
+  let stampY = H - stampSize - 35;
 
-  // Subtle "hand-stamped" tilt
-  CTX.translate(stampX + stampW / 2, stampY + stampH / 2);
-  CTX.rotate(-0.02);
-  CTX.translate(-(stampX + stampW / 2), -(stampY + stampH / 2));
+  // Hand-stamped jitter: slight tilt and position shift
+  CTX.translate(stampX + stampSize / 2, stampY + stampSize / 2);
+  CTX.rotate((p.noise(t * 0.5) - 0.5) * 0.04);
+  CTX.translate(-(stampX + stampSize / 2), -(stampY + stampSize / 2));
 
-  // ── 1. Draw the cinnabar stone with organic edges ───────────────────────
-  CTX.fillStyle  = '#b32222';
+  // ── 2. The Stone/Rubber Base ───────────────────────────────────────────────
+  CTX.fillStyle = '#b32222';
   CTX.globalAlpha = 0.9;
   CTX.beginPath();
-  let steps = 12, jitter = 1.2;
+  let steps = 18, jitter = 1.6; // Increased jitter for rubber-cut feel
+  
+  // Draw perimeter with Perlin noise edges
   for (let i = 0; i <= steps; i++) {
-    let x = stampX + (i / steps) * stampW;
-    let y = stampY + (p.noise(x * 0.1, stampY * 0.1) - 0.5) * jitter;
+    let x = stampX + (i / steps) * stampSize;
+    let y = stampY + (p.noise(x * 0.1, t) - 0.5) * jitter;
     i === 0 ? CTX.moveTo(x, y) : CTX.lineTo(x, y);
   }
   for (let i = 0; i <= steps; i++) {
-    let y = stampY + (i / steps) * stampH;
-    let x = stampX + stampW + (p.noise((stampX + stampW) * 0.1, y * 0.1) - 0.5) * jitter;
+    let y = stampY + (i / steps) * stampSize;
+    let x = stampX + stampSize + (p.noise(t, y * 0.1) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
-    let x = stampX + (i / steps) * stampW;
-    let y = stampY + stampH + (p.noise(x * 0.1, (stampY + stampH) * 0.1) - 0.5) * jitter;
+    let x = stampX + (i / steps) * stampSize;
+    let y = stampY + stampSize + (p.noise(x * 0.1, t + 5) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   for (let i = steps; i >= 0; i--) {
-    let y = stampY + (i / steps) * stampH;
-    let x = stampX + (p.noise(stampX * 0.1, y * 0.1) - 0.5) * jitter;
+    let y = stampY + (i / steps) * stampSize;
+    let x = stampX + (p.noise(t + 5, y * 0.1) - 0.5) * jitter;
     CTX.lineTo(x, y);
   }
   CTX.closePath();
   CTX.fill();
 
-  // ── 2. Ink break-up — random voids where stamp didn't fully contact ─────
+  // ── 3. Ink Break-up (Rubber "Chatter") ─────────────────────────────────────
   CTX.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < 40; i++) {
-    CTX.globalAlpha = Math.random() * 0.4;
+  for (let i = 0; i < 45; i++) {
+    CTX.globalAlpha = Math.random() * 0.5;
+    let rx = stampX + Math.random() * stampSize;
+    let ry = stampY + Math.random() * stampSize;
+    // Clump voids near edges to simulate thinner ink on the rubber shoulder
+    let edgeDist = Math.min(rx - stampX, stampX + stampSize - rx, ry - stampY, stampY + stampSize - ry);
+    let r = Math.random() * 2 + (edgeDist < 2 ? 1.5 : 0.5); 
+    
     CTX.beginPath();
-    CTX.arc(
-      stampX + Math.random() * stampW,
-      stampY + Math.random() * stampH,
-      Math.random() * 2 + 1, 0, Math.PI * 2
-    );
+    CTX.arc(rx, ry, r, 0, Math.PI * 2);
     CTX.fill();
   }
-  // ── 3. Carve the name glyphs (removes red ink) ──────────────────────────
+
+  // ── 4. Carve Glyphs (2x2 Grid: 喬納森印) ───────────────────────────────────
   CTX.globalCompositeOperation = 'destination-out';
-  CTX.globalAlpha  = 1.0;
-  CTX.textAlign    = 'center';
+  CTX.globalAlpha = 1.0;
+  CTX.textAlign = 'center';
   CTX.textBaseline = 'middle';
-  CTX.font = `bold ${stampW * 0.7}px "Ma Shan Zheng", "Noto Serif SC", serif`;
-  ['乔', '纳', '森'].forEach((ch, i) => {
-    let charY = stampY + (stampH * 0.18) + (i * stampH * 0.31);
-    let jx    = (p.noise(i, t * 0.01) - 0.5) * 0.8;
-    CTX.fillText(ch, stampX + stampW / 2 + jx, charY);
+  // Use a slightly smaller font to fit the 2x2 grid
+  CTX.font = `bold ${stampSize * 0.38}px "Ma Shan Zheng", "Noto Serif SC", serif`;
+
+  // Traditional order: Top-Right (喬), Bottom-Right (納), Top-Left (森), Bottom-Left (印)
+  const chars = [
+    { ch: '喬', x: 0.72, y: 0.28 }, { ch: '納', x: 0.72, y: 0.72 },
+    { ch: '森', x: 0.28, y: 0.28 }, { ch: '印', x: 0.28, y: 0.72 }
+  ];
+
+  chars.forEach(c => {
+    let jx = (p.noise(c.x, c.y, t) - 0.5) * 1.2;
+    let jy = (p.noise(c.y, c.x, t) - 0.5) * 1.2;
+    CTX.fillText(c.ch, stampX + stampSize * c.x + jx, stampY + stampSize * c.y + jy);
   });
-  // ── 4. Subtle multiply pass — ink soaking into paper fibers ─────────────
+
+  // ── 5. Final Paper Bleed ──────────────────────────────────────────────────
   CTX.globalCompositeOperation = 'multiply';
-  CTX.globalAlpha = 0.1;
-  CTX.fillStyle   = '#440000';
-  CTX.fillRect(stampX, stampY, stampW, stampH);
+  CTX.globalAlpha = 0.12;
+  CTX.fillStyle = '#440000';
+  CTX.fillRect(stampX, stampY, stampSize, stampSize);
 
   CTX.restore();
 }
-
 
 // ── Brush cursor (div-based circle indicator) ──────────────────────────────────
 // Size is synced every frame; position is set by the pointer move handler.
