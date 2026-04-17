@@ -9251,7 +9251,7 @@ function drawNumbCollage(p, t) {
 //     S.palette, S.bg, S.speed
 // ─────────────────────────────────────────────────────────────────────────────
 
-
+// ─── NEWSPAPER v3 — Customizable Chinese Newsprint Collage ────────────────────
 let _npS = null;
 let _npEasterEggState = {
   dazibaoActive: false,
@@ -9267,25 +9267,25 @@ function initNewspaper(p) {
 
   // Read layout params
   let nStrips      = Math.max(3,  Math.round(S.npStrips      ?? 14));
-  let maxAng       =             S.npRotation    ?? 22;
-  let tearAmt      =             S.npTear        ?? 1.0;
+  let maxAng       =              S.npRotation    ?? 22;
+  let tearAmt      =              S.npTear        ?? 1.0;
   let colSp        = Math.max(8, Math.round(S.npColSpacing  ?? 14));
   let nWashes      = Math.max(0, Math.round(S.npWashes      ?? 4));
-  let hlFrac       =             S.npHeadlineFreq ?? 0.35;
-  let redInkChance =             S.npRedInkChance ?? 0.04;
-  let sealFreq     =             S.npSealFreq     ?? 0.48;
-  let paperAge     =             S.npPaperAge     ?? 0.6;
-  let textDensity  =             S.npTextDensity  ?? 1.0;
-  let inkFade      =             S.npInkFade      ?? 0.15;
-  let colAlign     =             S.npColumnAlign  ?? 'rtl';
-  let mastSize     =             S.npMastheadSize ?? 44;
+  let hlFrac       =              S.npHeadlineFreq ?? 0.35;
+  let redInkChance =              S.npRedInkChance ?? 0.04;
+  let sealFreq     =              S.npSealFreq     ?? 0.48;
+  let paperAge     =              S.npPaperAge     ?? 0.6;
+  let textDensity  =              S.npTextDensity  ?? 1.0;
+  let inkFade      =              S.npInkFade      ?? 0.15;
+  let colAlign     =              S.npColumnAlign  ?? 'rtl';
+  let mastSize     =              S.npMastheadSize ?? 44;
   let creaseCnt    = Math.max(0, Math.round(S.npCreaseCount ?? 2));
-  let paletteMode  =             S.npPaletteMode  ?? 'palette';
-  let photoDensity =             S.npPhotoDensity ?? 0.36;
+  let paletteMode  =              S.npPaletteMode  ?? 'palette';
+  let photoDensity =              S.npPhotoDensity ?? 0.36;
   let fixedCols    = Math.max(0, Math.round(S.npFixedCols   ?? 0));
-  let layoutSeed   =             S.npLayoutSeed   ?? 0;
-  let chaos        =             S.npChaos        ?? 0.0;
-  let revStyle     =             S.npRevolutionaryStyle ?? false;
+  let layoutSeed   =              S.npLayoutSeed   ?? 0;
+  let chaos        =              S.npChaos        ?? 0.0;
+  let revStyle     =              S.npRevolutionaryStyle ?? false;
 
   if (layoutSeed > 0) p.randomSeed(layoutSeed);
   const rng = p;
@@ -9317,6 +9317,18 @@ function initNewspaper(p) {
     ()=>`为实现${['中华民族伟大复兴','第二个百年奋斗目标','中国式现代化'][Math.floor(rng.random(3))]}而团结奋斗`,
     ()=>`增强“四个意识” 坚定“四个自信” 做到“两个维护”`,
     ()=>`江山就是人民 人民就是江山`,
+  ];
+
+  const COMRADE_TEMPLATES = [
+    () => `全世界无产者，联合起来！`,
+    () => `敢于斗争，敢于胜利！`,
+    () => `虚心使人进步，骄傲使人落后`,
+    () => `星星之火，可以燎原`,
+    () => `为人民服务`,
+    () => `坚决支持${['亚非拉','英雄的阿尔巴尼亚','全世界无产阶级'][Math.floor(rng.random(3))]}的革命斗争`,
+    () => `打倒${['帝国主义','修正主义','一切牛鬼蛇神'][Math.floor(rng.random(3))]}！`,
+    () => `大跃进${['万岁','就是好','捷报频传'][Math.floor(rng.random(3))]}`,
+    () => `伟大的导师，伟大的领袖，伟大的统帅，伟大的舵手`
   ];
 
   const MASTHEAD_NAMES = ['人民日报', '红星报', '解放日报', '光明日报', '中国青年报'];
@@ -9379,8 +9391,9 @@ function initNewspaper(p) {
       let isHL = rng.random() < hlFrac;
       let headlineText = null;
       if (isHL) {
-        let templateIdx = Math.floor(rng.random(HEADLINE_TEMPLATES.length));
-        headlineText = HEADLINE_TEMPLATES[templateIdx]();
+        let pool = _npEasterEggState.comradeModeActive ? COMRADE_TEMPLATES : HEADLINE_TEMPLATES;
+        let templateIdx = Math.floor(rng.random(pool.length));
+        headlineText = pool[templateIdx]();
       }
       let ink = rng.random() < redInkChance ? '#8b1010'
                 : rng.random() < 0.10 ? '#3a3a3a'
@@ -9430,6 +9443,7 @@ function initNewspaper(p) {
       sealX: rng.random(w*0.12, w*0.78), sealY: rng.random(h*0.12, h*0.75),
       mC,
       hasMast:  si >= nStrips - 3 && rng.random() < 0.72,
+      supremeQuote: COMRADE_TEMPLATES[Math.floor(rng.random(COMRADE_TEMPLATES.length))](),
       dPhase: dp, dSpeed: ds,
       dAX: (rng.random(2)-1) * 5.5,
       dAY: (rng.random(2)-1) * 3.5,
@@ -9485,7 +9499,7 @@ function drawNewspaper(p, t) {
   let W = _npS.W, H = _npS.H;
 
   let tick      = t * 0.010;
-  let driftAmt  = S.npDrift     ?? 1.0;
+  let driftAmt  = S.npDrift      ?? 1.0;
   let washAlpha = S.npWashAlpha ?? 0.35;
   let bodySize  = Math.max(5, Math.round(S.npBodySize ?? 9));
 
@@ -9535,7 +9549,7 @@ function drawNewspaper(p, t) {
       CTX.bezierCurveTo(
         dr.x + dr.lx * 0.3, dr.y + dr.len * 0.35,
         dr.x + dr.lx * 0.7, dr.y + dr.len * 0.75,
-        dr.x + dr.lx,        dr.y + dr.len
+        dr.x + dr.lx,         dr.y + dr.len
       );
       CTX.stroke();
       CTX.beginPath();
@@ -9611,7 +9625,7 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
         tearL, tearR, tearT, tearB, tearRes,
         creases, hasHT, htX, htY, htW, htH,
         hasSeal, sealX, sealY, mC, hasMast,
-        dPhase, dSpeed, dAX, dAY, dAR, seed } = strip;
+        supremeQuote, dPhase, dSpeed, dAX, dAY, dAR, seed } = strip;
 
   let dT   = tick * dSpeed;
   let offX = Math.sin(dT + dPhase)          * dAX * driftAmt;
@@ -9702,6 +9716,22 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
       CTX.textAlign = 'right';
       CTX.fillText('为人民服务', w - 10, 50);
       CTX.restore();
+      
+      if (p.noise(seed) > 0.4) {
+        let boxW = w * 0.45, boxH = 38;
+        let boxX = w - boxW - 8, boxY = 42;
+        CTX.save();
+        CTX.strokeStyle = '#cc0000';
+        CTX.lineWidth = 1;
+        CTX.strokeRect(boxX, boxY, boxW, boxH);
+        CTX.font = `bold 7px "Noto Serif SC", serif`;
+        CTX.fillStyle = '#cc0000';
+        CTX.textAlign = 'left';
+        CTX.fillText('最高指示', boxX + 3, boxY + 10);
+        CTX.font = `italic 6px "KaiTi", "STKaiti", serif`;
+        CTX.fillText(supremeQuote || "下定决心，不怕牺牲，排除万难", boxX + 3, boxY + 22, boxW - 6);
+        CTX.restore();
+      }
     }
 
     CTX.strokeStyle = '#cc0000';
@@ -9761,122 +9791,87 @@ function _npDrawStrip(p, strip, t, tick, driftAmt, bodySize, BC, HC) {
   CTX.save();
   CTX.textAlign    = 'center';
   CTX.textBaseline = 'top';
-  CTX.imageSmoothingEnabled = true;
-
-  let sloganEgg = (Math.abs(S.npInkFade - 0.88) < 0.01 && Math.abs(S.npTextDensity - 1.28) < 0.01);
-  let sloganChars = '实现中华民族伟大复兴'.split('');
 
   cols.forEach(col => {
     if (col.cx < 0 || col.cx > w) return;
-
-    let cx     = col.cx;
+    let cx = col.cx;
     let startY = 26;
+
+    if (S.npChaos > 0.85 && (_npS.revStyle || _npS.comradeMode)) {
+      CTX.save();
+      CTX.globalAlpha = 0.85;
+      CTX.fillStyle = col.ink;
+      CTX.font = `bold ${colSp * 1.6}px "KaiTi", "STKaiti", serif`;
+      let bigChar = BC[Math.floor(p.noise(col.seed) * BC.length)];
+      CTX.fillText(bigChar, cx, h * 0.3 + (p.noise(t * 0.01, col.seed) - 0.5) * 80);
+      CTX.restore();
+      return; 
+    }
 
     if (col.isHL && col.headlineText) {
       let hsz    = Math.min(Math.floor(colSp * 2.1), 40);
       let chars  = col.headlineText.split('');
       let nHead  = Math.min(chars.length, Math.floor((h * 0.38) / (hsz * 1.14)));
-      CTX.font   = `900 ${hsz}px "Noto Serif SC","Songti SC","SimSun",serif`;
+      CTX.font   = `900 ${hsz}px "Noto Serif SC","Songti SC",serif`;
       CTX.fillStyle   = '#0e0e0c';
-      CTX.globalAlpha = 1;
       for (let r = 0; r < nHead; r++) {
-        CTX.fillText(chars[r] || ' ', cx, startY + r * (hsz * 1.14));
+        CTX.fillText(chars[r], cx, startY + r * (hsz * 1.14));
       }
       startY += nHead * (hsz * 1.14) + 4;
       CTX.strokeStyle = 'rgba(0,0,0,0.25)';
       CTX.lineWidth   = 0.5;
-      CTX.beginPath();
-      CTX.moveTo(cx - colSp * 0.38, startY);
-      CTX.lineTo(cx + colSp * 0.38, startY);
-      CTX.stroke();
+      CTX.beginPath(); CTX.moveTo(cx - colSp * 0.38, startY); CTX.lineTo(cx + colSp * 0.38, startY); CTX.stroke();
       startY += 5;
     }
 
     let rowH = bodySize * 1.30;
-    let baseRows = Math.floor((h - startY - 6) / rowH);
-    let nRows = Math.floor(baseRows * _npS.textDensity);
-    CTX.font = `${bodySize}px "Noto Serif SC","Songti SC","SimSun",serif`;
+    let nRows = Math.floor((h - startY - 6) / rowH * _npS.textDensity);
+    CTX.font = `${bodySize}px "Noto Serif SC","Songti SC",serif`;
 
     for (let r = 0; r < nRows; r++) {
       let cy = startY + r * rowH;
       if (hasHT && cx > htX && cx < htX + htW && cy > htY && cy < htY + htH) continue;
-
-      let charToDraw;
-      if (sloganEgg && col.seed % 10 === 0 && r < sloganChars.length) {
-        charToDraw = sloganChars[r];
-      } else {
-        let ci = Math.floor(p.noise(col.seed * 0.01, r * 0.29, t * 0.0025) * BC.length) % BC.length;
-        charToDraw = BC[ci];
-      }
-
+      let ci = Math.floor(p.noise(col.seed * 0.01, r * 0.29, t * 0.002) * BC.length) % BC.length;
       let fadeN = p.noise(col.seed + 300, r * 0.42);
-      let baseAlpha = fadeN < 0.10 ? 0 : fadeN > 0.75 ? 0.10 + (1 - fadeN) * 0.35 : 0.68 + (1 - fadeN) * 0.28;
-      let alpha = baseAlpha * (1 - _npS.inkFade * (1 - baseAlpha));
-      if (alpha < 0.02) continue;
-
+      let alpha = (fadeN > 0.75 ? 0.2 : 0.8) * (1 - _npS.inkFade);
+      if (alpha < 0.05) continue;
       CTX.globalAlpha = alpha;
-      CTX.fillStyle   = col.ink;
-      CTX.fillText(charToDraw, cx, cy);
+      CTX.fillStyle = col.ink;
+      CTX.fillText(BC[ci], cx, cy);
     }
-    CTX.globalAlpha = 1;
   });
   CTX.restore();
 
   if (hasMast) {
     let msz = Math.min(Math.floor(w * 0.26), _npS.mastSize);
     CTX.save();
-    CTX.font         = `900 ${msz}px "Noto Serif SC","Songti SC","SimSun",serif`;
+    CTX.font         = `900 ${msz}px "Noto Serif SC","Songti SC",serif`;
     CTX.fillStyle    = '#080808';
     CTX.globalAlpha  = 0.90;
     CTX.textAlign    = 'left';
     CTX.textBaseline = 'top';
-    let ml   = 6;
-    let maxC = Math.min(mC.length, Math.floor((w - ml * 2) / (msz * 1.04)));
+    let maxC = Math.min(mC.length, Math.floor((w - 12) / (msz * 1.04)));
     for (let ci2 = 0; ci2 < maxC; ci2++) {
-      CTX.fillText(mC[ci2], ml + ci2 * (msz * 1.04), 1);
+      CTX.fillText(mC[ci2], 6 + ci2 * (msz * 1.04), 1);
     }
     CTX.restore();
   }
 
   if (hasSeal && S.npStamps !== false) {
     let ssz  = 26 + (seed % 13);
-    let hssz = ssz * 0.5;
-    let tilt = -0.05 + (seed % 100) * 0.0009;
-
     CTX.save();
     CTX.translate(sealX, sealY);
-    CTX.rotate(tilt);
-
+    CTX.rotate(-0.05 + (seed % 100) * 0.0009);
     CTX.globalAlpha = 0.82;
     CTX.fillStyle   = '#c01515';
-    CTX.fillRect(-hssz, -hssz, ssz, ssz);
-
+    CTX.fillRect(-ssz/2, -ssz/2, ssz, ssz);
     CTX.fillStyle   = paper;
-    CTX.globalAlpha = 0.25;
-    for (let di = 0; di < 5; di++) {
-      let bx = -hssz + p.noise(seed + di * 7) * ssz;
-      let by = -hssz + p.noise(seed + di * 7 + 99) * ssz;
-      let br = 1 + p.noise(seed + di * 7 + 33) * 2;
-      CTX.beginPath();
-      CTX.arc(bx, by, br, 0, Math.PI * 2);
-      CTX.fill();
-    }
-
-    CTX.strokeStyle = 'rgba(190,25,25,0.7)';
-    CTX.lineWidth   = 0.7;
-    CTX.globalAlpha = 0.82;
-    CTX.strokeRect(-hssz + 2.5, -hssz + 2.5, ssz - 5, ssz - 5);
-
-    CTX.globalAlpha  = 0.90;
-    CTX.fillStyle    = paper;
-    CTX.font         = `bold ${ssz * 0.52}px "Noto Serif SC","SimSun",serif`;
-    CTX.textAlign    = 'center';
+    CTX.font        = `bold ${ssz * 0.52}px "Noto Serif SC", serif`;
+    CTX.textAlign   = 'center';
     CTX.textBaseline = 'middle';
     CTX.fillText(mC[0] || '印', 0, 0);
-
     CTX.restore();
   }
-
   CTX.restore();
 }
 
@@ -9904,7 +9899,6 @@ function _npDrawStar(ctx, cx, cy, spikes, outerR, innerR, color) {
 
 // ─── EASTER EGGS ─────────────────────────────────────────────────────────────
 function _npApplyEasterEggs(p, t) {
-  // Shift+D triggers Dazibao overlay (if keyIsDown is available)
   if (typeof keyIsDown === 'function' && keyIsDown(16) && keyIsDown(68)) {
     if (!_npEasterEggState.dazibaoActive) {
       _npEasterEggState.dazibaoActive = true;
@@ -9913,7 +9907,7 @@ function _npApplyEasterEggs(p, t) {
   }
 }
 
-// ─── FIREWORKS (for July 1 / Oct 1) ─────────────────────────────────────────
+// ─── FIREWORKS ──────────────────────────────────────────────────────────────
 function _npDrawFireworks(p, tick, W, H) {
   CTX.save();
   CTX.globalAlpha = 0.15;
@@ -9933,12 +9927,15 @@ function _npDrawFireworks(p, tick, W, H) {
   CTX.restore();
 }
 
+
 // ─── EXPOSE TO GLOBAL SCOPE ─────────────────────────────────────────────────
 window.initNewspaper = initNewspaper;
 window.drawNewspaper = drawNewspaper;
 
 
 
+
+  
 
 
 
@@ -12457,10 +12454,14 @@ const PARAM_REGISTRY = {
       hint:'Show halftone dot zones suggesting newspaper photographs' },
     { type:'toggle', id:'npDrips',    label:'Ink drip marks',   def:true,
       hint:'Show ink runs and drip blobs at strip edges' },
-    { type:'toggle', id:'npRevolutionaryStyle', label:'Revolutionary style', def:false,
+    { type:'toggle', id:'npRevolutionaryStyle', label:'Comrade Mode', def:false,
       hint:'Enable CCP aesthetic: red banners, gold stars, and Party slogans',
-      extra: function(){ if(window._st) initNewspaper(window._st.p); } }
-  ],   
+      extra: function(){ if(window._st) initNewspaper(window._st.p);}},
+        // New toggle for the Supreme Instruction box
+    { type:'toggle', id:'npSupremeBox', label:'Supreme Instructions', def:true,
+      hint:'Show the "Highest Directive" quotation box in comrade mode',
+      extra: function(){ if(window._st) initNewspaper(window._st.p);}},  
+      ],   
   numbcollage: [
     { id: 'numbText',          label: 'Text',           type: 'text', def: '麻木的' },
     { id: 'numbBlockCount',    label: 'Block count',    min: 5,  max: 100, step: 5,  def: 40, scale: 1,
