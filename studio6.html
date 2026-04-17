@@ -9474,6 +9474,7 @@ const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
 // ══════════════════════════════════════════════════════════════════════════════
  
 function initNewspaper(p) {
+  _npS = null;   // clear cached scene
   let W = p.width, H = p.height;
   let m = Math.min(W, H);
 
