@@ -9728,14 +9728,21 @@ function initNewspaper(p) {
   }
  
   // ── Stash everything the draw loop needs ─────────────────────────────────
-  _npS = {
+  _npS = { 
   W, H, 
   strips: JSON.parse(JSON.stringify(strips)),
   washes: JSON.parse(JSON.stringify(washes)),
   drips: JSON.parse(JSON.stringify(drips)),
-  BC, HC, pal, paperAge, textDensity, inkFade, mastSize, revStyle, comradeMode 
-  };
-
+  BC: BC_CHARS, 
+  HC: HC_CHARS, 
+  pal, 
+  paperAge, 
+  textDensity, 
+  inkFade, 
+  mastSize, 
+  revStyle, 
+  comradeMode: comrade 
+};
  
   // Set up mouse/key interaction if not already done
   if (!window._npInteractionReady) _npSetupInteraction();
