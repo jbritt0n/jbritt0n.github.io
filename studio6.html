@@ -9475,37 +9475,38 @@ const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
  
 function initNewspaper(p) {
   let W = p.width, H = p.height;
-  _npS = null;  // clear old cache
+  let m = Math.min(W, H);
 
-  // ── Read layout params from S ──────────────────────────────────────────────
+  // Read layout params
   let nStrips      = Math.max(3,  Math.round(S.npStrips      ?? 14));
-  let maxAng       =              S.npRotation    ?? 22;
-  let tearAmt      =              S.npTear        ?? 1.0;
-  let colSp        = Math.max(8,  Math.round(S.npColSpacing  ?? 14));
-  let nWashes      = Math.max(0,  Math.round(S.npWashes      ?? 4));
-  let hlFrac       =              S.npHeadlineFreq ?? 0.35;
-  let redInkChance =              S.npRedInkChance ?? 0.04;
-  let sealFreq     =              S.npSealFreq     ?? 0.48;
-  let paperAge     =              S.npPaperAge     ?? 0.6;
-  let textDensity  =              S.npTextDensity  ?? 1.0;
-  let inkFade      =              S.npInkFade      ?? 0.15;
-  let colAlign     =              S.npColumnAlign  ?? 'rtl';
-  let mastSize     =              S.npMastheadSize ?? 44;
-  let creaseCnt    = Math.max(0,  Math.round(S.npCreaseCount ?? 2));
-  let paletteMode  =              S.npPaletteMode  ?? 'palette';
-  let photoDensity =              S.npPhotoDensity ?? 0.36;
-  let fixedCols    = Math.max(0,  Math.round(S.npFixedCols   ?? 0));
-  let layoutSeed   =              S.npLayoutSeed   ?? 0;
-  let chaos        =              S.npChaos        ?? 0.0;
-  let revStyle     =              S.npRevolutionaryStyle ?? false;
- 
-  if (layoutSeed > 0) p.randomSeed(layoutSeed);
-     // Reset random seed for true randomness when layoutSeed === 0
+  let maxAng       =             S.npRotation    ?? 22;
+  let tearAmt      =             S.npTear        ?? 1.0;
+  let colSp        = Math.max(8, Math.round(S.npColSpacing  ?? 14));
+  let nWashes      = Math.max(0, Math.round(S.npWashes      ?? 4));
+  let hlFrac       =             S.npHeadlineFreq ?? 0.35;
+  let redInkChance =             S.npRedInkChance ?? 0.04;
+  let sealFreq     =             S.npSealFreq     ?? 0.48;
+  let paperAge     =             S.npPaperAge     ?? 0.6;
+  let textDensity  =             S.npTextDensity  ?? 1.0;
+  let inkFade      =             S.npInkFade      ?? 0.15;
+  let colAlign     =             S.npColumnAlign  ?? 'rtl';
+  let mastSize     =             S.npMastheadSize ?? 44;
+  let creaseCnt    = Math.max(0, Math.round(S.npCreaseCount ?? 2));
+  let paletteMode  =             S.npPaletteMode  ?? 'palette';
+  let photoDensity =             S.npPhotoDensity ?? 0.36;
+  let fixedCols    = Math.max(0, Math.round(S.npFixedCols   ?? 0));
+  let layoutSeed   =             S.npLayoutSeed   ?? 0;
+  let chaos        =             S.npChaos        ?? 0.0;
+  let revStyle     =             S.npRevolutionaryStyle ?? false;
+
+  // ── Reset random seed for true randomness when layoutSeed === 0 ──────────
   if (layoutSeed === 0) {
     p.randomSeed(Math.random() * 999999);
   } else {
     p.randomSeed(layoutSeed);
   }
+  const rng = p;
+  
   // ── Detect special seeds ──────────────────────────────────────────────────
   let is1949  = layoutSeed === 1949;    // PRC birthday
   let is1921  = layoutSeed === 1921;    // CCP founding
