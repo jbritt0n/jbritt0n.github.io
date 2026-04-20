@@ -304,7 +304,6 @@ function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charC
 function rndSeedStr(){return ['VOID','NOVA','DEEP','IRON','GHOST'][Math.floor(Math.random()*5)]+'-'+(Math.floor(Math.random()*9000)+1000);}
 
 // ========== DATA ==========
-// ========== EXPANDED DATA FOR VOID FRONTIER ==========
 
 // ---------- ORIGINS (18 total) ----------
 const ORIGINS = [
@@ -1754,7 +1753,16 @@ function buyShip(id) {
   addLog(`Purchased ${hull.name}. Added to fleet.`);
   updateHUD(); updateRP(); renderNodeContent('maintenance');
 }
-function buyGood(id){const price = stationPrice(id, G.curSys, true);if (G.flagship.credits < price || !canAddCargo(id)) {addLog(!canAddCargo(id) ? 'Cargo hold full!' : 'Insufficient credits.');return;}G.flagship.credits -= price;addCargo(id);updateHUD(); updateRP(); renderNodeContent('market');};addCargo(id);updateHUD();updateRP();renderNodeContent('market');}
+function buyGood(id) {
+  const price = stationPrice(id, G.curSys, true);
+  if (G.flagship.credits < price || !canAddCargo(id)) {
+    addLog(!canAddCargo(id) ? 'Cargo hold full!' : 'Insufficient credits.');
+    return;
+  }
+  G.flagship.credits -= price;
+  addCargo(id);
+  updateHUD(); updateRP(); renderNodeContent('market');
+}
 function buyGoodIllegal(id){const price=Math.round(stationPrice(id,G.curSys,true)*1.4);if(G.flagship.credits<price||!canAddCargo(id))return;G.flagship.credits-=price;addCargo(id);const fac=G.galaxy.systems[G.curSys].faction.id;let penalty=5; if(id.includes('weapon')||id.includes('arms')) penalty=8; G.rep[fac]=Math.max(-100,(G.rep[fac]||0)-penalty);addLog(`Bought illegal goods. ${fac} rep -${penalty}.`);updateHUD();updateRP();}
 function acceptContract(id){const c=G.contracts.find(x=>x.id===id);if(c){c.active=true;addLog(`Accepted contract: ${c.title}.`);renderNodeContent('guild');}}
 function sellExploData(){const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id));const pay=unsold.length*80;G.flagship.credits+=pay;unsold.forEach(s=>G.soldExplorationData.push(s.id));addLog(`Sold data for ${pay}cr.`);updateHUD();renderNodeContent('dataexchange');}
