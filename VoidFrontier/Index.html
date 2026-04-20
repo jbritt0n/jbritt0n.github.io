@@ -1559,10 +1559,11 @@ function selectShip(id){
     id: 'ship0', name: oldShip.name, type: hull.name,
     hull: hull.hull, maxHull: hull.hull, shields: hull.shields, maxShields: hull.shields,
     fuel: oldShip.fuel, maxFuel: oldShip.maxFuel, cargoMax: hull.cargo, modules: oldShip.modules,
-    scrap: oldShip.scrap, fuelUse: hull.fuelUse, credits: oldShip.credits
+    scrap: oldShip.scrap, fuelUse: hull.fuelUse, credits: oldShip.credits, morale: oldShip.morale || 75
   };
   addLog(`Acquired ${hull.name}.`);
-  G.ccStep++; renderCC();
+  // Launch the game immediately – no need for a sixth step
+  launchGame();
 }
 function launchGame(){
   G.captain.name=document.getElementById('cap-name')?.value.trim()||'Captain';
