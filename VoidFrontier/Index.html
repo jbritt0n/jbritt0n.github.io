@@ -1394,20 +1394,29 @@ function generateRandomCrew() {
 function initState(seed, difficulty='normal') {
   G.seed = seed; G.rng = mkRNG(seed); G.difficulty = difficulty;
   G.captain = { name:'Captain', origin:null, cls:null, job:null, skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1}, xp:0, level:1 };
+  
+  // Initialize flagship with default values
   G.fleet = [{
     id:'ship0', name:'VAGRANT STAR', type:'Scout', hull:100, maxHull:100, shields:50, maxShields:50,
-    fuel:80, maxFuel:100, cargoMax:10, modules:[], scrap:0, fuelUse:1.0, credits:1000
+    fuel:80, maxFuel:100, cargoMax:10, modules:[], scrap:0, fuelUse:1.0, credits:1000, morale:75
   }];
-  G.flagship.credits = Math.floor(3000 * mult[difficulty]);
   G.curShipIdx = 0;
   G.rep = {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0};
   G.crew = JSON.parse(JSON.stringify(STARTER_CREW)).map(c=>({...c, id:'c'+Math.random().toString(36), alive:true, hp:c.maxHp, maxHp:c.hp, atk:c.atk||8, spd:c.spd||5, skill:c.skill||5}));
   G.cargo = []; G.soldExplorationData = []; G.probedFeatures = {};
   G.contracts = []; G.log = ['The stars await.']; G.ccStep = 0; G.jumps = 0; G.dramaTimer = 0;
+  
+  // Apply difficulty multipliers (moved before usage)
   const mult = {easy:1.5, normal:1.0, hard:0.6};
   G.flagship.credits = Math.floor(1000 * mult[difficulty]);
-  if (difficulty==='easy') { G.crew.push(generateRandomCrew()); G.flagship.credits+=500; }
-  else if (difficulty==='hard') { G.crew = G.crew.slice(0,1); G.flagship.credits = Math.floor(G.flagship.credits*0.7); }
+  
+  if (difficulty === 'easy') {
+    G.crew.push(generateRandomCrew());
+    G.flagship.credits += 500;
+  } else if (difficulty === 'hard') {
+    G.crew = G.crew.slice(0,1);
+    G.flagship.credits = Math.floor(G.flagship.credits * 0.7);
+  }
 }
 
 // ========== SCREENS ==========
@@ -1545,12 +1554,18 @@ function onGxHover(e){const rect=gxCanvas.getBoundingClientRect();const mx=e.cli
 
 // ========== UI UPDATES ==========
 function updateHUD(){
-  const s=G.flagship;document.getElementById('hud-ship').textContent=s.name;
-  document.getElementById('b-hull').style.width=(s.hull/s.maxHull*100)+'%';document.getElementById('v-hull').textContent=s.hull;
-  document.getElementById('b-shld').style.width=(s.shields/s.maxShields*100)+'%';document.getElementById('v-shld').textContent=s.shields;
-  document.getElementById('b-fuel').style.width=(s.fuel/s.maxFuel*100)+'%';document.getElementById('v-fuel').textContent=s.fuel;
-  document.getElementById('b-mora').style.width=(G.ship.morale||75)+'%';document.getElementById('v-mora').textContent=G.ship.morale||75;
-  document.getElementById('hud-creds').textContent=`💰 ${s.credits.toLocaleString()} CR`;
+  const s = G.flagship;
+  document.getElementById('hud-ship').textContent = s.name;
+  document.getElementById('b-hull').style.width = (s.hull/s.maxHull*100)+'%';
+  document.getElementById('v-hull').textContent = s.hull;
+  document.getElementById('b-shld').style.width = (s.shields/s.maxShields*100)+'%';
+  document.getElementById('v-shld').textContent = s.shields;
+  document.getElementById('b-fuel').style.width = (s.fuel/s.maxFuel*100)+'%';
+  document.getElementById('v-fuel').textContent = s.fuel;
+  // Fix: use s.morale instead of G.ship.morale
+  document.getElementById('b-mora').style.width = (s.morale || 75)+'%';
+  document.getElementById('v-mora').textContent = s.morale || 75;
+  document.getElementById('hud-creds').textContent = `💰 ${s.credits.toLocaleString()} CR`;
 }
 function updateLP(){
   const body=document.getElementById('lp-body'),acts=document.getElementById('lp-actions');
