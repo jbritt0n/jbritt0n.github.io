@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID FRONTIER</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --void:#0a0c10; --void2:#0d1117; --star:#e8f0ff;
+  --nebula:#1a3a5a; --hazard:#c41e3a; --warn:#e67e22;
+  --safe:#2ecc71; --alien:#8e44ad; --metal:#7f8c8d;
+  --gold:#f1c40f; --cyan:#00e5ff;
+  --border:rgba(0,229,255,0.22); --panel:#0d1117;
+}
+body{background:var(--void);color:var(--star);font-family:'VT323',monospace;font-size:18px;overflow:hidden;height:100vh;width:100vw;user-select:none}
+#game{width:100vw;height:100vh;position:relative}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── TITLE ── */
+#title-screen{align-items:center;justify-content:center}
+#sf-canvas{position:absolute;inset:0;z-index:0}
+.title-wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px}
+.logo-outer{text-align:center}
+.logo{font-family:'Press Start 2P',monospace;font-size:52px;color:var(--cyan);
+  text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4);
+  letter-spacing:6px;animation:logoPulse 3s ease-in-out infinite}
+.logo-sub{font-family:'VT323',monospace;font-size:20px;color:var(--metal);letter-spacing:10px;margin-top:8px}
+@keyframes logoPulse{0%,100%{text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4)}50%{text-shadow:0 0 40px rgba(0,229,255,1),0 0 100px rgba(0,229,255,.6)}}
+.seed-box{background:var(--panel);border:1px solid var(--border);padding:28px 32px;display:flex;flex-direction:column;gap:14px;min-width:420px}
+.seed-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);letter-spacing:2px}
+.seed-row{display:flex;gap:10px}
+input[type="text"]{background:var(--void);border:1px solid var(--cyan);color:var(--star);font-family:'VT323',monospace;font-size:22px;padding:8px 12px;outline:none;transition:border-color .2s;width:100%}
+input[type="text"]:focus{border-color:#fff;box-shadow:0 0 8px rgba(0,229,255,.3)}
+.title-hint{font-size:14px;color:rgba(127,140,141,.7);text-align:center;max-width:360px;line-height:1.6}
+
+/* ── BUTTONS ── */
+.btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:9px;padding:10px 15px;cursor:pointer;transition:all .15s;letter-spacing:1px;white-space:nowrap}
+.btn:hover{background:var(--cyan);color:var(--void)}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn-gold{border-color:var(--gold);color:var(--gold)}.btn-gold:hover{background:var(--gold);color:var(--void)}
+.btn-safe{border-color:var(--safe);color:var(--safe)}.btn-safe:hover{background:var(--safe);color:var(--void)}
+.btn-warn{border-color:var(--warn);color:var(--warn)}.btn-warn:hover{background:var(--warn);color:var(--void)}
+.btn-danger{border-color:var(--hazard);color:var(--hazard)}.btn-danger:hover{background:var(--hazard);color:#fff}
+.btn-alien{border-color:var(--alien);color:var(--alien)}.btn-alien:hover{background:var(--alien);color:#fff}
+.btn-sm{font-size:8px;padding:7px 11px}
+.btn-full{width:100%}
+
+/* ── CHAR CREATE ── */
+#cc-screen{padding:16px 24px;gap:12px;overflow:hidden}
+.cc-header{text-align:center;flex-shrink:0}
+.cc-step-label{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--cyan);margin-bottom:4px}
+.cc-step-desc{font-size:16px;color:var(--metal)}
+.cc-progress{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.cc-pip{width:40px;height:4px;background:rgba(255,255,255,.1);transition:background .3s}
+.cc-pip.done{background:var(--cyan)}.cc-pip.active{background:var(--gold)}
+.opt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow-y:auto;flex:1;padding:4px 2px}
+.opt-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.opt-card{background:var(--panel);border:1px solid var(--border);padding:12px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;position:relative}
+.opt-card:hover{border-color:var(--cyan);background:rgba(0,229,255,.04)}
+.opt-card.selected{border-color:var(--gold);background:rgba(241,196,15,.07)}
+.opt-card .oc-emoji{font-size:22px}.opt-card .oc-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star);line-height:1.5}
+.opt-card .oc-desc{font-size:13px;color:var(--metal);line-height:1.3}
+.opt-card .oc-bonus{font-size:13px;color:var(--safe)}
+.opt-card .oc-check{position:absolute;top:6px;right:8px;color:var(--gold);font-size:16px;display:none}
+.opt-card.selected .oc-check{display:block}
+.cc-nav{display:flex;justify-content:center;gap:14px;flex-shrink:0;margin-top:8px}
+.name-step{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:28px}
+.name-group{display:flex;flex-direction:column;gap:8px;width:360px}
+.name-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal);letter-spacing:1px}
+.dossier{background:var(--panel);border:1px solid var(--border);padding:20px;width:360px}
+.dossier-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);margin-bottom:10px}
+.dossier-row{font-size:16px;color:var(--metal);line-height:2}.dossier-row span{color:var(--star)}
+
+/* ── GALAXY SCREEN ── */
+#galaxy-screen{background:var(--void)}
+.hud{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:18px;flex-shrink:0;height:44px}
+.hud-ship{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);white-space:nowrap;margin-right:6px}
+.stat{display:flex;align-items:center;gap:6px}
+.stat-lbl{font-size:13px;color:var(--metal);white-space:nowrap}
+.bar-track{width:72px;height:7px;background:rgba(255,255,255,.08);flex-shrink:0}
+.bar-fill{height:100%;transition:width .4s,background .4s}
+.stat-val{font-size:15px;color:var(--star);white-space:nowrap;min-width:24px}
+.hud-creds{margin-left:auto;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);white-space:nowrap}
+.main-area{flex:1;display:flex;overflow:hidden}
+.lp{width:215px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.panel-hdr{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);flex-shrink:0}
+.lp-body{padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.lp-actions{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.rp{width:196px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.gc{flex:1;position:relative;overflow:hidden;background:#050709}
+#gx-canvas{display:block;image-rendering:pixelated}
+#ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
+#ev-overlay.open{display:flex}
+.ev-card{background:var(--panel);border:1px solid var(--cyan);padding:28px 32px;max-width:530px;width:90%;display:flex;flex-direction:column;gap:18px}
+.ev-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold);line-height:1.6}
+.ev-body{font-size:18px;color:var(--star);line-height:1.6}
+.ev-choices{display:flex;flex-direction:column;gap:9px}
+.choice-btn{background:transparent;border:1px solid var(--border);color:var(--star);font-family:'VT323',monospace;font-size:17px;padding:11px 14px;cursor:pointer;text-align:left;transition:all .15s;line-height:1.4}
+.choice-btn:hover{border-color:var(--cyan);background:rgba(0,229,255,.08);color:var(--cyan)}
+.log-bar{background:var(--panel);border-top:1px solid var(--border);padding:7px 14px;flex-shrink:0;height:78px;overflow:hidden}
+.log-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--cyan);margin-bottom:5px;letter-spacing:1px}
+.log-list{display:flex;flex-direction:column;gap:2px}
+.log-line{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-line:first-child{color:var(--star);font-size:14px}
+.log-line:not(:first-child){color:rgba(127,140,141,.65)}
+.rep-row{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;font-size:14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.crew-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+.crew-emoji{font-size:18px}
+.crew-info{display:flex;flex-direction:column}
+.crew-name{font-size:14px;color:var(--star)}
+.crew-role{font-size:12px;color:var(--metal)}
+.cap-info{padding:10px;font-size:13px;line-height:2;color:var(--metal)}
+.tag{display:inline-block;padding:2px 6px;font-size:12px;border:1px solid;margin:2px 2px 0 0;line-height:1.4}
+#sys-tooltip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--border);padding:4px 9px;font-size:14px;color:var(--star);z-index:20;display:none}
+
+/* ── STATION SCREEN ── */
+#station-screen{flex-direction:column}
+.st-header{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:18px;flex-shrink:0;height:48px}
+.st-name{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan)}
+.st-meta{font-size:16px;color:var(--metal);display:flex;gap:14px;flex:1}
+.st-body{flex:1;display:flex;overflow:hidden}
+.st-nav{width:200px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.st-node{padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s}
+.st-node:hover{background:rgba(0,229,255,.06)}
+.st-node.active{background:rgba(0,229,255,.09);border-left:3px solid var(--cyan)}
+.st-node-emoji{font-size:22px;flex-shrink:0}
+.st-node-label{display:flex;flex-direction:column;gap:2px}
+.st-node-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star);line-height:1.4}
+.st-node-desc{font-size:12px;color:var(--metal)}
+.st-content{flex:1;padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.st-content-hdr{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.st-footer{background:var(--panel);border-top:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:44px}
+/* trade row */
+.trade-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.trade-row:hover{border-color:var(--border)}
+.trade-name{flex:1;font-size:16px;color:var(--star)}
+.trade-price{font-size:16px;color:var(--gold);min-width:80px;text-align:right}
+.trade-actions{display:flex;gap:6px;flex-shrink:0}
+/* cargo row */
+.cargo-row{background:rgba(241,196,15,.04);border:1px solid rgba(241,196,15,.15);padding:8px 14px;display:flex;align-items:center;gap:10px;margin-bottom:5px}
+/* module card */
+.mod-card{background:var(--panel);border:1px solid var(--border);padding:14px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.mod-name{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold)}
+.mod-pos{font-size:14px;color:var(--safe)}
+.mod-neg{font-size:14px;color:var(--warn)}
+.mod-cost{font-size:14px;color:var(--cyan)}
+/* rumor row */
+.rumor-row{background:rgba(142,68,173,.08);border:1px solid rgba(142,68,173,.25);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+.rumor-body{flex:1;font-size:15px;color:var(--star);line-height:1.4}
+/* contract row */
+.contract-row{background:var(--panel);border:1px solid var(--border);padding:14px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
+.contract-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--star)}
+.contract-reward{font-size:14px;color:var(--gold)}
+.contract-desc{font-size:14px;color:var(--metal);line-height:1.4}
+/* maintenance */
+.maint-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:16px}
+.maint-label{color:var(--star)}
+.maint-detail{color:var(--metal);font-size:14px}
+
+/* ── COMBAT SCREEN ── */
+#combat-screen{flex-direction:column}
+.cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:20px;flex-shrink:0;height:44px}
+.cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard);animation:redPulse 1.5s ease-in-out infinite}
+@keyframes redPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.cbat-body{flex:1;display:flex;overflow:hidden;gap:0}
+.cbat-ship{width:260px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding:14px}
+.cbat-ship.enemy-panel{border-right:none;border-left:1px solid var(--border);cursor:default}
+.cbat-center{flex:1;display:flex;flex-direction:column;background:var(--void)}
+.cbat-ship-name{font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:10px}
+.cbat-bars{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.cbat-bar-row{display:flex;align-items:center;gap:8px;font-size:14px}
+.cbat-bar-lbl{width:46px;color:var(--metal)}
+.cbat-bar-track{flex:1;height:8px;background:rgba(255,255,255,.07)}
+.cbat-bar-fill{height:100%;transition:width .4s}
+.cbat-bar-val{width:36px;text-align:right}
+.sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.sys-cell{border:1px solid rgba(255,255,255,.15);padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;position:relative}
+.sys-cell .sc-emoji{font-size:16px}
+.sys-cell .sc-name{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--metal);line-height:1.3}
+.sys-cell .sc-hp{font-size:13px;color:var(--star)}
+.sys-cell .sc-bar{width:100%;height:3px;background:rgba(255,255,255,.08);margin-top:2px}
+.sys-cell .sc-bar-fill{height:100%;background:var(--safe);transition:width .3s}
+.sys-cell.targetable{cursor:pointer}
+.sys-cell.targetable:hover{border-color:var(--gold);background:rgba(241,196,15,.08)}
+.sys-cell.targeted{border-color:var(--gold)!important;background:rgba(241,196,15,.1);box-shadow:0 0 8px rgba(241,196,15,.25)}
+.sys-cell.dmg-warn{border-color:var(--warn)}
+.sys-cell.destroyed{opacity:.35;border-color:var(--hazard)!important;background:rgba(196,30,58,.06)}
+.sys-cell.destroyed .sc-name{color:var(--hazard)}
+.cbat-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:5px;font-size:15px}
+.cbat-log-entry{line-height:1.4;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.cbat-log-entry.player{color:var(--cyan)}
+.cbat-log-entry.enemy{color:var(--hazard)}
+.cbat-log-entry.system{color:var(--metal)}
+.cbat-phase{text-align:center;padding:8px;font-family:'Press Start 2P',monospace;font-size:9px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);flex-shrink:0}
+.cbat-actions{background:var(--panel);border-top:1px solid var(--border);padding:12px 18px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.cbat-action-row{display:flex;gap:8px;flex-wrap:wrap}
+.cbat-target-label{font-size:14px;color:var(--metal)}
+.cbat-target-label span{color:var(--gold)}
+
+/* ── GAME OVER ── */
+#gameover-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:200}
+#gameover-overlay.open{display:flex}
+.go-card{background:var(--panel);border:1px solid var(--hazard);padding:40px 50px;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;max-width:500px}
+.go-title{font-family:'Press Start 2P',monospace;font-size:18px;color:var(--hazard);line-height:1.6}
+.go-sub{font-size:18px;color:var(--metal);line-height:1.6}
+
+/* ── DRAMA OVERLAY ── */
+#drama-overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);display:none;align-items:center;justify-content:center;z-index:100}
+#drama-overlay.open{display:flex}
+.drama-card{background:var(--panel);border:1px solid var(--alien);padding:28px 32px;max-width:500px;width:90%;display:flex;flex-direction:column;gap:16px}
+.drama-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--alien);line-height:1.6}
+
+/* ── SHARED ── */
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:1000}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--void)}::-webkit-scrollbar-thumb{background:var(--nebula)}
+.flash-red{animation:flashR .3s ease}
+@keyframes flashR{0%,100%{background:transparent}50%{background:rgba(196,30,58,.3)}}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div id="game">
+
+<!-- ══════ TITLE ══════ -->
+<div id="title-screen" class="screen">
+  <canvas id="sf-canvas"></canvas>
+  <div class="title-wrap">
+    <div class="logo-outer">
+      <div class="logo">VOID FRONTIER</div>
+      <div class="logo-sub">A PROCEDURAL SPACE EPIC</div>
+    </div>
+    <div class="seed-box">
+      <div class="seed-label">▸ MISSION SEED</div>
+      <div class="seed-row">
+        <input type="text" id="seed-inp" placeholder="Enter seed string..." maxlength="24"/>
+        <button class="btn btn-sm" onclick="randomSeed()">⚡ RANDOM</button>
+      </div>
+      <button class="btn btn-gold btn-full" onclick="beginGame()">▶ BEGIN MISSION</button>
+    </div>
+    <div class="title-hint">Explore a procedurally generated galaxy. Every seed births a new universe — make choices that echo across the stars.</div>
+  </div>
+</div>
+
+<!-- ══════ CHARACTER CREATE ══════ -->
+<div id="cc-screen" class="screen">
+  <div class="cc-header">
+    <div class="cc-step-label" id="cc-title">CHOOSE YOUR ORIGIN</div>
+    <div class="cc-step-desc" id="cc-desc">Step 1 of 4</div>
+    <div class="cc-progress" id="cc-pips"></div>
+  </div>
+  <div id="cc-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 10px"></div>
+  <div class="cc-nav" id="cc-nav"></div>
+</div>
+
+<!-- ══════ GALAXY ══════ -->
+<div id="galaxy-screen" class="screen">
+  <div class="hud">
+    <div class="hud-ship" id="hud-ship">VAGRANT STAR</div>
+    <div class="stat"><div class="stat-lbl">HULL</div><div class="bar-track"><div class="bar-fill" id="b-hull" style="width:100%;background:var(--safe)"></div></div><div class="stat-val" id="v-hull">100</div></div>
+    <div class="stat"><div class="stat-lbl">SHLD</div><div class="bar-track"><div class="bar-fill" id="b-shld" style="width:100%;background:var(--cyan)"></div></div><div class="stat-val" id="v-shld">50</div></div>
+    <div class="stat"><div class="stat-lbl">FUEL</div><div class="bar-track"><div class="bar-fill" id="b-fuel" style="width:80%;background:var(--warn)"></div></div><div class="stat-val" id="v-fuel">80</div></div>
+    <div class="stat"><div class="stat-lbl">MORALE</div><div class="bar-track"><div class="bar-fill" id="b-mora" style="width:75%;background:var(--alien)"></div></div><div class="stat-val" id="v-mora">75</div></div>
+    <div class="hud-creds" id="hud-creds">💰 1,000 CR</div>
+  </div>
+  <div class="main-area">
+    <div class="lp">
+      <div class="panel-hdr">◈ SYSTEM INTEL</div>
+      <div class="lp-body" id="lp-body"><div style="color:var(--metal)">Select a system on the galaxy map.</div></div>
+      <div class="lp-actions" id="lp-actions"></div>
+    </div>
+    <div class="gc">
+      <canvas id="gx-canvas"></canvas>
+      <div id="sys-tooltip"></div>
+      <div id="ev-overlay">
+        <div class="ev-card">
+          <div class="ev-title" id="ev-title"></div>
+          <div class="ev-body" id="ev-body"></div>
+          <div class="ev-choices" id="ev-choices"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rp">
+      <div class="panel-hdr">◈ REPUTATION</div>
+      <div id="rp-rep"></div>
+      <div class="panel-hdr" style="margin-top:4px">◈ CARGO <span id="cargo-count" style="color:var(--metal);font-size:7px"></span></div>
+      <div id="rp-cargo" style="overflow-y:auto;max-height:100px"></div>
+      <div class="panel-hdr" style="margin-top:4px">◈ CREW</div>
+      <div id="rp-crew"></div>
+      <div class="panel-hdr" style="margin-top:4px">◈ CAPTAIN</div>
+      <div class="cap-info" id="rp-cap"></div>
+    </div>
+  </div>
+  <div class="log-bar">
+    <div class="log-hdr">▸ CAPTAIN'S LOG</div>
+    <div class="log-list" id="log-list"></div>
+  </div>
+</div>
+
+<!-- ══════ STATION ══════ -->
+<div id="station-screen" class="screen">
+  <div class="st-header">
+    <div class="st-name" id="st-name">STATION</div>
+    <div class="st-meta" id="st-meta"></div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold)" id="st-credits"></div>
+  </div>
+  <div class="st-body">
+    <div class="st-nav" id="st-nav"></div>
+    <div class="st-content" id="st-content"><div style="color:var(--metal)">Select a location.</div></div>
+  </div>
+  <div class="st-footer">
+    <button class="btn btn-warn" onclick="undock()">◀ UNDOCK</button>
+    <div style="font-size:14px;color:var(--metal)" id="st-status"></div>
+  </div>
+</div>
+
+<!-- ══════ COMBAT ══════ -->
+<div id="combat-screen" class="screen">
+  <div class="cbat-hdr">
+    <div class="cbat-title">⚔ SHIP COMBAT</div>
+    <div style="flex:1"></div>
+    <div style="font-size:14px;color:var(--metal)" id="cbat-phase-hdr">YOUR TURN</div>
+  </div>
+  <div class="cbat-body">
+    <!-- Player ship -->
+    <div class="cbat-ship">
+      <div class="cbat-ship-name" style="color:var(--cyan)" id="cbat-player-name">YOUR SHIP</div>
+      <div class="cbat-bars" id="cbat-player-bars"></div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--metal);margin-bottom:6px">SHIP SYSTEMS</div>
+      <div class="sys-grid" id="cbat-player-sys"></div>
+    </div>
+    <!-- Center log -->
+    <div class="cbat-center">
+      <div class="cbat-log" id="cbat-log"></div>
+      <div class="cbat-phase" id="cbat-phase-bar" style="color:var(--cyan)">▸ SELECT AN ACTION</div>
+    </div>
+    <!-- Enemy ship -->
+    <div class="cbat-ship enemy-panel">
+      <div class="cbat-ship-name" style="color:var(--hazard)" id="cbat-enemy-name">ENEMY</div>
+      <div class="cbat-bars" id="cbat-enemy-bars"></div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--metal);margin-bottom:6px">TARGET SYSTEMS <span style="color:rgba(127,140,141,.5)">(CLICK)</span></div>
+      <div class="sys-grid" id="cbat-enemy-sys"></div>
+      <div style="margin-top:14px;font-size:13px;color:var(--metal);line-height:1.5" id="cbat-enemy-desc"></div>
+    </div>
+  </div>
+  <div class="cbat-actions">
+    <div class="cbat-target-label">TARGET: <span id="cbat-target-lbl">None selected</span></div>
+    <div class="cbat-action-row">
+      <button class="btn btn-danger" onclick="combatAction('fire')">🎯 FIRE WEAPONS</button>
+      <button class="btn" onclick="combatAction('boost_shields')">🛡 BOOST SHIELDS</button>
+      <button class="btn btn-warn" onclick="combatAction('evasive')">⚡ EVASIVE MANEUVERS</button>
+      <button class="btn btn-safe" onclick="combatAction('flee')">🚀 EMERGENCY FTL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ DRAMA OVERLAY ══════ -->
+<div id="drama-overlay">
+  <div class="drama-card">
+    <div class="drama-title" id="drama-title"></div>
+    <div class="ev-body" id="drama-body"></div>
+    <div class="ev-choices" id="drama-choices"></div>
+  </div>
+</div>
+
+<!-- ══════ GAME OVER ══════ -->
+<div id="gameover-overlay">
+  <div class="go-card">
+    <div class="go-title">SHIP DESTROYED</div>
+    <div class="go-sub" id="go-sub">Your vessel has been reduced to debris in the void.</div>
+    <div style="font-size:15px;color:var(--metal)" id="go-stats"></div>
+    <button class="btn btn-gold" style="margin-top:10px" onclick="location.reload()">▶ NEW MISSION</button>
+  </div>
+</div>
+
+</div><!-- #game -->
+<script>
+'use strict';
+
+// ══════════════════════════════════
+// RNG — Mulberry32
+// ══════════════════════════════════
+function mkRNG(seed){
+  let s=(typeof seed==='string'?hashStr(seed):seed)|0;
+  if(!s)s=0xDEADBEEF;
+  return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h;}
+function rndSeedStr(){const W=['VOID','NOVA','DEEP','IRON','GHOST','DARK','LOST','BRIGHT','SILENT','CRIMSON'];return W[Math.floor(Math.random()*W.length)]+'-'+(Math.floor(Math.random()*9000)+1000);}
+function rng01(){return Math.random();}
+
+// ══════════════════════════════════
+// DATA TABLES
+// ══════════════════════════════════
+const ORIGINS=[
+  {id:'military',name:'Military Veteran',emoji:'🪖',desc:'Served in Federation Navy.',bonus:'+15 Max Hull',credits:500},
+  {id:'merchant',name:"Merchant's Child",emoji:'💰',desc:'Raised bartering across systems.',bonus:'+10% Trade Prices',credits:1500},
+  {id:'refugee',name:'Planetary Refugee',emoji:'🌍',desc:'Homeworld annihilated.',bonus:'Halved Disaster Morale Loss',credits:300},
+  {id:'dropout',name:'Research Dropout',emoji:'🔬',desc:'Xenobiologist gone rogue.',bonus:'+25% Artifact Discovery',credits:700},
+  {id:'criminal',name:'Reformed Criminal',emoji:'⛓️',desc:'Ran with pirates.',bonus:'Black Market Access',credits:800},
+  {id:'noble',name:'Fallen Noble',emoji:'👑',desc:'Disgraced aristocrat.',bonus:'Heirloom Signet Ring',credits:2000},
+  {id:'voidborn',name:'Voidborn Monk',emoji:'🌌',desc:'Raised on a monastery ship.',bonus:'Negates Cramped Penalty',credits:400},
+  {id:'fugitive',name:'Corporate Fugitive',emoji:'🔫',desc:'Stole proprietary tech.',bonus:'Cloaking Device',credits:600},
+  {id:'frontier_kid',name:'Frontier Settler',emoji:'⛏️',desc:'Mining colony childhood.',bonus:'+10% Scrap Yield',credits:600},
+  {id:'noble_exile',name:'Exiled Noble',emoji:'⚜️',desc:'Heir to a fallen house.',bonus:'+20% Megacorp Trade',credits:1200},
+  {id:'cult_survivor',name:'Cult Escapee',emoji:'🔥',desc:'Fled a doomsday cult.',bonus:'Cult Insight Perk',credits:350},
+  {id:'ai_construct',name:'AI Construct',emoji:'🤖',desc:'Experimental synthetic being.',bonus:'Immune to Bio-Hazards',credits:500},
+];
+const CLASSES=[
+  {id:'pilot',name:'Ace Pilot',emoji:'🚀',ability:'Evasion Boost: +20% dodge',passive:'+10% flee chance in combat'},
+  {id:'engineer',name:'Engineer',emoji:'⚙️',ability:'Rapid Repair: Fix 1 system',passive:'Hull repairs cost 15% less'},
+  {id:'mercenary',name:'Mercenary',emoji:'⚔️',ability:'Power Slash: High damage',passive:'+5 weapon damage in combat'},
+  {id:'diplomat',name:'Diplomat',emoji:'🕊️',ability:'Parley: End combat peacefully',passive:'Rep gains doubled'},
+  {id:'smuggler',name:'Smuggler',emoji:'🌑',ability:'Sneak Attack: Bypass armor',passive:'Bypass cargo scans'},
+  {id:'scientist',name:'Xenoscientist',emoji:'🔭',ability:'Overcharge Shields: +30%',passive:'+25% artifact sell value'},
+  {id:'empath',name:'Empath',emoji:'💞',ability:'Soothe: Pacify alien',passive:'Better alien contacts'},
+  {id:'operator',name:'Drone Operator',emoji:'🛸',ability:'Drone Swarm: Combat drones',passive:'Recon reveals fog of war'},
+  {id:'medic',name:'Combat Medic',emoji:'💉',ability:'Triage: Revive crew',passive:'Crew survives lethal hits +15%'},
+  {id:'hacker',name:'Netrunner',emoji:'💻',ability:'Virus Upload: Disable shields',passive:'Station hacking discounts'},
+  {id:'scavenger',name:'Salvage Specialist',emoji:'♻️',ability:'Strip Wreck: Rare component',passive:'+50% salvage from derelicts'},
+];
+const JOBS=[
+  {id:'bounty',name:'Bounty Hunter',emoji:'🎯',effect:'Track targets galaxy-wide',bonus:'Target Vectors on map'},
+  {id:'trader',name:'Trader',emoji:'💹',effect:'Know market prices ahead',bonus:'Trade Routes visible'},
+  {id:'explorer',name:'Explorer',emoji:'🔭',effect:'Reveal hidden anomalies',bonus:'Adjacent sectors auto-revealed'},
+  {id:'merc',name:'Mercenary',emoji:'⚔️',effect:'+1 Boarding Strength',bonus:'Conflict zones marked'},
+  {id:'smuggler_job',name:'Smuggler',emoji:'📦',effect:'Hidden Cargo Bay available',bonus:'Black market routes visible'},
+  {id:'diplomat_job',name:'Ambassador',emoji:'🏛️',effect:'Faction rep gains doubled',bonus:'Faction territories shown'},
+  {id:'archaeologist',name:'Xeno-Archaeologist',emoji:'🏺',effect:'Ancient ruins highlighted',bonus:'Artifact sites marked'},
+  {id:'salvager',name:'Salvager',emoji:'🔧',effect:'+50% scrap from derelicts',bonus:'Wreck density on map'},
+  {id:'bodyguard',name:'Bodyguard',emoji:'🛡️',effect:'VIP Passenger missions unlock',bonus:'Safe routes marked'},
+  {id:'researcher',name:'Field Researcher',emoji:'📊',effect:'+25% credits for lifeform scans',bonus:'Lifeform signatures visible'},
+  {id:'corsair',name:'Corsair',emoji:'☠️',effect:'Attack pirates without rep loss',bonus:'Pirate positions tracked'},
+  {id:'preacher',name:'Void Preacher',emoji:'✨',effect:'30% chance to pacify aliens',bonus:'Shrine worlds highlighted'},
+];
+const STAR_TYPES=[
+  {type:'Yellow Dwarf',color:'#FFE566',glow:'rgba(255,229,100,.45)'},
+  {type:'Red Giant',color:'#FF5533',glow:'rgba(255,85,51,.45)'},
+  {type:'Blue Giant',color:'#88AAFF',glow:'rgba(136,170,255,.45)'},
+  {type:'White Dwarf',color:'#DDEEFF',glow:'rgba(220,238,255,.35)'},
+  {type:'Neutron Star',color:'#AAFFDD',glow:'rgba(170,255,220,.55)'},
+  {type:'Binary Star',color:'#FFCC44',glow:'rgba(255,200,68,.45)'},
+  {type:'Pulsar',color:'#FF77FF',glow:'rgba(255,119,255,.55)'},
+];
+const FACTIONS=[
+  {id:'federation',name:'Federation',short:'FED',color:'#2ecc71'},
+  {id:'empire',name:'Empire',short:'EMP',color:'#c41e3a'},
+  {id:'syndicate',name:'Syndicate',short:'SYN',color:'#8e44ad'},
+  {id:'guild',name:'Merchant Guild',short:'GLD',color:'#f1c40f'},
+  {id:'independent',name:'Independent',short:'IND',color:'#7f8c8d'},
+  {id:'megacorp',name:'Megacorp',short:'MCO',color:'#00e5ff'},
+];
+const SYS_PFXS=['Vega','Alpha','Beta','Delta','Nova','Sol','Tau','Lyra','Proxima','Kepler','Wolf','Rigel','Antares','Deneb','Polaris','Sirius','Arcturus','Aldebaran','Procyon','Capella','Betelgeuse','Castor'];
+const SYS_SFXS=['Prime','Major','Gate','Crossing','Deep','Edge','Core','Reach','Void','Haven','Expanse','Rim','Junction','Watch','Breach','Point'];
+const SYS_FEATURES=['Gas Giant System','Rocky Inner Planets','Ancient Ruins','Dense Asteroid Belt','Habitable World','High Radiation Zone','Mineral Rich Veins','Alien Life Detected','Trade Hub Station','Military Installation','Research Outpost','Pirate Den','Derelict Megastructure','Nomad Fleet Present','Unstable Wormhole','Shrine World'];
+
+const STARTER_CREW=[
+  {name:'Zoya Kas',nick:'',role:'Engineer',emoji:'⚙️',loyalty:70,bio:'A seasoned mechanic keeping rattletraps flying since the wars.'},
+  {name:'REX-7',nick:'"Ironclad"',role:'Security',emoji:'🤖',loyalty:55,bio:'Decommissioned combat android seeking new purpose.'},
+  {name:'Mira Tong',nick:'',role:'Navigator',emoji:'🔭',loyalty:65,bio:'Former Federation cartographer with secrets to keep.'},
+];
+
+// Trade Goods
+const GOODS=[
+  {id:'fuel_cells',name:'Fuel Cells',emoji:'⚡',basePrice:55,legal:true,wt:1},
+  {id:'medicine',name:'Medicine',emoji:'💊',basePrice:85,legal:true,wt:1},
+  {id:'protein_packs',name:'Protein Packs',emoji:'🥫',basePrice:32,legal:true,wt:2},
+  {id:'tech_parts',name:'Tech Components',emoji:'🔩',basePrice:130,legal:true,wt:1},
+  {id:'small_arms',name:'Small Arms',emoji:'🔫',basePrice:210,legal:true,wt:2},
+  {id:'alien_fauna',name:'Alien Fauna',emoji:'👾',basePrice:380,legal:false,wt:3},
+  {id:'void_spice',name:'Void Spice',emoji:'🌀',basePrice:520,legal:false,wt:1},
+  {id:'corp_data',name:'Corporate Secrets',emoji:'💾',basePrice:450,legal:false,wt:0},
+  {id:'artifacts',name:'Ancient Artifacts',emoji:'🏺',basePrice:850,legal:true,wt:1},
+];
+
+// Ship Modules
+const MODULES=[
+  {id:'gambler_reactor',name:"Gambler's Reactor",emoji:'🎲',cost:3200,pos:'+50% Power output',neg:'5% chance per jump: drain all fuel',effect:'power',val:50},
+  {id:'empathic_hull',name:'Empathic Hull Coating',emoji:'🧬',cost:2800,pos:'+20% Evasion in combat',neg:'-2 Morale per jump (organic slime)',effect:'evasion',val:20},
+  {id:'quantum_cargo',name:'Quantum Cargo Hold',emoji:'📦',cost:4500,pos:'Double cargo capacity',neg:'5% chance items phase out on jump',effect:'cargo',val:10},
+  {id:'reinforced_frame',name:'Reinforced Frame',emoji:'🛡️',cost:3800,pos:'+20% Max Hull',neg:'-15% Speed',effect:'hull',val:20},
+  {id:'overclocked_reactor',name:'Overclocked Reactor',emoji:'⚡',cost:2500,pos:'+15% Power',neg:'2% chance of fire per jump',effect:'power',val:15},
+  {id:'phase_shields',name:'Phase Shields',emoji:'🌀',cost:5500,pos:'3s invulnerability burst in combat',neg:'15s cooldown vulnerability window',effect:'shields',val:0},
+  {id:'ai_assistant',name:'AI Combat Assistant',emoji:'🤖',cost:6000,pos:'Auto-repairs 1 system per combat turn',neg:'Randomly changes target 10% of time',effect:'autorepair',val:0},
+  {id:'luxury_interior',name:'Luxury Interior',emoji:'✨',cost:4000,pos:'Morale loss halved during hardship',neg:'Uses 20% more power',effect:'morale',val:0},
+  {id:'lucky_hull',name:'"Lucky" Hull Plating',emoji:'🍀',cost:7000,pos:'5% chance to ignore fatal damage',neg:'-10% Fuel Efficiency',effect:'lucky',val:0},
+  {id:'noisy_engine',name:'Noisy Engine Mods',emoji:'📢',cost:1800,pos:'+15% travel speed',neg:'+20% chance of pirate ambush',effect:'speed',val:15},
+  {id:'void_engine',name:'Void Micro-Drive',emoji:'🌌',cost:8500,pos:'Instant jump (no travel time)',neg:'10% chance to arrive at random system',effect:'instant',val:0},
+  {id:'blood_battery',name:'Blood Battery',emoji:'🩸',cost:3000,pos:'Powers ship from crew life force',neg:'-1 HP per crew per combat turn',effect:'blood',val:0},
+];
+
+// Enemy Ships
+const ENEMY_SHIPS=[
+  {type:'Pirate Gunship',emoji:'💀',color:'#e67e22',hull:55,maxHull:55,shield:15,maxShield:15,desc:'A battered raider rigged for close-range assault.',loot:{cr:[350,600],scrap:3},systems:{weapons:{name:'Laser Cannons',hp:30,maxHp:30},shields:{name:'Deflector Array',hp:15,maxHp:15},engines:{name:'Afterburners',hp:20,maxHp:20}}},
+  {type:'Cartel Enforcer',emoji:'⚠️',color:'#c41e3a',hull:75,maxHull:75,shield:30,maxShield:30,desc:'Well-armed syndicate muscle. Fights dirty.',loot:{cr:[600,900],scrap:5,contraband:true},systems:{weapons:{name:'Dual Railguns',hp:40,maxHp:40},shields:{name:'Shield Matrix',hp:30,maxHp:30},engines:{name:'Boost Drive',hp:25,maxHp:25}}},
+  {type:'Empire Patrol',emoji:'🪖',color:'#2ecc71',hull:90,maxHull:90,shield:45,maxShield:45,desc:'Federation military interceptor. Heavily shielded.',loot:{cr:[250,500],scrap:2},systems:{weapons:{name:'Ion Array',hp:45,maxHp:45},shields:{name:'Military Shields',hp:45,maxHp:45},engines:{name:'Plasma Drive',hp:30,maxHp:30}}},
+  {type:'Rogue Freighter',emoji:'📦',color:'#7f8c8d',hull:70,maxHull:70,shield:10,maxShield:10,desc:'Cargo ship gone pirate. Slow but carries goods.',loot:{cr:[200,400],scrap:1,goods:true},systems:{weapons:{name:'Defensive Guns',hp:20,maxHp:20},shields:{name:'Cargo Shields',hp:10,maxHp:10},engines:{name:'Hauler Drive',hp:35,maxHp:35}}},
+  {type:'Alien Scout',emoji:'👽',color:'#8e44ad',hull:45,maxHull:45,shield:40,maxShield:40,desc:'Unfamiliar configuration. Readings are strange.',loot:{cr:[500,800],artifact:true},systems:{weapons:{name:'Plasma Lances',hp:35,maxHp:35},shields:{name:'Energy Cocoon',hp:40,maxHp:40},engines:{name:'Phase Drive',hp:40,maxHp:40}}},
+];
+
+// Crew Drama Events
+const DRAMA_EVENTS=[
+  {title:'💬 CANTINA ARGUMENT',body:'During a quiet stretch between jumps, raised voices fill the mess hall. {crew1} and {crew2} are at each other\'s throats over the last ration pack — or maybe it\'s about something older and deeper.',choices:[
+    {text:'[ INTERVENE ] "That\'s enough, both of you."',eff:{mora:5,log:'Mediated the argument. Crew tensions eased — for now.'}},
+    {text:'[ LET THEM SETTLE IT ] Stay out of it',eff:{mora:-3,log:'Stayed out of the crew argument. They\'ll work it out... probably.'}},
+    {text:'[ OFFER A ROUND ] Spend 80cr on drinks',eff:{cr:-80,mora:12,log:'Bought a round for the whole crew. Laughter replaced anger. Morale up.'}},
+  ]},
+  {title:'💞 UNEXPECTED BOND',body:'You find {crew1} and {crew2} huddled in the observation bay, sharing stories from before they joined the ship. Something shifted between them tonight.',choices:[
+    {text:'[ JOIN THEM ] Pull up a chair',eff:{mora:8,log:'Joined the crew for stories. A rare moment of warmth on a cold ship.'}},
+    {text:'[ LEAVE THEM BE ] Give them space',eff:{mora:5,log:'Left the crew to their moment. Good to see bonds forming out here.'}},
+  ]},
+  {title:'😰 MIDNIGHT FEARS',body:'{crew1} hasn\'t slept in two days. You find them in the engine room, hands shaking. "I keep dreaming about the last ship I was on," they whisper.',choices:[
+    {text:'[ LISTEN ] Stay up with them',eff:{mora:10,log:'Listened to the crew member\'s fears. They needed to be heard. Loyalty gained.'}},
+    {text:'[ ORDER REST ] "Get some sleep. Orders."',eff:{mora:-2,log:'Ordered the crew member to rest. Military approach — effective, if cold.'}},
+    {text:'[ ASSIGN TASK ] Give them something to focus on',eff:{mora:4,log:'Gave the anxious crew member a maintenance job. Focus helped.'}},
+  ]},
+  {title:'🎲 GAMBLING DISPUTE',body:'A dice game in the cargo bay has escalated. {crew2} is accusing {crew1} of cheating — and there\'s actual credits on the table.',choices:[
+    {text:'[ ADJUDICATE ] Make a ruling',eff:{mora:3,log:'Made a ruling on the gambling dispute. Accepted by both parties — barely.'}},
+    {text:'[ CONFISCATE ] "No gambling on my ship"',eff:{mora:-5,cr:120,log:'Confiscated the gambling pot and banned dice games. Crew is annoyed.'}},
+    {text:'[ JOIN IN ] Deal me in',eff:{cr:200,mora:8,log:'Joined the gambling game — and won. Crew loved it. Suspicious looks after.'}},
+  ]},
+  {title:'🌟 CREW DISCOVERY',body:'{crew1} bursts onto the bridge with wide eyes. They\'ve been studying the sensor data in their off hours and found something — a faint signal, encoded, repeating.',choices:[
+    {text:'[ INVESTIGATE ] Divert course',eff:{cr:500,mora:10,log:'Investigated the signal. Found a hidden cache — reward for the curious.'}},
+    {text:'[ LOG AND CONTINUE ] Not now',eff:{log:'Logged the signal for later. The crew member looked disappointed.'}},
+  ]},
+  {title:'⚔ IDEOLOGY CLASH',body:'{crew1} finds out you accepted a contract from a faction they despise. Words get sharp. "There are lines I won\'t cross, Captain."',choices:[
+    {text:'[ HOLD FIRM ] "It pays the fuel bills."',eff:{mora:-8,log:'Held firm on the contract. Crew member accepted it, barely. Tension remains.'}},
+    {text:'[ COMPROMISE ] "Let\'s talk this through"',eff:{mora:3,log:'Talked it through. Found a middle ground. Respect earned through dialogue.'}},
+    {text:'[ CANCEL CONTRACT ] "You\'re right."',eff:{mora:12,cr:-200,log:'Cancelled the contract in solidarity. Costly but the crew unity improved.'}},
+  ]},
+];
+
+// Rumors for the Cantina
+const RUMOR_POOL=[
+  'Scavengers near {sys} hit a derelict warship — still packed with munitions.',
+  'The {fac} has been consolidating power in this sector. Border patrols are thicker.',
+  'A cult ship was spotted heading coreward. Crew looked... different.',
+  'Black market prices on Void Spice are through the roof in the inner systems.',
+  'Someone\'s hunting a bounty in this sector. Big payout. Dangerous target.',
+  'A trader swears they saw a generation ship near the outer rim. Ancient design.',
+  'The Merchant Guild is offering premium rates for rare minerals right now.',
+  'Pirate activity near {sys} has spiked. Caution is advised.',
+  'Word is there\'s an unstable wormhole two jumps from here. Shortcut — if you survive it.',
+  'A contact says the Federation is looking for an independent crew. Good pay, murky details.',
+  'Someone found old terraforming logs in a derelict. Point to a supposedly habitable world off the charts.',
+  'The Syndicate moved into {sys}. Anyone who lived there before is... adjusting.',
+];
+
+// Guild Contracts
+const CONTRACT_TYPES=[
+  {type:'bounty',label:'ELIMINATE',emoji:'🎯',desc:'Eliminate a hostile ship in the target system.',reward:[600,1000],repFac:'federation',rep:8},
+  {type:'delivery',label:'DELIVER',emoji:'📦',desc:'Transport a sealed crate to the destination system.',reward:[400,700],repFac:'guild',rep:6},
+  {type:'scan',label:'SURVEY',emoji:'🔭',desc:'Conduct deep scan of target system resources.',reward:[300,500],repFac:'independent',rep:5},
+  {type:'escort',label:'ESCORT',emoji:'🛡️',desc:'Escort a civilian transport through a conflict zone.',reward:[500,800],repFac:'federation',rep:7},
+];
+
+// Space Events
+const EVENTS=[
+  {title:'⚠  DERELICT VESSEL',body:'Sensors pick up a drifting ship — no life signs, but active power cells remain.',choices:[
+    {text:'[ BOARD AND SALVAGE ]  Risk crew for high reward',eff:{cr:450,hull:-8,log:'Boarded the derelict. Found useful components.'}},
+    {text:'[ SCAN FROM DISTANCE ]  Safe, lower reward',eff:{cr:150,log:'Scanned derelict remotely. Data sold to the guild.'}},
+    {text:'[ AVOID ]  No risk, no reward',eff:{log:'Bypassed the derelict. Better safe than sorry.'}},
+  ]},
+  {title:'🚨  PIRATE INTERCEPT',body:'"Captain, a vessel just dropped out of FTL ahead. Weapons are powering up."',choices:[
+    {text:'[ OPEN FIRE ]  Enter ship combat',eff:{combat:true}},
+    {text:'[ PAY TRIBUTE ]  500 credits to pass',eff:{cr:-500,log:"Paid the pirates their toll. The indignity stings."}},
+    {text:'[ EMERGENCY FTL ]  Burn fuel to escape',eff:{fuel:-25,log:'Made a desperate FTL jump to escape.'}},
+  ]},
+  {title:'📡  DISTRESS SIGNAL',body:"A distress beacon pulses from a nearby moon. Signal is weeks old. Could be a trap.",choices:[
+    {text:'[ INVESTIGATE ]  Answer the call',eff:{cr:600,mora:10,log:'Rescued stranded survivors. Crew spirits lifted.'}},
+    {text:'[ REPORT ONLY ]  Let authorities handle it',eff:{cr:100,rep_federation:5,log:"Reported signal to the Federation."}},
+    {text:'[ IGNORE ]  Survival first',eff:{mora:-5,log:"Ignored the distress signal. Some things stick with you."}},
+  ]},
+  {title:'🌀  SPATIAL ANOMALY',body:"Strange energy readings ahead. Instruments are going haywire. Something new.",choices:[
+    {text:'[ DOCUMENT AND SELL ]  Science guild payday',eff:{cr:300,log:'Documented the anomaly. Science guilds paid well.'}},
+    {text:'[ FLY THROUGH ]  Risk it for the biscuit',eff:{cr:900,hull:-15,log:'Flew through the anomaly! Found a cache on the other side.'}},
+    {text:'[ CHART AND AVOID ]  Mark it, move on',eff:{log:'Charted the anomaly for future reference.'}},
+  ]},
+  {title:'🛒  TRAVELING MERCHANT',body:'"Captain, you look like someone who appreciates quality goods." A freighter hails with an offer.',choices:[
+    {text:'[ BUY REPAIRS ]  Spend 400cr',eff:{cr:-400,hull:25,log:'Bought hull repair materials. Ship patched up.'}},
+    {text:'[ TRADE CHARTS ]  Intel for fuel',eff:{fuel:35,log:'Exchanged navigation charts for fuel cells.'}},
+    {text:'[ DECLINE ]  Save credits',eff:{log:"Declined the merchant's offer."}},
+  ]},
+  {title:'👽  FIRST CONTACT',body:'An alien vessel of unknown configuration approaches. Your translator is struggling.',choices:[
+    {text:'[ OPEN HAILING ]  Attempt communication',eff:{cr:400,mora:10,log:'Made peaceful contact! Exchanged data fragments.'}},
+    {text:'[ RAISE SHIELDS ]  Defensive posture',eff:{log:'Held defensive posture. They observed and moved on.'}},
+    {text:'[ AGGRESSIVE SCAN ]  Force data collection',eff:{cr:200,hull:-8,log:'Scanned aggressively. They fired a warning shot.'}},
+  ]},
+  {title:'💀  BOUNTY TARGET',body:"Scanner flags a vessel matching an active bounty posting.",choices:[
+    {text:'[ GIVE CHASE ]  Enter combat',eff:{combat:true}},
+    {text:'[ REPORT POSITION ]  Safer payout',eff:{cr:200,log:"Reported the criminal's last coordinates."}},
+    {text:'[ LET THEM GO ]  Not your problem',eff:{log:"Let the criminal go."}},
+  ]},
+  {title:'⚡  SYSTEM MALFUNCTION',body:"A power surge rips through ship systems. Alarms blare.",choices:[
+    {text:'[ EMERGENCY REPAIRS ]  Spend 300cr',eff:{cr:-300,hull:15,log:'Emergency repairs completed. The engineer saved us.'}},
+    {text:'[ REROUTE POWER ]  Systems offline',eff:{fuel:-15,log:'Rerouted through backup systems. Some fuel lost.'}},
+    {text:'[ PUSH THROUGH ]  Fly damaged',eff:{hull:-20,log:'Pushed through with damaged systems. Risky.'}},
+  ]},
+  {title:'☄  ASTEROID SHORTCUT',body:'A dense asteroid field sits between you and destination. Faster but dangerous.',choices:[
+    {text:'[ FLY THROUGH ]  Faster, risky',eff:{fuel:20,hull:-8,log:'Threaded the asteroid field. Hull grazed.'}},
+    {text:'[ LONG ROUTE ]  Safe and slow',eff:{fuel:-18,log:'Took the long route around. Safe, but costly.'}},
+  ]},
+  {title:'🌟  ALIEN ARTIFACT',body:'Your deep scanner pings an anomalous reading. Something buried on a nearby moon.',choices:[
+    {text:'[ EXCAVATE ]  Send crew down',eff:{cr:800,mora:8,hull:-5,log:'Retrieved an alien artifact. Incredible find.'}},
+    {text:'[ SCAN ONLY ]  Log and leave',eff:{cr:200,log:'Catalogued the artifact location. Others can dig it up.'}},
+  ]},
+];
+
+// ══════════════════════════════════
+// GALAXY GENERATION
+// ══════════════════════════════════
+function genGalaxy(rng,W,H){
+  const NUM=50,MARGIN=55,MIN_D=64,MAX_LANE=165;
+  const positions=[];let att=0;
+  while(positions.length<NUM&&att<8000){att++;const x=MARGIN+rng()*(W-MARGIN*2),y=MARGIN+rng()*(H-MARGIN*2);if(!positions.some(p=>{const dx=p.x-x,dy=p.y-y;return Math.sqrt(dx*dx+dy*dy)<MIN_D;}))positions.push({x,y});}
+  const systems=positions.map((p,i)=>{
+    const st=STAR_TYPES[Math.floor(rng()*STAR_TYPES.length)];
+    const fac=FACTIONS[Math.floor(rng()*FACTIONS.length)];
+    const f1=SYS_FEATURES[Math.floor(rng()*SYS_FEATURES.length)];
+    const f2=SYS_FEATURES[Math.floor(rng()*SYS_FEATURES.length)];
+    const pref=SYS_PFXS[Math.floor(rng()*SYS_PFXS.length)];
+    const suff=rng()>.45?' '+SYS_SFXS[Math.floor(rng()*SYS_SFXS.length)]:'';
+    const stType=['Hub','Outpost','Megastation','Waypoint'][Math.floor(rng()*4)];
+    return{id:i,name:pref+suff,x:p.x,y:p.y,starType:st.type,starColor:st.color,starGlow:st.glow,faction:fac,features:[f1,...(f1!==f2?[f2]:[])],danger:Math.floor(rng()*5)+1,wealth:Math.floor(rng()*5)+1,hasStation:rng()>.42,stationType:stType,hasPlanet:rng()>.35,visited:i===0,rx:0,ry:0};
+  });
+  const conns=[];const cset=new Set();
+  for(let i=0;i<systems.length;i++){const dists=[];for(let j=0;j<systems.length;j++){if(i===j)continue;const dx=systems[i].x-systems[j].x,dy=systems[i].y-systems[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<MAX_LANE)dists.push({j,d});}dists.sort((a,b)=>a.d-b.d);const n=Math.floor(rng()*3)+2;dists.slice(0,n).forEach(({j})=>{const k=Math.min(i,j)+'_'+Math.max(i,j);if(!cset.has(k)){cset.add(k);conns.push([i,j]);}});}
+  return{systems,conns};
+}
+
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+let G={};
+let currentEvent=null;
+let currentDrama=null;
+let stActiveNode='cantina';
+
+function initState(seed){
+  G={
+    seed,rng:mkRNG(seed),
+    captain:{name:'Captain',origin:null,cls:null,job:null},
+    ship:{name:'VAGRANT STAR',hull:100,maxHull:100,fuel:80,maxFuel:100,shields:50,maxShields:50,morale:75,credits:1000,cargoMax:10,modules:[]},
+    galaxy:null,curSys:0,selSys:null,
+    rep:{federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0},
+    crew:JSON.parse(JSON.stringify(STARTER_CREW)),
+    cargo:[],
+    contracts:[],
+    log:['The stars await, Captain. Chart your course.'],
+    ccStep:0,jumps:0,dramaTimer:0,evasionActive:false,
+    combat:null,
+  };
+}
+
+// ══════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// ══════════════════════════════════
+// TITLE SCREEN
+// ══════════════════════════════════
+let sfCtx,sfStars=[],sfAnim=false;
+function initStarfield(){const c=document.getElementById('sf-canvas');c.width=window.innerWidth;c.height=window.innerHeight;sfCtx=c.getContext('2d');sfStars=[];for(let i=0;i<220;i++)sfStars.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()-.5)*.015+.005});sfAnim=true;animSF();}
+function animSF(){if(!sfAnim)return;const c=sfCtx.canvas;sfCtx.fillStyle='#0a0c10';sfCtx.fillRect(0,0,c.width,c.height);[[c.width*.3,c.height*.4,c.width*.35,'rgba(26,58,90,.10)'],[c.width*.7,c.height*.6,c.width*.3,'rgba(142,68,173,.07)']].forEach(([cx,cy,r,cl])=>{const g=sfCtx.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,cl);g.addColorStop(1,'transparent');sfCtx.fillStyle=g;sfCtx.fillRect(0,0,c.width,c.height);});sfStars.forEach(s=>{s.a+=s.da;if(s.a<=0){s.a=0;s.da=Math.abs(s.da);}if(s.a>=1){s.a=1;s.da=-Math.abs(s.da);}sfCtx.beginPath();sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);sfCtx.fillStyle=`rgba(232,240,255,${s.a})`;sfCtx.fill();});requestAnimationFrame(animSF);}
+function randomSeed(){document.getElementById('seed-inp').value=rndSeedStr();}
+function beginGame(){sfAnim=false;const sv=document.getElementById('seed-inp').value.trim();const seed=sv||rndSeedStr();document.getElementById('seed-inp').value=seed;initState(seed);G.ccStep=0;showScreen('cc-screen');renderCC();}
+
+// ══════════════════════════════════
+// CHARACTER CREATION
+// ══════════════════════════════════
+const CC_TITLES=['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN'];
+const CC_DESCS=['Step 1 of 4 — Your backstory determines starting bonuses and dialogue options','Step 2 of 4 — Your class defines combat abilities and special actions','Step 3 of 4 — Your job grants passive galaxy map perks and bonuses','Step 4 of 4 — Personalise your captain and ship name'];
+function renderCC(){
+  const s=G.ccStep;
+  document.getElementById('cc-title').textContent=CC_TITLES[s];
+  document.getElementById('cc-desc').textContent=CC_DESCS[s];
+  document.getElementById('cc-pips').innerHTML=[0,1,2,3].map(i=>`<div class="cc-pip ${i<s?'done':i===s?'active':''}"></div>`).join('');
+  const body=document.getElementById('cc-body'),nav=document.getElementById('cc-nav');
+  if(s===3){
+    body.innerHTML=`<div class="name-step"><div class="name-group"><div class="name-label">CAPTAIN NAME</div><input type="text" id="cap-name" value="${G.captain.name}" maxlength="22" placeholder="Enter name..."/></div><div class="name-group"><div class="name-label">SHIP NAME</div><input type="text" id="ship-name-in" value="${G.ship.name}" maxlength="22" placeholder="Enter ship name..."/></div><div class="dossier"><div class="dossier-title">▸ CAPTAIN DOSSIER</div><div class="dossier-row">Origin: <span>${ORIGINS.find(o=>o.id===G.captain.origin)?.name||'—'}</span></div><div class="dossier-row">Class: <span>${CLASSES.find(c=>c.id===G.captain.cls)?.name||'—'}</span></div><div class="dossier-row">Job: <span>${JOBS.find(j=>j.id===G.captain.job)?.name||'—'}</span></div><div class="dossier-row">Starting Credits: <span style="color:var(--gold)">${G.ship.credits.toLocaleString()} CR</span></div></div></div>`;
+    nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="launchGame()">▶ LAUNCH INTO THE VOID</button>`;return;
+  }
+  const data=s===0?ORIGINS:s===1?CLASSES:JOBS;
+  const sel=s===0?G.captain.origin:s===1?G.captain.cls:G.captain.job;
+  const cols=s===1?'cols-3':'';
+  body.innerHTML=`<div class="opt-grid ${cols}">${data.map(it=>`<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc}</div><div class="oc-bonus">◈ ${it.bonus||it.ability||it.effect}</div></div>`).join('')}</div>`;
+  nav.innerHTML=`${s>0?'<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>':''}<button class="btn btn-gold" ${sel?'':'disabled'} onclick="ccNext()">▶ CONTINUE</button>`;
+}
+function ccSelect(id){if(G.ccStep===0){G.captain.origin=id;const o=ORIGINS.find(x=>x.id===id);if(o)G.ship.credits=o.credits;}else if(G.ccStep===1)G.captain.cls=id;else if(G.ccStep===2)G.captain.job=id;renderCC();}
+function ccNext(){const s=G.ccStep;const ok=(s===0&&G.captain.origin)||(s===1&&G.captain.cls)||(s===2&&G.captain.job);if(!ok)return;G.ccStep++;renderCC();}
+function launchGame(){
+  const cn=document.getElementById('cap-name').value.trim();
+  const sn=document.getElementById('ship-name-in').value.trim();
+  G.captain.name=cn||'Captain';G.ship.name=(sn||'VAGRANT STAR').toUpperCase();
+  // Apply origin bonuses
+  if(G.captain.origin==='military')G.ship.maxHull+=15,G.ship.hull=G.ship.maxHull;
+  const gc=document.querySelector('.gc');
+  const W=Math.max(600,gc.clientWidth||window.innerWidth-411);
+  const H=Math.max(400,gc.clientHeight||window.innerHeight-122);
+  G.galaxy=genGalaxy(G.rng,W,H);G.curSys=0;G.selSys=0;
+  genContracts();
+  addLog(`Captain ${G.captain.name} takes the helm of the ${G.ship.name}.`);
+  showScreen('galaxy-screen');initGalaxy();updateHUD();updateLP();updateRP();updateLog();
+}
+
+// ══════════════════════════════════
+// GALAXY MAP
+// ══════════════════════════════════
+let gxCanvas,gxCtx,gxPulse=0,gxAniming=false;
+function initGalaxy(){
+  gxCanvas=document.getElementById('gx-canvas');gxCtx=gxCanvas.getContext('2d');gxCtx.imageSmoothingEnabled=false;
+  const gc=document.querySelector('.gc');gxCanvas.width=gc.clientWidth;gxCanvas.height=gc.clientHeight;
+  const {systems}=G.galaxy;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  systems.forEach(s=>{minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minY=Math.min(minY,s.y);maxY=Math.max(maxY,s.y);});
+  const pad=52,scX=(gxCanvas.width-pad*2)/(maxX-minX||1),scY=(gxCanvas.height-pad*2)/(maxY-minY||1),sc=Math.min(scX,scY,.95);
+  const offX=pad+(gxCanvas.width-pad*2-(maxX-minX)*sc)/2-minX*sc,offY=pad+(gxCanvas.height-pad*2-(maxY-minY)*sc)/2-minY*sc;
+  systems.forEach(s=>{s.rx=Math.round(s.x*sc+offX);s.ry=Math.round(s.y*sc+offY);});
+  gxCanvas.addEventListener('click',onGxClick);gxCanvas.addEventListener('mousemove',onGxHover);gxCanvas.addEventListener('mouseleave',()=>{document.getElementById('sys-tooltip').style.display='none';});
+  gxAniming=true;drawGalaxy();
+}
+function reachable(){const r=new Set();G.galaxy.conns.forEach(([a,b])=>{if(a===G.curSys)r.add(b);if(b===G.curSys)r.add(a);});return r;}
+function drawGalaxy(){
+  if(!gxAniming)return;
+  const ctx=gxCtx,{systems,conns}=G.galaxy,W=gxCanvas.width,H=gxCanvas.height;gxPulse+=.04;
+  ctx.fillStyle='#050709';ctx.fillRect(0,0,W,H);
+  [[W*.3,H*.4,.30,'rgba(26,58,90,.14)'],[W*.7,H*.6,.25,'rgba(142,68,173,.08)'],[W*.5,H*.2,.22,'rgba(26,90,70,.07)']].forEach(([cx,cy,r,c])=>{const g=ctx.createRadialGradient(cx,cy,0,cx,cy,W*r);g.addColorStop(0,c);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);});
+  const reach=reachable();
+  conns.forEach(([a,b])=>{const sa=systems[a],sb=systems[b],vis=sa.visited||sb.visited||reach.has(a)||reach.has(b);ctx.beginPath();ctx.moveTo(sa.rx,sa.ry);ctx.lineTo(sb.rx,sb.ry);if(vis){ctx.strokeStyle='rgba(0,229,255,.16)';ctx.lineWidth=1;ctx.setLineDash([4,5]);}else{ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=.5;ctx.setLineDash([2,7]);}ctx.stroke();ctx.setLineDash([]);});
+  systems.forEach((sys,i)=>{
+    const isCur=i===G.curSys,isSel=i===G.selSys,isReach=reach.has(i),isVis=sys.visited||isCur,revealed=isVis||isReach;
+    const cx=sys.rx,cy=sys.ry;
+    if(!revealed){ctx.beginPath();ctx.arc(cx,cy,1.2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.05)';ctx.fill();return;}
+    const r=isCur?6:4;
+    if(isVis){const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,r*4.5);grd.addColorStop(0,sys.starGlow);grd.addColorStop(1,'transparent');ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx,cy,r*4.5,0,Math.PI*2);ctx.fill();}
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=isVis?sys.starColor:sys.starColor+'66';ctx.fill();
+    if(isReach&&!isCur){const pulse=.4+.4*Math.sin(gxPulse*1.8);ctx.beginPath();ctx.arc(cx,cy,r+7+pulse*2,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.2+pulse*.25})`;ctx.lineWidth=1;ctx.stroke();}
+    if(isCur){const pulse=.5+.5*Math.sin(gxPulse*1.5);ctx.beginPath();ctx.arc(cx,cy,r+5+pulse*3,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.5+pulse*.5})`;ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#00e5ff';ctx.beginPath();ctx.moveTo(cx,cy-r-9);ctx.lineTo(cx-5,cy-r-2);ctx.lineTo(cx+5,cy-r-2);ctx.closePath();ctx.fill();}
+    if(isSel&&!isCur){ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.strokeStyle='rgba(241,196,15,.85)';ctx.lineWidth=1.5;ctx.stroke();}
+    if(isVis){ctx.font=`${isCur?'11':'10'}px VT323`;ctx.textAlign='center';ctx.fillStyle=isCur?'#00e5ff':isSel?'#f1c40f':'rgba(232,240,255,.75)';ctx.fillText(sys.name,cx,cy+r+12);}else if(isReach){ctx.font='10px VT323';ctx.textAlign='center';ctx.fillStyle='rgba(0,229,255,.45)';ctx.fillText('? ? ?',cx,cy+r+12);}
+    if(isVis){ctx.beginPath();ctx.arc(cx+r+2,cy-r-2,2.5,0,Math.PI*2);ctx.fillStyle=sys.faction.color;ctx.fill();}
+    if(isVis&&sys.hasStation){ctx.font='9px VT323';ctx.textAlign='center';ctx.fillStyle='rgba(0,229,255,.7)';ctx.fillText('⬡',cx,cy+r+22);}
+  });
+  ctx.font='11px VT323';ctx.fillStyle='rgba(0,229,255,.3)';ctx.textAlign='left';
+  ctx.fillText(`SEED: ${G.seed}  |  ${G.galaxy.systems.filter(s=>s.visited).length}/${G.galaxy.systems.length} SYSTEMS  |  JUMPS: ${G.jumps}`,10,H-10);
+  requestAnimationFrame(drawGalaxy);
+}
+function onGxClick(e){const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();let best=null,bestD=20;G.galaxy.systems.forEach((sys,i)=>{const dx=mx-sys.rx,dy=my-sys.ry,d=Math.sqrt(dx*dx+dy*dy);if(d<bestD&&(sys.visited||reach.has(i)||i===G.curSys)){bestD=d;best=i;}});if(best!==null){G.selSys=best;updateLP();}}
+function onGxHover(e){const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();const tt=document.getElementById('sys-tooltip');let found=false;G.galaxy.systems.forEach((sys,i)=>{const dx=mx-sys.rx,dy=my-sys.ry;if(Math.sqrt(dx*dx+dy*dy)<12&&(sys.visited||reach.has(i)||i===G.curSys)){tt.textContent=sys.visited?`${sys.name} — ${sys.faction.name}`:reach.has(i)?`${sys.name} — UNSCANNED`:'';tt.style.display='block';tt.style.left=(mx+14)+'px';tt.style.top=(my-10)+'px';found=true;}});if(!found)tt.style.display='none';}
+
+// ══════════════════════════════════
+// UI UPDATES
+// ══════════════════════════════════
+const DANGER_BARS=['','▮▯▯▯▯','▮▮▯▯▯','▮▮▮▯▯','▮▮▮▮▯','▮▮▮▮▮'];
+const DANGER_COLS=['','#2ecc71','#2ecc71','#e67e22','#e67e22','#c41e3a'];
+const WEALTH_BARS=['','◇◇◇◇◇','◆◇◇◇◇','◆◆◇◇◇','◆◆◆◇◇','◆◆◆◆◆'];
+function updateHUD(){
+  const s=G.ship;document.getElementById('hud-ship').textContent=s.name;
+  const pct=(v,mx)=>Math.max(0,Math.min(100,v/mx*100))+'%';
+  document.getElementById('b-hull').style.width=pct(s.hull,s.maxHull);document.getElementById('b-shld').style.width=pct(s.shields,s.maxShields);document.getElementById('b-fuel').style.width=pct(s.fuel,s.maxFuel);document.getElementById('b-mora').style.width=s.morale+'%';
+  document.getElementById('v-hull').textContent=s.hull;document.getElementById('v-shld').textContent=s.shields;document.getElementById('v-fuel').textContent=s.fuel;document.getElementById('v-mora').textContent=s.morale;
+  const hp=s.hull/s.maxHull;document.getElementById('b-hull').style.background=hp>.5?'#2ecc71':hp>.25?'#e67e22':'#c41e3a';
+  document.getElementById('hud-creds').textContent=`💰 ${s.credits.toLocaleString()} CR`;
+}
+function updateLP(){
+  const body=document.getElementById('lp-body'),acts=document.getElementById('lp-actions');
+  if(G.selSys===null){body.innerHTML='<div style="color:var(--metal)">Select a system on the galaxy map to view intelligence data.</div>';acts.innerHTML='';return;}
+  const sys=G.galaxy.systems[G.selSys],isCur=G.selSys===G.curSys,reach=reachable(),canTravel=reach.has(G.selSys)&&!isCur,isVis=sys.visited||isCur;
+  body.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${sys.starColor};box-shadow:0 0 8px ${sys.starColor};flex-shrink:0"></div><div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--star);line-height:1.5">${sys.name}</div></div>
+    <div style="color:var(--metal)">${sys.starType}</div>
+    <div style="display:flex;flex-wrap:wrap;margin-top:2px"><span class="tag" style="border-color:${sys.faction.color};color:${sys.faction.color}">${sys.faction.short}</span>${sys.hasStation?'<span class="tag" style="border-color:var(--cyan);color:var(--cyan)">⬡ '+sys.stationType.toUpperCase()+'</span>':''}${sys.hasPlanet?'<span class="tag" style="border-color:var(--metal);color:var(--metal)">◉ PLANET</span>':''}</div>
+    ${isVis?`<div style="margin-top:4px"><div style="font-size:12px;color:var(--metal)">DANGER</div><div style="color:${DANGER_COLS[sys.danger]};font-size:16px;letter-spacing:2px">${DANGER_BARS[sys.danger]}</div></div><div><div style="font-size:12px;color:var(--metal)">WEALTH</div><div style="color:var(--gold);font-size:16px;letter-spacing:2px">${WEALTH_BARS[sys.wealth]}</div></div><div style="border-top:1px solid var(--border);padding-top:7px;line-height:1.9">${sys.features.map(f=>`<div>◈ ${f}</div>`).join('')}</div>`:
+    '<div style="color:var(--metal);margin-top:6px;font-size:14px">⬛ UNSCANNED — Approach to reveal data.</div>'}
+    ${isCur?'<div style="color:var(--cyan);font-size:14px;margin-top:4px">▸ CURRENT LOCATION</div>':''}`;
+  if(canTravel){
+    const cost=10,ok=G.ship.fuel>=cost;
+    acts.innerHTML=`<div style="font-size:14px;color:var(--metal)">FTL COST: <span style="color:var(--warn)">${cost} FUEL</span></div><button class="btn ${ok?'btn-gold':'btn-danger'} btn-full" ${ok?'':'disabled'} onclick="travelTo(${G.selSys})">${ok?'▶ ENGAGE FTL DRIVE':'⚠ INSUFFICIENT FUEL'}</button>`;
+  }else if(isCur){
+    acts.innerHTML=`<button class="btn btn-safe btn-full" style="margin-bottom:6px" onclick="exploreSys()">◈ EXPLORE SYSTEM</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK AT STATION</button>`:''}`;
+  }else{
+    acts.innerHTML=`<div style="font-size:13px;color:var(--metal)">System not within FTL range from current position.</div>`;
+  }
+}
+function updateRP(){
+  document.getElementById('rp-rep').innerHTML=FACTIONS.map(f=>{const r=G.rep[f.id]||0,col=r>=0?'var(--safe)':'var(--hazard)',sign=r>=0?'+':'';return`<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span style="color:${col}">${sign}${r}</span></div>`;}).join('');
+  const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1),0);
+  document.getElementById('cargo-count').textContent=`${cargoWt}/${G.ship.cargoMax}`;
+  document.getElementById('rp-cargo').innerHTML=G.cargo.length===0?`<div style="color:var(--metal);font-size:13px;padding:6px 10px">Empty</div>`:G.cargo.map((c,i)=>{const g=GOODS.find(x=>x.id===c.id);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)"><span>${g?.emoji||'📦'} ${g?.name||c.id}</span><span style="color:var(--gold)">${c.qty}×</span></div>`;}).join('');
+  document.getElementById('rp-crew').innerHTML=G.crew.map(c=>`<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name}${c.nick?' <span style="color:var(--gold);font-size:12px">'+c.nick+'</span>':''}</div><div class="crew-role">${c.role}</div></div></div>`).join('');
+  const or=ORIGINS.find(o=>o.id===G.captain.origin),cl=CLASSES.find(c=>c.id===G.captain.cls),jb=JOBS.find(j=>j.id===G.captain.job);
+  document.getElementById('rp-cap').innerHTML=`<div style="font-size:16px;color:var(--star);margin-bottom:4px">${G.captain.name}</div><div>${or?.emoji||''} <span style="color:var(--star)">${or?.name||'—'}</span></div><div>${cl?.emoji||''} <span style="color:var(--star)">${cl?.name||'—'}</span></div><div>${jb?.emoji||''} <span style="color:var(--star)">${jb?.name||'—'}</span></div>`;
+}
+function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map((e,i)=>`<div class="log-line"${i>0?' style="opacity:.55"':''}>${e}</div>`).join('');}
+function addLog(msg){G.log.unshift(msg);if(G.log.length>30)G.log.pop();updateLog();}
+
+// ══════════════════════════════════
+// GAME LOGIC
+// ══════════════════════════════════
+function travelTo(id){
+  if(G.ship.fuel<10){addLog('⚠ Insufficient fuel!');return;}
+  const sys=G.galaxy.systems[id];
+  G.ship.fuel=Math.max(0,G.ship.fuel-10);
+  G.curSys=id;sys.visited=true;G.selSys=id;G.jumps++;G.dramaTimer++;
+  // Morale tick
+  if(G.ship.morale>10)G.ship.morale=Math.max(10,G.ship.morale-1);
+  addLog(`Jumped to ${sys.name}.${sys.hasStation?' Station in orbit.':''}${sys.hasPlanet?' Planet detected.':''}`);
+  updateHUD();updateLP();
+  // Crew drama check every 3 jumps
+  if(G.dramaTimer>=3&&G.crew.length>=2){G.dramaTimer=0;setTimeout(()=>{checkDrama();},800);}
+  else{setTimeout(()=>{triggerEvent();},700);}
+}
+function exploreSys(){addLog('Deploying scanner array...');setTimeout(()=>{triggerEvent();},400);}
+
+function checkDrama(){
+  if(rng01()>0.45){triggerEvent();return;}
+  const ev=DRAMA_EVENTS[Math.floor(rng01()*DRAMA_EVENTS.length)];
+  const c1=G.crew[Math.floor(rng01()*G.crew.length)];
+  const others=G.crew.filter(c=>c!==c1);
+  const c2=others.length?others[Math.floor(rng01()*others.length)]:c1;
+  currentDrama=ev;
+  document.getElementById('drama-title').textContent=ev.title;
+  document.getElementById('drama-body').textContent=ev.body.replace('{crew1}',c1.name).replace('{crew2}',c2.name);
+  document.getElementById('drama-choices').innerHTML=ev.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveDrama(${i})">${c.text}</button>`).join('');
+  document.getElementById('drama-overlay').classList.add('open');
+}
+function resolveDrama(i){
+  const ch=currentDrama.choices[i],e=ch.eff,s=G.ship;
+  if(e.cr)s.credits=Math.max(0,s.credits+e.cr);
+  if(e.mora)s.morale=Math.min(100,Math.max(0,s.morale+e.mora));
+  if(e.log)addLog(e.log);
+  document.getElementById('drama-overlay').classList.remove('open');
+  updateHUD();updateRP();
+  setTimeout(()=>{triggerEvent();},300);
+}
+
+function triggerEvent(){
+  const sys=G.galaxy.systems[G.curSys];
+  // High danger = chance of combat ambush
+  if(sys.danger>=4&&rng01()<0.3){startCombat();return;}
+  const ev=EVENTS[Math.floor(rng01()*EVENTS.length)];
+  currentEvent=ev;
+  document.getElementById('ev-title').textContent=ev.title;
+  document.getElementById('ev-body').textContent=ev.body;
+  document.getElementById('ev-choices').innerHTML=ev.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`).join('');
+  document.getElementById('ev-overlay').classList.add('open');
+}
+function resolveChoice(i){
+  const ch=currentEvent.choices[i],e=ch.eff,s=G.ship;
+  document.getElementById('ev-overlay').classList.remove('open');
+  if(e.combat){startCombat();return;}
+  if(e.cr)s.credits=Math.max(0,s.credits+e.cr);
+  if(e.hull){s.hull=Math.min(s.maxHull,Math.max(1,s.hull+e.hull));if(s.hull<=1)triggerGameOver();}
+  if(e.fuel)s.fuel=Math.min(s.maxFuel,Math.max(0,s.fuel+e.fuel));
+  if(e.mora)s.morale=Math.min(100,Math.max(0,s.morale+e.mora));
+  if(e.rep_federation)G.rep.federation+=e.rep_federation;
+  if(e.log)addLog(e.log);
+  updateHUD();updateLP();updateRP();
+}
+
+// ══════════════════════════════════
+// STATION SYSTEM
+// ══════════════════════════════════
+const ST_NODES=[
+  {id:'cantina',name:'THE CANTINA',emoji:'🍺',desc:'Rumors & crew'},
+  {id:'maintenance',name:'MAINTENANCE BAY',emoji:'🔧',desc:'Repair & refit'},
+  {id:'market',name:'DOCKING RING',emoji:'💹',desc:'Trade goods'},
+  {id:'guild',name:'GUILD OFFICE',emoji:'📋',desc:'Contracts'},
+  {id:'blackmarket',name:'BLACK MARKET',emoji:'🌑',desc:'Contraband'},
+  {id:'dataexchange',name:'DATA EXCHANGE',emoji:'📡',desc:'Maps & intel'},
+];
+
+function stationPrice(goodId,sysIdx,buying){
+  const g=GOODS.find(x=>x.id===goodId);if(!g)return 0;
+  const sys=G.galaxy.systems[sysIdx];
+  const srng=mkRNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17);
+  const variance=0.85+srng()*0.30;
+  const wealthMod=0.6+sys.wealth*0.18;
+  let price=Math.round(g.basePrice*wealthMod*variance);
+  if(buying)price=Math.round(price*1.18);
+  return Math.max(1,price);
+}
+function stationGoods(sysIdx){
+  const sys=G.galaxy.systems[sysIdx];
+  const srng=mkRNG(hashStr(G.seed)+sysIdx*251);
+  const legal=GOODS.filter(g=>g.legal);
+  const sorted=[...legal].sort(()=>srng()-.5);
+  return sorted.slice(0,5);
+}
+function stationModules(sysIdx){
+  const srng=mkRNG(hashStr(G.seed)+sysIdx*333);
+  const avail=MODULES.filter(m=>!G.ship.modules.includes(m.id));
+  return [...avail].sort(()=>srng()-.5).slice(0,3);
+}
+function stationRumors(sysIdx){
+  const srng=mkRNG(hashStr(G.seed)+sysIdx*421);
+  const pool=[...RUMOR_POOL].sort(()=>srng()-.5).slice(0,3);
+  const adj=G.galaxy.conns.filter(([a,b])=>a===sysIdx||b===sysIdx).map(([a,b])=>G.galaxy.systems[a===sysIdx?b:a]);
+  return pool.map(r=>{
+    const sys=adj[Math.floor(srng()*adj.length)]||G.galaxy.systems[sysIdx];
+    const fac=FACTIONS[Math.floor(srng()*FACTIONS.length)];
+    return r.replace('{sys}',sys.name).replace('{fac}',fac.name);
+  });
+}
+function genContracts(){
+  G.contracts=[];
+  for(let i=0;i<3;i++){
+    const ct=CONTRACT_TYPES[Math.floor(rng01()*CONTRACT_TYPES.length)];
+    const reward=Math.floor(ct.reward[0]+rng01()*(ct.reward[1]-ct.reward[0]));
+    const targSys=G.galaxy.systems[Math.floor(rng01()*G.galaxy.systems.length)];
+    G.contracts.push({...ct,id:'c'+Date.now()+i,reward,target:targSys.name,active:false});
+  }
+}
+function dockStation(){
+  const sys=G.galaxy.systems[G.curSys];if(!sys.hasStation)return;
+  stActiveNode='cantina';
+  document.getElementById('st-name').textContent=`⬡ ${sys.name} ${sys.stationType.toUpperCase()}`;
+  document.getElementById('st-meta').innerHTML=`<span style="color:${sys.faction.color}">${sys.faction.name}</span><span>Wealth ${sys.wealth}/5</span><span>Security ${sys.danger}/5</span>`;
+  document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;
+  document.getElementById('st-nav').innerHTML=ST_NODES.map(n=>`<div class="st-node ${n.id===stActiveNode?'active':''}" onclick="stSelectNode('${n.id}')"><div class="st-node-emoji">${n.emoji}</div><div class="st-node-label"><div class="st-node-name">${n.name}</div><div class="st-node-desc">${n.desc}</div></div></div>`).join('');
+  renderNodeContent('cantina');
+  showScreen('station-screen');
+  addLog(`Docked at ${sys.name} ${sys.stationType}.`);
+}
+function stSelectNode(id){
+  stActiveNode=id;
+  document.querySelectorAll('.st-node').forEach(n=>{n.classList.toggle('active',n.onclick.toString().includes(`'${id}'`));});
+  document.getElementById('st-nav').innerHTML=ST_NODES.map(n=>`<div class="st-node ${n.id===id?'active':''}" onclick="stSelectNode('${n.id}')"><div class="st-node-emoji">${n.emoji}</div><div class="st-node-label"><div class="st-node-name">${n.name}</div><div class="st-node-desc">${n.desc}</div></div></div>`).join('');
+  renderNodeContent(id);
+}
+function renderNodeContent(nodeId){
+  const cont=document.getElementById('st-content');
+  const sys=G.galaxy.systems[G.curSys];
+  const s=G.ship;
+  switch(nodeId){
+    case 'cantina':{
+      const rumors=stationRumors(G.curSys);
+      cont.innerHTML=`<div class="st-content-hdr">🍺 THE CANTINA</div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:10px">A dim, smoky lounge where loose lips trade secrets for credits. Information flows freely if you know how to pay.</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal);margin-bottom:8px">RUMOR MILL — 150 CR each to verify</div>
+        ${rumors.map((r,i)=>`<div class="rumor-row"><div class="rumor-body">❓ "${r}"</div><button class="btn btn-sm btn-alien" onclick="buyRumor(${i},'${r.replace(/'/g,"\\'")}')">VERIFY</button></div>`).join('')}
+        <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal);margin-bottom:8px">REFRESHMENTS</div>
+        <div class="maint-row"><div class="maint-label">Round of Drinks <div class="maint-detail">+8 Morale</div></div><button class="btn btn-sm btn-safe" onclick="stDrink()">50 CR</button></div>
+        <div class="maint-row"><div class="maint-label">Crew Rest Period <div class="maint-detail">+15 Morale</div></div><button class="btn btn-sm btn-safe" onclick="stRest()">200 CR</button></div>`;
+      break;}
+    case 'maintenance':{
+      const hullCost=Math.ceil((s.maxHull-s.hull)*6);
+      const fuelCost=Math.ceil((s.maxFuel-s.fuel)*4);
+      const mods=stationModules(G.curSys);
+      const cls=CLASSES.find(c=>c.id===G.captain.cls);
+      const discount=cls?.id==='engineer'?0.85:1.0;
+      cont.innerHTML=`<div class="st-content-hdr">🔧 MAINTENANCE BAY</div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:14px">Certified repair crews and hardware specialists. ${cls?.id==='engineer'?'<span style="color:var(--safe)">Engineer bonus: -15% on repairs.</span>':''}</div>
+        <div class="maint-row"><div class="maint-label">Hull Repairs<div class="maint-detail">${s.hull}/${s.maxHull} HP — ${Math.ceil(hullCost*discount).toLocaleString()} CR to full</div></div><button class="btn btn-sm btn-safe" onclick="repairHull()" ${s.hull>=s.maxHull?'disabled':''}>REPAIR</button></div>
+        <div class="maint-row"><div class="maint-label">Refuel Ship<div class="maint-detail">${s.fuel}/${s.maxFuel} — ${Math.ceil(fuelCost*discount).toLocaleString()} CR to full</div></div><button class="btn btn-sm btn-warn" onclick="refuel()" ${s.fuel>=s.maxFuel?'disabled':''}>REFUEL</button></div>
+        <div style="border-top:1px solid var(--border);margin:14px 0;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal)">SHIP MODULES — AVAILABLE FOR PURCHASE</div>
+        ${mods.length===0?'<div style="color:var(--metal)">No modules available at this station.</div>':mods.map(m=>`<div class="mod-card"><div class="mod-name">${m.emoji} ${m.name}</div><div class="mod-pos">+ ${m.pos}</div><div class="mod-neg">- ${m.neg}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><div class="mod-cost">${m.cost.toLocaleString()} CR</div><button class="btn btn-sm btn-gold" onclick="buyModule('${m.id}')" ${s.credits<m.cost||s.modules.includes(m.id)?'disabled':''}>${s.modules.includes(m.id)?'INSTALLED':'PURCHASE'}</button></div></div>`).join('')}`;
+      break;}
+    case 'market':{
+      const goods=stationGoods(G.curSys);
+      const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1),0);
+      cont.innerHTML=`<div class="st-content-hdr">💹 DOCKING RING MARKET</div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:10px">Trade goods with station merchants. Cargo capacity: <span style="color:var(--cyan)">${cargoWt}/${s.cargoMax}</span></div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--metal);margin-bottom:8px">AVAILABLE TO BUY</div>
+        ${goods.map(g=>{const bp=stationPrice(g.id,G.curSys,true);return`<div class="trade-row"><div class="trade-name">${g.emoji} ${g.name} <span style="font-size:12px;color:var(--metal)">(${g.wt}wt)</span></div><div class="trade-price">${bp} CR</div><div class="trade-actions"><button class="btn btn-sm btn-safe" onclick="buyGood('${g.id}')" ${s.credits<bp||(cargoWt+g.wt>s.cargoMax)?'disabled':''}>BUY</button></div></div>`;}).join('')}
+        <div style="border-top:1px solid var(--border);margin:14px 0;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--metal)">YOUR CARGO — SELL HERE</div>
+        ${G.cargo.length===0?'<div style="color:var(--metal)">Hold is empty.</div>':G.cargo.map((c,i)=>{const g=GOODS.find(x=>x.id===c.id);const sp=stationPrice(c.id,G.curSys,false);return`<div class="cargo-row"><div style="flex:1;font-size:15px">${g?.emoji||'📦'} ${g?.name||c.id} <span style="color:var(--metal);font-size:13px">×${c.qty}</span></div><div style="color:var(--safe);font-size:15px;margin-right:10px">${sp} CR/ea</div><button class="btn btn-sm btn-gold" onclick="sellGood('${c.id}')">SELL 1</button><button class="btn btn-sm btn-gold" onclick="sellAllGood('${c.id}')">ALL</button></div>`;}).join('')}`;
+      break;}
+    case 'guild':{
+      cont.innerHTML=`<div class="st-content-hdr">📋 MERCHANT GUILD OFFICE</div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:14px">Active contracts for registered independent captains. Completion raises your faction standing.</div>
+        ${G.contracts.map(c=>`<div class="contract-row"><div class="contract-title">${c.emoji} ${c.label}: ${c.target}</div><div class="contract-desc">${c.desc}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><div class="contract-reward">💰 ${c.reward.toLocaleString()} CR + ${FACTIONS.find(f=>f.id===c.repFac)?.short||'REP'} +${c.rep}</div><button class="btn btn-sm btn-gold" onclick="acceptContract('${c.id}')" ${c.active?'disabled':''}>${c.active?'ACTIVE':'ACCEPT'}</button></div></div>`).join('')}
+        <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:10px;font-size:14px;color:var(--metal)">Active contracts: Complete by visiting the target system.</div>`;
+      break;}
+    case 'blackmarket':{
+      const hasAccess=G.captain.origin==='criminal'||G.captain.job==='smuggler_job';
+      if(!hasAccess){
+        cont.innerHTML=`<div class="st-content-hdr">🌑 BLACK MARKET</div><div style="color:var(--metal);font-size:16px;margin-top:20px">A shady-looking merchant shakes their head. "Don't know what you're talking about, friend."<br><br><span style="color:var(--hazard)">Access requires Criminal origin or Smuggler job.</span></div>`;
+        break;
+      }
+      const illegal=GOODS.filter(g=>!g.legal);
+      cont.innerHTML=`<div class="st-content-hdr">🌑 BLACK MARKET <span style="color:var(--hazard);font-size:8px">— RESTRICTED</span></div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:10px">No names, no receipts. You were never here.</div>
+        ${illegal.map(g=>{const bp=Math.round(stationPrice(g.id,G.curSys,true)*1.4);return`<div class="trade-row"><div class="trade-name">${g.emoji} ${g.name}</div><div class="trade-price" style="color:var(--hazard)">${bp} CR</div><div class="trade-actions"><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY</button></div></div>`;}).join('')}`;
+      break;}
+    case 'dataexchange':{
+      cont.innerHTML=`<div class="st-content-hdr">📡 DATA EXCHANGE HUB</div>
+        <div style="font-size:15px;color:var(--metal);margin-bottom:14px">Buy star maps and sell your exploration data to the highest bidder.</div>
+        <div class="maint-row"><div class="maint-label">Sector Scan Package<div class="maint-detail">Reveals 5 adjacent unscanned systems</div></div><button class="btn btn-sm" onclick="buySectorScan()">800 CR</button></div>
+        <div class="maint-row"><div class="maint-label">Deep Chart Module<div class="maint-detail">Reveals faction territories on map</div></div><button class="btn btn-sm" onclick="buyDeepChart()">2,000 CR</button></div>
+        <div style="border-top:1px solid var(--border);margin:14px 0"></div>
+        <div class="maint-row"><div class="maint-label">Sell Exploration Data<div class="maint-detail">${G.galaxy.systems.filter(s=>s.visited).length} systems visited = ${G.galaxy.systems.filter(s=>s.visited).length*80} CR</div></div><button class="btn btn-sm btn-gold" onclick="sellExploData()">SELL</button></div>`;
+      break;}
+  }
+}
+
+// Station actions
+function buyRumor(i,text){
+  if(G.ship.credits<150){document.getElementById('st-status').textContent='⚠ Insufficient credits';setTimeout(()=>document.getElementById('st-status').textContent='',2000);return;}
+  G.ship.credits-=150;addLog(`Rumor: "${text.slice(0,60)}..."`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('cantina');
+}
+function stDrink(){
+  if(G.ship.credits<50){document.getElementById('st-status').textContent='⚠ Insufficient credits';return;}
+  G.ship.credits-=50;G.ship.morale=Math.min(100,G.ship.morale+8);addLog('Bought a round for the crew. Morale up!');document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();
+}
+function stRest(){
+  if(G.ship.credits<200){document.getElementById('st-status').textContent='⚠ Insufficient credits';return;}
+  G.ship.credits-=200;G.ship.morale=Math.min(100,G.ship.morale+15);addLog('Crew rested at the station. Morale fully restored.');document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();
+}
+function repairHull(){
+  const s=G.ship,missing=s.maxHull-s.hull;if(missing<=0)return;
+  const cls=CLASSES.find(c=>c.id===G.captain.cls);const discount=cls?.id==='engineer'?0.85:1.0;
+  const cost=Math.ceil(missing*6*discount);
+  if(s.credits<cost){document.getElementById('st-status').textContent=`⚠ Need ${cost.toLocaleString()} CR`;setTimeout(()=>document.getElementById('st-status').textContent='',2000);return;}
+  s.credits-=cost;s.hull=s.maxHull;addLog(`Hull fully repaired at the maintenance bay. Cost: ${cost.toLocaleString()} CR.`);document.getElementById('st-credits').textContent=`💰 ${s.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('maintenance');
+}
+function refuel(){
+  const s=G.ship,missing=s.maxFuel-s.fuel;if(missing<=0)return;
+  const cost=Math.ceil(missing*4);
+  if(s.credits<cost){document.getElementById('st-status').textContent=`⚠ Need ${cost.toLocaleString()} CR`;setTimeout(()=>document.getElementById('st-status').textContent='',2000);return;}
+  s.credits-=cost;s.fuel=s.maxFuel;addLog(`Ship fully refuelled. Cost: ${cost.toLocaleString()} CR.`);document.getElementById('st-credits').textContent=`💰 ${s.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('maintenance');
+}
+function buyModule(id){
+  const m=MODULES.find(x=>x.id===id);if(!m)return;
+  if(G.ship.credits<m.cost||G.ship.modules.includes(m.id))return;
+  G.ship.credits-=m.cost;G.ship.modules.push(m.id);
+  // Apply module effects
+  if(m.effect==='hull'){G.ship.maxHull=Math.round(G.ship.maxHull*1.2);G.ship.hull=Math.round(G.ship.hull*1.2);}
+  if(m.effect==='cargo')G.ship.cargoMax+=10;
+  addLog(`Module installed: ${m.name}. ${m.pos}`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('maintenance');
+}
+function buyGood(id){
+  const g=GOODS.find(x=>x.id===id);if(!g)return;
+  const price=stationPrice(id,G.curSys,true);
+  const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(x=>x.id===c.id)?.wt||1),0);
+  if(G.ship.credits<price||cargoWt+g.wt>G.ship.cargoMax)return;
+  G.ship.credits-=price;const ex=G.cargo.find(c=>c.id===id);if(ex)ex.qty++;else G.cargo.push({id,qty:1,boughtAt:price});
+  addLog(`Purchased ${g.name} for ${price} CR.`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();updateRP();renderNodeContent('market');
+}
+function buyGoodIllegal(id){
+  const g=GOODS.find(x=>x.id===id);if(!g)return;
+  const price=Math.round(stationPrice(id,G.curSys,true)*1.4);
+  const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(x=>x.id===c.id)?.wt||1),0);
+  if(G.ship.credits<price||cargoWt+g.wt>G.ship.cargoMax)return;
+  G.ship.credits-=price;const ex=G.cargo.find(c=>c.id===id);if(ex)ex.qty++;else G.cargo.push({id,qty:1,boughtAt:price,illegal:true});
+  addLog(`Acquired ${g.name} on the black market.`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();updateRP();renderNodeContent('blackmarket');
+}
+function sellGood(id){
+  const idx=G.cargo.findIndex(c=>c.id===id);if(idx<0)return;
+  const price=stationPrice(id,G.curSys,false);
+  G.ship.credits+=price;G.cargo[idx].qty--;if(G.cargo[idx].qty<=0)G.cargo.splice(idx,1);
+  const g=GOODS.find(x=>x.id===id);addLog(`Sold 1x ${g?.name||id} for ${price} CR.`);
+  document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();updateRP();renderNodeContent('market');
+}
+function sellAllGood(id){const item=G.cargo.find(c=>c.id===id);if(!item)return;for(let i=0;i<item.qty;i++){const price=stationPrice(id,G.curSys,false);G.ship.credits+=price;}const g=GOODS.find(x=>x.id===id);const qty=item.qty;G.cargo=G.cargo.filter(c=>c.id!==id);addLog(`Sold all ${g?.name||id} (${qty}×) for ${(stationPrice(id,G.curSys,false)*qty).toLocaleString()} CR.`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();updateRP();renderNodeContent('market');}
+function acceptContract(id){
+  const c=G.contracts.find(x=>x.id===id);if(!c||c.active)return;
+  c.active=true;addLog(`Accepted contract: ${c.label} in ${c.target}.`);renderNodeContent('guild');
+}
+function buySectorScan(){
+  if(G.ship.credits<800)return;
+  G.ship.credits-=800;
+  // Reveal 5 random unvisited adjacent systems
+  let revealed=0;const reach=reachable();[...reach].forEach(i=>{if(!G.galaxy.systems[i].visited&&revealed<5){G.galaxy.systems[i].visited=true;revealed++;}});
+  addLog(`Sector scan package activated. ${revealed} systems revealed.`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('dataexchange');
+}
+function buyDeepChart(){if(G.ship.credits<2000)return;G.ship.credits-=2000;addLog('Deep chart module purchased. Faction territories updated.');document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('dataexchange');}
+function sellExploData(){
+  const n=G.galaxy.systems.filter(s=>s.visited).length;
+  const pay=n*80;G.ship.credits+=pay;addLog(`Sold exploration data for ${pay.toLocaleString()} CR.`);document.getElementById('st-credits').textContent=`💰 ${G.ship.credits.toLocaleString()} CR`;updateHUD();renderNodeContent('dataexchange');
+}
+function undock(){
+  addLog(`Undocked from ${G.galaxy.systems[G.curSys].name} station.`);
+  genContracts();
+  showScreen('galaxy-screen');updateHUD();updateLP();updateRP();
+}
+
+// ══════════════════════════════════
+// SHIP COMBAT
+// ══════════════════════════════════
+let combatTarget=null;
+
+function initCombatSystems(){
+  return{
+    weapons:{id:'weapons',name:'Weapons Array',emoji:'🎯',hp:30,maxHp:30},
+    shields:{id:'shields',name:'Shield Generator',emoji:'🛡️',hp:50,maxHp:50},
+    engines:{id:'engines',name:'FTL Drive',emoji:'⚡',hp:25,maxHp:25},
+    lifesupport:{id:'lifesupport',name:'Life Support',emoji:'💨',hp:20,maxHp:20},
+    medbay:{id:'medbay',name:'Med Bay',emoji:'💉',hp:20,maxHp:20},
+    sensors:{id:'sensors',name:'Sensors Array',emoji:'📡',hp:20,maxHp:20},
+  };
+}
+
+function startCombat(enemyOverride){
+  const enemy=enemyOverride||ENEMY_SHIPS[Math.floor(rng01()*ENEMY_SHIPS.length)];
+  G.combat={
+    enemy:JSON.parse(JSON.stringify(enemy)),
+    playerSys:initCombatSystems(),
+    log:[],
+    evasionActive:false,
+    round:0,
+    won:false,
+    fled:false,
+  };
+  combatTarget=null;
+  document.getElementById('ev-overlay').classList.remove('open');
+  addCombatLog(`⚔ ${enemy.type} has engaged you!`,'system');
+  addCombatLog('Select a target system on the enemy ship and choose an action.','system');
+  renderCombat();
+  showScreen('combat-screen');
+}
+
+function addCombatLog(msg,type='system'){
+  G.combat.log.unshift({msg,type});
+  if(G.combat.log.length>20)G.combat.log.pop();
+  document.getElementById('cbat-log').innerHTML=G.combat.log.map(e=>`<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');
+}
+
+function renderCombat(){
+  const c=G.combat,s=G.ship,e=c.enemy;
+  document.getElementById('cbat-player-name').textContent=s.name;
+  document.getElementById('cbat-enemy-name').textContent=`${e.emoji} ${e.type}`;
+  document.getElementById('cbat-enemy-desc').textContent=e.desc;
+
+  // Player bars
+  const pb=document.getElementById('cbat-player-bars');
+  pb.innerHTML=renderCombatBars(s.hull,s.maxHull,'#2ecc71','HULL')+renderCombatBars(s.shields,s.maxShields,'#00e5ff','SHLD');
+
+  // Enemy bars
+  const eb=document.getElementById('cbat-enemy-bars');
+  eb.innerHTML=renderCombatBars(e.hull,e.maxHull,'#c41e3a','HULL')+renderCombatBars(e.shield,e.maxShield,'#8e44ad','SHLD');
+
+  // Player systems
+  const pOrder=['weapons','shields','engines','lifesupport','medbay','sensors'];
+  document.getElementById('cbat-player-sys').innerHTML=pOrder.map(k=>{
+    const sys=c.playerSys[k];const pct=Math.round(sys.hp/sys.maxHp*100);
+    const st=sys.hp<=0?'destroyed':sys.hp<sys.maxHp*0.4?'dmg-warn':'';
+    return`<div class="sys-cell ${st}"><div class="sc-emoji">${sys.emoji}</div><div class="sc-name">${sys.name.split(' ')[0]}</div><div class="sc-hp">${sys.hp}</div><div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${pct>50?'#2ecc71':pct>20?'#e67e22':'#c41e3a'}"></div></div></div>`;
+  }).join('');
+
+  // Enemy systems (clickable targets)
+  const eOrder=['weapons','shields','engines'];
+  document.getElementById('cbat-enemy-sys').innerHTML=eOrder.map(k=>{
+    const sys=e.systems[k];const pct=Math.round(sys.hp/sys.maxHp*100);
+    const st=sys.hp<=0?'destroyed':sys.hp<sys.maxHp*0.4?'dmg-warn':'';
+    const tgt=combatTarget===k?'targeted':'';
+    return`<div class="sys-cell targetable ${st} ${tgt}" onclick="setTarget('${k}')"><div class="sc-emoji">${k==='weapons'?'🎯':k==='shields'?'🛡️':'⚡'}</div><div class="sc-name">${sys.name.split(' ')[0]}</div><div class="sc-hp">${sys.hp}</div><div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${pct>50?'#2ecc71':pct>20?'#e67e22':'#c41e3a'}"></div></div></div>`;
+  }).join('');
+
+  // Target label
+  document.getElementById('cbat-target-lbl').textContent=combatTarget?e.systems[combatTarget].name:'None selected — click an enemy system';
+  document.getElementById('cbat-target-lbl').style.color=combatTarget?'var(--gold)':'var(--metal)';
+}
+
+function renderCombatBars(v,mx,col,lbl){
+  const pct=Math.max(0,Math.min(100,v/mx*100));
+  return`<div class="cbat-bar-row"><div class="cbat-bar-lbl">${lbl}</div><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${pct}%;background:${col}"></div></div><div class="cbat-bar-val">${v}</div></div>`;
+}
+
+function setTarget(sysId){
+  const c=G.combat;if(!c)return;
+  if(c.enemy.systems[sysId].hp<=0){addCombatLog(`${c.enemy.systems[sysId].name} is already destroyed.`,'system');return;}
+  combatTarget=sysId;renderCombat();
+}
+
+function combatAction(action){
+  const c=G.combat;if(!c||c.won||c.fled)return;
+  const s=G.ship;
+  c.round++;
+  let phaseMsg='';
+
+  if(action==='fire'){
+    if(!combatTarget){addCombatLog('Select a target system first!','system');return;}
+    const pwSys=c.playerSys.weapons;
+    if(pwSys.hp<=0){addCombatLog('Your Weapons Array is destroyed! Cannot fire.','system');return;}
+    const hitChance=c.evasionActive?0.55:0.78;
+    const sensorBonus=c.playerSys.sensors.hp>0?0.1:0;
+    const hit=rng01()<(hitChance+sensorBonus);
+    if(hit){
+      const baseDmg=12+Math.floor(rng01()*14); // 12-25
+      const wepBonus=G.captain.cls==='mercenary'?5:0;
+      const target=c.enemy.systems[combatTarget];
+      const shieldsActive=c.enemy.systems.shields.hp>0;
+      let dmg=baseDmg+wepBonus;
+      if(shieldsActive&&combatTarget!=='shields'&&combatTarget!=='engines'){
+        const absorbed=Math.min(dmg,Math.floor(dmg*0.45));
+        c.enemy.systems.shields.hp=Math.max(0,c.enemy.systems.shields.hp-absorbed);
+        dmg-=absorbed;addCombatLog(`Shields absorbed ${absorbed} damage.`,'system');
+      }
+      if(dmg>0){target.hp=Math.max(0,target.hp-dmg);addCombatLog(`▶ You strike ${target.name}! -${dmg} HP`,'player');}
+      if(target.hp<=0)addCombatLog(`🔥 Enemy ${target.name} DESTROYED!`,'player');
+    }else{
+      addCombatLog('▶ Weapons fire — MISSED.','player');
+    }
+    c.evasionActive=false;
+  }else if(action==='boost_shields'){
+    const gain=Math.min(15,s.maxShields-s.shields);s.shields+=gain;
+    addCombatLog(`▶ Boosted shields +${gain} HP.`,'player');
+  }else if(action==='evasive'){
+    if(c.playerSys.engines.hp<=0){addCombatLog('Engines are destroyed! Cannot evade.','system');return;}
+    c.evasionActive=true;addCombatLog('▶ Evasive maneuvers activated! -35% enemy hit chance.','player');
+  }else if(action==='flee'){
+    if(c.playerSys.engines.hp<=0){addCombatLog('Engines are destroyed! Cannot flee.','system');return;}
+    if(s.fuel<20){addCombatLog('Insufficient fuel for emergency FTL!','system');return;}
+    const pilotBonus=G.captain.cls==='pilot'?0.15:0;
+    const fleeChance=0.55+pilotBonus;
+    if(rng01()<fleeChance){
+      s.fuel-=20;c.fled=true;addCombatLog('▶ Emergency FTL jump successful! Escaped combat.','player');
+      setTimeout(()=>{exitCombat(false);},1500);return;
+    }else{
+      s.fuel-=10;addCombatLog('▶ FTL failed to charge in time! Enemy fires!','system');
+    }
+  }
+
+  // Enemy AI turn
+  enemyAI();
+
+  // Check end conditions
+  if(s.hull<=0){renderCombat();setTimeout(()=>triggerGameOver(),800);return;}
+  if(c.enemy.hull<=0){c.won=true;addCombatLog(`✓ ${c.enemy.type} destroyed! Victory!`,'player');renderCombat();setTimeout(()=>exitCombat(true),1500);return;}
+
+  renderCombat();
+}
+
+function enemyAI(){
+  const c=G.combat,s=G.ship,e=c.enemy;
+  if(e.hull<=0)return;
+  // Enemy low HP: try to flee (no effect for player, just flavor)
+  if(e.hull<e.maxHull*0.2&&rng01()<0.3){addCombatLog(`◀ ${e.type} is fleeing! They fire desperately!`,'enemy');}
+  const wepActive=e.systems.weapons.hp>0;
+  const baseDmg=wepActive?(8+Math.floor(rng01()*13)):(3+Math.floor(rng01()*6));
+  const hitChance=c.evasionActive?0.42:0.72;
+  const hit=rng01()<hitChance;
+  if(!hit){addCombatLog(`◀ ${e.type} fires — MISSED.`,'enemy');return;}
+  // Enemy targets: shields first, then weapons, then engines, then hull
+  let target='hull',targetName='your hull';
+  if(c.playerSys.shields.hp>0){c.playerSys.shields.hp=Math.max(0,c.playerSys.shields.hp-baseDmg);targetName='your Shields';addCombatLog(`◀ Enemy strikes ${targetName}! -${baseDmg} HP`,'enemy');}
+  else if(c.playerSys.weapons.hp>0&&rng01()>0.4){c.playerSys.weapons.hp=Math.max(0,c.playerSys.weapons.hp-baseDmg);targetName='your Weapons Array';addCombatLog(`◀ Enemy targets ${targetName}! -${baseDmg} HP`,'enemy');if(c.playerSys.weapons.hp<=0)addCombatLog('🔥 Your Weapons Array is DESTROYED!','system');}
+  else{s.hull=Math.max(0,s.hull-baseDmg);addCombatLog(`◀ Enemy strikes ${targetName}! -${baseDmg} HP`,'enemy');}
+  // Also reduce enemy hull from hull damage (simulating both ships taking direct hits)
+  if(target==='hull'&&c.playerSys.weapons.hp>0&&rng01()>0.5){e.hull=Math.max(0,e.hull-3);}
+  c.evasionActive=false;
+}
+
+function exitCombat(won){
+  const c=G.combat;
+  if(won){
+    const e=c.enemy;
+    const cr=Math.floor(e.loot.cr[0]+rng01()*(e.loot.cr[1]-e.loot.cr[0]));
+    const mrcBonus=G.captain.cls==='mercenary'?Math.floor(cr*0.2):0;
+    G.ship.credits+=(cr+mrcBonus);
+    let lootMsg=`Victory! Salvaged ${(cr+mrcBonus).toLocaleString()} CR`;
+    if(e.loot.artifact&&rng01()>0.5){G.cargo.push({id:'artifacts',qty:1,boughtAt:0});lootMsg+=', found an Ancient Artifact';}
+    if(e.loot.goods&&rng01()>0.5){G.cargo.push({id:'tech_parts',qty:1,boughtAt:0});lootMsg+=', recovered Tech Components';}
+    addLog(lootMsg+'.');
+    // Check active combat contracts
+    G.contracts.filter(con=>con.active&&con.type==='bounty').forEach(con=>{G.ship.credits+=con.reward;G.rep[con.repFac]+=con.rep;addLog(`Contract complete: ${con.label} paid ${con.reward.toLocaleString()} CR.`);});
+    G.contracts=G.contracts.filter(con=>!(con.active&&con.type==='bounty'));
+    updateRP();
+  }else if(c.fled){addLog('Escaped from combat. Hull damage sustained.');}
+  G.combat=null;combatTarget=null;
+  showScreen('galaxy-screen');updateHUD();updateLP();updateRP();
+}
+
+// ══════════════════════════════════
+// GAME OVER
+// ══════════════════════════════════
+function triggerGameOver(){
+  document.getElementById('go-stats').textContent=`Jumps made: ${G.jumps} | Systems visited: ${G.galaxy.systems.filter(s=>s.visited).length} | Credits at death: ${G.ship.credits.toLocaleString()}`;
+  document.getElementById('gameover-overlay').classList.add('open');
+}
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+window.addEventListener('load',()=>{
+  initState(rndSeedStr());
+  document.getElementById('seed-inp').value=rndSeedStr();
+  showScreen('title-screen');
+  initStarfield();
+  window.addEventListener('resize',()=>{const c=document.getElementById('sf-canvas');c.width=window.innerWidth;c.height=window.innerHeight;});
+});
+</script>
+</body>
+</html>
