@@ -474,43 +474,449 @@ const E_TYPES = [
   { name: "Mercenary Captain", hp: 90, maxHp: 90, atk: 20, spd: 5, icon: "👑", loot: { cr: [150, 300], gear: true }, abilities: ['command'] }
 ];
 
-// ---------- EVENTS (more narrative templates) ----------
+// ========== EXPANDED EVENTS FOR VOID FRONTIER ==========
 const EVENTS = [
-  { id: 'derelict', title: '⚠ DERELICT VESSEL', body: 'Drifting ship. No life signs.', choices: [
-    { text: '[ BOARD ] Risk crew', skillCheck: { skill: 'engineering', dc: 12 }, success: { eff: { cr: 450, scrap: 2, log: 'Boarded derelict.' } }, failure: { eff: { hull: -15, log: 'Security drone!' }, combat: true } },
-    { text: '[ SCAN ] Safe', eff: { cr: 150, log: 'Scanned remotely.' } }, { text: '[ AVOID ]', eff: {} }
+  // ---------- SPACE ENCOUNTERS ----------
+  { id: 'derelict', title: '⚠ DERELICT VESSEL', body: 'A ship drifts silently. No life signs, but power readings flicker.', choices: [
+    { text: '[ BOARD ] Risk crew for salvage', skillCheck: { skill: 'engineering', dc: 12 }, success: { eff: { cr: 450, scrap: 3, log: 'Salvaged valuable components from the wreck.' } }, failure: { eff: { hull: -15, log: 'Security drones activated! Hull took damage.' }, combat: true } },
+    { text: '[ SCAN REMOTELY ] Safe intel', eff: { cr: 150, log: 'Scanned and sold the derelict\'s location data.' } },
+    { text: '[ AVOID ] Continue journey', eff: {} }
   ] },
-  { id: 'distress', title: '📡 DISTRESS SIGNAL', body: 'Old beacon. Trap?', choices: [
-    { text: '[ INVESTIGATE ]', skillCheck: { skill: 'charisma', dc: 10 }, success: { eff: { cr: 400, mora: 8, log: 'Rescued survivors.' }, followUp: { title: 'GRATEFUL SURVIVORS', body: 'They offer a reward.', choices: [{ text: '[ ACCEPT ]', eff: { cr: 200 } }, { text: '[ RECRUIT ]', eff: { crewGain: true } }] } }, failure: { eff: {}, combat: true, log: 'Pirate ambush!' } },
-    { text: '[ REPORT ]', eff: { cr: 100, rep_federation: 5 } }, { text: '[ IGNORE ]', eff: { mora: -5 } }
+  
+  { id: 'distress', title: '📡 DISTRESS SIGNAL', body: 'A weak beacon pulses from a nearby moon. Could be survivors—or bait.', choices: [
+    { text: '[ INVESTIGATE ] Answer the call', skillCheck: { skill: 'charisma', dc: 10 }, 
+      success: { eff: { cr: 400, mora: 8, log: 'Rescued stranded colonists. They rewarded you generously.' }, 
+                followUp: { title: 'GRATEFUL SURVIVORS', body: 'The colonists offer additional thanks.', 
+                           choices: [{ text: '[ ACCEPT CREDITS ]', eff: { cr: 200 } }, 
+                                    { text: '[ RECRUIT ONE ]', eff: { crewGain: true, log: 'A colonist joins your crew.' } }] } }, 
+      failure: { eff: {}, combat: true, log: 'Pirate ambush! The beacon was a trap.' } },
+    { text: '[ REPORT TO AUTHORITIES ]', eff: { cr: 100, rep_federation: 5, log: 'Reported coordinates. Small finder\'s fee.' } },
+    { text: '[ IGNORE ]', eff: { mora: -5, log: 'The crew is unsettled by your decision.' } }
   ] },
-  { id: 'hackable', title: '💻 ENCRYPTED TERMINAL', body: 'A terminal with corporate logo.', choices: [
-    { text: '[ HACK ]', skillCheck: { skill: 'hacking', dc: 12 }, success: { eff: { cr: 300, log: 'Downloaded data.' } }, failure: { eff: {}, combat: true, log: 'Security alerted!' } },
-    { text: '[ LEAVE ]', eff: {} }
+  
+  { id: 'pirate_ambush', title: '🏴‍☠️ PIRATE INTERCEPT', body: '"Captain, vessel dropping out of FTL! Weapons hot!" A pirate ship demands your cargo.', choices: [
+    { text: '[ FIGHT ] Engage in combat', eff: { combat: true, log: 'You power up weapons and prepare for battle.' } },
+    { text: '[ PAY TRIBUTE ] 500 credits', eff: { cr: -500, log: 'Paid the pirates. Your pride stings, but the ship is intact.' } },
+    { text: '[ FLEE ] Emergency FTL', skillCheck: { skill: 'piloting', dc: 13 }, success: { eff: { fuel: -20, log: 'Escaped into FTL. Costly in fuel, but safe.' } }, failure: { eff: { hull: -25, combat: true, log: 'Failed to escape! Forced into combat.' } } },
+    { text: '[ NEGOTIATE ] Try to talk', skillCheck: { skill: 'charisma', dc: 15 }, success: { eff: { cr: -200, log: 'Talked them down to a smaller tribute.' } }, failure: { eff: { combat: true, log: 'They weren\'t interested in talking.' } } }
   ] },
-  { id: 'trader', title: '🛒 WANDERING TRADER', body: 'A merchant hails you.', choices: [
-    { text: '[ TRADE ] Open shop', eff: { trade: true } },
-    { text: '[ ATTACK ]', eff: { combat: true, log: 'You open fire.' } },
-    { text: '[ IGNORE ]', eff: {} }
+  
+  { id: 'trader', title: '🛒 WANDERING TRADER', body: 'A civilian freighter hails you. "Captain! Care to browse my wares?"', choices: [
+    { text: '[ TRADE ] Open shop', eff: { trade: true, log: 'You peruse the trader\'s inventory.' } },
+    { text: '[ BUY FUEL ] 300cr for +25 fuel', eff: { cr: -300, fuel: 25, log: 'Topped off fuel reserves.' } },
+    { text: '[ BUY REPAIRS ] 400cr for +20 hull', eff: { cr: -400, hull: 20, log: 'Patched up the hull.' } },
+    { text: '[ ATTACK ] Pirate instincts', eff: { combat: true, log: 'You open fire on the defenseless trader.' } },
+    { text: '[ DECLINE ] Continue on', eff: {} }
   ] },
-  { id: 'anomaly', title: '🌀 SPATIAL ANOMALY', body: 'Strange readings.', choices: [
-    { text: '[ SCAN ]', skillCheck: { skill: 'science', dc: 14 }, success: { eff: { cr: 250, log: 'Data sold.' } }, failure: { eff: { hull: -10, log: 'Anomaly surged.' } } },
-    { text: '[ FLY THROUGH ]', eff: { cr: 800, hull: -20, log: 'Made it through!' } },
-    { text: '[ AVOID ]', eff: {} }
+  
+  { id: 'anomaly', title: '🌀 SPATIAL ANOMALY', body: 'Strange energy readings ahead. Instruments are going haywire.', choices: [
+    { text: '[ SCAN ] Document for science guilds', skillCheck: { skill: 'science', dc: 14 }, success: { eff: { cr: 300, log: 'Detailed scan data sold to researchers.' } }, failure: { eff: { hull: -10, log: 'Anomaly surged! Minor hull damage.' } } },
+    { text: '[ FLY THROUGH ] Risk it for rewards', eff: { cr: 800, hull: -20, log: 'Made it through! Found a cache of valuable materials on the other side.' } },
+    { text: '[ AVOID ] Chart and bypass', eff: { log: 'Charted the anomaly and plotted a safe course around.' } }
+  ] },
+  
+  { id: 'alien_first_contact', title: '👽 FIRST CONTACT', body: 'An unknown alien vessel approaches. Your translator struggles with their signals.', choices: [
+    { text: '[ OPEN HAIL ] Attempt communication', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { cr: 400, mora: 10, log: 'Peaceful contact! Exchanged cultural data.' } }, failure: { eff: { combat: true, log: 'They interpreted your hail as aggression!' } } },
+    { text: '[ RAISE SHIELDS ] Defensive posture', eff: { log: 'They observed you briefly and moved on. No conflict.' } },
+    { text: '[ AGGRESSIVE SCAN ] Force data collection', eff: { cr: 200, hull: -10, log: 'They fired a warning shot before departing. Worth it? Barely.' } }
+  ] },
+  
+  { id: 'bounty_target', title: '🎯 BOUNTY TARGET SPOTTED', body: 'Your scanner flags a vessel matching an active bounty. High-value criminal.', choices: [
+    { text: '[ ENGAGE ] Collect the bounty', eff: { combat: true, bountyBonus: true, log: 'You move to intercept the criminal.' } },
+    { text: '[ REPORT POSITION ] Safer payout', eff: { cr: 200, rep_federation: 5, log: 'Reported location. Smaller cut, no risk.' } },
+    { text: '[ LET THEM GO ] Not your problem', eff: { log: 'You let the criminal slip away.' } }
+  ] },
+  
+  { id: 'derelict_station', title: '🛰️ ABANDONED STATION', body: 'An old research station orbits silently. Records show it was evacuated years ago.', choices: [
+    { text: '[ DOCK AND EXPLORE ]', skillCheck: { skill: 'engineering', dc: 13 }, success: { eff: { cr: 500, artifact: 1, log: 'Found abandoned research data and artifacts.' } }, failure: { eff: { hull: -20, combat: true, log: 'Automated defenses still active!' } } },
+    { text: '[ SCAN FOR LOOT ] Quick sweep', eff: { cr: 150, log: 'Scanned and found minor valuables.' } },
+    { text: '[ MARK FOR SALVAGE ] Sell coordinates', eff: { cr: 100, log: 'Sold the station\'s location to salvagers.' } }
+  ] },
+  
+  { id: 'fuel_crisis', title: '⛽ FUEL SHORTAGE', body: 'Your fuel reserves are critically low. A nearby gas giant offers a risky refueling option.', choices: [
+    { text: '[ SKIM GAS GIANT ] Dangerous but free', skillCheck: { skill: 'piloting', dc: 14 }, success: { eff: { fuel: 40, log: 'Successfully skimmed fuel from the atmosphere.' } }, failure: { eff: { hull: -30, log: 'Atmospheric turbulence damaged the hull!' } } },
+    { text: '[ DISTRESS CALL ] Hope for help', eff: { log: 'You broadcast a distress call. A passing freighter shares some fuel.' }, followUp: { title: 'GRATEFUL CAPTAIN', body: 'The freighter captain asks for a small favor in return.', choices: [{ text: '[ AGREE ] Help later', eff: { debt: true, fuel: 25 } }, { text: '[ PAY NOW ] 400cr', eff: { cr: -400, fuel: 25 } }] } },
+    { text: '[ DRIFT ] Conserve power', eff: { mora: -10, log: 'You drift, hoping to find fuel. Crew morale drops.' } }
+  ] },
+  
+  { id: 'nomad_fleet', title: '🌌 NOMAD FLEET', body: 'A fleet of Stellar Nomad vessels drifts nearby. They rarely interact with outsiders.', choices: [
+    { text: '[ HAIL THEM ] Seek audience', skillCheck: { skill: 'charisma', dc: 14 }, success: { eff: { cr: 300, artifact: 1, log: 'They shared ancient star charts and artifacts.' } }, failure: { eff: { log: 'They ignored your hails completely.' } } },
+    { text: '[ TRADE ] Offer goods', eff: { trade: true, log: 'The Nomads are willing to trade rare goods.' } },
+    { text: '[ OBSERVE ] Keep distance', eff: { log: 'You observe their fleet from afar, learning nothing.' } }
+  ] },
+  
+  // ---------- PLANETARY EVENTS ----------
+  { id: 'ruins_exploration', title: '🏛️ ANCIENT RUINS', body: 'Your scanner detects ancient structures on the planet\'s surface. Xeno-archaeology potential.', choices: [
+    { text: '[ EXPLORE ] Send away team', skillCheck: { skill: 'science', dc: 12 }, success: { eff: { cr: 600, artifact: 2, log: 'Discovered valuable artifacts and data.' } }, failure: { eff: { crewInjury: true, log: 'Collapsing structure injured a crew member!' } } },
+    { text: '[ DRONE SURVEY ] Safer approach', eff: { cr: 200, log: 'Drones mapped the site and recovered minor items.' } },
+    { text: '[ LEAVE ] Too risky', eff: {} }
+  ] },
+  
+  { id: 'alien_city', title: '🏙️ ALIEN METROPOLIS', body: 'A sprawling alien city stretches below. The inhabitants are {alienSpecies}—known to be {disposition}.', choices: [
+    { text: '[ LAND AND EXPLORE ]', eff: { landCity: true, log: 'You set down at the spaceport.' } },
+    { text: '[ TRADE FROM ORBIT ]', eff: { trade: true, log: 'You conduct business via orbital comms.' } },
+    { text: '[ AVOID ] Continue scanning', eff: {} }
+  ] },
+  
+  { id: 'hostile_fauna', title: '🦖 HOSTILE FAUNA', body: 'Your away team is ambushed by aggressive native creatures!', choices: [
+    { text: '[ FIGHT ] Defend yourselves', eff: { groundCombat: true, log: 'You engage the creatures in combat.' } },
+    { text: '[ RETREAT ] Back to the ship', skillCheck: { skill: 'piloting', dc: 10 }, success: { eff: { log: 'Escaped without injury.' } }, failure: { eff: { crewInjury: true, log: 'One crew member was injured during retreat.' } } },
+    { text: '[ CAPTURE SPECIMEN ] High risk, high reward', skillCheck: { skill: 'science', dc: 15 }, success: { eff: { cr: 500, bioSample: true, log: 'Captured a live specimen! Worth a fortune.' } }, failure: { eff: { crewInjury: true, log: 'Capture attempt failed. Crew member injured.' } } }
+  ] },
+  
+  { id: 'mineral_deposit', title: '💎 RICH MINERAL DEPOSIT', body: 'Scanners reveal a massive vein of valuable ore. Mining it will take time.', choices: [
+    { text: '[ DEPLOY MINING DRONES ]', eff: { cr: 350, log: 'Drones extracted a good haul.' } },
+    { text: '[ MANUAL MINING ] Crew effort', skillCheck: { skill: 'engineering', dc: 11 }, success: { eff: { cr: 600, log: 'Crew extracted a massive haul!' } }, failure: { eff: { cr: 150, log: 'Minor yield. Crew is exhausted.' } } },
+    { text: '[ MARK FOR LATER ]', eff: { log: 'Coordinates saved. Maybe return someday.' } }
+  ] },
+  
+  { id: 'cult_ritual', title: '☩ CULT RITUAL', body: 'You stumble upon a Cult of the Final Silence ritual. They haven\'t noticed you yet.', choices: [
+    { text: '[ OBSERVE ] Gather intel', skillCheck: { skill: 'stealth', dc: 13 }, success: { eff: { artifact: 1, log: 'You learned of a hidden shrine world.' } }, failure: { eff: { combat: true, log: 'They spotted you!' } } },
+    { text: '[ INTERRUPT ] Stop the ritual', eff: { combat: true, log: 'You charge in to disrupt the ceremony.' } },
+    { text: '[ LEAVE QUIETLY ]', eff: {} }
+  ] },
+  
+  // ---------- STATION EVENTS ----------
+  { id: 'station_hack', title: '💻 STATION SECURITY HACK', body: 'You\'ve accessed a terminal in the station\'s maintenance sector. Sensitive data awaits.', choices: [
+    { text: '[ HACK ] Attempt intrusion', skillCheck: { skill: 'hacking', dc: 12 }, success: { eff: { cr: 300, log: 'Downloaded valuable corporate data.' } }, failure: { eff: { rep_megacorp: -10, log: 'Security detected the breach!' } } },
+    { text: '[ PLANT VIRUS ] Sabotage systems', skillCheck: { skill: 'hacking', dc: 15 }, success: { eff: { cr: 500, log: 'Virus planted. Future payouts expected.' } }, failure: { eff: { rep_megacorp: -20, bounty: true, log: 'Traced back to you! Bounty issued.' } } },
+    { text: '[ LEAVE ] Too risky', eff: {} }
+  ] },
+  
+  { id: 'bar_fight', title: '🍻 CANTINA BRAWL', body: 'A drunk patron throws a punch at your crew member! The bar erupts into chaos.', choices: [
+    { text: '[ JOIN THE FIGHT ]', eff: { crewInjury: true, mora: 5, log: 'You won the brawl but took some hits.' } },
+    { text: '[ DEFUSE SITUATION ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { mora: 8, log: 'You calmed everyone down. Free drinks!' } }, failure: { eff: { crewInjury: true, log: 'Your words failed. Fists did the talking.' } } },
+    { text: '[ SLIP AWAY ]', eff: {} }
+  ] },
+  
+  { id: 'black_market', title: '🌑 BLACK MARKET CONTACT', body: 'A hooded figure slides you a datapad. "Interested in... off-record goods?"', choices: [
+    { text: '[ BROWSE WARES ]', eff: { blackMarket: true, log: 'You peruse illegal goods.' } },
+    { text: '[ BUY INTEL ] 300cr for rumor', eff: { cr: -300, rumor: true, log: 'You bought a tip about a hidden cache.' } },
+    { text: '[ REPORT TO SECURITY ]', eff: { cr: 100, rep_federation: 5, log: 'You turned in the contact.' } },
+    { text: '[ DECLINE ]', eff: {} }
+  ] },
+  
+  { id: 'guild_contract', title: '📜 GUILD CONTRACT', body: 'The Merchant Guild offers a lucrative delivery contract. High pay, tight deadline.', choices: [
+    { text: '[ ACCEPT ] Take the job', eff: { quest: 'delivery', cr: 800, log: 'You accepted the contract. Deliver {cargo} to {system}.' } },
+    { text: '[ NEGOTIATE ] Push for more', skillCheck: { skill: 'charisma', dc: 14 }, success: { eff: { quest: 'delivery', cr: 1100, log: 'Negotiated a better rate!' } }, failure: { eff: { log: 'They refused to budge. Contract offered as is.' } } },
+    { text: '[ DECLINE ]', eff: {} }
+  ] },
+  
+  { id: 'repair_discount', title: '🔧 DISCOUNT REPAIRS', body: 'The station\'s chief engineer owes you a favor. Repairs at cost.', choices: [
+    { text: '[ FULL REPAIR ] 200cr', eff: { cr: -200, hull: 999, log: 'Hull fully repaired at a steal.' } },
+    { text: '[ PARTIAL REPAIR ] 100cr for +30 hull', eff: { cr: -100, hull: 30 } },
+    { text: '[ DECLINE ] Save credits', eff: {} }
+  ] },
+  
+  // ---------- FACTION-SPECIFIC EVENTS ----------
+  { id: 'federation_inspection', title: '🪖 FEDERATION INSPECTION', body: 'A Federation patrol vessel orders you to heave to for a cargo inspection.', choices: [
+    { text: '[ COMPLY ] Allow inspection', eff: { log: 'They scan your cargo.' }, followUp: { title: 'INSPECTION RESULTS', body: 'They find {contrabandStatus}.', choices: [{ text: '[ PAY FINE ] 300cr', eff: { cr: -300 } }, { text: '[ BRIBE ] 500cr', eff: { cr: -500 } }] } },
+    { text: '[ FLEE ] Run for it', skillCheck: { skill: 'piloting', dc: 14 }, success: { eff: { rep_federation: -10, log: 'Escaped the patrol!' } }, failure: { eff: { combat: true, log: 'They caught you! Forced to fight.' } } },
+    { text: '[ HIDE CONTRABAND ]', skillCheck: { skill: 'stealth', dc: 13 }, success: { eff: { log: 'Contraband hidden. Inspection passed.' } }, failure: { eff: { rep_federation: -15, cr: -400, log: 'Contraband discovered! Heavy fine.' } } }
+  ] },
+  
+  { id: 'empire_conscription', title: '👑 EMPIRE CONSCRIPTION', body: 'An Empire recruitment officer eyes your crew. "Your vessel is hereby conscripted for military service."', choices: [
+    { text: '[ COMPLY ] Temporary service', eff: { quest: 'empire_mission', log: 'You are ordered to patrol the border.' } },
+    { text: '[ BRIBE ] 800cr to look away', eff: { cr: -800, log: 'The officer pockets the credits and waves you on.' } },
+    { text: '[ REFUSE ] Risk their wrath', eff: { rep_empire: -20, combat: true, log: 'They don\'t take no for an answer.' } }
+  ] },
+  
+  { id: 'syndicate_offer', title: '🌑 SYNDICATE JOB', body: 'A Crimson Syndicate operative offers a high-paying, off-books job. "No questions asked."', choices: [
+    { text: '[ ACCEPT ] Take the job', eff: { quest: 'syndicate_smuggle', cr: 900, log: 'You agreed to smuggle contraband.' } },
+    { text: '[ DECLINE ] Too dangerous', eff: { rep_syndicate: -5 } },
+    { text: '[ DOUBLE-CROSS ] Inform authorities', eff: { cr: 300, rep_federation: 10, rep_syndicate: -30, log: 'You tipped off the Feds. Syndicate won\'t forget.' } }
+  ] },
+  
+  { id: 'megacorp_espionage', title: '💼 CORPORATE ESPIONAGE', body: 'A rival megacorp wants you to steal research data from Aethelgard Terraforming.', choices: [
+    { text: '[ ACCEPT ] Infiltrate', eff: { quest: 'espionage', cr: 1200, log: 'You accepted the dangerous mission.' } },
+    { text: '[ WARN AETHELGARD ]', eff: { cr: 400, rep_megacorp: 15, log: 'You warned them of the plot. They\'re grateful.' } },
+    { text: '[ DECLINE ]', eff: {} }
+  ] },
+  
+  // ---------- SPECIAL / RARE EVENTS ----------
+  { id: 'time_anomaly', title: '⏳ TEMPORAL ANOMALY', body: 'Your ship is caught in a temporal distortion! Time flows strangely.', choices: [
+    { text: '[ RIDE IT OUT ]', eff: { fuel: 30, hull: -15, log: 'You emerged with extra fuel but hull stress.' } },
+    { text: '[ CALIBRATE SHIELDS ]', skillCheck: { skill: 'science', dc: 16 }, success: { eff: { artifact: 1, log: 'You stabilized the anomaly and extracted a temporal crystal!' } }, failure: { eff: { crewAge: true, log: 'Crew aged several years! Morale plummets.' } } }
+  ] },
+  
+  { id: 'ghost_ship', title: '👻 GHOST SHIP', body: 'A spectral vessel appears on scanners. It matches no known configuration.', choices: [
+    { text: '[ BOARD ] Investigate', eff: { log: 'You dock with the eerie ship.' }, followUp: { title: 'THE PHANTOM CREW', body: 'Ghostly apparitions stare at you.', choices: [{ text: '[ COMMUNICATE ]', eff: { artifact: 2, log: 'They shared ancient knowledge.' } }, { text: '[ FLEE ]', eff: { mora: -15, log: 'You fled in terror.' } }] } },
+    { text: '[ DESTROY ] Open fire', eff: { log: 'Your weapons pass right through it. It fades away.' } }
+  ] },
+  
+  { id: 'black_market_auction', title: '🔨 BLACK MARKET AUCTION', body: 'You receive an invitation to an exclusive underground auction. Rare items for sale.', choices: [
+    { text: '[ ATTEND ] See what\'s offered', eff: { auction: true, log: 'You join the bidding.' } },
+    { text: '[ INFILTRATE ] Steal the goods', skillCheck: { skill: 'stealth', dc: 16 }, success: { eff: { artifact: 2, cr: 500, log: 'You made off with priceless items!' } }, failure: { eff: { combat: true, bounty: true, log: 'Caught! You barely escaped.' } } },
+    { text: '[ DECLINE ]', eff: {} }
+  ] },
+  
+  { id: 'legendary_derelict', title: '🌟 LEGENDARY DERELICT', body: 'Rumors were true! You\'ve found the long-lost warship "Eternal Vigilance."', choices: [
+    { text: '[ EXPLORE ] Risk it all', eff: { log: 'You board the legendary vessel.' }, followUp: { title: 'THE BRIDGE', body: 'The captain\'s log reveals its final mission.', choices: [{ text: '[ SALVAGE ARTIFACT ]', eff: { artifact: 3, cr: 1000, log: 'You recovered a priceless relic.' } }, { text: '[ SCRAP SHIP ]', eff: { scrap: 20, log: 'Massive salvage haul.' } }] } },
+    { text: '[ SELL COORDINATES ]', eff: { cr: 1500, log: 'Sold the location to collectors.' } }
+  ] },
+  
+  { id: 'void_echo', title: '🌀 VOID ECHO', body: 'A strange signal resonates through the ship. It feels... familiar.', choices: [
+    { text: '[ LISTEN ]', eff: { log: 'The signal speaks of a ghost system.' }, followUp: { title: 'GHOST COORDINATES', body: 'A hidden system is revealed on your map.', choices: [{ text: '[ INVESTIGATE ]', eff: { revealSystem: true } }, { text: '[ IGNORE ]', eff: {} }] } }
+  ] },
+  
+  { id: 'crew_betrayal', title: '🔪 BETRAYAL', body: '{crewMember} has been feeding information to a rival faction! They\'re a mole.', choices: [
+    { text: '[ CONFRONT ]', eff: { log: 'You confront the traitor.' }, followUp: { title: 'TRAITOR\'S CONFESSION', body: 'They beg for mercy.', choices: [{ text: '[ EXECUTE ]', eff: { crewLoss: true, mora: -5 } }, { text: '[ FORGIVE ]', eff: { mora: 10 } }, { text: '[ TURN TRIPLE AGENT ]', eff: { intel: true } }] } }
+  ] },
+  
+  // ---------- STATION JOB BOARD EVENTS ----------
+  { id: 'bounty_job', title: '🎯 BOUNTY CONTRACT', body: 'A bounty is posted for a notorious pirate lord hiding in {system}.', choices: [
+    { text: '[ ACCEPT ] Hunt the target', eff: { quest: 'bounty', cr: 1500, log: 'You accepted the bounty contract.' } },
+    { text: '[ DECLINE ]', eff: {} }
+  ] },
+  
+  { id: 'escort_job', title: '🛡️ ESCORT MISSION', body: 'A wealthy merchant needs safe passage through pirate-infested space.', choices: [
+    { text: '[ ACCEPT ] Provide escort', eff: { quest: 'escort', cr: 600, log: 'You agreed to escort the merchant.' } },
+    { text: '[ NEGOTIATE ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { quest: 'escort', cr: 900 } }, failure: { eff: { quest: 'escort', cr: 600 } } }
+  ] },
+  
+  { id: 'rescue_job', title: '🆘 RESCUE OPERATION', body: 'A scientist is stranded on a hostile world. Retrieve them.', choices: [
+    { text: '[ ACCEPT ] Launch rescue', eff: { quest: 'rescue', cr: 700, log: 'You accepted the rescue mission.' } }
+  ] },
+  
+  // ---------- MYSTERY / INVESTIGATION ARCS ----------
+  { id: 'missing_colony', title: '🕵️ THE MISSING COLONY', body: 'The colony of {colonyName} has gone silent. No distress call, just... nothing.', choices: [
+    { text: '[ INVESTIGATE ] Travel there', eff: { quest: 'missing_colony', log: 'You set course for the silent world.' } },
+    { text: '[ REPORT ] Notify authorities', eff: { cr: 100, log: 'You reported the anomaly.' } }
+  ] },
+  
+  { id: 'immortal_ceo', title: '🧬 THE IMMORTAL CEO', body: 'You\'ve uncovered evidence that Maximilian Vane of Aethelgard Terraforming is a clone. The original died decades ago.', choices: [
+    { text: '[ EXPOSE ] Reveal the truth', eff: { cr: 800, rep_megacorp: -30, log: 'You leaked the truth. Aethelgard stock plummets.' } },
+    { text: '[ BLACKMAIL ] Demand payment', eff: { cr: 2000, rep_megacorp: -10, log: 'They paid you handsomely for silence.' } },
+    { text: '[ BURY IT ]', eff: {} }
   ] }
 ];
 
-// ---------- DRAMA EVENTS (crew interactions) ----------
+// ========== EXPANDED DRAMA EVENTS FOR VOID FRONTIER ==========
 const DRAMA_EVENTS = [
-  { title: '💬 CANTINA ARGUMENT', body: '{crew1} and {crew2} are fighting.', choices: [
-    { text: '[ INTERVENE ]', eff: { mora: 5 } }, { text: '[ LET THEM ]', eff: { mora: -3 } }, { text: '[ BUY DRINKS ] 80cr', eff: { cr: -80, mora: 12 } }
+  // ---------- SOCIAL CONFLICTS ----------
+  { title: '💬 CANTINA ARGUMENT', body: '{crew1} and {crew2} are locked in a heated argument at the station cantina. Voices are rising.', choices: [
+    { text: '[ INTERVENE AS MEDIATOR ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { mora: 8, relationship: 5, log: 'You calmed them down. They actually found common ground.' } }, failure: { eff: { mora: -5, relationship: -10, log: 'Your intervention made it worse. They\'re not speaking.' } } },
+    { text: '[ LET THEM WORK IT OUT ]', eff: { mora: -3, relationship: -5, log: 'They eventually exhausted themselves. Tension remains.' } },
+    { text: '[ BUY A ROUND ] 80cr', eff: { cr: -80, mora: 12, relationship: 8, log: 'Alcohol solved the problem. For now.' } },
+    { text: '[ SIDE WITH {crew1} ]', eff: { mora: 5, relationshipSingle: { crew1: 15, crew2: -20 }, log: 'You took sides. {crew2} feels betrayed.' } }
   ] },
-  { title: '❤️ BUDDING ROMANCE', body: '{crew1} and {crew2} seem close.', choices: [
-    { text: '[ ENCOURAGE ]', eff: { mora: 8, relationship: 10 } }, { text: '[ DISCOURAGE ]', eff: { mora: -5, relationship: -15 } }, { text: '[ IGNORE ]', eff: {} }
+  
+  { title: '😤 PERSONALITY CLASH', body: '{crew1} and {crew2} have fundamentally incompatible working styles. Constant friction is affecting the whole crew.', choices: [
+    { text: '[ MEDIATE A COMPROMISE ]', skillCheck: { skill: 'charisma', dc: 14 }, success: { eff: { mora: 10, relationship: 10, log: 'You found a middle ground. They\'ll try to cooperate.' } }, failure: { eff: { mora: -8, relationship: -15, log: 'Neither would budge. The tension is palpable.' } } },
+    { text: '[ SEPARATE THEIR DUTIES ]', eff: { efficiency: -5, mora: 5, log: 'You rearranged shifts. Peace, but at a cost to efficiency.' } },
+    { text: '[ IGNORE THE PROBLEM ]', eff: { mora: -10, log: 'The friction continues. Crew morale is suffering.' } },
+    { text: '[ THREATEN TO FIRE ONE ]', eff: { mora: -15, loyalty: -10, log: 'You made a threat. They\'re quiet now, but resentful.' } }
   ] },
-  { title: '🛠️ TINKERING', body: '{crew1} is modifying equipment.', choices: [
-    { text: '[ HELP ]', skillCheck: { skill: 'engineering', dc: 10 }, success: { eff: { module: 'upgrade', log: 'Upgrade successful!' } }, failure: { eff: { hull: -5, log: 'Broke something.' } } },
-    { text: '[ STOP THEM ]', eff: { mora: -5 } }
+  
+  { title: '🎲 GAMBLING DEBT', body: '{crew1} owes {crew2} a significant amount of credits from a poker game. {crew2} is pressuring them to pay up.', choices: [
+    { text: '[ PAY THE DEBT ] 300cr', eff: { cr: -300, relationship: 15, log: 'You cleared the debt. Both are grateful.' } },
+    { text: '[ FORGIVE THE DEBT ] Convince {crew2}', skillCheck: { skill: 'charisma', dc: 13 }, success: { eff: { relationship: 20, mora: 10, log: '{crew2} agreed to let it slide. A noble gesture.' } }, failure: { eff: { relationship: -15, log: '{crew2} refused. The tension is worse now.' } } },
+    { text: '[ PUNISH GAMBLING ] Ban games', eff: { mora: -12, log: 'You banned gambling on the ship. The crew is not happy.' } },
+    { text: '[ STAY OUT OF IT ]', eff: { relationship: -10, log: 'The debt remains a sore point between them.' } }
+  ] },
+  
+  { title: '🤐 SECRET REVEALED', body: '{crew1} accidentally revealed a personal secret about {crew2} to the rest of the crew. {crew2} is humiliated and furious.', choices: [
+    { text: '[ APOLOGIZE ON BEHALF OF {crew1} ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { relationship: 5, mora: 5, log: 'Your apology smoothed things over. Mostly.' } }, failure: { eff: { relationship: -20, log: '{crew2} feels you\'re taking sides against them.' } } },
+    { text: '[ PUNISH {crew1} ] Confine to quarters', eff: { mora: -5, loyaltySingle: { crew1: -15 }, relationship: 10, log: 'You punished {crew1}. {crew2} feels vindicated.' } },
+    { text: '[ FORCE A RECONCILIATION ]', skillCheck: { skill: 'leadership', dc: 14 }, success: { eff: { relationship: 15, mora: 8, log: 'They talked it out. Stronger for it.' } }, failure: { eff: { relationship: -25, log: 'It devolved into another fight.' } } },
+    { text: '[ DO NOTHING ]', eff: { relationship: -15, mora: -8, log: 'The resentment festers.' } }
+  ] },
+  
+  { title: '🥇 COMPETITION FOR PROMOTION', body: '{crew1} and {crew2} are both vying for the same promotion. Their rivalry is becoming cutthroat.', choices: [
+    { text: '[ PROMOTE {crew1} ]', eff: { loyaltySingle: { crew1: 20, crew2: -25 }, log: '{crew1} is thrilled. {crew2} is considering leaving.' } },
+    { text: '[ PROMOTE {crew2} ]', eff: { loyaltySingle: { crew2: 20, crew1: -25 }, log: '{crew2} is thrilled. {crew1} feels passed over.' } },
+    { text: '[ CREATE A NEW POSITION ]', eff: { cr: -200, loyalty: 10, mora: 8, log: 'You found a creative solution. Both are satisfied.' } },
+    { text: '[ DELAY THE DECISION ]', eff: { mora: -5, log: 'You kicked the can down the road. They\'re both anxious.' } }
+  ] },
+  
+  // ---------- ROMANCE & RELATIONSHIPS ----------
+  { title: '❤️ BUDDING ROMANCE', body: '{crew1} and {crew2} have been spending a lot of time together. There\'s definitely something developing.', choices: [
+    { text: '[ ENCOURAGE THEM ]', eff: { mora: 10, relationship: 15, log: 'You gave your blessing. They\'re radiant.' } },
+    { text: '[ DISCOURAGE FRATERNIZATION ]', eff: { mora: -10, relationship: -20, log: 'You reminded them of ship policy. They\'re crushed.' } },
+    { text: '[ IGNORE IT ]', eff: { mora: 5, log: 'You let things develop naturally.' } },
+    { text: '[ GIVE THEM SHORE LEAVE TOGETHER ] 100cr', eff: { cr: -100, relationship: 25, mora: 15, log: 'A romantic evening on the station. They\'re inseparable now.' } }
+  ] },
+  
+  { title: '💔 BREAKUP AFTERMATH', body: '{crew1} and {crew2} have ended their relationship. The ship feels like a pressure cooker.', choices: [
+    { text: '[ OFFER COUNSELING ] 150cr', eff: { cr: -150, mora: 10, relationship: 5, log: 'Professional help eased the transition. They\'re civil now.' } },
+    { text: '[ REASSIGN ONE TO A DIFFERENT SHIFT ]', eff: { efficiency: -3, mora: 5, log: 'Distance has helped. They rarely interact now.' } },
+    { text: '[ LET THEM HANDLE IT ]', eff: { mora: -12, log: 'Passive-aggressive comments fill the air. It\'s awkward for everyone.' } },
+    { text: '[ SUGGEST ONE TRANSFERS OFF SHIP ]', eff: { loyalty: -30, log: 'You suggested someone leave. Both are offended.' } }
+  ] },
+  
+  { title: '💘 SECRET ADMIRER', body: '{crew1} has been leaving anonymous gifts and notes for {crew2}. {crew2} is confused and a little creeped out.', choices: [
+    { text: '[ REVEAL THE ADMIRER ] Tell {crew2}', eff: { relationship: -10, log: '{crew1} is mortified. {crew2} is flattered but awkward.' } },
+    { text: '[ ENCOURAGE {crew1} TO CONFESS ]', skillCheck: { skill: 'charisma', dc: 11 }, success: { eff: { relationship: 20, mora: 15, log: 'The confession went well! They\'re together now.' } }, failure: { eff: { relationship: -20, log: 'Rejected. {crew1} is heartbroken.' } } },
+    { text: '[ TELL {crew1} TO STOP ]', eff: { mora: -8, log: '{crew1} stopped, but feels rejected.' } },
+    { text: '[ DO NOTHING ]', eff: { mora: -5, log: 'The mystery continues. {crew2} is getting anxious.' } }
+  ] },
+  
+  { title: '👨‍👩‍👧 FAMILY EMERGENCY', body: '{crew1} receives a distress call from their family. They need to return home immediately.', choices: [
+    { text: '[ DIVERT COURSE ] Help them', eff: { fuel: -30, time: 3, loyalty: 30, mora: 15, log: 'You changed course. {crew1} is eternally grateful.' } },
+    { text: '[ OFFER CREDITS INSTEAD ] 500cr', eff: { cr: -500, loyalty: 10, log: 'You couldn\'t divert, but you helped financially.' } },
+    { text: '[ REFUSE ] Mission comes first', eff: { loyalty: -40, mora: -20, log: '{crew1} is devastated. They may not stay.' } },
+    { text: '[ LET THEM GO ] Release from contract', eff: { crewLoss: true, mora: 5, log: 'You released {crew1} from duty. The crew respects your decision.' } }
+  ] },
+  
+  // ---------- PERSONAL CRISES ----------
+  { title: '😰 PANIC ATTACK', body: 'During a tense situation, {crew1} freezes up. They\'re hyperventilating and unable to function.', choices: [
+    { text: '[ COACH THEM THROUGH IT ]', skillCheck: { skill: 'charisma', dc: 10 }, success: { eff: { loyalty: 15, mora: 5, log: 'Your calm voice brought them back. They\'re grateful.' } }, failure: { eff: { mora: -10, log: 'Your attempts to help made it worse. They\'re embarrassed.' } } },
+    { text: '[ HAVE THE MEDIC SEDATE THEM ]', eff: { crewInjury: true, mora: -5, log: 'The medic sedated {crew1}. They\'ll recover, but feel humiliated.' } },
+    { text: '[ RELIEVE THEM OF DUTY ]', eff: { efficiency: -2, loyalty: -10, log: 'You took them off active duty. They feel like a failure.' } },
+    { text: '[ IGNORE IT ]', eff: { mora: -15, log: 'The crew watched you do nothing. Trust is shaken.' } }
+  ] },
+  
+  { title: '🍺 HANGOVER FROM HELL', body: '{crew1} is severely hungover after shore leave. They can barely stand, let alone work.', choices: [
+    { text: '[ BERATE THEM ]', eff: { loyalty: -15, mora: -5, log: 'You tore into them. They\'re ashamed but resentful.' } },
+    { text: '[ GIVE THEM LIGHT DUTY ]', eff: { efficiency: -1, loyalty: 10, log: 'You cut them some slack. They owe you one.' } },
+    { text: '[ FORCE THEM TO WORK ]', eff: { skillCheck: { skill: 'leadership', dc: 12 }, success: { eff: { log: 'They powered through. Miserable, but functional.' } }, failure: { eff: { accident: true, log: 'They caused a minor accident. You regret pushing them.' } } } },
+    { text: '[ "HAIR OF THE DOG" ] 50cr', eff: { cr: -50, mora: 5, log: 'Another drink took the edge off. Not exactly professional.' } }
+  ] },
+  
+  { title: '📝 LETTER OF RESIGNATION', body: '{crew1} hands you a formal letter of resignation. They\'ve had enough of the void.', choices: [
+    { text: '[ ACCEPT IT ]', eff: { crewLoss: true, mora: -5, log: '{crew1} leaves the ship at the next port.' } },
+    { text: '[ CONVINCE THEM TO STAY ]', skillCheck: { skill: 'charisma', dc: 15 }, success: { eff: { loyalty: 25, mora: 10, log: 'You talked them out of it. They\'re recommitted.' } }, failure: { eff: { crewLoss: true, log: 'Your words fell flat. They\'re gone.' } } },
+    { text: '[ OFFER A RAISE ] +50cr per jump', eff: { salaryIncrease: true, loyalty: 20, log: 'Money talked. They\'re staying—for now.' } },
+    { text: '[ COUNTER WITH A PROMOTION ]', eff: { promotion: true, loyalty: 30, log: 'A new title and responsibilities. They\'re thrilled.' } }
+  ] },
+  
+  { title: '🛌 INSOMNIA', body: '{crew1} hasn\'t slept in days. They\'re irritable, making mistakes, and look terrible.', choices: [
+    { text: '[ ORDER THEM TO REST ]', eff: { efficiency: -2, loyalty: 10, mora: 5, log: 'Forced bed rest. They\'ll recover.' } },
+    { text: '[ MEDICATE THEM ] 100cr', eff: { cr: -100, log: 'Sleep aids from the med bay. They\'re out cold.' } },
+    { text: '[ IGNORE IT ]', eff: { accident: true, mora: -10, log: 'Exhaustion caused a serious mistake.' } },
+    { text: '[ TALK IT OUT ] Discover the cause', skillCheck: { skill: 'charisma', dc: 13 }, success: { eff: { loyalty: 20, log: 'You uncovered the root of their anxiety. They feel heard.' } }, failure: { eff: { log: 'They wouldn\'t open up.' } } }
+  ] },
+  
+  { title: '🎂 BIRTHDAY FORGOTTEN', body: 'It\'s {crew1}\'s birthday. No one remembered. They\'re quietly devastated.', choices: [
+    { text: '[ THROW A SURPRISE PARTY ] 200cr', eff: { cr: -200, mora: 20, loyalty: 25, log: 'A last-minute celebration! They\'re touched.' } },
+    { text: '[ APOLOGIZE PERSONALLY ]', eff: { loyalty: 10, mora: 5, log: 'Your sincere apology meant a lot.' } },
+    { text: '[ GIVE THEM THE DAY OFF ]', eff: { efficiency: -1, loyalty: 15, log: 'A small gesture, but appreciated.' } },
+    { text: '[ DO NOTHING ]', eff: { loyalty: -15, mora: -10, log: 'The day passes. They won\'t forget this.' } }
+  ] },
+  
+  { title: '🧠 EXISTENTIAL CRISIS', body: '{crew1} is questioning their purpose. "Why are we out here? What does any of this mean?"', choices: [
+    { text: '[ OFFER PHILOSOPHICAL COMFORT ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { loyalty: 15, mora: 10, log: 'Your words gave them perspective.' } }, failure: { eff: { mora: -15, log: 'You made it worse. They\'re spiraling.' } } },
+    { text: '[ DISTRACT THEM WITH WORK ]', eff: { efficiency: 2, mora: -5, log: 'Busy hands, quiet mind. Temporarily.' } },
+    { text: '[ SUGGEST THEY SEE THE SHIP\'S COUNSELOR ]', eff: { log: 'They agreed to seek help.' } },
+    { text: '[ DISMISS THEIR CONCERNS ]', eff: { loyalty: -25, log: 'You brushed them off. They feel utterly alone.' } }
+  ] },
+  
+  // ---------- SHIPBOARD INCIDENTS ----------
+  { title: '🛠️ TINKERING', body: '{crew1} is modifying ship equipment without authorization. Could be an improvement... or a disaster.', choices: [
+    { text: '[ HELP THEM ]', skillCheck: { skill: 'engineering', dc: 10 }, success: { eff: { module: 'upgrade', loyalty: 15, log: 'The modification worked! Minor performance boost.' } }, failure: { eff: { hull: -10, loyalty: -5, log: 'It backfired. Minor damage and embarrassment.' } } },
+    { text: '[ STOP THEM ]', eff: { loyalty: -10, log: 'You shut it down. They\'re frustrated.' } },
+    { text: '[ SUPERVISE ONLY ]', eff: { log: 'You watched but didn\'t intervene. Nothing broke. Nothing improved.' } },
+    { text: '[ ENCOURAGE CREATIVITY ] Give them resources', eff: { cr: -150, module: 'upgrade', log: 'With proper materials, they made a real improvement!' } }
+  ] },
+  
+  { title: '🍳 MESS HALL DISASTER', body: '{crew1} tried to cook a "special meal" for the crew. The mess hall is now covered in... something.', choices: [
+    { text: '[ LAUGH IT OFF ]', eff: { mora: 10, loyalty: 5, log: 'Everyone had a good laugh. {crew1} is embarrassed but relieved.' } },
+    { text: '[ HELP CLEAN UP ]', eff: { mora: 8, log: 'You grabbed a mop. The crew appreciates the solidarity.' } },
+    { text: '[ BAN THEM FROM THE KITCHEN ]', eff: { loyalty: -10, mora: -3, log: 'You banned them. They\'re humiliated.' } },
+    { text: '[ ORDER TAKEOUT ] 150cr', eff: { cr: -150, mora: 15, log: 'You ordered station food. Crisis averted.' } }
+  ] },
+  
+  { title: '🚽 PLUMBING EMERGENCY', body: 'The ship\'s waste reclamation system has failed. The smell is... indescribable. {crew1} (Engineer) is on it.', choices: [
+    { text: '[ HELP WITH REPAIRS ]', skillCheck: { skill: 'engineering', dc: 12 }, success: { eff: { loyalty: 15, mora: 5, log: 'Together you fixed it. {crew1} is grateful for the help.' } }, failure: { eff: { mora: -20, log: 'You made it worse. The smell will linger for days.' } } },
+    { text: '[ LET THEM HANDLE IT ]', eff: { log: '{crew1} fixed it. They\'re covered in... never mind.' } },
+    { text: '[ BLAME {crew1} ]', eff: { loyalty: -30, mora: -15, log: 'You blamed them publicly. They\'re furious.' } },
+    { text: '[ OFFER HAZARD PAY ] 100cr', eff: { cr: -100, loyalty: 10, log: 'Extra pay for a dirty job. They appreciate it.' } }
+  ] },
+  
+  { title: '🔊 NOISE COMPLAINT', body: '{crew1} plays music/podcasts at all hours. {crew2} can\'t sleep and is at their breaking point.', choices: [
+    { text: '[ SIDE WITH {crew2} ] Enforce quiet hours', eff: { loyaltySingle: { crew1: -15, crew2: 20 }, log: 'Quiet hours established. {crew1} is annoyed.' } },
+    { text: '[ SIDE WITH {crew1} ] It\'s their space too', eff: { loyaltySingle: { crew1: 20, crew2: -15 }, log: '{crew2} will have to deal with it.' } },
+    { text: '[ BUY SOUNDPROOFING ] 200cr', eff: { cr: -200, loyalty: 15, mora: 10, log: 'Problem solved with credits. Everyone\'s happy.' } },
+    { text: '[ CONFISCATE THE SPEAKER ]', eff: { loyaltySingle: { crew1: -30 }, log: 'You took their speaker. They\'re seething.' } }
+  ] },
+  
+  { title: '🧹 CLEANLINESS STANDOFF', body: '{crew1} is a slob. {crew2} is a neat freak. Their shared quarters are a war zone.', choices: [
+    { text: '[ MEDIATE A CLEANING SCHEDULE ]', skillCheck: { skill: 'charisma', dc: 11 }, success: { eff: { relationship: 10, mora: 8, log: 'A compromise! The quarters are livable.' } }, failure: { eff: { relationship: -15, log: 'Neither would agree. The standoff continues.' } } },
+    { text: '[ ASSIGN SEPARATE QUARTERS ]', eff: { space: -1, mora: 15, log: 'They now have their own space. Peace at last.' } },
+    { text: '[ SIDE WITH {crew2} ] Cleanliness is discipline', eff: { loyaltySingle: { crew2: 20, crew1: -20 }, log: '{crew1} is forced to clean up. Resentment builds.' } },
+    { text: '[ IGNORE IT ]', eff: { mora: -10, log: 'The passive-aggressive notes are getting out of hand.' } }
+  ] },
+  
+  // ---------- POSITIVE MOMENTS ----------
+  { title: '🎉 CREW BONDING', body: 'After a successful mission, the crew is in high spirits. This is a moment to strengthen ties.', choices: [
+    { text: '[ THROW A SHIP PARTY ] 200cr', eff: { cr: -200, mora: 25, relationship: 10, log: 'A night of celebration! The crew feels like a family.' } },
+    { text: '[ GIVE BONUSES ] 500cr', eff: { cr: -500, loyalty: 20, mora: 15, log: 'Credits speak louder than words. They\'re motivated.' } },
+    { text: '[ PERSONAL COMPLIMENTS ]', eff: { loyalty: 10, mora: 10, log: 'You thanked each crew member individually. It meant a lot.' } },
+    { text: '[ MOVE ON ]', eff: { log: 'You acknowledged the success and moved on. Efficient, but cold.' } }
+  ] },
+  
+  { title: '🏆 PERSONAL ACHIEVEMENT', body: '{crew1} has achieved a personal milestone—a certification, a sobriety anniversary, a personal best.', choices: [
+    { text: '[ CELEBRATE PUBLICLY ]', eff: { loyalty: 25, mora: 15, log: 'You announced it to the crew. {crew1} is beaming.' } },
+    { text: '[ PRIVATE CONGRATULATIONS ]', eff: { loyalty: 20, log: 'A quiet word of praise. They appreciate the sincerity.' } },
+    { text: '[ GIVE A SMALL GIFT ] 75cr', eff: { cr: -75, loyalty: 30, log: 'A thoughtful gift. They\'re touched.' } },
+    { text: '[ IGNORE IT ]', eff: { loyalty: -15, log: 'You didn\'t acknowledge it. They noticed.' } }
+  ] },
+  
+  { title: '🤝 UNLIKELY FRIENDSHIP', body: '{crew1} and {crew2}—who couldn\'t be more different—have struck up an unlikely friendship. It\'s surprisingly wholesome.', choices: [
+    { text: '[ ENCOURAGE IT ]', eff: { relationship: 20, mora: 12, log: 'You gave your blessing. The friendship blossoms.' } },
+    { text: '[ TEASE THEM LIGHTLY ]', eff: { mora: 8, log: 'They laughed it off. It\'s all in good fun.' } },
+    { text: '[ WARN THEM ABOUT DISTRACTIONS ]', eff: { relationship: -5, mora: -3, log: 'You rained on their parade. They\'re more guarded now.' } }
+  ] },
+  
+  { title: '📚 SKILL SHARING', body: '{crew1} is teaching {crew2} a valuable skill during off-hours. Cross-training in action.', choices: [
+    { text: '[ ENCOURAGE AND PROVIDE MATERIALS ] 100cr', eff: { cr: -100, skillUp: true, relationship: 15, log: '{crew2} learned a new skill! The crew is stronger.' } },
+    { text: '[ OBSERVE QUIETLY ]', eff: { mora: 5, log: 'You watched them grow. It\'s good for morale.' } },
+    { text: '[ DISCOURAGE IT ] Focus on assigned duties', eff: { relationship: -10, log: 'You shut it down. They\'re disappointed.' } }
+  ] },
+  
+  // ---------- DARK / TENSE MOMENTS ----------
+  { title: '🕯️ GRIEF', body: '{crew1} received news that a loved one has passed away. They\'re inconsolable.', choices: [
+    { text: '[ OFFER COMFORT AND LEAVE ]', eff: { loyalty: 15, mora: 5, log: 'You gave them space to grieve. They appreciate your respect.' } },
+    { text: '[ GIVE THEM EXTENDED LEAVE ]', eff: { crewTempLoss: true, loyalty: 25, log: 'You let them go home to attend the funeral. They\'ll return.' } },
+    { text: '[ TRY TO DISTRACT THEM ]', eff: { mora: -10, log: 'Your attempts to cheer them up fell flat. They need time.' } },
+    { text: '[ IGNORE THEIR PAIN ]', eff: { loyalty: -40, log: 'You acted like nothing happened. They won\'t forget this cruelty.' } }
+  ] },
+  
+  { title: '💢 SABOTAGE SUSPICION', body: 'Equipment keeps failing in {crew1}\'s area. {crew2} is convinced {crew1} is sabotaging things to look like a hero when they fix it.', choices: [
+    { text: '[ INVESTIGATE DISCREETLY ]', skillCheck: { skill: 'investigation', dc: 14 }, success: { eff: { log: 'You found no evidence of sabotage. Just bad luck.' } }, failure: { eff: { log: 'You couldn\'t determine the truth.' } } },
+    { text: '[ CONFRONT {crew1} DIRECTLY ]', eff: { loyalty: -20, log: 'You accused them. They\'re innocent and deeply offended.' } },
+    { text: '[ INSTALL SURVEILLANCE ] 200cr', eff: { cr: -200, mora: -15, log: 'The crew feels watched. Morale plummets.' } },
+    { text: '[ IGNORE THE ACCUSATION ]', eff: { relationship: -20, log: 'The suspicion festers. Trust is eroding.' } }
+  ] },
+  
+  { title: '🔪 THREATENING BEHAVIOR', body: '{crew1} made a veiled threat toward {crew2} during an argument. The crew is on edge.', choices: [
+    { text: '[ MEDIATE IMMEDIATELY ]', skillCheck: { skill: 'charisma', dc: 15 }, success: { eff: { relationship: 5, log: 'You de-escalated the situation. For now.' } }, failure: { eff: { fight: true, log: 'It escalated into a physical altercation!' } } },
+    { text: '[ CONFINED TO QUARTERS ] Punish {crew1}', eff: { loyaltySingle: { crew1: -30 }, mora: -10, log: 'You confined {crew1}. They\'re furious, but the crew feels safer.' } },
+    { text: '[ EJECT {crew1} FROM THE SHIP ]', eff: { crewLoss: true, mora: 5, log: 'You removed the threat. The crew respects your decisiveness.' } },
+    { text: '[ DO NOTHING ]', eff: { mora: -25, log: 'You did nothing. The crew feels unsafe and abandoned.' } }
+  ] },
+  
+  { title: '💊 SUBSTANCE ABUSE', body: 'You\'ve noticed {crew1} has been acting erratically. A search reveals they\'ve been using illegal stimulants to stay awake.', choices: [
+    { text: '[ CONFRONT WITH COMPASSION ]', skillCheck: { skill: 'charisma', dc: 13 }, success: { eff: { loyalty: 25, log: 'They broke down and accepted help. You may have saved them.' } }, failure: { eff: { loyalty: -20, log: 'They denied everything and became defensive.' } } },
+    { text: '[ DISCIPLINE THEM HARSHLY ]', eff: { loyalty: -40, log: 'You came down hard. They\'re resentful and still using.' } },
+    { text: '[ IGNORE IT ]', eff: { accident: true, mora: -15, log: 'Their performance degraded until they caused a serious incident.' } },
+    { text: '[ OFFER REHAB AT NEXT PORT ] 500cr', eff: { cr: -500, crewTempLoss: true, loyalty: 30, log: 'You arranged professional help. They\'re grateful for the second chance.' } }
+  ] },
+  
+  // ---------- HUMOROUS / LIGHTHEARTED ----------
+  { title: '🐀 SHIP MASCOT', body: '{crew1} has adopted a small alien creature and is keeping it as a pet. {crew2} is allergic/terrified.', choices: [
+    { text: '[ ALLOW THE PET ]', eff: { mora: 10, loyaltySingle: { crew1: 20, crew2: -15 }, log: 'The creature now roams the ship. {crew2} is miserable.' } },
+    { text: '[ BAN THE PET ]', eff: { loyaltySingle: { crew1: -20, crew2: 15 }, log: 'You made {crew1} get rid of it. They\'re heartbroken.' } },
+    { text: '[ FIND A COMPROMISE ] Confine to quarters', eff: { loyalty: 5, log: 'The pet stays in {crew1}\'s quarters. A reasonable compromise.' } },
+    { text: '[ EAT THE PET ]', eff: { mora: -30, log: 'You... ate it. The crew is horrified.' } }
+  ] },
+  
+  { title: '🎤 KARAOKE NIGHT', body: 'The crew has organized an impromptu karaoke night in the mess hall. {crew1} is... enthusiastic but terrible.', choices: [
+    { text: '[ JOIN IN ]', eff: { mora: 15, log: 'You sang terribly too. The crew loved it.' } },
+    { text: '[ WATCH AND APPLAUD ]', eff: { mora: 10, log: 'You enjoyed the show. Good spirits all around.' } },
+    { text: '[ SHUT IT DOWN ]', eff: { mora: -20, log: 'You killed the vibe. The crew is disappointed.' } }
+  ] },
+  
+  { title: '👽 PRANK WARS', body: '{crew1} and {crew2} are engaged in an escalating prank war. It started funny, but someone might get hurt.', choices: [
+    { text: '[ LET IT CONTINUE ]', eff: { mora: 8, log: 'The pranks are hilarious. Morale is up.' } },
+    { text: '[ CALL A TRUCE ]', skillCheck: { skill: 'charisma', dc: 12 }, success: { eff: { relationship: 5, log: 'You brokered peace. They\'re disappointed but obedient.' } }, failure: { eff: { accident: true, log: 'They ignored you. The next prank caused minor damage.' } } },
+    { text: '[ JOIN THE PRANK ] Side with one', eff: { loyaltySingle: { crew1: 15, crew2: -15 }, log: 'You joined {crew1}\'s side. {crew2} feels ganged up on.' } }
+  ] },
+  
+  { title: '🛸 CONSPIRACY THEORIST', body: '{crew1} is convinced the Federation is hiding proof of ancient aliens. They won\'t stop talking about it.', choices: [
+    { text: '[ HUMOR THEM ]', eff: { loyalty: 10, mora: 5, log: 'You listened patiently. They feel validated.' } },
+    { text: '[ DEBUNK THEIR THEORIES ]', skillCheck: { skill: 'science', dc: 12 }, success: { eff: { log: 'You logically dismantled their arguments. They\'re quiet now.' } }, failure: { eff: { log: 'They have a counterpoint for everything. You gave up.' } } },
+    { text: '[ TELL THEM TO STOP ]', eff: { loyalty: -15, log: 'You shut them down. They\'re sulking.' } }
   ] }
 ];
 
