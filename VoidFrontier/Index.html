@@ -307,63 +307,112 @@ function rndSeedStr(){return ['VOID','NOVA','DEEP','IRON','GHOST'][Math.floor(Ma
 
 // ---------- ORIGINS (18 total) ----------
 const ORIGINS = [
-  { id: 'military', name: 'Military Veteran', emoji: '🪖', desc: 'Served in Federation Navy.', bonus: '+15 Max Hull', credits: 500, startingRep: { federation: 15 }, trait: 'Disciplined' },
-  { id: 'merchant', name: "Merchant's Child", emoji: '💰', desc: 'Raised bartering across systems.', bonus: '+15% Trade Prices', credits: 1500, startingRep: { guild: 20 }, trait: 'Silver Tongue' },
-  { id: 'refugee', name: 'Planetary Refugee', emoji: '🌍', desc: 'Homeworld lost. Resilient.', bonus: 'Halved Disaster Morale Loss', credits: 300, startingRep: { independent: 10 }, trait: 'Survivor' },
-  { id: 'dropout', name: 'Research Dropout', emoji: '🔬', desc: 'Xenobiologist gone rogue.', bonus: '+25% Artifact Discovery', credits: 700, startingRep: { megacorp: -5 }, trait: 'Curious' },
-  { id: 'criminal', name: 'Reformed Criminal', emoji: '⛓️', desc: 'Ran with pirates.', bonus: 'Black Market Access', credits: 800, startingRep: { syndicate: 20, federation: -10 }, trait: 'Underworld Contacts' },
-  { id: 'noble', name: 'Fallen Noble', emoji: '👑', desc: 'Disgraced aristocrat.', bonus: 'Heirloom Signet Ring (sell 2k or diplo bonus)', credits: 2000, startingRep: { empire: 10 }, trait: 'Noble Bearing' },
-  { id: 'voidborn', name: 'Voidborn Monk', emoji: '🌌', desc: 'Monastery ship childhood.', bonus: 'Negates Cramped Penalty', credits: 400, startingRep: { independent: 15 }, trait: 'Meditative' },
-  { id: 'fugitive', name: 'Corporate Fugitive', emoji: '🔫', desc: 'Stole proprietary tech.', bonus: 'Starts with Cloaking Device', credits: 600, startingRep: { megacorp: -20 }, trait: 'Paranoid' },
-  { id: 'frontier_kid', name: 'Frontier Settler', emoji: '⛏️', desc: 'Mining colony childhood.', bonus: '+15% Scrap Yield', credits: 600, startingRep: { independent: 10 }, trait: 'Resourceful' },
-  { id: 'noble_exile', name: 'Exiled Noble', emoji: '⚜️', desc: 'Heir to a fallen house.', bonus: '+20% Megacorp Trade', credits: 1200, startingRep: { empire: -5, megacorp: 15 }, trait: 'Political Mind' },
-  { id: 'cult_survivor', name: 'Cult Escapee', emoji: '🔥', desc: 'Fled a doomsday cult.', bonus: 'Cult Insight Perk (detect traps/ambushes)', credits: 350, startingRep: { syndicate: -5 }, trait: 'Haunted' },
-  { id: 'ai_construct', name: 'AI Construct', emoji: '🤖', desc: 'Experimental synthetic.', bonus: 'Immune to Bio-Hazards & Plague', credits: 500, startingRep: { federation: -10, megacorp: 10 }, trait: 'Logical' },
-  { id: 'clone', name: 'Clone Trooper', emoji: '🧬', desc: 'Grown for war, seeking identity.', bonus: '+10% HP, +5% damage', credits: 700, startingRep: { empire: 10 }, trait: 'Identity Crisis' },
-  { id: 'void_touched', name: 'Void-Touched', emoji: '🌀', desc: 'Exposed to a spatial anomaly.', bonus: 'Occasional premonitions (reveal hidden threats)', credits: 300, startingRep: { independent: 5 }, trait: 'Uncanny' },
-  { id: 'diplomat_child', name: "Diplomat's Child", emoji: '🤝', desc: 'Grew up in embassies.', bonus: '+10% Faction Rep Gains', credits: 900, startingRep: { federation: 10, empire: 10 }, trait: 'Charming' },
-  { id: 'scavenger_brat', name: 'Scavenger Brat', emoji: '🔧', desc: 'Raised in salvage yards.', bonus: 'Identify valuable scrap on scan', credits: 500, startingRep: { independent: 15 }, trait: 'Keen Eye' },
-  { id: 'telepath', name: 'Latent Telepath', emoji: '🧠', desc: 'Minor psionic abilities.', bonus: 'Bonus in social checks vs aliens', credits: 400, startingRep: { empire: -10 }, trait: 'Empathic' },
-  { id: 'war_orphan', name: 'War Orphan', emoji: '🕊️', desc: 'Survivor of a border conflict.', bonus: 'Crew combat experience gain +20%', credits: 300, startingRep: { federation: 5, empire: -5 }, trait: 'Hardened' }
+  { id: 'military', name: 'Military Veteran', emoji: '🪖', desc: 'Served in Federation Navy.', bonus: '+15 Max Hull', credits: 500, startingRep: { federation: 15 }, trait: 'Disciplined',
+    effect: { maxHullBonus: 15 } },
+  { id: 'merchant', name: "Merchant's Child", emoji: '💰', desc: 'Raised bartering across systems.', bonus: '+15% Trade Prices', credits: 1500, startingRep: { guild: 20 }, trait: 'Silver Tongue',
+    effect: { tradeSellMult: 1.15 } },
+  { id: 'refugee', name: 'Planetary Refugee', emoji: '🌍', desc: 'Homeworld lost. Resilient.', bonus: 'Halved Disaster Morale Loss', credits: 300, startingRep: { independent: 10 }, trait: 'Survivor',
+    effect: { disasterMoraleLossMult: 0.5 } },
+  { id: 'dropout', name: 'Research Dropout', emoji: '🔬', desc: 'Xenobiologist gone rogue.', bonus: '+25% Artifact Discovery', credits: 700, startingRep: { megacorp: -5 }, trait: 'Curious',
+    effect: { artifactFindChanceBonus: 0.25 } },
+  { id: 'criminal', name: 'Reformed Criminal', emoji: '⛓️', desc: 'Ran with pirates.', bonus: 'Black Market Access', credits: 800, startingRep: { syndicate: 20, federation: -10 }, trait: 'Underworld Contacts',
+    effect: { blackMarketAccess: true } },
+  { id: 'noble', name: 'Fallen Noble', emoji: '👑', desc: 'Disgraced aristocrat.', bonus: 'Heirloom Signet Ring (sell 2k or diplo bonus)', credits: 2000, startingRep: { empire: 10 }, trait: 'Noble Bearing',
+    effect: { startingItem: { id: 'signet_ring', name: 'Signet Ring', value: 2000 }, diplomacyBonus: 2 } },
+  { id: 'voidborn', name: 'Voidborn Monk', emoji: '🌌', desc: 'Monastery ship childhood.', bonus: 'Negates Cramped Penalty', credits: 400, startingRep: { independent: 15 }, trait: 'Meditative',
+    effect: { negateCramped: true } },
+  { id: 'fugitive', name: 'Corporate Fugitive', emoji: '🔫', desc: 'Stole proprietary tech.', bonus: 'Starts with Cloaking Device', credits: 600, startingRep: { megacorp: -20 }, trait: 'Paranoid',
+    effect: { startingModule: 'cloaking_device' } },
+  { id: 'frontier_kid', name: 'Frontier Settler', emoji: '⛏️', desc: 'Mining colony childhood.', bonus: '+15% Scrap Yield', credits: 600, startingRep: { independent: 10 }, trait: 'Resourceful',
+    effect: { scrapYieldMult: 1.15 } },
+  { id: 'noble_exile', name: 'Exiled Noble', emoji: '⚜️', desc: 'Heir to a fallen house.', bonus: '+20% Megacorp Trade', credits: 1200, startingRep: { empire: -5, megacorp: 15 }, trait: 'Political Mind',
+    effect: { megacorpTradeMult: 1.20 } },
+  { id: 'cult_survivor', name: 'Cult Escapee', emoji: '🔥', desc: 'Fled a doomsday cult.', bonus: 'Cult Insight Perk (detect traps/ambushes)', credits: 350, startingRep: { syndicate: -5 }, trait: 'Haunted',
+    effect: { detectAmbushChance: 0.30 } },
+  { id: 'ai_construct', name: 'AI Construct', emoji: '🤖', desc: 'Experimental synthetic.', bonus: 'Immune to Bio-Hazards & Plague', credits: 500, startingRep: { federation: -10, megacorp: 10 }, trait: 'Logical',
+    effect: { immuneBioHazard: true } },
+  { id: 'clone', name: 'Clone Trooper', emoji: '🧬', desc: 'Grown for war, seeking identity.', bonus: '+10% HP, +5% damage', credits: 700, startingRep: { empire: 10 }, trait: 'Identity Crisis',
+    effect: { hpMult: 1.10, damageMult: 1.05 } },
+  { id: 'void_touched', name: 'Void-Touched', emoji: '🌀', desc: 'Exposed to a spatial anomaly.', bonus: 'Occasional premonitions (reveal hidden threats)', credits: 300, startingRep: { independent: 5 }, trait: 'Uncanny',
+    effect: { premonitionChance: 0.15 } },
+  { id: 'diplomat_child', name: "Diplomat's Child", emoji: '🤝', desc: 'Grew up in embassies.', bonus: '+10% Faction Rep Gains', credits: 900, startingRep: { federation: 10, empire: 10 }, trait: 'Charming',
+    effect: { repGainMult: 1.10 } },
+  { id: 'scavenger_brat', name: 'Scavenger Brat', emoji: '🔧', desc: 'Raised in salvage yards.', bonus: 'Identify valuable scrap on scan', credits: 500, startingRep: { independent: 15 }, trait: 'Keen Eye',
+    effect: { scrapScanBonus: true } },
+  { id: 'telepath', name: 'Latent Telepath', emoji: '🧠', desc: 'Minor psionic abilities.', bonus: 'Bonus in social checks vs aliens', credits: 400, startingRep: { empire: -10 }, trait: 'Empathic',
+    effect: { alienSocialBonus: 2 } },
+  { id: 'war_orphan', name: 'War Orphan', emoji: '🕊️', desc: 'Survivor of a border conflict.', bonus: 'Crew combat experience gain +20%', credits: 300, startingRep: { federation: 5, empire: -5 }, trait: 'Hardened',
+    effect: { crewXpGainMult: 1.20 } }
 ];
 
-// ---------- CLASSES (15 total) ----------
-const CLASSES = [
-  { id: 'pilot', name: 'Ace Pilot', emoji: '🚀', ability: 'Evasion Boost: +20% dodge 2 turns', passive: '+10% Flee Success & -20% Fuel Use', combatRole: 'support', startingSkill: { piloting: 8 } },
-  { id: 'engineer', name: 'Engineer', emoji: '⚙️', ability: 'Rapid Repair: Fix 1 system breach', passive: 'Repairs cost 30% less, +1 repair speed', combatRole: 'support', startingSkill: { engineering: 9 } },
-  { id: 'mercenary', name: 'Mercenary', emoji: '⚔️', ability: 'Power Slash: High dmg', passive: '+5 Weapon Damage, +10% bounty rewards', combatRole: 'damage', startingSkill: { combat: 8 } },
-  { id: 'diplomat', name: 'Diplomat', emoji: '🕊️', ability: 'Parley: End combat peacefully', passive: 'Faction Rep gains doubled, better trade prices', combatRole: 'support', startingSkill: { social: 9 } },
-  { id: 'smuggler', name: 'Smuggler', emoji: '🌑', ability: 'Sneak Attack: Bypass armor', passive: 'Bypass cargo scans, hidden compartment', combatRole: 'damage', startingSkill: { stealth: 8 } },
-  { id: 'scientist', name: 'Xenoscientist', emoji: '🔭', ability: 'Overcharge Shields: +30% capacity', passive: '+25% Artifact Sell Value, identify alien weaknesses', combatRole: 'support', startingSkill: { science: 9 } },
-  { id: 'empath', name: 'Empath', emoji: '💞', ability: 'Soothe: Pacify alien for 2 turns', passive: 'Better first-contact outcomes, sense hostile intent', combatRole: 'support', startingSkill: { psionic: 7 } },
-  { id: 'operator', name: 'Drone Operator', emoji: '🛸', ability: 'Drone Swarm: Deploy combat drones', passive: 'Recon reveals fog of war, +1 drone capacity', combatRole: 'damage', startingSkill: { tech: 8 } },
-  { id: 'medic', name: 'Combat Medic', emoji: '💉', ability: 'Triage: Revive fallen crew', passive: 'Crew survives lethal hits +20%, heal 5HP after combat', combatRole: 'healer', startingSkill: { medical: 9 } },
-  { id: 'hacker', name: 'Netrunner', emoji: '💻', ability: 'Virus Upload: Disable enemy shields 5s', passive: 'Station hacking discounts, disable security', combatRole: 'support', startingSkill: { hacking: 9 } },
-  { id: 'scavenger', name: 'Salvage Specialist', emoji: '♻️', ability: 'Strip Wreck: Guaranteed rare component', passive: '+50% Salvage Yield, find extra scrap', combatRole: 'support', startingSkill: { scavenging: 9 } },
-  { id: 'psionic', name: 'Psionic Adept', emoji: '✨', ability: 'Mind Blast: Psychic damage & stun', passive: 'Resistance to psychic attacks, sense hidden enemies', combatRole: 'damage', startingSkill: { psionic: 9 } },
-  { id: 'beastmaster', name: 'Beastmaster', emoji: '🐉', ability: 'Call Companion: Summon alien pet', passive: 'Alien fauna less aggressive, can tame', combatRole: 'damage', startingSkill: { animal: 8 } },
-  { id: 'chaplain', name: 'Void Chaplain', emoji: '✝️', ability: 'Blessing: Buff ally morale & luck', passive: 'Crew morale loss reduced, inspire in combat', combatRole: 'support', startingSkill: { leadership: 8 } },
-  { id: 'cyborg', name: 'Cyborg', emoji: '🦾', ability: 'Overclock: Boost stats for 3 turns', passive: '+10% HP, immune to poison', combatRole: 'damage', startingSkill: { combat: 7, tech: 7 } }
-];
-
-// ---------- JOBS (16 total) ----------
+// ---------- JOBS ----------
 const JOBS = [
-  { id: 'bounty', name: 'Bounty Hunter', emoji: '🎯', effect: 'Track targets galaxy-wide', bonus: 'Target Vectors on map', passiveIncome: 'bounty' },
-  { id: 'trader', name: 'Trader', emoji: '💹', effect: 'Know market prices ahead', bonus: 'Trade Routes visible', passiveIncome: 'trade' },
-  { id: 'explorer', name: 'Explorer', emoji: '🔭', effect: 'Reveal hidden anomalies nearby', bonus: 'Adjacent sectors auto-revealed', passiveIncome: 'discovery' },
-  { id: 'merc', name: 'Mercenary', emoji: '⚔️', effect: '+1 Boarding Strength', bonus: 'Conflict zones marked', passiveIncome: 'combat' },
-  { id: 'smuggler_job', name: 'Smuggler', emoji: '📦', effect: 'Hidden Cargo Bay module', bonus: 'Black market routes visible', passiveIncome: 'smuggling' },
-  { id: 'diplomat_job', name: 'Ambassador', emoji: '🏛️', effect: 'Faction rep gains doubled', bonus: 'Faction territories shown', passiveIncome: 'diplomacy' },
-  { id: 'archaeologist', name: 'Xeno-Archaeologist', emoji: '🏺', effect: 'Ancient ruins highlighted on scan', bonus: 'Artifact sites marked', passiveIncome: 'artifacts' },
-  { id: 'salvager', name: 'Salvager', emoji: '🔧', effect: '+50% scrap from derelicts', bonus: 'Wreck density on map', passiveIncome: 'salvage' },
-  { id: 'bodyguard', name: 'Bodyguard', emoji: '🛡️', effect: 'VIP Passenger missions unlock', bonus: 'Safe routes marked', passiveIncome: 'protection' },
-  { id: 'researcher', name: 'Field Researcher', emoji: '📊', effect: '+25% credits for scanning lifeforms', bonus: 'Lifeform signatures visible', passiveIncome: 'research' },
-  { id: 'corsair', name: 'Corsair', emoji: '☠️', effect: 'Attack pirates without rep loss', bonus: 'Pirate fleet positions tracked', passiveIncome: 'raiding' },
-  { id: 'preacher', name: 'Void Preacher', emoji: '✨', effect: '30% chance to pacify neutral aliens', bonus: 'Shrine worlds highlighted', passiveIncome: 'pilgrimage' },
-  { id: 'courier', name: 'Courier', emoji: '📨', effect: 'Fast delivery missions', bonus: 'Priority lanes visible, +20% speed', passiveIncome: 'courier' },
-  { id: 'miner', name: 'Asteroid Miner', emoji: '⛏️', effect: 'Extract resources from belts', bonus: 'Mineral-rich systems highlighted', passiveIncome: 'mining' },
-  { id: 'scout', name: 'Recon Scout', emoji: '🔍', effect: 'Stealthy system scanning', bonus: 'Avoid hostile encounters easier', passiveIncome: 'scouting' },
-  { id: 'fixer', name: 'Fixer', emoji: '🤝', effect: 'Access to hidden job network', bonus: 'Special missions from underworld', passiveIncome: 'fixer' }
+  { id: 'bounty', name: 'Bounty Hunter', emoji: '🎯', effect: 'Track targets galaxy-wide', bonus: 'Target Vectors on map', passiveIncome: 'bounty',
+    jobEffect: { showBountyTargets: true } },
+  { id: 'trader', name: 'Trader', emoji: '💹', effect: 'Know market prices ahead', bonus: 'Trade Routes visible', passiveIncome: 'trade',
+    jobEffect: { showTradeRoutes: true, pricePrediction: true } },
+  { id: 'explorer', name: 'Explorer', emoji: '🔭', effect: 'Reveal hidden anomalies nearby', bonus: 'Adjacent sectors auto-revealed', passiveIncome: 'discovery',
+    jobEffect: { revealAdjacentSectors: true, anomalyDetectionBonus: 0.30 } },
+  { id: 'merc', name: 'Mercenary', emoji: '⚔️', effect: '+1 Boarding Strength', bonus: 'Conflict zones marked', passiveIncome: 'combat',
+    jobEffect: { boardingStrengthBonus: 1, showConflictZones: true } },
+  { id: 'smuggler_job', name: 'Smuggler', emoji: '📦', effect: 'Hidden Cargo Bay module', bonus: 'Black market routes visible', passiveIncome: 'smuggling',
+    jobEffect: { hiddenCargoModule: true, showBlackMarketRoutes: true } },
+  { id: 'diplomat_job', name: 'Ambassador', emoji: '🏛️', effect: 'Faction rep gains doubled', bonus: 'Faction territories shown', passiveIncome: 'diplomacy',
+    jobEffect: { repGainMult: 2.0, showFactionTerritories: true } },
+  { id: 'archaeologist', name: 'Xeno-Archaeologist', emoji: '🏺', effect: 'Ancient ruins highlighted on scan', bonus: 'Artifact sites marked', passiveIncome: 'artifacts',
+    jobEffect: { highlightRuins: true, artifactSiteMarked: true } },
+  { id: 'salvager', name: 'Salvager', emoji: '🔧', effect: '+50% scrap from derelicts', bonus: 'Wreck density on map', passiveIncome: 'salvage',
+    jobEffect: { scrapYieldMult: 1.50, showWreckDensity: true } },
+  { id: 'bodyguard', name: 'Bodyguard', emoji: '🛡️', effect: 'VIP Passenger missions unlock', bonus: 'Safe routes marked', passiveIncome: 'protection',
+    jobEffect: { vipMissions: true, showSafeRoutes: true } },
+  { id: 'researcher', name: 'Field Researcher', emoji: '📊', effect: '+25% credits for scanning lifeforms', bonus: 'Lifeform signatures visible', passiveIncome: 'research',
+    jobEffect: { lifeformScanMult: 1.25, showLifeformSignatures: true } },
+  { id: 'corsair', name: 'Corsair', emoji: '☠️', effect: 'Attack pirates without rep loss', bonus: 'Pirate fleet positions tracked', passiveIncome: 'raiding',
+    jobEffect: { noRepLossVsPirates: true, showPirateFleets: true } },
+  { id: 'preacher', name: 'Void Preacher', emoji: '✨', effect: '30% chance to pacify neutral aliens', bonus: 'Shrine worlds highlighted', passiveIncome: 'pilgrimage',
+    jobEffect: { pacifyChance: 0.30, highlightShrineWorlds: true } },
+  { id: 'courier', name: 'Courier', emoji: '📨', effect: 'Fast delivery missions', bonus: 'Priority lanes visible, +20% speed', passiveIncome: 'courier',
+    jobEffect: { deliverySpeedMult: 1.20, showPriorityLanes: true } },
+  { id: 'miner', name: 'Asteroid Miner', emoji: '⛏️', effect: 'Extract resources from belts', bonus: 'Mineral-rich systems highlighted', passiveIncome: 'mining',
+    jobEffect: { miningYieldMult: 1.30, highlightMineralRich: true } },
+  { id: 'scout', name: 'Recon Scout', emoji: '🔍', effect: 'Stealthy system scanning', bonus: 'Avoid hostile encounters easier', passiveIncome: 'scouting',
+    jobEffect: { hostileEncounterReduction: 0.30, stealthScan: true } },
+  { id: 'fixer', name: 'Fixer', emoji: '🤝', effect: 'Access to hidden job network', bonus: 'Special missions from underworld', passiveIncome: 'fixer',
+    jobEffect: { underworldJobs: true, specialMissionChance: 0.25 } }
+];
+
+// ---------- CLASSES ----------
+const CLASSES = [
+  { id: 'pilot', name: 'Ace Pilot', emoji: '🚀', ability: 'Evasion Boost: +20% dodge 2 turns', passive: '+10% Flee Success & -20% Fuel Use', combatRole: 'support', startingSkill: { piloting: 8 },
+    effect: { fleeChanceBonus: 0.10, fuelUseMult: 0.8 } },
+  { id: 'engineer', name: 'Engineer', emoji: '⚙️', ability: 'Rapid Repair: Fix 1 system breach', passive: 'Repairs cost 30% less, +1 repair speed', combatRole: 'support', startingSkill: { engineering: 9 },
+    effect: { repairCostMult: 0.7, repairSpeedBonus: 1 } },
+  { id: 'mercenary', name: 'Mercenary', emoji: '⚔️', ability: 'Power Slash: High dmg', passive: '+5 Weapon Damage, +10% bounty rewards', combatRole: 'damage', startingSkill: { combat: 8 },
+    effect: { weaponDamageBonus: 5, bountyRewardMult: 1.10 } },
+  { id: 'diplomat', name: 'Diplomat', emoji: '🕊️', ability: 'Parley: End combat peacefully', passive: 'Faction Rep gains doubled, better trade prices', combatRole: 'support', startingSkill: { social: 9 },
+    effect: { repGainMult: 2.0, tradeSellMult: 1.10 } },
+  { id: 'smuggler', name: 'Smuggler', emoji: '🌑', ability: 'Sneak Attack: Bypass armor', passive: 'Bypass cargo scans, hidden compartment', combatRole: 'damage', startingSkill: { stealth: 8 },
+    effect: { bypassScansChance: 0.50, hiddenCargoSlots: 5 } },
+  { id: 'scientist', name: 'Xenoscientist', emoji: '🔭', ability: 'Overcharge Shields: +30% capacity', passive: '+25% Artifact Sell Value, identify alien weaknesses', combatRole: 'support', startingSkill: { science: 9 },
+    effect: { artifactSellMult: 1.25, alienWeaknessReveal: true } },
+  { id: 'empath', name: 'Empath', emoji: '💞', ability: 'Soothe: Pacify alien for 2 turns', passive: 'Better first-contact outcomes, sense hostile intent', combatRole: 'support', startingSkill: { psionic: 7 },
+    effect: { firstContactBonus: 2, senseHostileChance: 0.40 } },
+  { id: 'operator', name: 'Drone Operator', emoji: '🛸', ability: 'Drone Swarm: Deploy combat drones', passive: 'Recon reveals fog of war, +1 drone capacity', combatRole: 'damage', startingSkill: { tech: 8 },
+    effect: { droneCapacityBonus: 1, revealFogOfWar: true } },
+  { id: 'medic', name: 'Combat Medic', emoji: '💉', ability: 'Triage: Revive fallen crew', passive: 'Crew survives lethal hits +20%, heal 5HP after combat', combatRole: 'healer', startingSkill: { medical: 9 },
+    effect: { crewSurviveLethalChance: 0.20, postCombatHeal: 5 } },
+  { id: 'hacker', name: 'Netrunner', emoji: '💻', ability: 'Virus Upload: Disable enemy shields 5s', passive: 'Station hacking discounts, disable security', combatRole: 'support', startingSkill: { hacking: 9 },
+    effect: { hackingDiscount: 0.30, disableSecurityChance: 0.60 } },
+  { id: 'scavenger', name: 'Salvage Specialist', emoji: '♻️', ability: 'Strip Wreck: Guaranteed rare component', passive: '+50% Salvage Yield, find extra scrap', combatRole: 'support', startingSkill: { scavenging: 9 },
+    effect: { salvageYieldMult: 1.50, extraScrapFind: true } },
+  { id: 'psionic', name: 'Psionic Adept', emoji: '✨', ability: 'Mind Blast: Psychic damage & stun', passive: 'Resistance to psychic attacks, sense hidden enemies', combatRole: 'damage', startingSkill: { psionic: 9 },
+    effect: { psychicResist: 0.50, detectHidden: true } },
+  { id: 'beastmaster', name: 'Beastmaster', emoji: '🐉', ability: 'Call Companion: Summon alien pet', passive: 'Alien fauna less aggressive, can tame', combatRole: 'damage', startingSkill: { animal: 8 },
+    effect: { faunaPacifyChance: 0.70, canTame: true } },
+  { id: 'chaplain', name: 'Void Chaplain', emoji: '✝️', ability: 'Blessing: Buff ally morale & luck', passive: 'Crew morale loss reduced, inspire in combat', combatRole: 'support', startingSkill: { leadership: 8 },
+    effect: { moraleLossReduction: 0.30, inspireBonus: 5 } },
+  { id: 'cyborg', name: 'Cyborg', emoji: '🦾', ability: 'Overclock: Boost stats for 3 turns', passive: '+10% HP, immune to poison', combatRole: 'damage', startingSkill: { combat: 7, tech: 7 },
+    effect: { hpMult: 1.10, immunePoison: true } }
 ];
 
 // ---------- STAR TYPES (9 total) ----------
@@ -1501,7 +1550,9 @@ function initState(seed, difficulty='normal') {
 
 // ========== SCREENS ==========
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+  
 
+  
 // ========== TITLE ==========
 let sfCtx,sfStars=[],sfAnim=false;
 function initStarfield(){const c=document.getElementById('sf-canvas');c.width=window.innerWidth;c.height=window.innerHeight;sfCtx=c.getContext('2d');sfStars=[];for(let i=0;i<220;i++)sfStars.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()-.5)*.015+.005});sfAnim=true;animSF();}
@@ -1516,6 +1567,138 @@ function beginGame(){
   G.ccStep=0; renderCC(); showScreen('cc-screen');
 }
 
+// ========== BONUSES AND EFFECTS ==========
+function applyCharacterBonuses() {
+  const origin = ORIGINS.find(o => o.id === G.captain.origin);
+  const cls = CLASSES.find(c => c.id === G.captain.cls);
+  const job = JOBS.find(j => j.id === G.captain.job);
+
+  // Helper to safely merge multipliers
+  const applyMult = (base, mult) => (base || 1.0) * mult;
+
+  // --- Apply Origin Effects ---
+  if (origin?.effect) {
+    const eff = origin.effect;
+    if (eff.maxHullBonus) {
+      G.flagship.maxHull += eff.maxHullBonus;
+      G.flagship.hull = G.flagship.maxHull;
+    }
+    if (eff.tradeSellMult) G.flagship.tradeSellMult = applyMult(G.flagship.tradeSellMult, eff.tradeSellMult);
+    if (eff.blackMarketAccess) G.flagship.blackMarketAccess = true;
+    if (eff.startingModule) G.flagship.modules.push(eff.startingModule);
+    if (eff.disasterMoraleLossMult) G.flagship.disasterMoraleLossMult = eff.disasterMoraleLossMult;
+    if (eff.artifactFindChanceBonus) G.flagship.artifactFindChanceBonus = (G.flagship.artifactFindChanceBonus || 0) + eff.artifactFindChanceBonus;
+    if (eff.startingItem) G.cargo.push({ id: eff.startingItem.id, qty: 1 });
+    if (eff.diplomacyBonus) G.captain.skills.charisma = (G.captain.skills.charisma || 1) + eff.diplomacyBonus;
+    if (eff.negateCramped) G.flagship.negateCramped = true;
+    if (eff.scrapYieldMult) G.flagship.scrapYieldMult = applyMult(G.flagship.scrapYieldMult, eff.scrapYieldMult);
+    if (eff.megacorpTradeMult) G.flagship.megacorpTradeMult = applyMult(G.flagship.megacorpTradeMult, eff.megacorpTradeMult);
+    if (eff.detectAmbushChance) G.flagship.detectAmbushChance = (G.flagship.detectAmbushChance || 0) + eff.detectAmbushChance;
+    if (eff.immuneBioHazard) G.flagship.immuneBioHazard = true;
+    if (eff.hpMult) {
+      G.flagship.maxHull = Math.floor(G.flagship.maxHull * eff.hpMult);
+      G.flagship.hull = G.flagship.maxHull;
+    }
+    if (eff.damageMult) G.flagship.damageMult = applyMult(G.flagship.damageMult, eff.damageMult);
+    if (eff.premonitionChance) G.flagship.premonitionChance = (G.flagship.premonitionChance || 0) + eff.premonitionChance;
+    if (eff.repGainMult) G.flagship.repGainMult = applyMult(G.flagship.repGainMult, eff.repGainMult);
+    if (eff.scrapScanBonus) G.flagship.scrapScanBonus = true;
+    if (eff.alienSocialBonus) G.captain.skills.charisma = (G.captain.skills.charisma || 1) + eff.alienSocialBonus;
+    if (eff.crewXpGainMult) G.flagship.crewXpGainMult = applyMult(G.flagship.crewXpGainMult, eff.crewXpGainMult);
+  }
+
+  // --- Apply Class Effects ---
+  if (cls?.effect) {
+    const eff = cls.effect;
+    if (eff.fleeChanceBonus) G.flagship.fleeChanceBonus = (G.flagship.fleeChanceBonus || 0) + eff.fleeChanceBonus;
+    if (eff.fuelUseMult) G.flagship.fuelUse = (G.flagship.fuelUse || 1.0) * eff.fuelUseMult;
+    if (eff.repairCostMult) G.flagship.repairCostMult = applyMult(G.flagship.repairCostMult, eff.repairCostMult);
+    if (eff.repairSpeedBonus) G.flagship.repairSpeedBonus = (G.flagship.repairSpeedBonus || 0) + eff.repairSpeedBonus;
+    if (eff.weaponDamageBonus) G.flagship.weaponDamageBonus = (G.flagship.weaponDamageBonus || 0) + eff.weaponDamageBonus;
+    if (eff.bountyRewardMult) G.flagship.bountyRewardMult = applyMult(G.flagship.bountyRewardMult, eff.bountyRewardMult);
+    if (eff.repGainMult) G.flagship.repGainMult = applyMult(G.flagship.repGainMult, eff.repGainMult);
+    if (eff.tradeSellMult) G.flagship.tradeSellMult = applyMult(G.flagship.tradeSellMult, eff.tradeSellMult);
+    if (eff.bypassScansChance) G.flagship.bypassScansChance = (G.flagship.bypassScansChance || 0) + eff.bypassScansChance;
+    if (eff.hiddenCargoSlots) G.flagship.cargoMax += eff.hiddenCargoSlots;
+    if (eff.artifactSellMult) G.flagship.artifactSellMult = applyMult(G.flagship.artifactSellMult, eff.artifactSellMult);
+    if (eff.alienWeaknessReveal) G.flagship.alienWeaknessReveal = true;
+    if (eff.firstContactBonus) G.captain.skills.charisma = (G.captain.skills.charisma || 1) + eff.firstContactBonus;
+    if (eff.senseHostileChance) G.flagship.senseHostileChance = (G.flagship.senseHostileChance || 0) + eff.senseHostileChance;
+    if (eff.droneCapacityBonus) G.flagship.droneCapacityBonus = (G.flagship.droneCapacityBonus || 0) + eff.droneCapacityBonus;
+    if (eff.revealFogOfWar) G.flagship.revealFogOfWar = true;
+    if (eff.crewSurviveLethalChance) G.flagship.crewSurviveLethalChance = (G.flagship.crewSurviveLethalChance || 0) + eff.crewSurviveLethalChance;
+    if (eff.postCombatHeal) G.flagship.postCombatHeal = (G.flagship.postCombatHeal || 0) + eff.postCombatHeal;
+    if (eff.hackingDiscount) G.flagship.hackingDiscount = (G.flagship.hackingDiscount || 0) + eff.hackingDiscount;
+    if (eff.disableSecurityChance) G.flagship.disableSecurityChance = (G.flagship.disableSecurityChance || 0) + eff.disableSecurityChance;
+    if (eff.salvageYieldMult) G.flagship.salvageYieldMult = applyMult(G.flagship.salvageYieldMult, eff.salvageYieldMult);
+    if (eff.extraScrapFind) G.flagship.extraScrapFind = true;
+    if (eff.psychicResist) G.flagship.psychicResist = (G.flagship.psychicResist || 0) + eff.psychicResist;
+    if (eff.detectHidden) G.flagship.detectHidden = true;
+    if (eff.faunaPacifyChance) G.flagship.faunaPacifyChance = (G.flagship.faunaPacifyChance || 0) + eff.faunaPacifyChance;
+    if (eff.canTame) G.flagship.canTame = true;
+    if (eff.moraleLossReduction) G.flagship.moraleLossReduction = (G.flagship.moraleLossReduction || 0) + eff.moraleLossReduction;
+    if (eff.inspireBonus) G.flagship.inspireBonus = (G.flagship.inspireBonus || 0) + eff.inspireBonus;
+    if (eff.hpMult) {
+      G.flagship.maxHull = Math.floor(G.flagship.maxHull * eff.hpMult);
+      G.flagship.hull = G.flagship.maxHull;
+    }
+    if (eff.immunePoison) G.flagship.immunePoison = true;
+  }
+
+  // --- Apply Job Effects (stored as galaxy flags) ---
+  G.galaxyFlags = {};
+  if (job?.jobEffect) {
+    const eff = job.jobEffect;
+    if (eff.showBountyTargets) G.galaxyFlags.showBountyTargets = true;
+    if (eff.showTradeRoutes) G.galaxyFlags.showTradeRoutes = true;
+    if (eff.pricePrediction) G.galaxyFlags.pricePrediction = true;
+    if (eff.revealAdjacentSectors) G.galaxyFlags.revealAdjacentSectors = true;
+    if (eff.anomalyDetectionBonus) G.galaxyFlags.anomalyDetectionBonus = eff.anomalyDetectionBonus;
+    if (eff.boardingStrengthBonus) G.galaxyFlags.boardingStrengthBonus = eff.boardingStrengthBonus;
+    if (eff.showConflictZones) G.galaxyFlags.showConflictZones = true;
+    if (eff.hiddenCargoModule) G.flagship.modules.push('hidden_cargo');
+    if (eff.showBlackMarketRoutes) G.galaxyFlags.showBlackMarketRoutes = true;
+    if (eff.repGainMult) G.flagship.repGainMult = applyMult(G.flagship.repGainMult, eff.repGainMult);
+    if (eff.showFactionTerritories) G.galaxyFlags.showFactionTerritories = true;
+    if (eff.highlightRuins) G.galaxyFlags.highlightRuins = true;
+    if (eff.artifactSiteMarked) G.galaxyFlags.artifactSiteMarked = true;
+    if (eff.scrapYieldMult) G.flagship.scrapYieldMult = applyMult(G.flagship.scrapYieldMult, eff.scrapYieldMult);
+    if (eff.showWreckDensity) G.galaxyFlags.showWreckDensity = true;
+    if (eff.vipMissions) G.galaxyFlags.vipMissions = true;
+    if (eff.showSafeRoutes) G.galaxyFlags.showSafeRoutes = true;
+    if (eff.lifeformScanMult) G.flagship.lifeformScanMult = applyMult(G.flagship.lifeformScanMult, eff.lifeformScanMult);
+    if (eff.showLifeformSignatures) G.galaxyFlags.showLifeformSignatures = true;
+    if (eff.noRepLossVsPirates) G.galaxyFlags.noRepLossVsPirates = true;
+    if (eff.showPirateFleets) G.galaxyFlags.showPirateFleets = true;
+    if (eff.pacifyChance) G.flagship.pacifyChance = (G.flagship.pacifyChance || 0) + eff.pacifyChance;
+    if (eff.highlightShrineWorlds) G.galaxyFlags.highlightShrineWorlds = true;
+    if (eff.deliverySpeedMult) G.flagship.deliverySpeedMult = applyMult(G.flagship.deliverySpeedMult, eff.deliverySpeedMult);
+    if (eff.showPriorityLanes) G.galaxyFlags.showPriorityLanes = true;
+    if (eff.miningYieldMult) G.flagship.miningYieldMult = applyMult(G.flagship.miningYieldMult, eff.miningYieldMult);
+    if (eff.highlightMineralRich) G.galaxyFlags.highlightMineralRich = true;
+    if (eff.hostileEncounterReduction) G.flagship.hostileEncounterReduction = (G.flagship.hostileEncounterReduction || 0) + eff.hostileEncounterReduction;
+    if (eff.stealthScan) G.galaxyFlags.stealthScan = true;
+    if (eff.underworldJobs) G.galaxyFlags.underworldJobs = true;
+    if (eff.specialMissionChance) G.galaxyFlags.specialMissionChance = eff.specialMissionChance;
+  }
+
+  // Apply starting reputation from origin
+  if (origin?.startingRep) {
+    Object.entries(origin.startingRep).forEach(([fac, val]) => {
+      G.rep[fac] = (G.rep[fac] || 0) + val;
+    });
+  }
+}
+
+  // --- Apply Starting Reputation ---
+  if (origin?.startingRep) {
+    Object.entries(origin.startingRep).forEach(([fac, val]) => {
+      G.rep[fac] = (G.rep[fac] || 0) + val;
+    });
+  }
+}
+
+  
 // ========== CHARACTER CREATION (5 steps) ==========
 const CC_TITLES=['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN','SELECT STARTER SHIP'];
 function renderCC(){
@@ -1569,7 +1752,7 @@ function launchGame(){
   G.captain.name=document.getElementById('cap-name')?.value.trim()||'Captain';
   const shipName=document.getElementById('ship-name-in')?.value.trim();
   if(shipName) G.flagship.name = shipName.toUpperCase();
-  if(G.captain.origin==='military'){G.flagship.maxHull+=15;G.flagship.hull=G.flagship.maxHull;}
+  applyCharacterBonuses();
   const gc=document.querySelector('.gc');const W=Math.max(600,gc.clientWidth||800),H=Math.max(400,gc.clientHeight||600);
   G.galaxy=genGalaxy(G.rng,W,H);G.curSys=0;G.selSys=0;genContracts();
   addLog(`Captain ${G.captain.name} takes the helm of ${G.flagship.name}.`);
@@ -1768,7 +1951,8 @@ function resolveChoice(i){
 
 // ========== STATION (expanded) ==========
 const ST_NODES=[{id:'cantina',name:'CANTINA',emoji:'🍺'},{id:'maintenance',name:'MAINTENANCE',emoji:'🔧'},{id:'market',name:'MARKET',emoji:'💹'},{id:'guild',name:'GUILD',emoji:'📋'},{id:'blackmarket',name:'BLACK MARKET',emoji:'🌑'},{id:'dataexchange',name:'DATA EXCHANGE',emoji:'📡'},{id:'smuggler',name:'SMUGGLER\'S DEN',emoji:'🥷'},{id:'bordello',name:'BORDELLO',emoji:'💋'},{id:'pleasure',name:'PLEASURE HOUSE',emoji:'🎰'}];
-function stationPrice(goodId,sysIdx,buying){const g=GOODS.find(x=>x.id===goodId);if(!g)return 0;const srng=new RNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17);const variance=0.85+srng.next()*0.30;const wealthMod=0.6+G.galaxy.systems[sysIdx].wealth*0.18;let price=Math.round(g.basePrice*wealthMod*variance);if(buying)price=Math.round(price*1.18);return Math.max(1,price);}
+function stationPrice(goodId,sysIdx,buying){const g=GOODS.find(x=>x.id===goodId);if(!g)return 0;const srng=new RNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17);const variance=0.85+srng.next()*0.30;const wealthMod=0.6+G.galaxy.systems[sysIdx].wealth*0.18;let price=Math.round(g.basePrice*wealthMod*variance);
+ if(buying)price=Math.round(price*1.18); else price = Math.round(price * (G.flagship.tradeSellMult || 1.0));return Math.max(1,price);}
 function stationGoods(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*251);return GOODS.filter(g=>g.legal).sort(()=>srng.next()-.5).slice(0,5);}
 function stationRumors(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*421);return [...RUMOR_POOL].sort(()=>srng.next()-.5).slice(0,3).map(r=>r.replace('{sys}',G.galaxy.systems[sysIdx].name).replace('{fac}',FACTIONS[Math.floor(srng.next()*FACTIONS.length)].name));}
 function genContracts(){G.contracts=[{id:'c1',title:'Delivery',reward:800,target:null,desc:'Transport cargo.'}];}
@@ -1824,7 +2008,16 @@ function talkBartender(){addLog('Bartender: "Heard the Syndicate is moving in. W
 function talkToCrew(id){const c=G.crew.find(x=>x.id===id); if(c){addLog(`${c.name}: "${c.bio}"`); G.ship.morale=Math.min(100,(G.ship.morale||75)+2); updateHUD();}}
 function buyRumor(i){if(G.flagship.credits<150)return;G.flagship.credits-=150;addLog('Rumor purchased.');updateHUD();}
 function stDrink(){if(G.flagship.credits<50)return;G.flagship.credits-=50;G.ship.morale=Math.min(100,(G.ship.morale||75)+8);updateHUD();}
-function repairHull(){const miss=G.flagship.maxHull-G.flagship.hull;if(miss<=0)return;const cost=Math.ceil(miss*6);if(G.flagship.credits<cost)return;G.flagship.credits-=cost;G.flagship.hull=G.flagship.maxHull;updateHUD();renderNodeContent('maintenance');}
+function repairHull() {
+  const miss = G.flagship.maxHull - G.flagship.hull;
+  if (miss <= 0) return;
+  const baseCost = Math.ceil(miss * 6);
+  const cost = Math.ceil(baseCost * (G.flagship.repairCostMult || 1.0));
+  if (G.flagship.credits < cost) return;
+  G.flagship.credits -= cost;
+  G.flagship.hull = G.flagship.maxHull;
+  updateHUD(); renderNodeContent('maintenance');
+}
 function refuel(){const miss=G.flagship.maxFuel-G.flagship.fuel;if(miss<=0)return;const cost=Math.ceil(miss*4);if(G.flagship.credits<cost)return;G.flagship.credits-=cost;G.flagship.fuel=G.flagship.maxFuel;updateHUD();renderNodeContent('maintenance');}
 function buyModule(id){const m=MODULES.find(x=>x.id===id);if(!m||G.flagship.credits<m.cost)return;G.flagship.credits-=m.cost;G.flagship.modules.push(m.id);addLog(`Installed ${m.name}.`);updateHUD();}
 function buyShip(id) {
