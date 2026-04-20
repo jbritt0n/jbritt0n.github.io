@@ -440,14 +440,427 @@ const MODULES = [
   { id: 'luxury_suite', name: 'Luxury Suite', emoji: '🛋️', cost: 2500, desc: '+10 Morale per jump, uses power.', effect: 'morale' }
 ];
 
-// ---------- SHIP HULLS (more variety) ----------
+// ---------- SHIP HULLS (FULL SYSTEM) ----------
 const SHIP_HULLS = [
-  { id: 'scout', name: 'Scout Dart', cost: 5000, hull: 80, shields: 30, cargo: 8, fuelUse: 0.8, crewMax: 3, moduleSlots: 2 },
-  { id: 'freighter', name: 'Cargo Hauler', cost: 12000, hull: 120, shields: 40, cargo: 20, fuelUse: 1.2, crewMax: 5, moduleSlots: 3 },
-  { id: 'corvette', name: 'Corvette', cost: 20000, hull: 150, shields: 60, cargo: 12, fuelUse: 1.5, crewMax: 6, moduleSlots: 4 },
-  { id: 'frigate', name: 'Frigate', cost: 35000, hull: 220, shields: 90, cargo: 18, fuelUse: 2.0, crewMax: 8, moduleSlots: 5 },
-  { id: 'destroyer', name: 'Destroyer', cost: 60000, hull: 300, shields: 140, cargo: 25, fuelUse: 2.8, crewMax: 12, moduleSlots: 6 },
-  { id: 'explorer', name: 'Deep Space Explorer', cost: 28000, hull: 180, shields: 100, cargo: 30, fuelUse: 1.3, crewMax: 7, moduleSlots: 4 }
+
+  // --- Tier 0: Junk / Starter ---
+  {
+    id: 'scrap_skiff',
+    name: 'Scrap Skiff',
+    tier: 0,
+    role: 'survival',
+    rarity: 'common',
+    cost: 1500,
+    hull: 50,
+    shields: 0,
+    cargo: 5,
+    fuelUse: 1.5,
+    crewMax: 2,
+    moduleSlots: 1,
+    passive: 'Barebones Frame: Repairs cost -25%, but all damage taken +10%',
+    layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'cargo'] }
+  },
+  {
+    id: 'rustbucket',
+    name: 'Rustbucket Freighter',
+    tier: 0,
+    role: 'trade',
+    rarity: 'common',
+    cost: 3000,
+    hull: 70,
+    shields: 10,
+    cargo: 15,
+    fuelUse: 1.8,
+    crewMax: 3,
+    moduleSlots: 2,
+    passive: 'Loose Panels: +5 cargo, but 5% chance per jump to lose 1 random cargo',
+    layout: { width: 4, height: 2, rooms: ['cockpit', 'cargo', 'cargo', 'engine'] }
+  },
+  {
+    id: 'shuttle',
+    name: 'Decommissioned Shuttle',
+    tier: 0,
+    role: 'utility',
+    rarity: 'common',
+    cost: 2500,
+    hull: 60,
+    shields: 20,
+    cargo: 6,
+    fuelUse: 1.0,
+    crewMax: 3,
+    moduleSlots: 1,
+    passive: 'Old Military Frame: +10% evade vs missiles',
+    layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'medbay'] }
+  },
+
+  // --- Tier 1: Light / Agile ---
+  {
+    id: 'scout',
+    name: 'Scout Dart',
+    tier: 1,
+    role: 'exploration',
+    rarity: 'common',
+    cost: 5000,
+    hull: 80,
+    shields: 30,
+    cargo: 8,
+    fuelUse: 0.7,
+    crewMax: 3,
+    moduleSlots: 2,
+    passive: 'Survey Scanner: +15% chance to reveal hidden nodes',
+    layout: { width: 3, height: 3, rooms: ['cockpit', 'engine', 'scanner', 'cargo'] }
+  },
+  {
+    id: 'interceptor',
+    name: 'Light Interceptor',
+    tier: 1,
+    role: 'combat',
+    rarity: 'common',
+    cost: 7000,
+    hull: 90,
+    shields: 25,
+    cargo: 5,
+    fuelUse: 0.6,
+    crewMax: 2,
+    moduleSlots: 2,
+    passive: 'Afterburn Thrusters: +20% evasion for first 2 turns of combat',
+    layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'weapon'] }
+  },
+
+  // --- Tier 2: Utility / Trade ---
+  {
+    id: 'freighter',
+    name: 'Cargo Hauler',
+    tier: 2,
+    role: 'trade',
+    rarity: 'common',
+    cost: 12000,
+    hull: 120,
+    shields: 40,
+    cargo: 20,
+    fuelUse: 1.2,
+    crewMax: 5,
+    moduleSlots: 3,
+    passive: 'Bulk Transport: Trade profits +10%',
+    layout: { width: 5, height: 2, rooms: ['cockpit', 'cargo', 'cargo', 'engine', 'cargo'] }
+  },
+  {
+    id: 'salvager',
+    name: 'Salvage Barge',
+    tier: 2,
+    role: 'utility',
+    rarity: 'uncommon',
+    cost: 14000,
+    hull: 140,
+    shields: 30,
+    cargo: 25,
+    fuelUse: 1.6,
+    crewMax: 5,
+    moduleSlots: 3,
+    passive: 'Scrap Harvester: +25% scrap from wrecks',
+    layout: { width: 5, height: 2, rooms: ['cockpit', 'salvage', 'cargo', 'engine'] }
+  },
+  {
+    id: 'smuggler',
+    name: 'Smuggler Sloop',
+    tier: 2,
+    role: 'stealth',
+    rarity: 'uncommon',
+    cost: 16000,
+    hull: 110,
+    shields: 50,
+    cargo: 12,
+    fuelUse: 1.0,
+    crewMax: 4,
+    moduleSlots: 3,
+    passive: 'Hidden Compartments: 50% chance to avoid contraband scans',
+    layout: { width: 4, height: 2, rooms: ['cockpit', 'cargo_hidden', 'engine', 'crew'] }
+  },
+
+  // --- Tier 3: Combat Core ---
+  {
+    id: 'corvette',
+    name: 'Corvette',
+    tier: 3,
+    role: 'combat',
+    rarity: 'common',
+    cost: 20000,
+    hull: 150,
+    shields: 60,
+    cargo: 12,
+    fuelUse: 1.5,
+    crewMax: 6,
+    moduleSlots: 4,
+    passive: 'Balanced Systems: +5% all stats',
+    layout: { width: 5, height: 3, rooms: ['cockpit', 'weapon', 'engine', 'shield', 'crew'] }
+  },
+  {
+    id: 'gunship',
+    name: 'Assault Gunship',
+    tier: 3,
+    role: 'combat',
+    rarity: 'uncommon',
+    cost: 24000,
+    hull: 170,
+    shields: 50,
+    cargo: 10,
+    fuelUse: 1.7,
+    crewMax: 6,
+    moduleSlots: 4,
+    passive: 'Heavy Barrage: +15% weapon damage, -10% evasion',
+    layout: { width: 5, height: 3, rooms: ['cockpit', 'weapon', 'weapon', 'engine'] }
+  },
+  {
+    id: 'raider',
+    name: 'Pirate Raider',
+    tier: 3,
+    role: 'boarding',
+    rarity: 'uncommon',
+    cost: 22000,
+    hull: 140,
+    shields: 40,
+    cargo: 15,
+    fuelUse: 1.4,
+    crewMax: 6,
+    moduleSlots: 4,
+    passive: 'Boarding Hooks: Boarding success +25%',
+    layout: { width: 5, height: 3, rooms: ['cockpit', 'boarding', 'crew', 'engine'] }
+  },
+
+  // --- Tier 4: Specialized ---
+  {
+    id: 'explorer',
+    name: 'Deep Space Explorer',
+    tier: 4,
+    role: 'exploration',
+    rarity: 'uncommon',
+    cost: 28000,
+    hull: 180,
+    shields: 100,
+    cargo: 30,
+    fuelUse: 1.2,
+    crewMax: 7,
+    moduleSlots: 4,
+    passive: 'Deep Scan Array: +25% anomaly rewards',
+    layout: { width: 6, height: 3, rooms: ['cockpit', 'scanner', 'lab', 'engine', 'cargo'] }
+  },
+  {
+    id: 'science_vessel',
+    name: 'Research Vessel',
+    tier: 4,
+    role: 'science',
+    rarity: 'rare',
+    cost: 30000,
+    hull: 160,
+    shields: 80,
+    cargo: 20,
+    fuelUse: 1.1,
+    crewMax: 8,
+    moduleSlots: 5,
+    passive: 'Xeno Lab: +50% research speed, unlocks special events',
+    layout: { width: 6, height: 3, rooms: ['lab', 'lab', 'cockpit', 'engine'] }
+  },
+  {
+    id: 'carrier_light',
+    name: 'Light Carrier',
+    tier: 4,
+    role: 'carrier',
+    rarity: 'rare',
+    cost: 32000,
+    hull: 200,
+    shields: 70,
+    cargo: 18,
+    fuelUse: 1.8,
+    crewMax: 9,
+    moduleSlots: 5,
+    passive: 'Drone Bay: Deploy 1 extra drone in combat',
+    layout: { width: 6, height: 3, rooms: ['hangar', 'hangar', 'cockpit', 'engine'] }
+  },
+
+  // --- Tier 5: Heavy Warships ---
+  {
+    id: 'frigate',
+    name: 'Frigate',
+    tier: 5,
+    role: 'combat',
+    rarity: 'uncommon',
+    cost: 35000,
+    hull: 220,
+    shields: 90,
+    cargo: 18,
+    fuelUse: 2.0,
+    crewMax: 8,
+    moduleSlots: 5,
+    passive: 'Shield Matrix: +20% shield regen',
+    layout: { width: 6, height: 3, rooms: ['cockpit', 'shield', 'weapon', 'engine'] }
+  },
+  {
+    id: 'destroyer',
+    name: 'Destroyer',
+    tier: 5,
+    role: 'combat',
+    rarity: 'rare',
+    cost: 60000,
+    hull: 300,
+    shields: 140,
+    cargo: 25,
+    fuelUse: 2.8,
+    crewMax: 12,
+    moduleSlots: 6,
+    passive: 'Siege Mode: +30% damage when stationary',
+    layout: { width: 7, height: 3, rooms: ['weapon', 'weapon', 'cockpit', 'engine'] }
+  },
+  {
+    id: 'cruiser',
+    name: 'Heavy Cruiser',
+    tier: 5,
+    role: 'combat',
+    rarity: 'rare',
+    cost: 75000,
+    hull: 380,
+    shields: 180,
+    cargo: 30,
+    fuelUse: 3.2,
+    crewMax: 14,
+    moduleSlots: 7,
+    passive: 'Command Bridge: Crew buffs +10%',
+    layout: { width: 7, height: 4, rooms: ['bridge', 'weapon', 'shield', 'engine'] }
+  },
+
+  // --- Tier 6: Exotic ---
+  {
+    id: 'void_skimmer',
+    name: 'Void Skimmer',
+    tier: 6,
+    role: 'exploration',
+    rarity: 'rare',
+    cost: 65000,
+    hull: 200,
+    shields: 120,
+    cargo: 15,
+    fuelUse: 0.9,
+    crewMax: 6,
+    moduleSlots: 5,
+    passive: 'Void Glide: Ignores nebula penalties',
+    layout: { width: 5, height: 3, rooms: ['cockpit', 'engine', 'phase'] }
+  },
+  {
+    id: 'bio_cruiser',
+    name: 'Living Bio-Cruiser',
+    tier: 6,
+    role: 'exotic',
+    rarity: 'legendary',
+    cost: 70000,
+    hull: 350,
+    shields: 100,
+    cargo: 20,
+    fuelUse: 1.5,
+    crewMax: 10,
+    moduleSlots: 6,
+    passive: 'Regenerative Hull: Heals 2% hull per turn',
+    layout: { width: 6, height: 4, rooms: ['core', 'core', 'vein', 'engine'] }
+  },
+  {
+    id: 'phase_runner',
+    name: 'Phase Runner',
+    tier: 6,
+    role: 'stealth',
+    rarity: 'legendary',
+    cost: 68000,
+    hull: 180,
+    shields: 160,
+    cargo: 10,
+    fuelUse: 1.0,
+    crewMax: 5,
+    moduleSlots: 5,
+    passive: 'Phase Shift: 20% chance to avoid all damage',
+    layout: { width: 5, height: 3, rooms: ['phase', 'cockpit', 'engine'] }
+  },
+
+  // --- Tier 7: Flagships ---
+  {
+    id: 'battlecarrier',
+    name: 'Battlecarrier',
+    tier: 7,
+    role: 'carrier',
+    rarity: 'legendary',
+    cost: 120000,
+    hull: 500,
+    shields: 250,
+    cargo: 40,
+    fuelUse: 4.0,
+    crewMax: 18,
+    moduleSlots: 8,
+    passive: 'Fleet Command: +2 drone capacity',
+    layout: { width: 8, height: 4, rooms: ['hangar', 'hangar', 'bridge', 'engine'] }
+  },
+  {
+    id: 'dreadnought',
+    name: 'Dreadnought',
+    tier: 7,
+    role: 'combat',
+    rarity: 'legendary',
+    cost: 150000,
+    hull: 650,
+    shields: 300,
+    cargo: 50,
+    fuelUse: 5.0,
+    crewMax: 20,
+    moduleSlots: 9,
+    passive: 'Intimidation Aura: Enemy morale -20%',
+    layout: { width: 8, height: 4, rooms: ['weapon', 'weapon', 'bridge', 'engine'] }
+  },
+  {
+    id: 'arkship',
+    name: 'Arkship',
+    tier: 7,
+    role: 'colony',
+    rarity: 'legendary',
+    cost: 130000,
+    hull: 550,
+    shields: 220,
+    cargo: 80,
+    fuelUse: 3.5,
+    crewMax: 16,
+    moduleSlots: 8,
+    passive: 'Self-Sustaining: Reduces all upkeep costs by 25%',
+    layout: { width: 8, height: 4, rooms: ['habitat', 'cargo', 'bridge', 'engine'] }
+  },
+
+  // --- Tier 8: Legendary Unique ---
+  {
+    id: 'relic_vessel',
+    name: 'Precursor Relic Ship',
+    tier: 8,
+    role: 'exotic',
+    rarity: 'mythic',
+    cost: 0,
+    hull: 400,
+    shields: 400,
+    cargo: 25,
+    fuelUse: 0.5,
+    crewMax: 10,
+    moduleSlots: 7,
+    passive: 'Ancient Power: No fuel cost for jumps',
+    layout: { width: 6, height: 4, rooms: ['core', 'core', 'unknown'] }
+  },
+  {
+    id: 'ghost_ship',
+    name: 'Ghost Ship',
+    tier: 8,
+    role: 'stealth',
+    rarity: 'mythic',
+    cost: 0,
+    hull: 300,
+    shields: 0,
+    cargo: 20,
+    fuelUse: 0.8,
+    crewMax: 6,
+    moduleSlots: 5,
+    passive: 'Ethereal: Cannot be targeted every 3rd turn',
+    layout: { width: 5, height: 3, rooms: ['void', 'cockpit', 'engine'] }
+  }
+
 ];
 
 // ---------- ENEMY SHIPS (space combat) more variety ----------
@@ -986,6 +1399,7 @@ function initState(seed, difficulty='normal') {
     id:'ship0', name:'VAGRANT STAR', type:'Scout', hull:100, maxHull:100, shields:50, maxShields:50,
     fuel:80, maxFuel:100, cargoMax:10, modules:[], scrap:0, fuelUse:1.0, credits:1000
   }];
+  G.flagship.credits = Math.floor(3000 * mult[difficulty]);
   G.curShipIdx = 0;
   G.rep = {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0};
   G.crew = JSON.parse(JSON.stringify(STARTER_CREW)).map(c=>({...c, id:'c'+Math.random().toString(36), alive:true, hp:c.maxHp, maxHp:c.hp, atk:c.atk||8, spd:c.spd||5, skill:c.skill||5}));
@@ -1316,8 +1730,31 @@ function stDrink(){if(G.flagship.credits<50)return;G.flagship.credits-=50;G.ship
 function repairHull(){const miss=G.flagship.maxHull-G.flagship.hull;if(miss<=0)return;const cost=Math.ceil(miss*6);if(G.flagship.credits<cost)return;G.flagship.credits-=cost;G.flagship.hull=G.flagship.maxHull;updateHUD();renderNodeContent('maintenance');}
 function refuel(){const miss=G.flagship.maxFuel-G.flagship.fuel;if(miss<=0)return;const cost=Math.ceil(miss*4);if(G.flagship.credits<cost)return;G.flagship.credits-=cost;G.flagship.fuel=G.flagship.maxFuel;updateHUD();renderNodeContent('maintenance');}
 function buyModule(id){const m=MODULES.find(x=>x.id===id);if(!m||G.flagship.credits<m.cost)return;G.flagship.credits-=m.cost;G.flagship.modules.push(m.id);addLog(`Installed ${m.name}.`);updateHUD();}
-function buyShip(id){const hull=SHIP_HULLS.find(h=>h.id===id);if(!hull||G.flagship.credits<hull.cost)return;const tradeIn=Math.floor(G.flagship.maxHull*30);G.flagship.credits=G.flagship.credits-hull.cost+tradeIn;G.fleet.push({id:'ship'+Date.now(),name:`${hull.name}-${G.fleet.length+1}`,type:hull.name,hull:hull.hull,maxHull:hull.hull,shields:hull.shields,maxShields:hull.shields,fuel:50,maxFuel:100,cargoMax:hull.cargo,modules:[],scrap:0,fuelUse:hull.fuelUse,credits:0});addLog(`Purchased ${hull.name}.`);updateHUD();updateRP();renderNodeContent('maintenance');}
-function buyGood(id){const price=stationPrice(id,G.curSys,true);if(G.flagship.credits<price||!canAddCargo(id))return;G.flagship.credits-=price;addCargo(id);updateHUD();updateRP();renderNodeContent('market');}
+function buyShip(id) {
+  const hull = SHIP_HULLS.find(h => h.id === id);
+  if (!hull || G.flagship.credits < hull.cost) {
+    addLog('Insufficient credits.');
+    return;
+  }
+  G.flagship.credits -= hull.cost;
+  const newShip = {
+    id: 'ship' + Date.now(),
+    name: `${hull.name}-${G.fleet.length + 1}`,
+    type: hull.name,
+    hull: hull.hull, maxHull: hull.hull,
+    shields: hull.shields, maxShields: hull.shields,
+    fuel: 50, maxFuel: 100,
+    cargoMax: hull.cargo,
+    modules: [],
+    scrap: 0,
+    fuelUse: hull.fuelUse,
+    credits: 0
+  };
+  G.fleet.push(newShip);
+  addLog(`Purchased ${hull.name}. Added to fleet.`);
+  updateHUD(); updateRP(); renderNodeContent('maintenance');
+}
+function buyGood(id){const price = stationPrice(id, G.curSys, true);if (G.flagship.credits < price || !canAddCargo(id)) {addLog(!canAddCargo(id) ? 'Cargo hold full!' : 'Insufficient credits.');return;}G.flagship.credits -= price;addCargo(id);updateHUD(); updateRP(); renderNodeContent('market');};addCargo(id);updateHUD();updateRP();renderNodeContent('market');}
 function buyGoodIllegal(id){const price=Math.round(stationPrice(id,G.curSys,true)*1.4);if(G.flagship.credits<price||!canAddCargo(id))return;G.flagship.credits-=price;addCargo(id);const fac=G.galaxy.systems[G.curSys].faction.id;let penalty=5; if(id.includes('weapon')||id.includes('arms')) penalty=8; G.rep[fac]=Math.max(-100,(G.rep[fac]||0)-penalty);addLog(`Bought illegal goods. ${fac} rep -${penalty}.`);updateHUD();updateRP();}
 function acceptContract(id){const c=G.contracts.find(x=>x.id===id);if(c){c.active=true;addLog(`Accepted contract: ${c.title}.`);renderNodeContent('guild');}}
 function sellExploData(){const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id));const pay=unsold.length*80;G.flagship.credits+=pay;unsold.forEach(s=>G.soldExplorationData.push(s.id));addLog(`Sold data for ${pay}cr.`);updateHUD();renderNodeContent('dataexchange');}
