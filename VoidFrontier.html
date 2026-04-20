@@ -163,7 +163,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 <div id="title-screen" class="screen active">
   <canvas id="sf-canvas"></canvas>
   <div class="title-wrap">
-    <div class="logo-outer"><div class="logo">VOID FRONTIER</div><div class="logo-sub">ENHANCED EDITION</div></div>
+    <div class="logo-outer"><div class="logo">VOID FRONTIER</div><div class="logo-sub">DEEP EVENTS EDITION</div></div>
     <div class="seed-box">
       <div class="seed-label">▸ MISSION SEED</div>
       <div class="seed-row">
@@ -278,7 +278,63 @@ const SYS_FEATURES=['Gas Giant','Rocky Planets','Ancient Ruins','Asteroid Belt',
 const GOODS=[{id:'fuel_cells',name:'Fuel Cells',emoji:'⚡',basePrice:55,legal:true,wt:1,use:{fuel:10}},{id:'medicine',name:'Medicine',emoji:'💊',basePrice:85,legal:true,wt:1,use:{heal:15}},{id:'protein_packs',name:'Protein Packs',emoji:'🥫',basePrice:32,legal:true,wt:2,use:{morale:2}},{id:'tech_parts',name:'Tech Components',emoji:'🔩',basePrice:130,legal:true,wt:1,use:{repairDiscount:0.3}},{id:'small_arms',name:'Small Arms',emoji:'🔫',basePrice:210,legal:true,wt:2,use:{equipBonus:5}},{id:'alien_fauna',name:'Alien Fauna',emoji:'👾',basePrice:380,legal:false,wt:3},{id:'void_spice',name:'Void Spice',emoji:'🌀',basePrice:520,legal:false,wt:1},{id:'corp_data',name:'Corporate Secrets',emoji:'💾',basePrice:450,legal:false,wt:0},{id:'artifacts',name:'Ancient Artifacts',emoji:'🏺',basePrice:850,legal:true,wt:1,use:{artifactResearch:true}}];
 const MODULES=[{id:'gambler_reactor',name:"Gambler's Reactor",emoji:'🎲',cost:3200,pos:'+50% Power',neg:'5% chance/jump: drain fuel',effect:'power'},{id:'reinforced_frame',name:'Reinforced Frame',emoji:'🛡️',cost:3800,pos:'+20% Max Hull',neg:'-15% Speed',effect:'hull'},{id:'phase_shields',name:'Phase Shields',emoji:'🌀',cost:5500,pos:'3s invulnerability',effect:'shields'},{id:'ai_assistant',name:'AI Combat Assistant',emoji:'🤖',cost:6000,pos:'Auto-repairs 1 system',effect:'autorepair'}];
 const ENEMY_SHIPS=[{type:'Pirate Gunship',emoji:'💀',color:'#e67e22',hull:55,maxHull:55,shield:15,maxShield:15,desc:'Battered raider.',loot:{cr:[350,600],scrap:3},systems:{weapons:{name:'Laser Cannons',hp:30,maxHp:30},shields:{name:'Deflector Array',hp:15,maxHp:15},engines:{name:'Afterburners',hp:20,maxHp:20}}},{type:'Cartel Enforcer',emoji:'⚠️',color:'#c41e3a',hull:75,maxHull:75,shield:30,maxShield:30,desc:'Syndicate muscle.',loot:{cr:[600,900],scrap:5},systems:{weapons:{name:'Dual Railguns',hp:40,maxHp:40},shields:{name:'Shield Matrix',hp:30,maxHp:30},engines:{name:'Boost Drive',hp:25,maxHp:25}}},{type:'Empire Patrol',emoji:'🪖',color:'#2ecc71',hull:90,maxHull:90,shield:45,maxShield:45,desc:'Military interceptor.',loot:{cr:[250,500],scrap:2},systems:{weapons:{name:'Ion Array',hp:45,maxHp:45},shields:{name:'Military Shields',hp:45,maxHp:45},engines:{name:'Plasma Drive',hp:30,maxHp:30}}}];
-const EVENTS=[{title:'⚠ DERELICT VESSEL',body:'Drifting ship. No life signs.',choices:[{text:'[ BOARD ] Risk crew',eff:{cr:450,hull:-8,log:'Boarded derelict.'},skillCheck:{skill:'engineering',dc:12},failEff:{hull:-15,log:'Trapped! Hull damaged.'}},{text:'[ SCAN ] Safe',eff:{cr:150,log:'Scanned remotely.'}},{text:'[ AVOID ]',eff:{}}]},{title:'🚨 PIRATE INTERCEPT',body:'Weapons powering up!',choices:[{text:'[ FIGHT ]',eff:{combat:true}},{text:'[ PAY ] 500cr',eff:{cr:-500,log:'Paid tribute.'}},{text:'[ FLEE ]',eff:{fuel:-25,log:'Emergency FTL.'}}]},{title:'📡 DISTRESS SIGNAL',body:'Old beacon. Trap?',choices:[{text:'[ INVESTIGATE ]',eff:{cr:600,mora:10,log:'Rescued survivors.'}},{text:'[ REPORT ]',eff:{cr:100,rep_federation:5}},{text:'[ IGNORE ]',eff:{mora:-5}}]}];
+
+// ---------- ENHANCED EVENTS (with branching & follow-ups) ----------
+const EVENTS = [
+  { id: 'derelict', title:'⚠ DERELICT VESSEL', body:'A drifting ship. No life signs, but power readings flicker.',
+    choices:[
+      { text:'[ BOARD ] Risk crew for high reward', 
+        skillCheck:{skill:'engineering',dc:12},
+        success: { eff:{cr:450, scrap:2, log:'Boarded the derelict. Found useful components and scrap.'} },
+        failure: { eff:{hull:-15, log:'A security drone activates! Hull damaged.'}, combat: true },
+        followUp: null
+      },
+      { text:'[ SCAN ] Safe, lower reward', eff:{cr:150, log:'Scanned remotely. Sold data.'} },
+      { text:'[ AVOID ] No risk', eff:{log:'Bypassed the derelict.'} }
+  ]},
+  { id: 'distress', title:'📡 DISTRESS SIGNAL', body:'A weak beacon pulses from a nearby moon. Signal is weeks old. Could be survivors... or a trap.',
+    choices:[
+      { text:'[ INVESTIGATE ] Answer the call',
+        skillCheck:{skill:'charisma',dc:10},
+        success: { eff:{cr:400, mora:8, log:'You find a small group of grateful survivors. They reward you and boost morale.'}, 
+                  followUp: null },
+        failure: { eff:{}, combat: true, log:'It was a pirate ambush! They attack!' }
+      },
+      { text:'[ REPORT ONLY ] Let authorities handle it', eff:{cr:100, rep_federation:5, log:'Reported to Federation. They appreciate the intel.'} },
+      { text:'[ IGNORE ] Survival first', eff:{mora:-5, log:'You ignore the signal. The guilt lingers.'} }
+  ]},
+  { id: 'pirate', title:'🚨 PIRATE INTERCEPT', body:'A vessel drops out of FTL ahead. Weapons powering up!',
+    choices:[
+      { text:'[ FIGHT ] Open fire', eff:{}, combat:true },
+      { text:'[ PAY ] 500 credits', eff:{cr:-500, log:'Paid tribute. They let you pass.'} },
+      { text:'[ FLEE ] Emergency FTL', eff:{fuel:-25, log:'Made a desperate jump.'} }
+  ]},
+  { id: 'anomaly', title:'🌀 SPATIAL ANOMALY', body:'Strange energy readings. Instruments go haywire.',
+    choices:[
+      { text:'[ FLY THROUGH ] Risk it', skillCheck:{skill:'intelligence',dc:14},
+        success: { eff:{cr:900, artifact:true, log:'You navigate the anomaly and find an ancient artifact!'} },
+        failure: { eff:{hull:-25, log:'The anomaly tears at your hull!'} }
+      },
+      { text:'[ DOCUMENT ] Sell data', eff:{cr:300, log:'Documented the anomaly for science guilds.'} },
+      { text:'[ AVOID ] Chart and move on', eff:{log:'Charted for future reference.'} }
+  ]},
+  { id: 'merchant', title:'🛒 TRAVELING MERCHANT', body:'A freighter hails with an offer.',
+    choices:[
+      { text:'[ BUY REPAIRS ] 400cr', eff:{cr:-400, hull:25, log:'Bought repair materials.'} },
+      { text:'[ TRADE CHARTS ] Intel for fuel', eff:{fuel:35, log:'Exchanged navigation charts.'} },
+      { text:'[ DECLINE ]', eff:{log:'Declined the offer.'} }
+  ]},
+  { id: 'firstcontact', title:'👽 FIRST CONTACT', body:'An alien vessel of unknown configuration approaches.',
+    choices:[
+      { text:'[ OPEN HAILING ] Attempt communication', skillCheck:{skill:'charisma',dc:12},
+        success: { eff:{cr:400, mora:10, log:'Peaceful contact! They share data.'} },
+        failure: { eff:{hull:-10, log:'They misinterpret your hail as aggression!'} }
+      },
+      { text:'[ RAISE SHIELDS ] Defensive posture', eff:{log:'You hold defensive posture. They observe and leave.'} },
+      { text:'[ AGGRESSIVE SCAN ] Force data', eff:{cr:200, hull:-8, log:'Scanned aggressively. They fire a warning shot.'} }
+  ]}
+];
+
 const DRAMA_EVENTS=[{title:'💬 CANTINA ARGUMENT',body:'{crew1} and {crew2} are fighting.',choices:[{text:'[ INTERVENE ]',eff:{mora:5}},{text:'[ LET THEM ]',eff:{mora:-3}},{text:'[ BUY DRINKS ] 80cr',eff:{cr:-80,mora:12}}]}];
 const STARTER_CREW=[{name:'Zoya Kas',role:'Engineer',emoji:'⚙️',loyalty:70,bio:'Seasoned mechanic.',xp:0,level:1,equippedWeapon:null},{name:'REX-7',role:'Security',emoji:'🤖',loyalty:55,bio:'Combat android.',xp:0,level:1,equippedWeapon:null},{name:'Mira Tong',role:'Navigator',emoji:'🔭',loyalty:65,bio:'Former cartographer.',xp:0,level:1,equippedWeapon:null}];
 const RUMOR_POOL=['Scavengers near {sys} hit a derelict warship.','The {fac} is consolidating power.','Black market prices on Void Spice are up.','Pirate activity near {sys} has spiked.'];
@@ -439,7 +495,7 @@ function useCargoItem(id){
   const idx=G.cargo.findIndex(c=>c.id===id);if(idx<0)return;
   const good=GOODS.find(g=>g.id===id);
   if(id==='fuel_cells'){G.ship.fuel=Math.min(G.ship.maxFuel,G.ship.fuel+10);addLog('Used fuel cell +10 fuel.');}
-  else if(id==='medicine'){const crew=G.crew.find(c=>c);if(crew){/* heal logic */ addLog('Medicine used.');}}
+  else if(id==='medicine'){/* heal logic */ addLog('Medicine used.');}
   else if(id==='protein_packs'){G.ship.morale=Math.min(100,G.ship.morale+2);addLog('Morale +2');}
   else if(id==='small_arms'){/* equip handled elsewhere */ return;}
   else if(id==='artifacts'){G.ship.maxHull+=5;G.ship.hull+=5;addLog('Artifact analyzed! Hull +5');}
@@ -468,22 +524,60 @@ function triggerEvent(){
   document.getElementById('ev-overlay').classList.add('open');
 }
 function resolveChoice(i){
-  let ch=currentEvent.choices[i];const e=ch.eff;document.getElementById('ev-overlay').classList.remove('open');
-  if(ch.skillCheck){
-    const skill=ch.skillCheck.skill,dc=ch.skillCheck.dc;
-    const roll=Math.floor(G.rng()*20)+G.captain.skills[skill];
-    if(roll<dc){ch=ch.failEff||{log:'Skill check failed.'};addLog(`Check failed (${roll}/${dc}).`);}
-    else{addLog(`Skill success!`);G.captain.skills[skill]++;G.captain.xp+=10;if(G.captain.xp>=G.captain.level*100){G.captain.level++;addLog(`Captain level ${G.captain.level}!`);}}
+  let choice = currentEvent.choices[i];
+  document.getElementById('ev-overlay').classList.remove('open');
+  
+  // Handle skill check if present
+  let outcome = choice;
+  if (choice.skillCheck) {
+    const skill = choice.skillCheck.skill;
+    const dc = choice.skillCheck.dc;
+    const roll = Math.floor(G.rng() * 20) + (G.captain.skills[skill] || 0);
+    if (roll >= dc) {
+      outcome = choice.success || choice;
+      addLog(`Skill check success! (${roll}/${dc})`);
+      // Improve skill
+      G.captain.skills[skill] = (G.captain.skills[skill] || 0) + 1;
+      G.captain.xp += 10;
+      if (G.captain.xp >= G.captain.level * 100) {
+        G.captain.level++;
+        addLog(`Captain reached level ${G.captain.level}!`);
+      }
+    } else {
+      outcome = choice.failure || { eff: { log: 'Skill check failed.' } };
+      addLog(`Skill check failed. (${roll}/${dc})`);
+    }
   }
-  if(e.combat){startCombat();return;}
-  if(e.cr)G.ship.credits=Math.max(0,G.ship.credits+e.cr);
-  if(e.hull){G.ship.hull=Math.min(G.ship.maxHull,Math.max(1,G.ship.hull+e.hull));if(G.ship.hull<=1)triggerGameOver();}
-  if(e.fuel)G.ship.fuel=Math.min(G.ship.maxFuel,Math.max(0,G.ship.fuel+e.fuel));
-  if(e.mora)G.ship.morale=Math.min(100,Math.max(0,G.ship.morale+e.mora));
-  if(e.rep_federation)G.rep.federation+=e.rep_federation;
-  addLog(e.log||'Event resolved.');updateHUD();updateLP();updateRP();
+  
+  // Apply effects
+  const eff = outcome.eff || {};
+  if (eff.cr) G.ship.credits = Math.max(0, G.ship.credits + eff.cr);
+  if (eff.hull) { G.ship.hull = Math.min(G.ship.maxHull, Math.max(1, G.ship.hull + eff.hull)); if (G.ship.hull <= 1) triggerGameOver(); }
+  if (eff.fuel) G.ship.fuel = Math.min(G.ship.maxFuel, Math.max(0, G.ship.fuel + eff.fuel));
+  if (eff.mora) G.ship.morale = Math.min(100, Math.max(0, G.ship.morale + eff.mora));
+  if (eff.rep_federation) G.rep.federation += eff.rep_federation;
+  if (eff.scrap) G.ship.scrap = (G.ship.scrap || 0) + eff.scrap;
+  if (eff.artifact) { G.cargo.push({ id: 'artifacts', qty: 1 }); addLog('Found an Ancient Artifact!'); }
+  addLog(eff.log || 'Event resolved.');
+  
+  // Check for combat trigger
+  if (outcome.combat) {
+    startCombat();
+    return;
+  }
+  
+  // Check for follow-up event
+  if (outcome.followUp) {
+    currentEvent = outcome.followUp;
+    document.getElementById('ev-title').textContent = currentEvent.title;
+    document.getElementById('ev-body').textContent = currentEvent.body;
+    document.getElementById('ev-choices').innerHTML = currentEvent.choices.map((c,idx) => `<button class="choice-btn" onclick="resolveChoice(${idx})">${c.text}</button>`).join('');
+    document.getElementById('ev-overlay').classList.add('open');
+    return;
+  }
+  
+  updateHUD(); updateLP(); updateRP();
 }
-
 // ---------- STATION ----------
 const ST_NODES=[{id:'cantina',name:'CANTINA',emoji:'🍺'},{id:'maintenance',name:'MAINTENANCE',emoji:'🔧'},{id:'market',name:'MARKET',emoji:'💹'},{id:'guild',name:'GUILD',emoji:'📋'},{id:'blackmarket',name:'BLACK MARKET',emoji:'🌑'},{id:'dataexchange',name:'DATA EXCHANGE',emoji:'📡'}];
 function stationPrice(goodId,sysIdx,buying){const g=GOODS.find(x=>x.id===goodId);if(!g)return 0;const srng=mkRNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17);const variance=0.85+srng()*0.30;const wealthMod=0.6+G.galaxy.systems[sysIdx].wealth*0.18;let price=Math.round(g.basePrice*wealthMod*variance);if(buying)price=Math.round(price*1.18);return Math.max(1,price);}
@@ -550,12 +644,10 @@ function combatAction(action){
   if(action==='fire'){
     if(!combatTarget)return;if(c.playerSys.weapons.hp<=0){addCombatLog('Weapons offline!');return;}
     const dmg=10+Math.floor(G.rng()*15);const target=e.systems[combatTarget];target.hp=Math.max(0,target.hp-dmg);addCombatLog(`Hit ${target.name} -${dmg}`,'player');if(target.hp<=0)addCombatLog(`${target.name} destroyed!`);
-    // Enemy hull damage
     e.hull=Math.max(0,e.hull-Math.floor(dmg/2));
   }else if(action==='boost_shields'){s.shields=Math.min(s.maxShields,s.shields+15);addCombatLog('Shields boosted');}
   else if(action==='evasive'){c.evasionActive=true;addCombatLog('Evasive maneuvers!');}
   else if(action==='flee'){if(G.ship.fuel<20)return;if(G.rng()<0.6){addCombatLog('Fled!');exitCombat(false);return;}else addCombatLog('Flee failed!');}
-  // Enemy turn (only if weapons functional)
   if(e.systems.weapons.hp>0){
     const hit=c.evasionActive?G.rng()<0.4:G.rng()<0.7;
     if(hit){const dmg=8+Math.floor(G.rng()*12);s.hull=Math.max(0,s.hull-dmg);addCombatLog(`Enemy hits hull -${dmg}`,'enemy');}else addCombatLog('Enemy missed','enemy');
