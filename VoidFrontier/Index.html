@@ -449,7 +449,7 @@ const SHIP_HULLS = [
     tier: 0,
     role: 'survival',
     rarity: 'common',
-    cost: 1500,
+    cost: 500,
     hull: 50,
     shields: 0,
     cargo: 5,
@@ -465,7 +465,7 @@ const SHIP_HULLS = [
     tier: 0,
     role: 'trade',
     rarity: 'common',
-    cost: 3000,
+    cost: 700,
     hull: 70,
     shields: 10,
     cargo: 15,
@@ -481,7 +481,7 @@ const SHIP_HULLS = [
     tier: 0,
     role: 'utility',
     rarity: 'common',
-    cost: 2500,
+    cost: 600,
     hull: 60,
     shields: 20,
     cargo: 6,
@@ -491,7 +491,87 @@ const SHIP_HULLS = [
     passive: 'Old Military Frame: +10% evade vs missiles',
     layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'medbay'] }
   },
-
+// --- Tier 0: Ultra-Junk / Narrative Starters ---
+{
+  id: 'dads_jalopy',
+  name: "Dad's Jalopy",
+  tier: 0,
+  role: 'survival',
+  rarity: 'common',
+  cost: 300,
+  hull: 45,
+  shields: 0,
+  cargo: 6,
+  fuelUse: 1.8,
+  crewMax: 2,
+  moduleSlots: 1,
+  passive: 'Inherited Problems: Repairs cost -50%, but random system malfunctions occur every 3 jumps',
+  layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'cargo'] }
+},
+{
+  id: 'burnt_out_hopper',
+  name: 'Burnt-Out Hopper',
+  tier: 0,
+  role: 'exploration',
+  rarity: 'common',
+  cost: 200,
+  hull: 40,
+  shields: 0,
+  cargo: 4,
+  fuelUse: 2.0,
+  crewMax: 1,
+  moduleSlots: 1,
+  passive: 'Barely Holding Together: +20% evade, but 10% chance per combat to suffer internal damage',
+  layout: { width: 2, height: 2, rooms: ['cockpit', 'engine'] }
+},
+{
+  id: 'mining_castoff',
+  name: 'Mining Castoff',
+  tier: 0,
+  role: 'utility',
+  rarity: 'common',
+  cost: 400,
+  hull: 60,
+  shields: 5,
+  cargo: 12,
+  fuelUse: 2.2,
+  crewMax: 3,
+  moduleSlots: 1,
+  passive: 'Industrial Frame: +25% mining yield, but -15% evasion',
+  layout: { width: 4, height: 2, rooms: ['cockpit', 'cargo', 'drill', 'engine'] }
+},
+{
+  id: 'courier_wreck',
+  name: 'Wrecked Courier',
+  tier: 0,
+  role: 'speed',
+  rarity: 'common',
+  cost: 450,
+  hull: 35,
+  shields: 10,
+  cargo: 3,
+  fuelUse: 0.6,
+  crewMax: 2,
+  moduleSlots: 1,
+  passive: 'Overtuned Engines: -40% fuel use, but engines can fail mid-jump (rare event)',
+  layout: { width: 3, height: 2, rooms: ['cockpit', 'engine', 'engine'] }
+},
+{
+  id: 'floating_coffin',
+  name: 'Floating Coffin',
+  tier: 0,
+  role: 'stealth',
+  rarity: 'uncommon',
+  cost: 500,
+  hull: 50,
+  shields: 0,
+  cargo: 5,
+  fuelUse: 1.2,
+  crewMax: 2,
+  moduleSlots: 1,
+  passive: 'Cold Signature: Enemy detection chance -30%, but crew morale -2 per jump',
+  layout: { width: 3, height: 2, rooms: ['cockpit', 'void', 'engine'] }
+},
   // --- Tier 1: Light / Agile ---
   {
     id: 'scout',
@@ -1448,19 +1528,21 @@ function renderCC(){
     body.innerHTML=`<div class="name-step"><div class="name-group"><div class="name-label">CAPTAIN NAME</div><input type="text" id="cap-name" value="${G.captain.name}" maxlength="22"/></div><div class="name-group"><div class="name-label">SHIP NAME</div><input type="text" id="ship-name-in" value="${G.flagship.name}" maxlength="22"/></div><div class="dossier"><div class="dossier-title">DOSSIER</div><div class="dossier-row">Origin: <span>${ORIGINS.find(o=>o.id===G.captain.origin)?.name||'—'}</span></div><div class="dossier-row">Class: <span>${CLASSES.find(c=>c.id===G.captain.cls)?.name||'—'}</span></div><div class="dossier-row">Job: <span>${JOBS.find(j=>j.id===G.captain.job)?.name||'—'}</span></div></div></div>`;
     nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="ccNext()">▶ CONTINUE</button>`;return;
   }
-  if(s===4){
-    body.innerHTML=`<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><p>Credits: ${G.flagship.credits} CR</p>
-      <div class="opt-grid cols-3">${SHIP_HULLS.map(ship=>`
-        <div class="opt-card" onclick="selectShip('${ship.id}')">
-          <div class="oc-emoji">🚀</div>
-          <div class="oc-name">${ship.name}</div>
-          <div class="oc-desc">Hull:${ship.hull} Shields:${ship.shields} Cargo:${ship.cargo}</div>
-          <div class="oc-bonus">Fuel Use: ${ship.fuelUse}x | Cost: ${ship.cost} CR</div>
-        </div>`).join('')}</div>
-      <p>Remaining credits after purchase will be your starting funds.</p></div>`;
-    nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;
-    return;
-  }
+if(s===4){
+  // Filter only Tier 0 ships for starter selection
+  const starterShips = SHIP_HULLS.filter(ship => ship.tier === 0);
+  body.innerHTML = `<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><p>Credits: ${G.flagship.credits} CR</p>
+    <div class="opt-grid cols-3">${starterShips.map(ship=>`
+      <div class="opt-card" onclick="selectShip('${ship.id}')">
+        <div class="oc-emoji">🚀</div>
+        <div class="oc-name">${ship.name}</div>
+        <div class="oc-desc">Hull:${ship.hull} Shields:${ship.shields} Cargo:${ship.cargo}</div>
+        <div class="oc-bonus">${ship.passive} | Cost: ${ship.cost} CR</div>
+      </div>`).join('')}</div>
+    <p>Remaining credits after purchase will be your starting funds.</p></div>`;
+  nav.innerHTML = `<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;
+  return;
+}
   const data=s===0?ORIGINS:s===1?CLASSES:JOBS;
   const sel=s===0?G.captain.origin:s===1?G.captain.cls:G.captain.job;
   body.innerHTML=`<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it=>`<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc||it.ability||it.effect}</div><div class="oc-bonus">◈ ${it.bonus||it.passive||it.bonus||''}</div></div>`).join('')}</div>`;
