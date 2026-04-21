@@ -417,40 +417,272 @@ const JOBS = [
     jobEffect: { underworldJobs: true, specialMissionChance: 0.25 } }
 ];
 
-// ---------- CLASSES ----------
+// ========== CLASSES: TIERED PROGRESSION SYSTEM ==========
+
+// --- TIER 1 BASE CLASSES (6 total) ---
 const CLASSES = [
-  { id: 'pilot', name: 'Ace Pilot', emoji: '🚀', ability: 'Evasion Boost: +20% dodge 2 turns', passive: '+10% Flee Success & -20% Fuel Use', combatRole: 'support', startingSkill: { piloting: 8 },
-    effect: { fleeChanceBonus: 0.10, fuelUseMult: 0.8 } },
-  { id: 'engineer', name: 'Engineer', emoji: '⚙️', ability: 'Rapid Repair: Fix 1 system breach', passive: 'Repairs cost 30% less, +1 repair speed', combatRole: 'support', startingSkill: { engineering: 9 },
-    effect: { repairCostMult: 0.7, repairSpeedBonus: 1 } },
-  { id: 'mercenary', name: 'Mercenary', emoji: '⚔️', ability: 'Power Slash: High dmg', passive: '+5 Weapon Damage, +10% bounty rewards', combatRole: 'damage', startingSkill: { combat: 8 },
-    effect: { weaponDamageBonus: 5, bountyRewardMult: 1.10 } },
-  { id: 'diplomat', name: 'Diplomat', emoji: '🕊️', ability: 'Parley: End combat peacefully', passive: 'Faction Rep gains doubled, better trade prices', combatRole: 'support', startingSkill: { social: 9 },
-    effect: { repGainMult: 2.0, tradeSellMult: 1.10 } },
-  { id: 'smuggler', name: 'Smuggler', emoji: '🌑', ability: 'Sneak Attack: Bypass armor', passive: 'Bypass cargo scans, hidden compartment', combatRole: 'damage', startingSkill: { stealth: 8 },
-    effect: { bypassScansChance: 0.50, hiddenCargoSlots: 5 } },
-  { id: 'scientist', name: 'Xenoscientist', emoji: '🔭', ability: 'Overcharge Shields: +30% capacity', passive: '+25% Artifact Sell Value, identify alien weaknesses', combatRole: 'support', startingSkill: { science: 9 },
-    effect: { artifactSellMult: 1.25, alienWeaknessReveal: true } },
-  { id: 'empath', name: 'Empath', emoji: '💞', ability: 'Soothe: Pacify alien for 2 turns', passive: 'Better first-contact outcomes, sense hostile intent', combatRole: 'support', startingSkill: { psionic: 7 },
-    effect: { firstContactBonus: 2, senseHostileChance: 0.40 } },
-  { id: 'operator', name: 'Drone Operator', emoji: '🛸', ability: 'Drone Swarm: Deploy combat drones', passive: 'Recon reveals fog of war, +1 drone capacity', combatRole: 'damage', startingSkill: { tech: 8 },
-    effect: { droneCapacityBonus: 1, revealFogOfWar: true } },
-  { id: 'medic', name: 'Combat Medic', emoji: '💉', ability: 'Triage: Revive fallen crew', passive: 'Crew survives lethal hits +20%, heal 5HP after combat', combatRole: 'healer', startingSkill: { medical: 9 },
-    effect: { crewSurviveLethalChance: 0.20, postCombatHeal: 5 } },
-  { id: 'hacker', name: 'Netrunner', emoji: '💻', ability: 'Virus Upload: Disable enemy shields 5s', passive: 'Station hacking discounts, disable security', combatRole: 'support', startingSkill: { hacking: 9 },
-    effect: { hackingDiscount: 0.30, disableSecurityChance: 0.60 } },
-  { id: 'scavenger', name: 'Salvage Specialist', emoji: '♻️', ability: 'Strip Wreck: Guaranteed rare component', passive: '+50% Salvage Yield, find extra scrap', combatRole: 'support', startingSkill: { scavenging: 9 },
-    effect: { salvageYieldMult: 1.50, extraScrapFind: true } },
-  { id: 'psionic', name: 'Psionic Adept', emoji: '✨', ability: 'Mind Blast: Psychic damage & stun', passive: 'Resistance to psychic attacks, sense hidden enemies', combatRole: 'damage', startingSkill: { psionic: 9 },
-    effect: { psychicResist: 0.50, detectHidden: true } },
-  { id: 'beastmaster', name: 'Beastmaster', emoji: '🐉', ability: 'Call Companion: Summon alien pet', passive: 'Alien fauna less aggressive, can tame', combatRole: 'damage', startingSkill: { animal: 8 },
-    effect: { faunaPacifyChance: 0.70, canTame: true } },
-  { id: 'chaplain', name: 'Void Chaplain', emoji: '✝️', ability: 'Blessing: Buff ally morale & luck', passive: 'Crew morale loss reduced, inspire in combat', combatRole: 'support', startingSkill: { leadership: 8 },
-    effect: { moraleLossReduction: 0.30, inspireBonus: 5 } },
-  { id: 'cyborg', name: 'Cyborg', emoji: '🦾', ability: 'Overclock: Boost stats for 3 turns', passive: '+10% HP, immune to poison', combatRole: 'damage', startingSkill: { combat: 7, tech: 7 },
-    effect: { hpMult: 1.10, immunePoison: true } }
+  // === VANGUARD (Tank) ===
+  { 
+    id: 'vanguard', name: 'Vanguard', emoji: '🛡️', role: 'Tank', 
+    tags: ['MELEE', 'DEFENSE'],
+    activeAbility: { id: 'taunt', name: 'Taunt', desc: 'Force enemy to target you for 2 turns', cooldown: 4, effect: { tauntDuration: 2 } },
+    passive: { desc: '+15% max HP, +10% threat generation', effect: { hpMult: 1.15, threatMult: 1.1 } },
+    groundMoves: [
+      { id: 'shield_bash', name: 'Shield Bash', desc: 'Damage + stun (50%)', cost: 3, effect: { dmgMult: 1.2, stunChance: 0.5 } },
+      { id: 'fortify', name: 'Fortify', desc: 'Gain +30% defense for 3 turns', cost: 2, effect: { defenseBuff: 0.3, duration: 3 } },
+      { id: 'provoke', name: 'Provoke', desc: 'Taunt all enemies for 2 turns', cost: 4, effect: { aoeTaunt: 2 } }
+    ],
+    skillAffinity: { combat: 3, leadership: 2 },
+    tier2Options: ['juggernaut', 'dreadnought']
+  },
+  // === MARKSMAN (Ranged DPS) ===
+  { 
+    id: 'marksman', name: 'Marksman', emoji: '🎯', role: 'Ranged Damage', 
+    tags: ['RANGED', 'DAMAGE'],
+    activeAbility: { id: 'precision_shot', name: 'Precision Shot', desc: 'High damage, ignores 50% armor', cooldown: 3, effect: { dmgMult: 2.0, armorPierce: 0.5 } },
+    passive: { desc: '+10% crit chance, +15% accuracy', effect: { critChanceBonus: 0.1, accuracyBonus: 0.15 } },
+    groundMoves: [
+      { id: 'aimed_shot', name: 'Aimed Shot', desc: 'High single-target damage', cost: 3, effect: { dmgMult: 2.0 } },
+      { id: 'suppressing_fire', name: 'Suppressing Fire', desc: 'AOE damage, reduce enemy accuracy', cost: 4, effect: { aoeDmg: 1.0, accuracyDebuff: 0.2 } },
+      { id: 'headshot', name: 'Headshot', desc: 'Guaranteed crit on injured target', cost: 5, effect: { executeThreshold: 0.3, critGuaranteed: true } }
+    ],
+    skillAffinity: { combat: 2, perception: 3 },
+    tier2Options: ['sniper', 'gunslinger']
+  },
+  // === TECHNICIAN (Support/Repair) ===
+  { 
+    id: 'technician', name: 'Technician', emoji: '🔧', role: 'Support', 
+    tags: ['TECH', 'REPAIR'],
+    activeAbility: { id: 'emergency_repair', name: 'Emergency Repair', desc: 'Instantly repair 1 system', cooldown: 5, effect: { repairAmount: 1 } },
+    passive: { desc: 'Repairs cost 30% less, +1 repair speed', effect: { repairCostMult: 0.7, repairSpeedBonus: 1 } },
+    groundMoves: [
+      { id: 'deploy_turret', name: 'Deploy Turret', desc: 'Summon turret that attacks each turn', cost: 5, effect: { summonTurret: true } },
+      { id: 'overload', name: 'Overload', desc: 'Damage mechanical enemies, chance to stun', cost: 3, effect: { mechDmgBonus: 1.5, stunChance: 0.4 } },
+      { id: 'repair_drone', name: 'Repair Drone', desc: 'Heal ally over 3 turns', cost: 4, effect: { hot: 10, duration: 3 } }
+    ],
+    skillAffinity: { engineering: 3, tech: 2 },
+    tier2Options: ['engineer', 'hacker']
+  },
+  // === MEDIC (Healer) ===
+  { 
+    id: 'medic', name: 'Medic', emoji: '💉', role: 'Healer', 
+    tags: ['HEALING', 'SUPPORT'],
+    activeAbility: { id: 'triage', name: 'Triage', desc: 'Revive fallen crew member', cooldown: 6, effect: { revive: true } },
+    passive: { desc: 'Crew survives lethal hits +20%, heal 5HP after combat', effect: { surviveLethalChance: 0.2, postCombatHeal: 5 } },
+    groundMoves: [
+      { id: 'healing_wave', name: 'Healing Wave', desc: 'AOE heal all allies', cost: 5, effect: { aoeHeal: 15 } },
+      { id: 'adrenaline_shot', name: 'Adrenaline Shot', desc: 'Buff ally damage and speed', cost: 3, effect: { dmgBuff: 0.2, spdBuff: 0.2, duration: 3 } },
+      { id: 'cleanse', name: 'Cleanse', desc: 'Remove debuffs from ally', cost: 2, effect: { removeDebuff: true } }
+    ],
+    skillAffinity: { medical: 3, empathy: 2 },
+    tier2Options: ['surgeon', 'field_medic']
+  },
+  // === OPERATIVE (Stealth/Control) ===
+  { 
+    id: 'operative', name: 'Operative', emoji: '🥷', role: 'Control', 
+    tags: ['STEALTH', 'DEBUFF'],
+    activeAbility: { id: 'system_shock', name: 'System Shock', desc: 'Disable enemy shields for 1 turn', cooldown: 4, effect: { disableShields: 1 } },
+    passive: { desc: '+25% hack success, bypass scans easier', effect: { hackSuccessBonus: 0.25, bypassScansChance: 0.2 } },
+    groundMoves: [
+      { id: 'backstab', name: 'Backstab', desc: 'High damage from stealth', cost: 3, effect: { dmgMult: 2.5, requiresStealth: true } },
+      { id: 'smoke_bomb', name: 'Smoke Bomb', desc: 'Escape combat or grant stealth', cost: 2, effect: { stealthAllies: true, duration: 2 } },
+      { id: 'sabotage', name: 'Sabotage', desc: 'Disable enemy ability for 2 turns', cost: 4, effect: { disableAbility: true, duration: 2 } }
+    ],
+    skillAffinity: { stealth: 3, hacking: 2 },
+    tier2Options: ['saboteur', 'infiltrator']
+  },
+  // === PSION (Psychic) ===
+  { 
+    id: 'psion', name: 'Psion', emoji: '🧠', role: 'Caster', 
+    tags: ['PSYCHIC', 'CONTROL'],
+    activeAbility: { id: 'mind_blast', name: 'Mind Blast', desc: 'Psychic damage + stun', cooldown: 3, effect: { dmgMult: 1.5, stunChance: 0.6 } },
+    passive: { desc: '+20% psychic resistance, sense hidden enemies', effect: { psychicResist: 0.2, detectHidden: true } },
+    groundMoves: [
+      { id: 'telekinetic_push', name: 'Telekinetic Push', desc: 'Damage + push back', cost: 3, effect: { dmgMult: 1.2, knockback: true } },
+      { id: 'mind_control', name: 'Mind Control', desc: 'Confuse enemy to attack allies', cost: 5, effect: { confuse: 2 } },
+      { id: 'psychic_scream', name: 'Psychic Scream', desc: 'AOE psychic damage, chance to panic', cost: 4, effect: { aoeDmg: 1.0, panicChance: 0.3 } }
+    ],
+    skillAffinity: { psionic: 3, perception: 2 },
+    tier2Options: ['telepath', 'kinetic']
+  }
 ];
 
+// --- TIER 2 ADVANCED SPECIALIZATIONS ---
+const TIER2_CLASSES = {
+  // Vanguard paths
+  juggernaut: { 
+    name: 'Juggernaut', emoji: '🦾', desc: 'Unstoppable force',
+    bonusPassive: { desc: '+20% max HP, -50% CC duration', effect: { hpMult: 1.2, ccReduction: 0.5 } },
+    newMove: { id: 'unstoppable_charge', name: 'Unstoppable Charge', desc: 'Dash through enemies, damage + stun', cost: 5, effect: { lineDmg: 2.0, stun: 1 } }
+  },
+  dreadnought: { 
+    name: 'Dreadnought', emoji: '⚓', desc: 'Immovable object',
+    bonusPassive: { desc: '+30% defense, reflect 10% damage', effect: { defenseMult: 1.3, reflectDamage: 0.1 } },
+    newMove: { id: 'iron_wall', name: 'Iron Wall', desc: 'Grant massive defense to all allies', cost: 5, effect: { aoeDefenseBuff: 0.4, duration: 3 } }
+  },
+  // Marksman paths
+  sniper: { 
+    name: 'Sniper', emoji: '🔭', desc: 'One shot, one kill',
+    bonusPassive: { desc: '+50% crit damage, +2 range', effect: { critDmgMult: 1.5, rangeBonus: 2 } },
+    newMove: { id: 'perfect_shot', name: 'Perfect Shot', desc: 'Massive damage, ignores armor', cost: 6, effect: { dmgMult: 4.0, armorPierce: 1.0 } }
+  },
+  gunslinger: { 
+    name: 'Gunslinger', emoji: '🤠', desc: 'Rapid fire expert',
+    bonusPassive: { desc: '+30% attack speed, dual wield', effect: { attackSpeedBonus: 0.3, dualWield: true } },
+    newMove: { id: 'bullet_storm', name: 'Bullet Storm', desc: 'Attack all enemies multiple times', cost: 5, effect: { aoeHits: 3, dmgPerHit: 0.8 } }
+  },
+  // Technician paths
+  engineer: { 
+    name: 'Engineer', emoji: '⚙️', desc: 'Master of machines',
+    bonusPassive: { desc: '+50% construct health, +100% repair efficiency', effect: { constructHealthBonus: 0.5, repairEfficiency: 1.0 } },
+    newMove: { id: 'sentry_gun', name: 'Sentry Gun', desc: 'Deploy powerful sentry', cost: 6, effect: { summonSentry: true } }
+  },
+  hacker: { 
+    name: 'Hacker', emoji: '💻', desc: 'Digital ghost',
+    bonusPassive: { desc: '-30% hack cooldown, 30% remote disable chance', effect: { hackCooldownReduction: 0.3, remoteDisableChance: 0.3 } },
+    newMove: { id: 'system_crash', name: 'System Crash', desc: 'Stun all mechanical enemies', cost: 5, effect: { aoeStunMech: 2 } }
+  },
+  // Medic paths
+  surgeon: { 
+    name: 'Surgeon', emoji: '🏥', desc: 'Precision healer',
+    bonusPassive: { desc: '+20% heal crit chance, +30% heal amount', effect: { healCritChance: 0.2, healMult: 1.3 } },
+    newMove: { id: 'mass_revive', name: 'Mass Revive', desc: 'Revive all fallen allies', cost: 8, effect: { reviveAll: true } }
+  },
+  field_medic: { 
+    name: 'Field Medic', emoji: '⛑️', desc: 'Combat support',
+    bonusPassive: { desc: '+50% HoT effectiveness, +20% movement speed', effect: { hotEffectiveness: 0.5, movementSpeedBonus: 0.2 } },
+    newMove: { id: 'combat_stims', name: 'Combat Stims', desc: 'Buff all allies damage and speed', cost: 5, effect: { aoeDmgBuff: 0.25, aoeSpdBuff: 0.25 } }
+  },
+  // Operative paths
+  saboteur: { 
+    name: 'Saboteur', emoji: '💣', desc: 'Explosives expert',
+    bonusPassive: { desc: '+30% explosive damage, detect traps', effect: { explosiveDmgBonus: 0.3, trapDetection: true } },
+    newMove: { id: 'plant_explosives', name: 'Plant Explosives', desc: 'Delayed AOE damage', cost: 5, effect: { delayedAoeDmg: 3.0 } }
+  },
+  infiltrator: { 
+    name: 'Infiltrator', emoji: '🕶️', desc: 'Master of disguise',
+    bonusPassive: { desc: '+50% stealth crit bonus, 80% disguise success', effect: { stealthCritBonus: 0.5, disguiseSuccess: 0.8 } },
+    newMove: { id: 'assassinate', name: 'Assassinate', desc: 'Instantly kill low‑health enemy', cost: 6, effect: { executeThreshold: 0.25 } }
+  },
+  // Psion paths
+  telepath: { 
+    name: 'Telepath', emoji: '📡', desc: 'Mind controller',
+    bonusPassive: { desc: '+1 turn mind control duration, +2 psychic range', effect: { mindControlDuration: 1, psychicRange: 2 } },
+    newMove: { id: 'dominate', name: 'Dominate', desc: 'Permanently charm enemy', cost: 8, effect: { permanentCharm: true } }
+  },
+  kinetic: { 
+    name: 'Kinetic', emoji: '💥', desc: 'Force wielder',
+    bonusPassive: { desc: '+50% knockback damage, +30% shield strength', effect: { knockbackDmgBonus: 0.5, shieldStrength: 0.3 } },
+    newMove: { id: 'force_crush', name: 'Force Crush', desc: 'Massive single‑target damage', cost: 6, effect: { dmgMult: 3.5, stun: 1 } }
+  }
+};
+
+
+// ========== CLASS PROGRESSION SYSTEM ==========
+
+// Get available moves for a crew member (base + tier2 if unlocked)
+function getCrewMoves(crewMember) {
+  const baseClass = CLASSES.find(c => c.id === crewMember.classId);
+  if (!baseClass) return [];
+  
+  let moves = [...baseClass.groundMoves];
+  
+  // Add tier 2 move if unlocked
+  if (crewMember.advancedClass && TIER2_CLASSES[crewMember.advancedClass]?.newMove) {
+    moves.push(TIER2_CLASSES[crewMember.advancedClass].newMove);
+  }
+  
+  return moves;
+}
+
+// Check if crew member can advance to tier 2
+function checkTier2Eligibility(crewMember) {
+  const baseClass = CLASSES.find(c => c.id === crewMember.classId);
+  if (!baseClass || crewMember.classTier >= 2 || crewMember.level < 5) return null;
+  
+  return {
+    crewId: crewMember.id,
+    baseClass: baseClass,
+    options: baseClass.tier2Options.map(optId => TIER2_CLASSES[optId])
+  };
+}
+
+// Apply tier 2 specialization
+function applyTier2Specialization(crewId, tier2Id) {
+  const crew = G.crew.find(c => c.id === crewId);
+  const tier2 = TIER2_CLASSES[tier2Id];
+  if (!crew || !tier2) return false;
+  
+  // Apply progression
+  crew.classTier = 2;
+  crew.advancedClass = tier2Id;
+  
+  // Merge passive effects
+  if (tier2.bonusPassive?.effect) {
+    Object.entries(tier2.bonusPassive.effect).forEach(([key, val]) => {
+      if (typeof val === 'number' && typeof crew[key] === 'number') {
+        crew[key] = Math.floor(crew[key] * val);
+      }
+    });
+  }
+  
+  addLog(`${crew.name} advanced to ${tier2.name}!`);
+  return true;
+}
+
+// Render tier selection modal
+function renderTierSelectionModal(crewId, baseName, options) {
+  return `
+    <div id="tier-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:200">
+      <div style="background:var(--panel);border:2px solid var(--gold);padding:24px;max-width:600px;width:90%;border-radius:8px">
+        <div style="font-family:'Press Start 2P';font-size:12px;color:var(--gold);margin-bottom:12px;text-align:center">
+          🎖️ CLASS ADVANCEMENT
+        </div>
+        <div style="font-size:16px;color:var(--star);margin-bottom:20px;text-align:center">
+          ${baseName} → Choose Specialization:
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          ${options.map(opt => `
+            <div class="tier-card" style="background:rgba(0,229,255,0.05);border:1px solid var(--border);padding:12px;cursor:pointer;border-radius:4px" 
+                 onclick="confirmTier2('${crewId}', '${opt.id}')">
+              <div style="font-size:24px;margin-bottom:6px;text-align:center">${opt.emoji}</div>
+              <div style="font-family:'Press Start 2P';font-size:9px;color:var(--cyan);margin-bottom:4px;text-align:center">${opt.name}</div>
+              <div style="font-size:13px;color:var(--metal);margin-bottom:8px">${opt.desc}</div>
+              <div style="font-size:11px;color:var(--safe)">✨ ${opt.bonusPassive.desc}</div>
+              <div style="font-size:10px;color:var(--gold);margin-top:4px">🎯 New: ${opt.newMove.name}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:16px;text-align:center">
+          <button class="btn btn-sm" onclick="closeTierModal()">Later</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showTierModal(crewId, baseName, options) {
+  const modal = document.createElement('div');
+  modal.innerHTML = renderTierSelectionModal(crewId, baseName, options);
+  document.body.appendChild(modal);
+  G.gamePaused = true;
+}
+
+function closeTierModal() {
+  const modal = document.getElementById('tier-modal');
+  if (modal) modal.remove();
+  G.gamePaused = false;
+}
+
+function confirmTier2(crewId, tier2Id) {
+  if (applyTier2Specialization(crewId, tier2Id)) {
+    closeTierModal();
+    updateRP(); // Refresh crew panel
+  }
+}
+  
+
+  
 // ---------- STAR TYPES (9 total) ----------
 const STAR_TYPES = [
   { type: 'Yellow Dwarf', color: '#FFE566', glow: 'rgba(255,229,102,0.4)', habitableBonus: 0 },
@@ -1469,7 +1701,9 @@ function addCargo(itemId, qty=1) {
   return true;
 }
 function generateRandomCrew() {
-  const names=['Kael','Lyra','Dax','Nova','Orin','Vex']; const roles=['Gunner','Technician','Medic','Scout'];
+  const names=['Kael','Lyra','Dax','Nova','Orin','Vex']; 
+  const roles=['Gunner','Technician','Medic','Scout'];
+  
   return {id:'c'+Math.random().toString(36),name:names[Math.floor(Math.random()*names.length)],role:roles[Math.floor(Math.random()*roles.length)],emoji:'👤',loyalty:50,bio:'Recruit.',hp:40,maxHp:40,atk:8,spd:5,skill:5,alive:true,xp:0,level:1,equippedWeapon:null};
 }
 
@@ -1552,8 +1786,11 @@ G.crew = selectedCrew.map(c => ({
   atk: c.atk || 8,
   spd: c.spd || 5,
   skill: c.skill || 5,
-  level: 1,
+  classId: 'vanguard', // Pick randomly or from pool
+  classTier: 1,
+  advancedClass: null,
   xp: 0,
+  level: 1
   equippedWeapon: null
 }));
   G.cargo = []; G.soldExplorationData = []; G.probedFeatures = {};
@@ -1861,6 +2098,18 @@ function applyCharacterBonuses() {
   }
 }
 
+// ========== CREW PROGRESSION ==========
+function checkCrewProgression() {
+  G.crew.forEach(crew => {
+    if (crew.level >= 5 && crew.classTier === 1 && !crew.advancedClass) {
+      const eligible = checkTier2Eligibility(crew);
+      if (eligible) {
+        showTierModal(crew.id, eligible.baseClass.name, eligible.options);
+      }
+    }
+  });
+}
+  
   
 // ========== CHARACTER CREATION (5 steps) ==========
 const CC_TITLES=['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN','SELECT STARTER SHIP'];
