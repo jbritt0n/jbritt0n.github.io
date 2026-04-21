@@ -2136,12 +2136,10 @@ function resolveDrama(i){const ch=currentDrama.choices[i],e=ch.eff;if(e.cr)G.shi
 function triggerEvent(){
   console.log('triggerEvent called');
   const sys = G.galaxy.systems[G.curSys];
-  // Danger check: chance to trigger combat instead of event
   if (sys.danger >= 4 && G.rng.next() < 0.3) {
     startCombat();
     return;
   }
-  // Pick a random event from the EVENTS array
   const ev = EVENTS[Math.floor(G.rng.next() * EVENTS.length)];
   if (!ev) {
     addLog('Nothing unusual happens.');
@@ -2211,12 +2209,14 @@ function dockStation(){
   const sys = G.galaxy.systems[G.curSys];
   if (!sys.hasStation) { addLog('No station in this system.'); return; }
   
+  // Use pre-generated modules or build a basic set based on wealth
   let modules = sys.stationModules;
   if (!modules || modules.length === 0) {
-    // Fallback: generate basic modules based on wealth
+    // Fallback: generate basic modules (Cantina always present)
     const wealth = sys.wealth || 1;
-    modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1));
+    modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1) && !(n.requiresLowSecurity && sys.danger > 3));
     if (modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
+    sys.stationModules = modules; // cache for future visits
   }
   
   stActiveNode = modules[0].id;
