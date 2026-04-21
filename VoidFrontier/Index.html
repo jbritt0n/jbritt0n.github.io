@@ -1509,9 +1509,13 @@ let G = {
   cargo: [], soldExplorationData: [], probedFeatures: {},
   contracts: [], log: [], ccStep: 0, jumps: 0, dramaTimer: 0,
   combat: null, groundCombat: null,
-  let stActiveNode = 'cantina';
   ui: { rightPanelCollapsed: false }
 };
+  
+    let stActiveNode = 'cantina';
+    let currentEvent = null;
+    let currentDrama = null;
+    let combatTarget = null;
   
 Object.defineProperty(G, 'flagship', { get() { return this.fleet[0]; } });
 Object.defineProperty(G, 'ship', { get() { return this.flagship; } });
