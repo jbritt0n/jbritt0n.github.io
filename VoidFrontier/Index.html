@@ -130,8 +130,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .mod-name{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold)}
 /* QUEST */
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
-  
-/* COMBAT */
+
 #combat-screen{flex-direction:column}
 .cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:20px;height:44px}
 .cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard)}
@@ -1143,6 +1142,10 @@ let G = {
     let currentEvent = null;
     let currentDrama = null;
     let combatTarget = null;
+    // Quest system constants
+    const MAX_ACTIVE_QUESTS = 5;
+    const QUEST_REWARD_BASE = 400;
+    const QUEST_REWARD_VAR = 600;
   
 Object.defineProperty(G, 'flagship', { get() { return this.fleet[0]; } });
 Object.defineProperty(G, 'ship', { get() { return this.flagship; } });
@@ -1252,7 +1255,7 @@ G.crew = selectedCrew.map(c => ({
 }));
   G.cargo = []; G.soldExplorationData = []; G.probedFeatures = {};
   G.contracts = []; G.log = ['The stars await.']; G.ccStep = 0; G.jumps = 0; G.dramaTimer = 0;
-  
+  G.activeQuests = [];
   // Apply difficulty multipliers (moved before usage)
   const mult = {easy:1.5, normal:1.0, hard:0.6};
   G.flagship.credits = Math.floor(1000 * mult[difficulty]);
@@ -1825,9 +1828,25 @@ function updateRP(){
   document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>`<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv.${c.level||1} ${c.hp}/${c.maxHp}</div><div class="crew-role">${c.role}</div></div></div>`).join('');
   const or=ORIGINS.find(o=>o.id===G.captain.origin);document.getElementById('rp-cap').innerHTML=`<div>${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji} ${or?.name}</div><div>Skills: CHA ${G.captain.skills.charisma} INT ${G.captain.skills.intelligence} ENG ${G.captain.skills.engineering} CMB ${G.captain.skills.combat} HCK ${G.captain.skills.hacking}</div>`;
   document.getElementById('rp-fleet').innerHTML=G.fleet.map((s,i)=>`<div style="padding:5px;border-bottom:1px solid #333"><b>${s.name}</b> (${s.type})<br>Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}<br>Cargo: ${s.cargoMax}</div>`).join('');
-  renderQuests();
-}
-
+  // 🔹 QUESTS PANEL
+  const questPanel = document.getElementById('rp-quests');
+  if (questPanel) {
+      const activeQuests = G.activeQuests.map(qid => {
+          const q = G.contracts?.find(c => c.id === qid);
+          if (!q || q.completed) return null;
+          return `<div class="quest-item">
+              <div class="quest-hdr">${q.title}</div>
+              <div class="quest-obj">🎯 ${q.desc}</div>
+              <div style="color:var(--cyan);font-size:11px">📍 ${q.targetSysName}</div>
+              <div class="quest-rw">💰 ${q.reward} CR</div>
+          </div>`;
+      }).filter(Boolean).join('');
+      
+      questPanel.innerHTML = activeQuests 
+          ? activeQuests 
+          : '<div style="color:var(--metal);font-size:12px;padding:5px">No active quests</div>';
+  }
+  
 function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map(e=>`<div class="log-line">${e}</div>`).join('');}
 function addLog(msg){G.log.unshift(msg);if(G.log.length>30)G.log.pop();updateLog();}
 function toggleRightPanel(){
@@ -1861,17 +1880,66 @@ function useCargoItem(id){
 }
 
 // ========== TRAVEL & EVENTS ==========
-function travelTo(id){
-  const totalFuelNeeded = G.fleet.reduce((sum,s)=> sum + Math.ceil(10 * s.fuelUse), 0);
-  if(G.fleet.some(s=>s.fuel < Math.ceil(10 * s.fuelUse))){addLog('Not enough fuel for all ships!');return;}
-  G.fleet.forEach(s=> s.fuel = Math.max(0, s.fuel - Math.ceil(10 * s.fuelUse)));
-  G.curSys=id; const sys=G.galaxy.systems[id]; sys.visited=true; sys.revealed=true; revealConnected(id);
-  G.selSys=id; G.jumps++; G.dramaTimer++;
-  checkQuestProgress();
-  checkContractCompletion(sys.name);
-  addLog(`Jumped to ${sys.name}.`); updateHUD(); updateLP();
-  if(G.dramaTimer>=3&&G.crew.filter(c=>c.alive).length>=2){G.dramaTimer=0;setTimeout(checkDrama,800);}
-  else setTimeout(triggerEvent,700);
+function travelTo(id) {
+    const totalFuelNeeded = G.fleet.reduce((sum,s) => sum + Math.ceil(10 * s.fuelUse), 0);
+    if (G.fleet.some(s => s.fuel < Math.ceil(10 * s.fuelUse))) {
+        addLog('Not enough fuel for all ships!');
+        return;
+    }
+    
+    G.fleet.forEach(s => s.fuel = Math.max(0, s.fuel - Math.ceil(10 * s.fuelUse)));
+    G.curSys = id;
+    const sys = G.galaxy.systems[id];
+    sys.visited = true;
+    sys.revealed = true;
+    revealConnected(id);
+    G.selSys = id;
+    G.jumps++;
+    G.dramaTimer++;
+    
+    // 🔹 QUEST COMPLETION CHECK (FIXED)
+    checkQuestCompletion(id);
+    
+    addLog(`Jumped to ${sys.name}.`);
+    updateHUD();
+    updateLP();
+    
+    if (G.dramaTimer >= 3 && G.crew.filter(c => c.alive).length >= 2) {
+        G.dramaTimer = 0;
+        setTimeout(checkDrama, 800);
+    } else {
+        setTimeout(triggerEvent, 700);
+    }
+}
+
+// 🔹 NEW: Dedicated quest completion function
+function checkQuestCompletion(sysId) {
+    let completedAny = false;
+    G.activeQuests.forEach((qid, idx) => {
+        const quest = G.contracts?.find(c => c.id === qid);
+        if (!quest || quest.completed) return;
+        // Compare by system ID (reliable) or name (fallback)
+        if (quest.targetSysId === sysId || quest.targetSysName === G.galaxy.systems[sysId]?.name) {
+            quest.completed = true;
+            G.flagship.credits += quest.reward;
+            addLog(`🎉 QUEST COMPLETE: ${quest.title}! +${quest.reward} CR`);
+            completedAny = true;
+            // Optional: Bonus reward for first completion
+            if (quest.type === 'Bounty') {
+                G.rep.federation = (G.rep.federation || 0) + 5;
+                addLog('Federation reputation +5');
+            }
+        }
+    });
+    // Clean up completed quests from active list
+    if (completedAny) {
+        G.activeQuests = G.activeQuests.filter(qid => {
+            const q = G.contracts?.find(c => c.id === qid);
+            return q && !q.completed;
+        });
+        updateHUD();
+        updateRP();
+    }
 }
 function exploreSys(){
   const sysId = G.curSys;
@@ -1968,7 +2036,31 @@ function stationPrice(goodId,sysIdx,buying){const g=GOODS.find(x=>x.id===goodId)
  if(buying)price=Math.round(price*1.18); else price = Math.round(price * (G.flagship.tradeSellMult || 1.0));return Math.max(1,price);}
 function stationGoods(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*251);return GOODS.filter(g=>g.legal).sort(()=>srng.next()-.5).slice(0,5);}
 function stationRumors(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*421);return [...RUMOR_POOL].sort(()=>srng.next()-.5).slice(0,3).map(r=>r.replace('{sys}',G.galaxy.systems[sysIdx].name).replace('{fac}',FACTIONS[Math.floor(srng.next()*FACTIONS.length)].name));}
-function genContracts(){G.contracts=[{id:'c1',title:'Delivery',reward:800,target:null,desc:'Transport cargo.'}];}
+function genContracts() {
+    // Generate 3-5 potential contracts per station visit
+    const count = 1 + Math.floor(G.rng.next() * 3);
+    const available = [];
+    for (let i = 0; i < count; i++) {
+        const sys = G.galaxy.systems[Math.floor(G.rng.next() * G.galaxy.systems.length)];
+        // Don't offer quests for current system or already-visited easy targets
+        if (sys.id === G.curSys) continue;
+        const types = ['Delivery', 'Escort', 'Bounty', 'Recon', 'Salvage'];
+        const type = types[Math.floor(G.rng.next() * types.length)];
+        const reward = QUEST_REWARD_BASE + Math.floor(G.rng.next() * QUEST_REWARD_VAR) + (sys.wealth * 50);
+        available.push({
+            id: `q_${Date.now()}_${i}`,
+            title: `${type} Contract`,
+            desc: `${type} mission to ${sys.name}.`,
+            targetSysId: sys.id,      // Store system ID for reliable lookup
+            targetSysName: sys.name,  // Store name for display
+            reward: reward,
+            accepted: false,
+            completed: false,
+            type: type
+        });
+    }
+    return available;
+}
 function checkContractCompletion(sysName){G.contracts.forEach(c=>{if(c.active && c.target===sysName){G.flagship.credits+=c.reward;addLog(`Contract completed: ${c.title}. +${c.reward} CR`);c.active=false;}});}
 
 function dockStation(){
@@ -2135,10 +2227,46 @@ function renderNodeContent(nodeId){
       return `<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY</button></div>`;
     }).join('');
   
-  } else if (nodeId === 'guild') {
-    if (G.contracts.length === 0) genContracts();
-    G.contracts.forEach(c => { if (!c.target) c.target = G.galaxy.systems[Math.floor(G.rng.next() * G.galaxy.systems.length)].name; });
-    cont.innerHTML = `<div class="st-content-hdr">GUILD OFFICE</div>` + G.contracts.map(c => `<div class="trade-row"><span>${c.title} to ${c.target} (${c.reward}cr)</span><button class="btn btn-sm" onclick="acceptContract('${c.id}')" ${c.active ? 'disabled' : ''}>${c.active ? 'ACTIVE' : 'ACCEPT'}</button></div>`).join('');
+  }} else if (nodeId === 'guild') {
+    // Generate fresh contracts if none exist
+    if (!G.availableContracts || G.availableContracts.length === 0) {
+        G.availableContracts = genContracts();
+    }
+    
+    const activeCount = G.activeQuests.filter(qid => {
+        const q = G.contracts?.find(c => c.id === qid);
+        return q && !q.completed;
+    }).length;
+    
+    const contractHtml = G.availableContracts.map(c => {
+        const isAccepted = G.activeQuests.includes(c.id);
+        const isFull = activeCount >= MAX_ACTIVE_QUESTS && !isAccepted;
+        return `<div class="trade-row">
+            <span>${c.title} → ${c.targetSysName} (${c.reward}cr)</span>
+            <button class="btn btn-sm" onclick="acceptContract('${c.id}')" 
+                ${isAccepted ? 'disabled' : isFull ? 'disabled title="Quest limit reached"' : ''}>
+                ${isAccepted ? 'ACTIVE' : 'ACCEPT'}
+            </button>
+        </div>`;
+    }).join('');
+    
+    const activeHtml = G.activeQuests.map(qid => {
+        const q = G.contracts?.find(c => c.id === qid);
+        if (!q || q.completed) return '';
+        return `<div style="color:var(--safe);font-size:13px;padding:3px 0">
+            ✅ ${q.title} → ${q.targetSysName} (${q.reward}cr)
+        </div>`;
+    }).join('') || '<div style="color:var(--metal)">No active quests</div>';
+    
+    cont.innerHTML = `<div class="st-content-hdr">📋 GUILD OFFICE</div>
+    <div style="margin-bottom:10px"><b>Active Quests: ${activeCount}/${MAX_ACTIVE_QUESTS}</b></div>
+    ${activeHtml}
+    <div style="margin:12px 0 8px"><b>Available Contracts</b></div>
+    ${contractHtml}
+    <div style="margin-top:12px;font-size:13px;color:var(--metal)">
+        Travel to the target system to complete quests.
+    </div>`;
+
   } else if (nodeId === 'dataexchange') {
     const unsold = G.galaxy.systems.filter(s => s.visited && !G.soldExplorationData.includes(s.id)).length;
     cont.innerHTML = `<div class="st-content-hdr">DATA EXCHANGE</div><div>Unsold systems: ${unsold}</div>
@@ -2432,7 +2560,32 @@ function buyGood(id) {
   updateHUD(); updateRP(); renderNodeContent('market');
 }
 function buyGoodIllegal(id){const price=Math.round(stationPrice(id,G.curSys,true)*1.4);if(G.flagship.credits<price||!canAddCargo(id))return;G.flagship.credits-=price;addCargo(id);const fac=G.galaxy.systems[G.curSys].faction.id;let penalty=5; if(id.includes('weapon')||id.includes('arms')) penalty=8; G.rep[fac]=Math.max(-100,(G.rep[fac]||0)-penalty);addLog(`Bought illegal goods. ${fac} rep -${penalty}.`);updateHUD();updateRP();}
-function acceptContract(id){const c=G.contracts.find(x=>x.id===id);if(c){c.active=true;addLog(`Accepted contract: ${c.title}.`);renderNodeContent('guild');}}
+function acceptContract(id) {
+    // Find the contract in available pool
+    const contract = G.availableContracts?.find(c => c.id === id);
+    if (!contract) { addLog('Contract not found.'); return; }
+    
+    // Check quest limit (only count incomplete active quests)
+    const activeCount = G.activeQuests.filter(qid => {
+        const q = G.contracts?.find(c => c.id === qid);
+        return q && !q.completed;
+    }).length;
+    
+    if (activeCount >= MAX_ACTIVE_QUESTS) {
+        addLog(`Quest limit reached (${MAX_ACTIVE_QUESTS}). Complete a quest first.`);
+        renderNodeContent('guild');
+        return;
+    }
+    
+    // Add to active quests and main contracts array
+    if (!G.contracts) G.contracts = [];
+    G.contracts.push({ ...contract }); // Clone to avoid reference issues
+    G.activeQuests.push(id);
+    
+    addLog(`✅ Accepted: ${contract.title} to ${contract.targetSysName}`);
+    renderNodeContent('guild');
+    updateRP(); // Refresh quest panel
+}
 function sellExploData(){const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id));const pay=unsold.length*80;G.flagship.credits+=pay;unsold.forEach(s=>G.soldExplorationData.push(s.id));addLog(`Sold data for ${pay}cr.`);updateHUD();renderNodeContent('dataexchange');}
 function jumpNewGalaxy() {
   const dmIndex = G.cargo.findIndex(c => c.id === 'dark_matter');
