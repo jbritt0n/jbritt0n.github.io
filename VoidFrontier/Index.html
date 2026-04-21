@@ -131,6 +131,27 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 /* QUEST */
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
 
+/* CREW PORTRAITS */
+.crew-portrait {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.crew-card-with-portrait {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crew-info-with-portrait {
+  flex: 1;
+}
+
+  
 #combat-screen{flex-direction:column}
 .cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:20px;height:44px}
 .cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard)}
@@ -165,6 +186,12 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 #drama-overlay.open{display:flex}
 .drama-card{background:var(--panel);border:1px solid var(--alien);padding:28px;max-width:500px}
 
+/* SAVE/LOAD MODAL */
+#save-load-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:300}
+.save-slot{background:rgba(0,229,255,.05);border:1px solid var(--border);padding:12px;border-radius:4px;margin-bottom:8px}
+.save-meta{font-size:14px;color:var(--star);margin-bottom:6px}
+.save-actions{display:flex;gap:8px}
+  
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:1000}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--void)}::-webkit-scrollbar-thumb{background:var(--nebula)}
 </style>
@@ -216,6 +243,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
     <div class="stat"><div class="stat-lbl">FUEL</div><div class="bar-track"><div class="bar-fill" id="b-fuel" style="width:80%;background:var(--warn)"></div></div><div class="stat-val" id="v-fuel">80</div></div>
     <div class="stat"><div class="stat-lbl">MORALE</div><div class="bar-track"><div class="bar-fill" id="b-mora" style="width:75%;background:var(--alien)"></div></div><div class="stat-val" id="v-mora">75</div></div>
     <div class="hud-creds" id="hud-creds">💰 1,000 CR</div>
+    <button class="btn btn-sm" onclick="openSaveModal()" style="margin-left:12px">💾 SAVE/LOAD</button>
   </div>
   <div class="main-area">
     <div class="lp">
@@ -330,6 +358,15 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 <!-- GAME OVER -->
 <div id="gameover-overlay"><div class="go-card"><div class="go-title">SHIP DESTROYED</div><div class="go-sub" id="go-sub"></div><div id="go-stats"></div><button class="btn btn-gold" onclick="location.reload()">▶ NEW MISSION</button></div></div>
 
+<!-- SAVE/LOAD MODAL -->
+<div id="save-load-modal">
+  <div style="background:var(--panel);border:2px solid var(--cyan);padding:24px;max-width:480px;width:90%;border-radius:8px">
+    <div style="font-family:'Press Start 2P';font-size:12px;color:var(--cyan);margin-bottom:16px;text-align:center">💾 SAVE / LOAD</div>
+    <div id="save-slots" style="max-height:60vh;overflow-y:auto;padding-right:4px"></div>
+    <button class="btn" style="margin-top:12px;width:100%" onclick="closeSaveModal()">CLOSE</button>
+  </div>
+</div>
+  
 </div>
 <script>
 'use strict';
@@ -378,7 +415,11 @@ const ORIGINS = [
   { id: 'telepath', name: 'Latent Telepath', emoji: '🧠', desc: 'Minor psionic abilities.', bonus: 'Bonus in social checks vs aliens', credits: 400, startingRep: { empire: -10 }, trait: 'Empathic',
     effect: { alienSocialBonus: 2 } },
   { id: 'war_orphan', name: 'War Orphan', emoji: '🕊️', desc: 'Survivor of a border conflict.', bonus: 'Crew combat experience gain +20%', credits: 300, startingRep: { federation: 5, empire: -5 }, trait: 'Hardened',
-    effect: { crewXpGainMult: 1.20 } }
+    effect: { crewXpGainMult: 1.20 } },
+  { id: 'clone', name: 'Prototype Clone', emoji: '🧬', desc: 'Grown in a vat, seeking purpose beyond your genetic programming.', bonus: '+10% Max HP, +15% Combat XP Gain', credits: 600, startingRep: { empire: 5, megacorp: 10 }, trait: 'Blank Slate',
+  effect: { hpMult: 1.10, crewXpGainMult: 1.15, immunePoison: true } },
+  { id: 'ship_salesman', name: 'Used Ship Salesman', emoji: '🚗', desc: 'Talked your way out of a hundred bad deals. Knows every hull flaw and loose bolt.', bonus: '+500 CR, -20% Repair Costs, +10% Trade Sell', credits: 1200, startingRep: { guild: 15, independent: 10 }, trait: 'Haggler',
+  effect: { repairCostMult: 0.80, tradeSellMult: 1.10, startingItem: { id: 'tech_parts', qty: 3 } } },
 ];
 
 // ---------- JOBS ----------
@@ -1011,7 +1052,7 @@ const ENEMY_TEMPLATES = [
   }
 ];
 
-// ---------- GROUND COMBAT ENEMY TYPES (more variety) ----------
+
 // ---------- GROUND COMBAT ENEMY TYPES (Faction-based, Scalable) ----------
 const GROUND_ENEMY_TEMPLATES = [
   // === PIRATES / SYNDICATE ===
@@ -1405,6 +1446,9 @@ const EVENTS = [
     { text: '[ BLACKMAIL ] Demand payment', eff: { cr: 2000, rep_megacorp: -10, log: 'They paid you handsomely for silence.' } },
     { text: '[ BURY IT ]', eff: {} }
   ] }
+
+
+  
 ];
 
 // ========== EXPANDED DRAMA EVENTS FOR VOID FRONTIER ==========
@@ -1636,11 +1680,11 @@ const DRAMA_EVENTS = [
   ] }
 ];
 
-// ---------- STARTER CREW POOL ----------
+
 // ========== EXPANDED CREW POOL (30 total, class-aligned) ==========
 const CREW_POOL = [
   // === VANGUARD (Tank) - High HP, Defense Focus ===
-  { name: 'Zoya Kas', role: 'Vanguard', emoji: '🛡️', loyalty: 70, bio: 'Ex-military shield specialist. Never leaves a crewmate behind.', hp: 52, maxHp: 52, atk: 9, spd: 4, skill: 5, species: 'Human', classId: 'vanguard' },
+  { name: 'Zoya Kas', role: 'Vanguard', emoji: '🛡️', loyalty: 70, bio: 'Ex-military shield specialist. Never leaves a crewmate behind.', hp: 52, maxHp: 52, atk: 9, spd: 4, skill: 5, species: 'Human', classId: 'vanguard', portrait: CREW_PORTRAITS['Zoya Kas'] },
   { name: 'Grom Ironhide', role: 'Vanguard', emoji: '🪨', loyalty: 65, bio: 'Stone-scaled alien mercenary. Takes hits so others don\'t have to.', hp: 58, maxHp: 58, atk: 11, spd: 3, skill: 4, species: 'Korvax', classId: 'vanguard' },
   { name: 'Vera "Bulwark" Singh', role: 'Vanguard', emoji: '🧱', loyalty: 75, bio: 'Former riot control. Expert at holding the line under pressure.', hp: 50, maxHp: 50, atk: 8, spd: 5, skill: 6, species: 'Human', classId: 'vanguard' },
   
@@ -1687,13 +1731,116 @@ const CREW_POOL = [
   { name: 'Cipher', role: 'Codebreaker', emoji: '🔐', loyalty: 45, bio: 'Cryptographer who speaks in riddles. Secrets are their currency.', hp: 33, maxHp: 33, atk: 5, spd: 7, skill: 12, species: 'Human', classId: 'operative' }
 ];
 
-  
-// ---------- STARTER CREW (with more attributes) ----------
-const STARTER_CREW = [
-  { name: 'Zoya Kas', nick: '', role: 'Engineer', emoji: '⚙️', loyalty: 70, bio: 'Seasoned mechanic.', hp: 40, maxHp: 40, atk: 8, spd: 5, skill: 6, alive: true, xp: 0, level: 1, equippedWeapon: null, species: 'Human', biotype: 'Human', traits: ['Steady Hands'] },
-  { name: 'REX-7', nick: '"Ironclad"', role: 'Security', emoji: '🤖', loyalty: 55, bio: 'Combat android.', hp: 50, maxHp: 50, atk: 12, spd: 4, skill: 4, alive: true, xp: 0, level: 1, equippedWeapon: null, species: 'Android', biotype: 'Android', traits: ['Logical'] },
-  { name: 'Mira Tong', nick: '', role: 'Navigator', emoji: '🔭', loyalty: 65, bio: 'Former cartographer.', hp: 35, maxHp: 35, atk: 7, spd: 6, skill: 7, alive: true, xp: 0, level: 1, equippedWeapon: null, species: 'Human', biotype: 'Human', traits: ['Keen Eye'] }
+
+
+const CREW_PORTRAITS = {
+  'Zoya Kas': 'assets/portraits/engineer_01.png',
+  'REX-7': 'assets/portraits/android_security.png',
+  'Mira Tong': 'assets/portraits/navigator_01.png',
+  'Jax Varley': 'assets/portraits/gunner_01.png',
+  'Lyra Nox': 'assets/portraits/medic_01.png',
+  'Orin Vex': 'assets/portraits/scout_01.png',
+  'Kael Thorn': 'assets/portraits/technician_01.png',
+  'Nova Chen': 'assets/portraits/pilot_01.png',
+  // Add more as needed
+  'default': 'assets/portraits/crew_default.png'
+};
+
+
+// ========== RECRUITMENT QUESTS ==========
+
+// Special crew that require quests/reputation to recruit
+const SPECIAL_CREW = [
+  {
+    id: 'legendary_pilot',
+    name: 'Aria "Starfall" Voss',
+    role: 'Pilot',
+    emoji: '🌟',
+    species: 'Human',
+    hp: 45, maxHp: 45, atk: 10, spd: 9, skill: 10,
+    loyalty: 80,
+    bio: 'Legendary ace pilot. Only joins those who prove their worth.',
+    portrait: 'assets/portraits/legendary_pilot.png',
+    requirements: {
+      reputation: { guild: 30 },
+      completedQuests: ['delivery_legendary'],
+      minJumps: 15
+    },
+    cost: 2000
+  },
+  {
+    id: 'android_hacker',
+    name: 'NEXUS-9',
+    role: 'Hacker',
+    emoji: '💻',
+    species: 'Android',
+    hp: 38, maxHp: 38, atk: 8, spd: 7, skill: 12,
+    loyalty: 60,
+    bio: 'Rogue AI seeking purpose. Requires trust.',
+    portrait: 'assets/portraits/android_hacker.png',
+    requirements: {
+      reputation: { megacorp: -20 },
+      completedQuests: ['hack_megacorp'],
+      minJumps: 10
+    },
+    cost: 1500
+  },
+  {
+    id: 'void_medic',
+    name: 'Lyra Void-Whisper',
+    role: 'Medic',
+    emoji: '🌌',
+    species: 'Void-Touched',
+    hp: 35, maxHp: 35, atk: 5, spd: 6, skill: 11,
+    loyalty: 70,
+    bio: 'Mystic healer touched by the void. Seeks worthy captain.',
+    portrait: 'assets/portraits/void_medic.png',
+    requirements: {
+      reputation: { independent: 25 },
+      crewSpecies: ['Void-Touched'], // Must already have void-touched crew
+      minJumps: 20
+    },
+    cost: 1800
+  }
 ];
+  
+.completedRecruitmentQuests = G.completedRecruitmentQuests || [];
+
+function checkRecruitmentQuests() {
+  const available = [];
+  
+  SPECIAL_CREW.forEach(crew => {
+    if (G.completedRecruitmentQuests.includes(crew.id)) return; // Already recruited
+    
+    const req = crew.requirements;
+    let canRecruit = true;
+    
+    // Check reputation requirements
+    if (req.reputation) {
+      Object.entries(req.reputation).forEach(([fac, minRep]) => {
+        if ((G.rep[fac] || 0) < minRep) canRecruit …available.push(crew);
+      addLog(`🌟 Special recruit available: ${crew.name} at ${G.galaxy.systems[G.curSys].name}!`);
+    }
+  });
+  
+  return available;
+}
+
+function addSpecialCrewToPool(crew) {
+  // Add to temporary hire pool
+  if (!window._tempHirePool) window._tempHirePool = [];
+  
+  const existing = window._tempHirePool.find(c => c.id === crew.id);
+  if (!existing) {
+    window._tempHirePool.push({
+      ...crew,
+      cost: crew.cost,
+      id: crew.id,
+      isSpecial: true
+    });
+  }
+}
+  
 
 // ---------- RUMOR POOL (more variety) ----------
 const RUMOR_POOL = [
@@ -1879,7 +2026,8 @@ function initState(seed, difficulty='normal') {
     G.ccStep = 0; 
     G.jumps = 0; 
     G.dramaTimer = 0;
-    
+    G.completedRecruitmentQuests = [];
+
     // Apply difficulty multipliers
     const mult = {easy:1.5, normal:1.0, hard:0.6};
     G.flagship.credits = Math.floor(1000 * mult[difficulty]);
@@ -2620,23 +2768,20 @@ function updateRP(){
     document.getElementById('rp-cargo').innerHTML = cargoHtml || '<div style="color:var(--metal)">Empty</div>';
     
     // CREW
-    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
-      const cls = CLASSES.find(x => x.id === c.classId);
-      const tier2 = c.advancedClass ? TIER2_CLASSES[c.advancedClass] : null;
-      const classDisplay = tier2 ? `${cls?.emoji} ${tier2.name}` : `${cls?.emoji} ${cls?.name}`;
-      const tierBadge = c.classTier === 2 ? '<span style="color:var(--gold)">★</span>' : '';
-      
-      return `
-        <div class="crew-row">
-          <div class="crew-emoji">${c.emoji}</div>
-          <div class="crew-info">
-            <div class="crew-name">${c.name} Lv.${c.level || 1} ${tierBadge}</div>
-            <div class="crew-role">${classDisplay} • ${c.role}</div>
-            <div style="font-size:11px;color:var(--metal)">❤️ ${c.hp}/${c.maxHp} ⚔ ${c.atk}</div>
-          </div>
+  document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>{
+    const portraitUrl = c.portrait || CREW_PORTRAITS['default'] || 'assets/portraits/crew_default.png';
+    return `
+      <div class="crew-row crew-card-with-portrait">
+        <img src="${portraitUrl}" alt="${c.name}" class="crew-portrait" 
+             onerror="this.src='assets/portraits/crew_default.png'">
+        <div class="crew-info crew-info-with-portrait">
+          <div class="crew-name">${c.name} Lv.${c.level||1} ${c.hp}/${c.maxHp}</div>
+          <div class="crew-role">${c.role} • ${c.species}</div>
         </div>
-      `;
-    }).join('');
+      </div>
+    `;
+  }).join('');
+  
     
     // CAPTAIN
     const or = ORIGINS.find(o => o.id === G.captain.origin);
@@ -2716,7 +2861,10 @@ function travelTo(id) {
     G.selSys = id;
     G.jumps++;
     G.dramaTimer++;
-    
+        // 10% chance for species-specific event after jump
+    if (G.rng.next() < 0.10) {
+      checkSpeciesSpecificEvent();
+    }
     // 🔹 QUEST COMPLETION CHECK (FIXED)
     checkQuestCompletion(id);
     
@@ -2772,6 +2920,133 @@ function exploreSys(){
   console.log('exploreSys: calling triggerEvent');
   setTimeout(() => triggerEvent(), 400);
 }
+// ========== SPECIES-SPECIFIC EVENTS ==========
+
+function checkSpeciesSpecificEvent() {
+  const aliveCrew = G.crew.filter(c => c.alive);
+  if (aliveCrew.length === 0) return false;
+  
+  // Check for Void-Touched crew
+  const voidTouched = aliveCrew.find(c => c.species === 'Void-Touched');
+  if (voidTouched && G.rng.next() < 0.15) {
+    triggerVoidTouchedEvent(voidTouched);
+    return true;
+  }
+  
+  // Check for Android crew
+  const android = aliveCrew.find(c => c.species === 'Android');
+  if (android && G.rng.next() < 0.12) {
+    triggerAndroidEvent(android);
+    return true;
+  }
+  
+  // Check for other species
+  const alien = aliveCrew.find(c => c.species.includes('Alien') || c.species.includes('Hybrid'));
+  if (alien && G.rng.next() < 0.10) {
+    triggerAlienEvent(alien);
+    return true;
+  }
+  
+  return false;
+}
+
+function triggerVoidTouchedEvent(crewMember) {
+  const events = [
+    {
+      title: '🌀 VOID WHISPERS',
+      body: `${crewMember.name} suddenly freezes, eyes glowing with ethereal light. "I hear... something calling from the void."`,
+      choices: [
+        { text: '[ INVESTIGATE ] What do you hear?', 
+          eff: { cr: 300, artifact: 1, log: 'The whispers revealed coordinates to a hidden anomaly.' } },
+        { text: '[ SNAP THEM OUT OF IT ]', 
+          eff: { mora: -5, log: 'You shake them back to reality. They seem shaken.' } },
+        { text: '[ LET THEM LISTEN ]', 
+          eff: { cr: 150, darkMatterChance: 0.2, log: 'They commune with the void and return with strange knowledge.' } }
+      ]
+    },
+    {
+      title: '👁️ REALITY TEAR',
+      body: `${crewMember.name}'s presence causes space to warp around the ship. Instruments detect a micro-singularity forming.`,
+      choices: [
+        { text: '[ HARNESS THE ENERGY ]', 
+          skillCheck: { skill: 'engineering', dc: 14 },
+          success: { eff: { fuel: 30, cr: 200, log: 'Successfully harvested void energy!' } },
+          failure: { eff: { hull: -15, log: 'The energy backlash damaged the hull!' } } },
+        { text: '[ STABILIZE THE ANOMALY ]', 
+          eff: { cr: 250, log: 'You stabilized the tear and sold the data.' } }
+      ]
+    }
+  ];
+  
+  const ev = events[Math.floor(G.rng.next() * events.length)];
+  currentEvent = ev;
+  document.getElementById('ev-title').textContent = ev.title;
+  document.getElementById('ev-body').textContent = ev.body;
+  document.getElementById('ev-choices').innerHTML = ev.choices.map((c, i) => 
+    `<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`
+  ).join('');
+  document.getElementById('ev-overlay').classList.add('open');
+}
+
+function triggerAndroidEvent(crewMember) {
+  const events = [
+    {
+      title: '🤖 SYSTEM OVERRIDE',
+      body: `${crewMember.name} interfaces directly with the ship's computer. "I've detected unauthorized access attempts from corporate networks."`,
+      choices: [
+        { text: '[ TRACE THE SOURCE ]', 
+          skillCheck: { skill: 'hacking', dc: 12 },
+          success: { eff: { cr: 400, rep_megacorp: -5, log: 'Traced and exposed corporate espionage!' } },
+          failure: { eff: { rep_megacorp: -10, log: 'They traced you back! Megacorp relations worsened.' } } },
+        { text: '[ COUNTER-HACK ]', 
+          eff: { cr: 250, log: 'Android deployed countermeasures. Threat neutralized.' } }
+      ]
+    },
+    {
+      title: '⚡ TECH SYNCHRONIZATION',
+      body: `${crewMember.name} merges with the ship's systems, optimizing performance beyond normal parameters.`,
+      choices: [
+        { text: '[ ALLOW FULL INTEGRATION ]', 
+          eff: { fuel: 20, log: 'Ship efficiency increased temporarily.' } },
+        { text: '[ LIMIT ACCESS ]', 
+          eff: { log: 'You restricted their access. They seem disappointed.' } }
+      ]
+    }
+  ];
+  
+  const ev = events[Math.floor(G.rng.next() * events.length)];
+  currentEvent = ev;
+  document.getElementById('ev-title').textContent = ev.title;
+  document.getElementById('ev-body').textContent = ev.body;
+  document.getElementById('ev-choices').innerHTML = ev.choices.map((c, i) => 
+    `<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`
+  ).join('');
+  document.getElementById('ev-overlay').classList.add('open');
+}
+
+function triggerAlienEvent(crewMember) {
+  const events = [
+    {
+      title: '👽 CULTURAL INSIGHT',
+      body: `${crewMember.name} notices subtle details about the local alien species that humans would miss.`,
+      choices: [
+        { text: '[ LEARN FROM THEM ]', 
+          eff: { cr: 200, mora: 5, log: 'Their cultural knowledge proves valuable in negotiations.' } },
+        { text: '[ ASK FOR TRANSLATION HELP ]', 
+          eff: { rep_independent: 5, log: 'They helped bridge the communication gap.' } }
+      ]
+    }
+  ];
+  
+  const ev = events[Math.floor(G.rng.next() * events.length)];
+  currentEvent = ev;
+  document.getElementById('ev-title').textContent = ev.title;
+  document.getElementById('ev-body').textContent = ev.body;
+  document.getElementById('ev-choices').innerHTML = ev.choices.map((c, i) => 
+    `<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`
+  ).join('');
+  document.getElementById('ev-overlay').classList.add('open');
+}
   
 function checkDrama(){
   const alive=G.crew.filter(c=>c.alive);if(alive.length<2)return triggerEvent();
@@ -2786,6 +3061,10 @@ function resolveDrama(i){const ch=currentDrama.choices[i],e=ch.eff;if(e.cr)G.shi
 
   //trigger events
 function triggerEvent(){
+  // Check for species-specific events first (10% chance)
+  if (G.rng.next() < 0.10 && checkSpeciesSpecificEvent()) {
+    return;
+  }
   console.log('triggerEvent called');
   const sys = G.galaxy.systems[G.curSys];
   if (sys.danger >= 4 && G.rng.next() < 0.3) {
@@ -2960,6 +3239,7 @@ function renderNodeContent(nodeId){
   
   if (nodeId === 'cantina') {
     const rumors = stationRumors(G.curSys);
+    const specialRecruits = checkRecruitmentQuests(); specialRecruits.forEach(crew => addSpecialCrewToPool(crew));
     const hiredNames = G.crew.map(c => c.name);
     const hirePool = generateHireableCrew(G.curSys);
     let hireHtml = hirePool.map(c => `<div class="trade-row"><span>${c.emoji} ${c.name} - ${c.role} 💰${c.cost} (HP:${c.hp} ATK:${c.atk})</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits < c.cost ? 'disabled' : ''}>HIRE</button></div>`).join('');
@@ -4221,6 +4501,80 @@ function exitCombat(won){
 }
 function triggerGameOver(){document.getElementById('go-stats').textContent=`Jumps: ${G.jumps} | Credits: ${G.flagship.credits}`;document.getElementById('gameover-overlay').classList.add('open');}
 
+// ========== SAVE / LOAD SYSTEM ==========
+const SAVE_VERSION = '1.0';
+const MAX_SLOTS = 3;
+
+function saveGame(slot) {
+    const saveData = {
+        version: SAVE_VERSION,
+        timestamp: Date.now(),
+        state: JSON.parse(JSON.stringify(G)),
+        slot: slot
+    };
+    // Remove transient/runtime-only references
+    delete saveData.state.combat;
+    delete saveData.state.groundCombat;
+    localStorage.setItem(`vf_save_${slot}`, JSON.stringify(saveData));
+    addLog(`💾 Saved to slot ${slot}`);
+}
+
+function loadGame(slot) {
+    const data = localStorage.getItem(`vf_save_${slot}`);
+    if (!data) { addLog('❌ No save in slot ' + slot); return false; }
+    try {
+        const save = JSON.parse(data);
+        // Clear active screens/combat first
+        showScreen('title-screen');
+        // Restore state
+        Object.assign(G, save.state);
+        // Regenerate RNG from seed for deterministic behavior
+        G.rng = mkRNG(G.seed);
+        // Clear transient states
+        G.combat = null; G.groundCombat = null;
+        window._tempHirePool = null;
+        currentEvent = null; currentDrama = null; combatTarget = null;
+        // Restore UI
+        updateHUD(); updateLP(); updateRP(); updateLog();
+        showScreen('galaxy-screen');
+        addLog(`📂 Loaded from slot ${slot}`);
+        return true;
+    } catch (e) {
+        console.error('Load failed:', e);
+        addLog('❌ Corrupted save file');
+        return false;
+    }
+}
+// ========== SAVE/LOAD ==========
+function openSaveModal() {
+    const container = document.getElementById('save-slots');
+    container.innerHTML = '';
+    for (let i = 1; i <= MAX_SLOTS; i++) {
+        const data = localStorage.getItem(`vf_save_${i}`);
+        let meta = '<span style="color:var(--metal)">Empty</span>';
+        if (data) {
+            const save = JSON.parse(data);
+            const date = new Date(save.timestamp).toLocaleString();
+            meta = `${save.state.captain.name || 'Captain'} • ${save.state.jumps} jumps • ${date}`;
+        }
+        container.innerHTML += `
+            <div class="save-slot">
+                <div class="save-meta">Slot ${i}: ${meta}</div>
+                <div class="save-actions">
+                    <button class="btn btn-sm btn-safe" onclick="saveGame(${i});openSaveModal()">SAVE</button>
+                    <button class="btn btn-sm btn-gold" onclick="if(loadGame(${i})){closeSaveModal();}">LOAD</button>
+                    <button class="btn btn-sm btn-danger" onclick="if(confirm('Delete this save?')){localStorage.removeItem('vf_save_${i}');openSaveModal();}">DEL</button>
+                </div>
+            </div>`;
+    }
+    document.getElementById('save-load-modal').style.display = 'flex';
+}
+
+function closeSaveModal() {
+    document.getElementById('save-load-modal').style.display = 'none';
+}
+
+    
 // ========== INIT ==========
 window.addEventListener('load',()=>{
   initState(rndSeedStr());document.getElementById('seed-inp').value=G.seed;
