@@ -2213,29 +2213,59 @@ function stationGoods(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*251);ret
 function stationRumors(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*421);return [...RUMOR_POOL].sort(()=>srng.next()-.5).slice(0,3).map(r=>r.replace('{sys}',G.galaxy.systems[sysIdx].name).replace('{fac}',FACTIONS[Math.floor(srng.next()*FACTIONS.length)].name));}
 function genContracts(){G.contracts=[{id:'c1',title:'Delivery',reward:800,target:null,desc:'Transport cargo.'}];}
 function checkContractCompletion(sysName){G.contracts.forEach(c=>{if(c.active && c.target===sysName){G.flagship.credits+=c.reward;addLog(`Contract completed: ${c.title}. +${c.reward} CR`);c.active=false;}});}
+
 function dockStation(){
+    // === DEFENSIVE CHECKS ===
+    if (!G.galaxy || !G.galaxy.systems) {
+        console.error('dockStation: Galaxy not initialized');
+        addLog('Error: Galaxy data missing.');
+        return;
+    }
     const sys = G.galaxy.systems[G.curSys];
-    if(!sys) { console.error('Dock error: No current system data'); return; }
-    if(!sys.hasStation) { addLog('No station in this system.'); return; }
+    if (!sys) {
+        console.error('dockStation: No system at index', G.curSys);
+        addLog('Error: Cannot locate current system.');
+        return;
+    }
+    if (!sys.hasStation) { 
+        addLog('No station in this system.'); 
+        return; 
+    }
+    // === UI ELEMENT CHECKS ===
+    const stName = document.getElementById('st-name');
+    const stMeta = document.getElementById('st-meta');
+    const stCredits = document.getElementById('st-credits');
+    const stNav = document.getElementById('st-nav');
+    const stContent = document.getElementById('st-content');
+    
+    if (!stName || !stMeta || !stCredits || !stNav || !stContent) {
+        console.error('dockStation: Station UI elements not found in DOM');
+        addLog('UI Error: Station screen not ready.');
+        return;
+    }
+    // === MODULES LOGIC ===
     let modules = sys.stationModules;
-    if(!modules || modules.length === 0){
+    if (!modules || modules.length === 0) {
         const wealth = sys.wealth || 1;
-        modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1) && !(n.requiresLowSecurity && sys.danger > 3));
-        if(modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
-        sys.stationModules = modules; // Cache for next visit
+        modules = ST_NODES.filter(n => 
+            wealth >= (n.minWealth || 1) && 
+            !(n.requiresLowSecurity && sys.danger > 3)
+        );
+        if (modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
+        sys.stationModules = modules;
     }
     stActiveNode = modules[0].id;
-    document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType || 'Station'}`;
-    document.getElementById('st-meta').innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
-    document.getElementById('st-credits').textContent = `💰 ${G.flagship.credits.toLocaleString()} CR`;
-    // Note: passing 'event' explicitly fixes strict-mode crashes
-    document.getElementById('st-nav').innerHTML = modules.map(n => `
-        <div class="st-node ${n.id === stActiveNode ? 'active' : ''}" onclick="stSelectNode('${n.id}', event)">
+    // === SAFE DOM UPDATES ===
+    stName.textContent = `⬡ ${sys.name} ${sys.stationType || 'Station'}`;
+    stMeta.innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
+    stCredits.textContent = `💰 ${G.flagship.credits.toLocaleString()} CR`;
+    stNav.innerHTML = modules.map(n => `
+        <div class="st-node ${n.id === stActiveNode ? 'active' : ''}" 
+             onclick="stSelectNode('${n.id}', event)">
             <div class="st-node-emoji">${n.emoji}</div>
             <div class="st-node-name">${n.name}</div>
         </div>
     `).join('');
-    
     renderNodeContent(stActiveNode);
     showScreen('station-screen');
     addLog(`Docked at ${sys.name}.`);
@@ -2243,18 +2273,18 @@ function dockStation(){
 
 
 function stSelectNode(id, e){
-    if(e && e.preventDefault) e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     stActiveNode = id;
     document.querySelectorAll('.st-node').forEach(n => n.classList.remove('active'));
-    
-    // Safe event fallback for strict mode
-    const target = e ? e.target : window.event?.target;
-    if(target){
-        const node = target.closest('.st-node');
-        if(node) node.classList.add('active');
+    // Safe fallback for event target
+    const target = e?.target || window.event?.target;
+    if (target) {
+        const node = target.closest?.('.st-node');
+        if (node) node.classList.add('active');
     }
     renderNodeContent(id);
 }
+  
 function renderNodeContent(nodeId){
   const cont = document.getElementById('st-content');
   const sys = G.galaxy.systems[G.curSys];
