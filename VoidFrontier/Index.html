@@ -2227,7 +2227,7 @@ function renderNodeContent(nodeId){
       return `<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY</button></div>`;
     }).join('');
   
-  }} else if (nodeId === 'guild') {
+  } else if (nodeId === 'guild') {
     // Generate fresh contracts if none exist
     if (!G.availableContracts || G.availableContracts.length === 0) {
         G.availableContracts = genContracts();
