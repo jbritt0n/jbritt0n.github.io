@@ -85,6 +85,11 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .rp.collapsed{width:40px}
 .rp .panel-content{overflow-y:auto;flex:1}
 .rp.collapsed .panel-content{display:none}
+.rp-toggle { cursor: pointer; user-select: none; }
+.collapse-btn { transition: transform 0.2s ease; display: inline-block; margin-left: auto; font-size: 10px; }
+.rp-toggle.collapsed-header .collapse-btn { transform: rotate(-90deg); }
+.rp-content { transition: opacity 0.15s ease; }
+.rp-content.collapsed { display: none; opacity: 0; }  
 .gc{flex:1;position:relative;overflow:hidden;background:#050709}
 #gx-canvas{display:block;image-rendering:pixelated}
 #ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
@@ -224,22 +229,40 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
       <div id="sys-tooltip"></div>
       <div id="ev-overlay"><div class="ev-card"><div class="ev-title" id="ev-title"></div><div class="ev-body" id="ev-body"></div><div class="ev-choices" id="ev-choices"></div></div></div>
     </div>
-    <div class="rp" id="right-panel">
-      <div class="panel-hdr">◈ REPUTATION <span class="collapse-btn" onclick="toggleRightPanel()">◀</span></div>
-      <div class="panel-content">
-        <div id="rp-rep"></div>
-        <div class="panel-hdr">◈ CARGO <span id="cargo-count" style="padding:8px"></span></div>
-        <div id="rp-cargo"></div>
-        <div class="panel-hdr">◈ QUESTS</div>
-        <div id="rp-quests" style="padding:8px"></div>
-        <div class="panel-hdr">◈ CREW</div>
-        <div id="rp-crew" style="padding:8px"></div>
-        <div class="panel-hdr">◈ CAPTAIN</div>
-        <div class="cap-info" id="rp-cap" style="padding:8px"></div>
-        <div class="panel-hdr">◈ FLEET</div>
-        <div id="rp-fleet" style="padding:8px"></div>
-      </div>
-    </div>
+    
+<div class="rp" id="right-panel">
+  <!-- REPUTATION -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ REPUTATION <span class="collapse-btn">▼</span></div>
+    <div id="rp-rep" class="rp-content"></div>
+  </div>
+  <!-- CARGO -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CARGO <span id="cargo-count"></span><span class="collapse-btn">▼</span></div>
+    <div id="rp-cargo" class="rp-content"></div>
+  </div>
+  <!-- QUESTS -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ QUESTS <span class="collapse-btn">▼</span></div>
+    <div id="rp-quests" class="rp-content" style="padding:8px"></div>
+  </div>
+  <!-- CREW -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CREW <span class="collapse-btn">▼</span></div>
+    <div id="rp-crew" class="rp-content"></div>
+  </div>
+  <!-- CAPTAIN -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CAPTAIN <span class="collapse-btn">▼</span></div>
+    <div id="rp-cap" class="cap-info rp-content" style="padding:8px"></div>
+  </div>
+  <!-- FLEET -->
+  <div class="rp-section">
+    <div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ FLEET <span class="collapse-btn">▼</span></div>
+    <div id="rp-fleet" class="rp-content" style="padding:8px"></div>
+  </div>
+</div>
+    
   </div>
   <div class="log-bar"><div class="log-hdr">▸ CAPTAIN'S LOG</div><div class="log-list" id="log-list"></div></div>
 </div>
@@ -2156,10 +2179,22 @@ function updateRP(){
 function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map(e=>`<div class="log-line">${e}</div>`).join('');}
 function addLog(msg){G.log.unshift(msg);if(G.log.length>30)G.log.pop();updateLog();}
 function toggleRightPanel(){
-  G.ui.rightPanelCollapsed = !G.ui.rightPanelCollapsed;
+  G.ui.collapsedSections = G.ui.collapsedSections || [];
   document.getElementById('right-panel').classList.toggle('collapsed', G.ui.rightPanelCollapsed);
 }
-
+function toggleSection(headerEl) {
+    const content = headerEl.nextElementSibling;
+    if (!content) return;
+    content.classList.toggle('collapsed');
+    headerEl.classList.toggle('collapsed-header');
+    // Persist state
+    const id = content.id;
+    if (content.classList.contains('collapsed')) {
+        if (!G.ui.collapsedSections.includes(id)) G.ui.collapsedSections.push(id);
+    } else {
+        G.ui.collapsedSections = G.ui.collapsedSections.filter(i => i !== id);
+    }
+}
 // ========== CARGO USAGE ==========
 function useCargoItem(id){
   const idx=G.cargo.findIndex(c=>c.id===id);if(idx<0)return;
@@ -2362,7 +2397,7 @@ function renderNodeContent(nodeId){
   if (nodeId === 'cantina') {
     const rumors = stationRumors(G.curSys);
     const hiredNames = G.crew.map(c => c.name);
-    const hirePool = generateHireableCrew(G.curSys).filter(c => !hiredNames.includes(c.name));
+    const hirePool = generateHireableCrew(G.curSys);
     let hireHtml = hirePool.map(c => `<div class="trade-row"><span>${c.emoji} ${c.name} - ${c.role} 💰${c.cost} (HP:${c.hp} ATK:${c.atk})</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits < c.cost ? 'disabled' : ''}>HIRE</button></div>`).join('');
     cont.innerHTML = `<div class="st-content-hdr">🍺 CANTINA</div>
       <div><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>
@@ -2382,11 +2417,12 @@ function renderNodeContent(nodeId){
   } else if (nodeId === 'maintenance') {
     const hullCost = Math.ceil((G.flagship.maxHull - G.flagship.hull) * 6);
     const fuelCost = Math.ceil((G.flagship.maxFuel - G.flagship.fuel) * 4);
-    cont.innerHTML = `<div class="st-content-hdr">MAINTENANCE</div>
-      <div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div>
-      <div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
-      <div><b>SHIPYARD</b></div>${SHIP_HULLS.map(h => `<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
-      <div><b>MODULES</b></div>${MODULES.map(m => `<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
+    const availableShips = generateShipyardInventory();
+    cont.innerHTML = `<div class="st-content-hdr">MAINTENANCE BAY</div>
+    <div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div>
+    <div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
+    <div><b>SHIPYARD</b></div>${availableShips.map(h => `<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
+    <div><b>MODULES</b></div>${MODULES.map(m => `<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
   
   } else if (nodeId === 'blackmarket') {
     const illegal = GOODS.filter(g => !g.legal);
@@ -2513,9 +2549,93 @@ function smugglerBribe() {
   addLog('Authorities bribed. Bounty cleared.');
   updateHUD();
 }
- 
-function generateHireableCrew(sysIdx){const rng=new RNG(hashStr(G.seed)+sysIdx*739);const pool=[];const names=['Kael','Lyra','Dax','Nova','Orin','Vex','Zane','Yara'];for(let i=0;i<3;i++){const id='hire_'+Date.now()+i;const role=rng.pick(['Gunner','Technician','Medic','Scout']);const cost=300+Math.floor(rng.next()*400);const hp=35+Math.floor(rng.next()*20);pool.push({id,name:rng.pick(names),emoji:role==='Gunner'?'🔫':role==='Medic'?'💉':'🔧',role,cost,hp,maxHp:hp,atk:6+Math.floor(rng.next()*8),spd:4+Math.floor(rng.next()*4),skill:5+Math.floor(rng.next()*6),alive:true,xp:0,level:1,equippedWeapon:null});}window._tempHirePool=pool;return pool;}
+
+// --- Hireable Crew ---  
+function generateHireableCrew(sysIdx) {
+    // Deterministic seed per system so the same 2 appear until you leave
+    const rng = new RNG(hashStr(G.seed) + sysIdx * 739 + 11);
+    const hiredNames = G.crew.map(c => c.name);
+
+    const FIRST_NAMES = ['Kael','Lyra','Dax','Nova','Orin','Vex','Zane','Yara','Jax','Mira','Rex','Sia','Talon','Vega','Wren','Xen','Zara','Bram','Elara','Finn','Greta','Holt','Iris','Jett','Kira'];
+    const LAST_NAMES = ['Kas','Tong','Varley','Nox','Thorn','Chen','Vex','Rook','Silas','Dune','Frost','Steel','Vance','Cross','Blade','Shade','Ward','Stone','Fox','Moon','Star','Vale','Raine','Ash','Cole'];
+
+    const ROLES = [
+        { id: 'Gunner', emoji: '🔫', hp: [40, 60], atk: [10, 16], spd: [3, 6], skill: [4, 7], baseCost: 350 },
+        { id: 'Technician', emoji: '🔧', hp: [35, 50], atk: [5, 9], spd: [4, 7], skill: [7, 11], baseCost: 300 },
+        { id: 'Medic', emoji: '💉', hp: [30, 45], atk: [4, 8], spd: [4, 7], skill: [8, 12], baseCost: 400 },
+        { id: 'Scout', emoji: '🔍', hp: [30, 45], atk: [7, 11], spd: [7, 11], skill: [6, 10], baseCost: 320 },
+        { id: 'Engineer', emoji: '⚙️', hp: [40, 55], atk: [6, 10], spd: [4, 6], skill: [8, 12], baseCost: 380 },
+        { id: 'Pilot', emoji: '🚀', hp: [35, 50], atk: [5, 9], spd: [8, 12], skill: [7, 11], baseCost: 450 }
+    ];
+
+    const candidates = [];
+    let attempts = 0;
+
+    while (candidates.length < 2 && attempts < 50) {
+        attempts++;
+        const name = `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
+        if (hiredNames.includes(name)) continue;
+
+        const role = rng.pick(ROLES);
+        const hp = rng.int(role.hp[0], role.hp[1]);
+        const atk = rng.int(role.atk[0], role.atk[1]);
+        const spd = rng.int(role.spd[0], role.spd[1]);
+        const skill = rng.int(role.skill[0], role.skill[1]);
+        const avg = (hp + atk + spd + skill) / 4;
+        const cost = Math.floor(role.baseCost + (avg * 15) + (rng.next() * 150));
+
+        candidates.push({
+            id: `hire_${sysIdx}_${attempts}`,
+            name, role: role.id, emoji: role.emoji,
+            hp, maxHp: hp, atk, spd, skill,
+            cost, loyalty: 50 + rng.int(0, 20),
+            alive: true, xp: 0, level: 1, equippedWeapon: null,
+            species: 'Human',
+            bio: `${role.id} with ${skill > 8 ? 'expert' : 'solid'} training.`
+        });
+    }
+
+    window._tempHirePool = candidates;
+    return candidates;
+}
+  
 function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);updateHUD();updateRP();renderNodeContent('cantina');}
+
+// --- Shipyard Inventory --- 
+function generateShipyardInventory() {
+    const distance = G.jumps || 0;
+    const rarityWeights = { common: 50, uncommon: 30, rare: 15, legendary: 4, mythic: 1 };
+    const count = 2 + Math.floor(G.rng.next() * 4); // Random 2-5 ships
+
+    // Local RNG keeps inventory stable per system visit without polluting global state
+    const localRng = new RNG(hashStr(G.seed) + G.curSys * 997 + 42);
+
+    const weightedShips = SHIP_HULLS.map(ship => {
+        const base = rarityWeights[ship.rarity] || 20;
+        // Higher tiers get progressively more likely as you jump more
+        // Caps at ~2.8x boost at long distances to keep economy balanced
+        const tierBoost = 1 + (ship.tier * 0.15) * Math.min(1, distance / 12);
+        return { ...ship, weight: base * tierBoost };
+    });
+
+    const selected = [];
+    const pool = [...weightedShips];
+
+    for (let i = 0; i < Math.min(count, pool.length); i++) {
+        const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
+        let rand = localRng.next() * totalWeight;
+        for (let j = 0; j < pool.length; j++) {
+            rand -= pool[j].weight;
+            if (rand <= 0) {
+                selected.push(pool[j]);
+                pool.splice(j, 1);
+                break;
+            }
+        }
+    }
+    return selected;
+}  
+  
 function talkBartender(){addLog('Bartender: "Heard the Syndicate is moving in. Watch yourself."'); G.ship.morale=Math.min(100,(G.ship.morale||75)+2); updateHUD();}
 function talkToCrew(id){const c=G.crew.find(x=>x.id===id); if(c){addLog(`${c.name}: "${c.bio}"`); G.ship.morale=Math.min(100,(G.ship.morale||75)+2); updateHUD();}}
 function buyRumor(i){if(G.flagship.credits<150)return;G.flagship.credits-=150;addLog('Rumor purchased.');updateHUD();}
