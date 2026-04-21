@@ -681,7 +681,20 @@ function confirmTier2(crewId, tier2Id) {
   }
 }
   
-
+// Get available moves for a crew member (base class + tier2 if unlocked)
+function getCrewMoves(crewMember) {
+    const baseClass = CLASSES.find(c => c.id === crewMember.classId);
+    if (!baseClass) return [];
+    
+    let moves = [...baseClass.groundMoves];
+    
+    // Add tier 2 move if unlocked
+    if (crewMember.advancedClass && TIER2_CLASSES[crewMember.advancedClass]?.newMove) {
+        moves.push(TIER2_CLASSES[crewMember.advancedClass].newMove);
+    }
+    
+    return moves;
+}
   
 // ---------- STAR TYPES (9 total) ----------
 const STAR_TYPES = [
@@ -3365,39 +3378,96 @@ function startCombat(enemy = null) {
   showScreen('combat-screen');
 }
 
-function startGroundCombat(enemyShip) {
-  const party = G.crew.filter(c => c.alive).map(c => ({
-    ...c,
-    id: c.id,
-    atk: c.atk || 8,
-    spd: c.spd || 5,
-    skill: c.skill || 5,
-    maxHp: c.maxHp || c.hp,
-    hp: c.hp,
-    emoji: c.emoji || '👤',
-    perk: c.role?.toLowerCase() // Map role to perk for special abilities
-  }));
-  
-  if (party.length === 0) { 
-    addLog('No crew alive to board!'); 
-    return; 
-  }
-  
-  // Generate enemies using new faction-based system
-  const numE = 2 + Math.floor(G.rng.next() * 2);
-  const enemies = [];
-  for (let i = 0; i < numE; i++) {
-    enemies.push(generateGroundEnemy(G.curSys));
-  }
-  
-  // Initialize ATB combat state
-  groundCombatState = initGroundCombat(party, enemies, enemyShip?.type || 'Boarding Action', G.seed + G.jumps);
-  
-  renderGroundCombat();
-  showScreen('ground-combat-screen');
-  
-  // Start game loop
-  requestAnimationFrame(combatLoop);
+function renderGroundCombat(){
+    const st = groundCombatState;
+    if (!st) return;
+    
+    // === PARTY PANEL ===
+    document.getElementById('gc-party').innerHTML = st.party
+        .filter(p => p.alive && p.hp > 0)
+        .map(p => {
+            const cls = CLASSES.find(c => c.id === p.classId);
+            const tier2 = p.advancedClass ? TIER2_CLASSES[p.advancedClass] : null;
+            const classDisplay = tier2 
+                ? `<span style="color:var(--gold)">${tier2.emoji} ${tier2.name}</span>` 
+                : (cls ? `${cls.emoji} ${cls.name}` : p.role);
+            const moves = getCrewMoves(p);
+            
+            return `
+                <div class="gc-party-card" style="border-color:${st.acting===p.id?'var(--gold)':'var(--cyan)'}">
+                    <b>${p.name}</b> ${classDisplay}<br>
+                    ❤️ ${p.hp}/${p.maxHp} ⚔ ${p.atk} 🏃 ${p.spd}<br>
+                    <span style="font-size:11px;color:var(--metal)">AP: ${p.ap||4}/${p.maxAp||4}</span>
+                    ${st.acting===p.id ? `<div style="margin-top:4px;font-size:10px;color:var(--warn)">► READY</div>` : ''}
+                </div>
+            `;
+        }).join('') || '<div style="color:var(--metal)">No active crew</div>';
+    
+    // === ENEMY PANEL ===
+    document.getElementById('gc-enemies').innerHTML = st.enemies
+        .filter(e => e.hp > 0)
+        .map(e => `
+            <div class="gc-enemy-card" 
+                 onclick="selectGroundTarget('${e.id}')" 
+                 style="${st.selectedEnemy===e.id ? 'border-color:var(--gold);box-shadow:0 0 0 2px var(--gold);' : ''}">
+                <b>${e.name}</b><br>
+                ❤️ ${e.hp}/${e.maxHp}<br>
+                ⚔ ${e.atk} ${e.status ? `<span style="color:var(--warn)">[${e.status}]</span>` : ''}
+            </div>
+        `).join('') || '<div style="color:var(--metal)">No enemies</div>';
+    
+    // === COMBAT LOG ===
+    document.getElementById('gc-log').innerHTML = st.log
+        .map(l => `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">${l}</div>`)
+        .join('');
+    document.getElementById('gc-log').scrollTop = document.getElementById('gc-log').scrollHeight;
+    
+    // === ACTION PANEL ===
+    const actor = st.party.find(p => p.id === st.acting);
+    const actionsEl = document.getElementById('gc-actions');
+    
+    if (!actor) {
+        // No actor = enemy turn or waiting
+        actionsEl.innerHTML = `
+            <div style="color:var(--metal);font-size:14px">
+                ${st.phase !== 'active' ? (st.phase==='victory'?'★ VICTORY ★':st.phase==='defeat'?'✖ DEFEATED ✖':'— ESCAPED —') : 'Waiting for turn...'}
+            </div>
+            ${st.phase==='active' ? `<button class="btn btn-sm" onclick="groundTick()">⏩ Next Tick</button>` : ''}
+        `;
+        return;
+    }
+    
+    // Get available moves for this crew member (base + tier2 if unlocked)
+    const moves = getCrewMoves(actor);
+    const ap = actor.ap || 4;
+    
+    // Build action buttons
+    const moveButtons = moves.map(move => {
+        const canAfford = ap >= move.cost;
+        const disabled = !canAfford ? 'disabled style="opacity:0.5"' : '';
+        return `
+            <button class="btn btn-sm" 
+                    onclick="groundAction('${move.id}', '${move.effect ? JSON.stringify(move.effect).replace(/"/g, '&quot;') : ''}')" 
+                    ${disabled}>
+                ⚔ ${move.name} (${move.cost} AP)
+            </button>
+        `;
+    }).join('');
+    
+    actionsEl.innerHTML = `
+        <div style="margin-bottom:8px">
+            <b style="color:var(--gold)">${actor.name}</b>'s turn 
+            <span style="color:var(--metal)">• AP: ${ap}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            ${moveButtons}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-sm" onclick="groundAction('heal')">💊 Heal (2 AP)</button>
+            <button class="btn btn-sm btn-warn" onclick="groundAction('flee')">🏃 Flee (1 AP)</button>
+        </div>
+        ${st.selectedEnemy ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${st.enemies.find(e=>e.id===st.selectedEnemy)?.name || 'None'}</div>` : ''}
+    `;
 }
 
 // Main combat update loop
@@ -3618,31 +3688,214 @@ function selectGroundTarget(id) {
 }
 
 // Handle player action button clicks
-function groundAction(action) {
-  if (!groundCombatState || groundCombatState.phase !== 'active') return;
-  if (!groundCombatState.actingUnit) return;
-  
-  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
-  if (!actor) return;
-  
-  // For attack/special, require target selection
-  if ((action === 'attack' || action === 'special') && !groundCombatState.selectedTarget) {
-    addLog('Select a target first!');
-    return;
-  }
-  
-  // Execute action
-  groundCombatState = executeGroundAction(groundCombatState, action, groundCombatState.selectedTarget);
-  renderGroundCombat();
-  checkCombatEnd();
-  
-  // Start enemy turn cycle
-  if (groundCombatState.phase === 'active') {
-    requestAnimationFrame(() => {
-      groundCombatState = updateGroundCombat(groundCombatState);
-      renderGroundCombat();
+function groundAction(moveId, effectJson) {
+    const st = groundCombatState;
+    if (!st || st.phase !== 'active' || !st.acting) return;
+    
+    const actor = st.party.find(p => p.id === st.acting);
+    if (!actor) return;
+    
+    // Get available moves and find the selected one
+    const moves = getCrewMoves(actor);
+    const move = moves.find(m => m.id === moveId);
+    
+    // Handle built-in actions (heal/flee)
+    if (moveId === 'heal') {
+        if ((actor.ap || 4) < 2) { addLog('Not enough AP!'); return; }
+        const low = st.party.filter(p => p.alive && p.hp > 0 && p.hp < p.maxHp).sort((a,b) => a.hp - b.hp)[0] || actor;
+        const heal = Math.floor(15 + (actor.skill || 5) * 1.5);
+        low.hp = Math.min(low.maxHp, low.hp + heal);
+        st.log.unshift(`${actor.name} heals ${low.name} for ${heal} HP!`);
+        actor.ap = (actor.ap || 4) - 2;
+        st.acting = null;
+        renderGroundCombat();
+        setTimeout(() => enemyTurn(), 400);
+        return;
+    }
+    
+    if (moveId === 'flee') {
+        if ((actor.ap || 4) < 1) { addLog('Not enough AP!'); return; }
+        const partySpeed = st.party.reduce((s, p) => s + (p.spd || 5), 0) / st.party.length;
+        const enemySpeed = st.enemies.reduce((s, e) => s + (e.spd || 5), 0) / st.enemies.length;
+        const fleeChance = 0.4 + (partySpeed - enemySpeed) * 0.03;
+        
+        if (Math.random() < fleeChance) {
+            st.log.unshift('Tactical retreat successful!');
+            st.phase = 'fled';
+            renderGroundCombat();
+            setTimeout(() => closeGroundCombat(), 800);
+        } else {
+            st.log.unshift('Failed to escape!');
+            actor.ap = (actor.ap || 4) - 1;
+            st.acting = null;
+            renderGroundCombat();
+            setTimeout(() => enemyTurn(), 400);
+        }
+        return;
+    }
+    
+    // Handle class moves
+    if (!move) { addLog('Unknown action!'); return; }
+    if ((actor.ap || 4) < move.cost) { addLog('Not enough AP!'); return; }
+    
+    // Parse effect if provided
+    let effect = {};
+    if (effectJson) {
+        try { effect = JSON.parse(effectJson.replace(/&quot;/g, '"')); } catch(e) {}
+    }
+    
+    // Execute move effect
+    if (effect.dmgMult && st.selectedEnemy) {
+        const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0) || st.enemies.find(e => e.hp > 0);
+        if (target) {
+            const baseDmg = (actor.atk || 8) + Math.floor(Math.random() * 5);
+            const dmg = Math.floor(baseDmg * (effect.dmgMult || 1));
+            target.hp = Math.max(0, target.hp - dmg);
+            st.log.unshift(`${actor.name} uses ${move.name} for ${dmg} damage!`);
+            
+            // Handle secondary effects
+            if (effect.stunChance && Math.random() < effect.stunChance) {
+                target.status = 'stunned';
+                st.log.unshift(`${target.name} is stunned!`);
+            }
+            if (effect.aoe) {
+                st.enemies.forEach(e => {
+                    if (e.id !== target.id && e.hp > 0) {
+                        const aoeDmg = Math.floor(dmg * 0.5);
+                        e.hp = Math.max(0, e.hp - aoeDmg);
+                    }
+                });
+                st.log.unshift('AOE damage applied!');
+            }
+        }
+    }
+    
+    if (effect.pierceArmor && st.selectedEnemy) {
+        const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0);
+        if (target) {
+            const dmg = Math.floor((actor.atk || 8) * 1.5);
+            target.hp = Math.max(0, target.hp - dmg);
+            st.log.unshift(`${actor.name} pierces armor for ${dmg} damage!`);
+        }
+    }
+    
+    if (effect.summonTurret) {
+        // Simple turret summon: add a temporary ally
+        const turret = {
+            id: 'turret_' + Date.now(),
+            name: 'Deployed Turret',
+            hp: 30, maxHp: 30,
+            atk: 10, spd: 3,
+            isTurret: true,
+            duration: 3
+        };
+        st.party.push(turret);
+        st.log.unshift(`${actor.name} deploys a combat turret!`);
+    }
+    
+    if (effect.hot && st.selectedEnemy === null) {
+        // Heal-over-time on self or ally
+        const target = st.party.find(p => p.id === actor.id) || actor;
+        target.hp = Math.min(target.maxHp, target.hp + (effect.hot || 10));
+        target.hotEffect = { amount: effect.hot, turns: effect.duration || 3 };
+        st.log.unshift(`${actor.name} applies healing over time!`);
+    }
+    
+    // Spend AP and end turn
+    actor.ap = (actor.ap || 4) - move.cost;
+    st.acting = null;
+    
+    // Trim log
+    if (st.log.length > 12) st.log = st.log.slice(0, 12);
+    
+    // Check win/lose conditions
+    if (st.enemies.every(e => e.hp <= 0)) {
+        st.phase = 'victory';
+        st.log.unshift('★ ENEMIES DEFEATED ★');
+        // Award loot
+        const totalLoot = st.enemies.reduce((loot, e) => {
+            if (e.loot) {
+                loot.cr += Math.floor((e.loot.cr?.[0] || 0) + Math.random() * ((e.loot.cr?.[1] || 0) - (e.loot.cr?.[0] || 0)));
+                loot.scrap += e.loot.scrap || 0;
+            }
+            return loot;
+        }, { cr: 0, scrap: 0 });
+        G.flagship.credits += totalLoot.cr;
+        G.flagship.scrap = (G.flagship.scrap || 0) + totalLoot.scrap;
+        addLog(`Victory! +${totalLoot.cr}cr, +${totalLoot.scrap} scrap`);
+        renderGroundCombat();
+        setTimeout(() => closeGroundCombat(), 1200);
+        return;
+    }
+    
+    if (st.party.every(p => !p.alive || p.hp <= 0)) {
+        st.phase = 'defeat';
+        st.log.unshift('✖ PARTY DEFEATED ✖');
+        renderGroundCombat();
+        setTimeout(() => closeGroundCombat(), 1200);
+        return;
+    }
+    
+    // Render and trigger enemy turn
+    renderGroundCombat();
+    setTimeout(() => enemyTurn(), 400);
+}
+
+// Helper: Enemy turn logic
+function enemyTurn() {
+    const st = groundCombatState;
+    if (!st || st.phase !== 'active') return;
+    
+    // Find alive enemies and have them attack
+    const aliveEnemies = st.enemies.filter(e => e.hp > 0);
+    if (aliveEnemies.length === 0) return;
+    
+    const aliveParty = st.party.filter(p => p.alive && p.hp > 0 && !p.isTurret);
+    if (aliveParty.length === 0) return;
+    
+    aliveEnemies.forEach(enemy => {
+        if (enemy.status === 'stunned') {
+            enemy.status = null; // Clear stun after one turn
+            return;
+        }
+        
+        const target = aliveParty[Math.floor(Math.random() * aliveParty.length)];
+        const dmg = Math.floor((enemy.atk || 10) * (0.85 + Math.random() * 0.3));
+        target.hp = Math.max(0, target.hp - dmg);
+        st.log.unshift(`${enemy.name} attacks ${target.name} for ${dmg} damage!`);
+        
+        // Handle enemy abilities
+        if (enemy.abilities?.includes('poison') && Math.random() < 0.3) {
+            target.status = 'poisoned';
+            st.log.unshift(`${target.name} is poisoned!`);
+        }
     });
-  }
+    
+    // Apply poison damage
+    st.party.forEach(p => {
+        if (p.status === 'poisoned' && p.hp > 0) {
+            p.hp = Math.max(0, p.hp - 3);
+            if (p.hp <= 0) st.log.unshift(`${p.name} succumbs to poison!`);
+        }
+    });
+    
+    // Check end conditions again
+    if (st.enemies.every(e => e.hp <= 0)) {
+        st.phase = 'victory';
+        st.log.unshift('★ ENEMIES DEFEATED ★');
+        renderGroundCombat();
+        setTimeout(() => closeGroundCombat(), 1200);
+        return;
+    }
+    if (st.party.every(p => !p.alive || p.hp <= 0)) {
+        st.phase = 'defeat';
+        st.log.unshift('✖ PARTY DEFEATED ✖');
+        renderGroundCombat();
+        setTimeout(() => closeGroundCombat(), 1200);
+        return;
+    }
+    
+    renderGroundCombat();
 }
 
 // Close ground combat and return to galaxy
