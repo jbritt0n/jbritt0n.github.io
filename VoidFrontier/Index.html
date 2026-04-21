@@ -1897,12 +1897,12 @@ function updateLP(){
   const body=document.getElementById('lp-body'),acts=document.getElementById('lp-actions');
   if(G.selSys===null){body.innerHTML='<div style="color:var(--metal)">Select a system.</div>';acts.innerHTML='';return;}
   const sys=G.galaxy.systems[G.selSys],isCur=G.selSys===G.curSys,reach=reachable(),canTravel=reach.has(G.selSys)&&!isCur;
-  let featHtml = sys.features.map(f => {
-  const key = `${sys.id}_${f}`;
-  const probed = G.probedFeatures[key];
-  const escapedFeature = f.replace(/'/g, "\\'");
-  return `<div style="display:flex;gap:5px"><span>◈ ${f}</span> ${!probed ? `<button class="btn btn-sm" onclick="interactFeature('${escapedFeature}')">PROBE</button>` : '✅'}</div>`;
-}).join('');
+    let featHtml = sys.features.map(f => {
+    const key = `${sys.id}_${f}`;
+    const probed = G.probedFeatures[key];
+    const escapedFeature = f.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<div style="display:flex;gap:5px"><span>◈ ${f}</span> ${!probed ? `<button class="btn btn-sm" onclick="interactFeature('${escapedFeature}')">PROBE</button>` : '✅'}</div>`;
+  }).join('');
   body.innerHTML=`<div style="display:flex;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${sys.starColor}"></div><b>${sys.name}</b></div><div>${sys.starType}</div><div><span class="tag" style="border-color:${sys.faction.color}">${sys.faction.short}</span> ${sys.hasStation?'<span class="tag">⬡ '+sys.stationType+'</span>':''}</div><div>Danger: ${'▮'.repeat(sys.danger)}</div><div>Wealth: ${'◆'.repeat(sys.wealth)}</div>${featHtml}`;
   if(canTravel) acts.innerHTML=`<button class="btn btn-gold btn-full" onclick="travelTo(${G.selSys})" ${G.fleet.every(s=>s.fuel>=Math.ceil(10*s.fuelUse))?'':'disabled'}>▶ JUMP</button>`;
   else if(isCur) acts.innerHTML=`<button class="btn btn-safe btn-full" onclick="exploreSys()">◈ EXPLORE</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK</button>`:''}`;
