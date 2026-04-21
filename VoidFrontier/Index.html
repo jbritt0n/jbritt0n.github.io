@@ -2519,7 +2519,7 @@ function interactFeature(feature){
 }
   
 function updateRP(){
-    // REPUTATION
+    // REPUTATION/INFLUENCE
     document.getElementById('rp-rep').innerHTML = FACTIONS.map(f => {
         const r = G.rep[f.id] || 0;
         return `<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r >= 0 ? '+' + r : r}</span></div>`;
@@ -2536,9 +2536,23 @@ function updateRP(){
     document.getElementById('rp-cargo').innerHTML = cargoHtml || '<div style="color:var(--metal)">Empty</div>';
     
     // CREW
-    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => 
-        `<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv.${c.level || 1} ${c.hp}/${c.maxHp}</div><div class="crew-role">${c.role}</div></div></div>`
-    ).join('');
+    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
+      const cls = CLASSES.find(x => x.id === c.classId);
+      const tier2 = c.advancedClass ? TIER2_CLASSES[c.advancedClass] : null;
+      const classDisplay = tier2 ? `${cls?.emoji} ${tier2.name}` : `${cls?.emoji} ${cls?.name}`;
+      const tierBadge = c.classTier === 2 ? '<span style="color:var(--gold)">★</span>' : '';
+      
+      return `
+        <div class="crew-row">
+          <div class="crew-emoji">${c.emoji}</div>
+          <div class="crew-info">
+            <div class="crew-name">${c.name} Lv.${c.level || 1} ${tierBadge}</div>
+            <div class="crew-role">${classDisplay} • ${c.role}</div>
+            <div style="font-size:11px;color:var(--metal)">❤️ ${c.hp}/${c.maxHp} ⚔ ${c.atk}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
     
     // CAPTAIN
     const or = ORIGINS.find(o => o.id === G.captain.origin);
@@ -2735,7 +2749,7 @@ function resolveChoice(i){
   addLog(eff.log || 'Event resolved.');
   if (outcome.combat) { startCombat(); return; }
   if (outcome.followUp) { currentEvent = outcome.followUp; document.getElementById('ev-title').textContent = currentEvent.title; document.getElementById('ev-body').textContent = currentEvent.body; document.getElementById('ev-choices').innerHTML = currentEvent.choices.map((c,idx) => `<button class="choice-btn" onclick="resolveChoice(${idx})">${c.text}</button>`).join(''); document.getElementById('ev-overlay').classList.add('open'); return; }
-  updateHUD(); updateLP(); updateRP();
+  checkCrewProgression(); updateHUD(); updateLP(); updateRP(); 
 }
 
 // ========== STATION (expanded) ==========
@@ -3153,7 +3167,7 @@ function generateHireableCrew(sysIdx) {
     return candidates;
 }
   
-function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);updateHUD();updateRP();renderNodeContent('cantina');}
+function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);checkCrewProgression();updateHUD();updateRP();renderNodeContent('cantina');}
 
 // --- Shipyard Inventory --- 
 function generateShipyardInventory() {
