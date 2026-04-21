@@ -3102,49 +3102,50 @@ function startCombat(enemy = null) {
   showScreen('combat-screen');
 }
 
-// Update startGroundCombat to use generateGroundEnemy
 function startGroundCombat(enemyShip) {
-  const party = G.crew.filter(c => c.alive).map(c => ({ ...c, id: c.id }));
-  if (party.length === 0) { addLog('No crew alive to board!'); return; }
+  const party = G.crew.filter(c => c.alive).map(c => ({
+    ...c,
+    id: c.id,
+    atk: c.atk || 8,
+    spd: c.spd || 5,
+    skill: c.skill || 5,
+    maxHp: c.maxHp || c.hp,
+    hp: c.hp,
+    emoji: c.emoji || '👤',
+    perk: c.role?.toLowerCase() // Map role to perk for special abilities
+  }));
   
+  if (party.length === 0) { 
+    addLog('No crew alive to board!'); 
+    return; 
+  }
+  
+  // Generate enemies using new faction-based system
   const numE = 2 + Math.floor(G.rng.next() * 2);
   const enemies = [];
   for (let i = 0; i < numE; i++) {
     enemies.push(generateGroundEnemy(G.curSys));
   }
   
-  groundCombatState = initGC(party, enemies, enemyShip?.type || 'Boarding Action', G.seed + G.jumps);
+  // Initialize ATB combat state
+  groundCombatState = initGroundCombat(party, enemies, enemyShip?.type || 'Boarding Action', G.seed + G.jumps);
+  
   renderGroundCombat();
   showScreen('ground-combat-screen');
+  
+  // Start game loop
+  requestAnimationFrame(combatLoop);
 }
 
-// Update initGC to accept pre-generated enemies
-function initGC(party, enemies, loc, seed) {
-  const r = new RNG('gc' + seed);
-  // If enemies is a number, generate that many random ones (legacy fallback)
-  if (typeof enemies === 'number') {
-    const generated = [];
-    for (let i = 0; i < enemies; i++) {
-      generated.push(generateGroundEnemy());
-    }
-    enemies = generated;
+// Main combat update loop
+function combatLoop() {
+  if (groundCombatState && groundCombatState.phase === 'active') {
+    groundCombatState = updateGroundCombat(groundCombatState);
+    renderGroundCombat();
+    requestAnimationFrame(combatLoop);
   }
-  
-  const bars = {};
-  [...party, ...enemies].forEach(u => { bars[u.id] = u.atb || r.int(0, 30); });
-  
-  return {
-    phase: 'active',
-    party,
-    enemies,
-    bars,
-    acting: null,
-    log: [`⚔ COMBAT: ${loc}`, 'Stand by...'],
-    tick: 0,
-    flashId: null,
-    selectedEnemy: null
-  };
 }
+
 function addCombatLog(msg,type='system'){G.combat.log.unshift({msg,type});document.getElementById('cbat-log').innerHTML=G.combat.log.map(e=>`<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');}
 function renderCombat(){
   const c=G.combat,s=G.ship,e=c.enemy;
@@ -3176,38 +3177,451 @@ function combatAction(action){
 }
 function boardEnemy(){if(!G.combat||G.combat.enemy.systems.shields.hp>0){addCombatLog('Shields must be down to board.');return;}startGroundCombat(G.combat.enemy);}
 let groundCombatState=null;
-function initGC(party,numE,loc,seed){const r=new RNG('gc'+seed);const enemies=Array.from({length:numE},(_,i)=>{const e=r.pick(E_TYPES);return{...e,id:'e'+Date.now()+i,hp:e.maxHp,atb:r.int(0,30),status:null};});const bars={};[...party,...enemies].forEach(u=>{bars[u.id]=u.atb||0;});return{phase:'active',party,enemies,bars,acting:null,log:[`⚔ COMBAT: ${loc}`,'Stand by...'],tick:0,flashId:null,selectedEnemy:null};}
-function tickGC(st){if(st.acting!==null||st.phase!=='active')return st;let{party,enemies,bars,log}=st;const nb={...bars};[...party.filter(p=>p.alive&&p.hp>0),...enemies.filter(e=>e.hp>0)].forEach(u=>{nb[u.id]=Math.min(100,(nb[u.id]||0)+(u.spd||5)*0.14);});const eR=enemies.find(e=>e.hp>0&&nb[e.id]>=100);if(eR){const alive=party.filter(p=>p.alive&&p.hp>0);if(!alive.length)return{...st,phase:'defeat'};const tgt=alive[Math.floor(Math.random()*alive.length)];const dmg=Math.floor(eR.atk*(0.8+Math.random()*0.4));const np=party.map(p=>p.id===tgt.id?{...p,hp:Math.max(0,p.hp-dmg),alive:p.hp-dmg>0}:p);nb[eR.id]=0;const nlog=[`${eR.name} attacks ${tgt.name||tgt.role} for ${dmg}!`,...log].slice(0,10);return{...st,party:np,bars:nb,log:nlog,phase:np.every(p=>!p.alive||p.hp<=0)?'defeat':'active',flashId:tgt.id};}
-  const pR=party.find(p=>p.alive&&p.hp>0&&nb[p.id]>=100);if(pR)return{...st,bars:nb,acting:pR.id};return{...st,bars:nb,tick:st.tick+1};}
-function resolveGC(st,action,tid){let{party,enemies,bars,log,acting}=st;const actor=party.find(p=>p.id===acting);if(!actor)return{...st,acting:null};const nb={...bars,[acting]:0};let ne=[...enemies],np=[...party],flashId=null;if(action==='attack'||action==='special'){const tgt=enemies.find(e=>e.id===tid&&e.hp>0)||enemies.find(e=>e.hp>0);if(tgt){const m=action==='special'?2.5:1;const d=Math.floor(((actor.skill||5)*2+Math.random()*8)*m);ne=enemies.map(e=>e.id===tgt.id?{...e,hp:Math.max(0,e.hp-d),status:action==='special'?'stunned':e.status}:e);log=[`${actor.name||actor.role} ${action==='special'?'HACKS':''} → ${tgt.name}: ${d} dmg!`,...log].slice(0,10);flashId=tgt.id;}}else if(action==='heal'){const low=np.filter(p=>p.alive&&p.hp>0).sort((a,b)=>a.hp-b.hp)[0];if(low){const h=Math.floor(18+Math.random()*12);np=party.map(p=>p.id===low.id?{...p,hp:Math.min(p.maxHp,p.hp+h),timesHealed:(p.timesHealed||0)+1}:p);log=[`${actor.name||actor.role} heals ${low.name||low.role} for ${h} HP!`,...log].slice(0,10);}}else if(action==='flee'){return{...st,phase:'fled',acting:null};}
-  return{...st,party:np,enemies:ne,bars:nb,log,acting:null,phase:ne.every(e=>e.hp<=0)?'victory':np.every(p=>!p.alive||p.hp<=0)?'defeat':'active',flashId};}
-function renderGroundCombat(){
-  const st=groundCombatState; if(!st) return;
-  document.getElementById('gc-party').innerHTML=st.party.filter(p=>p.alive&&p.hp>0).map(p=>`<div class="gc-party-card"><b>${p.name}</b> (${p.role})<br>❤️ ${p.hp}/${p.maxHp}<br>⚔ ${p.atk} 🏃 ${p.spd}</div>`).join('');
-  document.getElementById('gc-enemies').innerHTML=st.enemies.filter(e=>e.hp>0).map(e=>`<div class="gc-enemy-card" onclick="selectGroundTarget('${e.id}')" style="${st.selectedEnemy===e.id?'border-color:gold;':''}"><b>${e.name}</b><br>❤️ ${e.hp}/${e.maxHp}<br>⚔ ${e.atk}</div>`).join('');
-  document.getElementById('gc-log').innerHTML=st.log.map(l=>`<div>${l}</div>`).join('');
-  const actor=st.party.find(p=>p.id===st.acting);
-  if(actor){
-    document.getElementById('gc-actions').innerHTML=`<b>${actor.name}'s turn</b><br>
-      <button class="btn btn-sm" onclick="groundAction('attack')">⚔ Attack</button>
-      <button class="btn btn-sm" onclick="groundAction('heal')">💊 Heal</button>
-      <button class="btn btn-sm" onclick="groundAction('special')">💻 Special</button>
-      <button class="btn btn-sm" onclick="groundAction('flee')">🏃 Flee</button>`;
-  }else{
-    document.getElementById('gc-actions').innerHTML=`<button class="btn btn-sm" onclick="groundTick()">⏩ Next Tick</button>`;
+
+
+// ========== SPRITE MAPPING HELPER ==========
+// Sprite mapping system (add your sprite URLs here later)
+const UNIT_SPRITES = {
+  // Player roles
+  'gunner': 'assets/sprites/gunner.png',
+  'medic': 'assets/sprites/medic.png',
+  'engineer': 'assets/sprites/engineer.png',
+  'scout': 'assets/sprites/scout.png',
+  
+  // Enemy types
+  'pirate_raider': 'assets/sprites/pirate.png',
+  'syndicate_merc': 'assets/sprites/merc.png',
+  'alien_warrior': 'assets/sprites/alien.png',
+  // ... add more
+};
+
+// Apply sprite to unit card (call in renderUnitCard)
+function applyUnitSprite(cardEl, unit) {
+  const spriteKey = unit.spriteId || unit.id || unit.role?.toLowerCase();
+  const spriteUrl = UNIT_SPRITES[spriteKey];
+  
+  if (spriteUrl) {
+    const spriteDiv = cardEl.querySelector('.unit-sprite');
+    if (spriteDiv) {
+      spriteDiv.style.backgroundImage = `url(${spriteUrl})`;
+      spriteDiv.textContent = ''; // Hide emoji
+    }
   }
 }
-function selectGroundTarget(id){groundCombatState.selectedEnemy=id;renderGroundCombat();}
-function groundAction(action){
-  if(!groundCombatState.acting)return;
-  const tid = (action==='attack'||action==='special') ? groundCombatState.selectedEnemy : null;
-  groundCombatState = resolveGC(groundCombatState, action, tid);
-  if(groundCombatState.phase==='victory'){ addLog('Boarding successful!'); G.combat.won=true; exitCombat(true); closeGroundCombat(); }
-  else if(groundCombatState.phase==='defeat'){ addLog('Boarding party wiped out!'); G.crew.forEach(c=>c.alive=false); closeGroundCombat(); exitCombat(false); }
-  else if(groundCombatState.phase==='fled'){ addLog('Fled from ground combat.'); closeGroundCombat(); }
-  else renderGroundCombat();
+
+  
+// ========== GROUND COMBAT: RENDERER (Sprite-Ready) ==========
+
+function renderGroundCombat() {
+  const gc = groundCombatState;
+  if (!gc) return;
+  
+  // Party Panel
+  const partyEl = document.getElementById('gc-party');
+  if (partyEl) {
+    partyEl.innerHTML = gc.party.map(unit => renderUnitCard(unit, false, gc)).join('');
+  }
+  
+  // Enemy Panel
+  const enemiesEl = document.getElementById('gc-enemies');
+  if (enemiesEl) {
+    enemiesEl.innerHTML = gc.enemies.map(unit => renderUnitCard(unit, true, gc)).join('');
+  }
+  
+  // Combat Log
+  const logEl = document.getElementById('gc-log');
+  if (logEl) {
+    logEl.innerHTML = gc.log.map((msg, i) => 
+      `<div style="color:${i===0?'var(--star)':'var(--metal)'};font-size:13px;line-height:1.5">${msg}</div>`
+    ).join('');
+    logEl.scrollTop = 0; // Auto-scroll to top
+  }
+  
+  // Action Panel
+  const actionsEl = document.getElementById('gc-actions');
+  if (actionsEl) {
+    const actor = gc.party.find(p => p.id === gc.actingUnit);
+    
+    if (gc.phase !== 'active') {
+      // End state
+      const endMsg = gc.phase === 'victory' ? '★ VICTORY ★' : 
+                    gc.phase === 'fled' ? '— ESCAPED —' : '✖ DEFEATED ✖';
+      const endColor = gc.phase === 'victory' ? 'var(--safe)' : 
+                      gc.phase === 'fled' ? 'var(--warn)' : 'var(--hazard)';
+      actionsEl.innerHTML = `<div style="text-align:center;color:${endColor};font-family:'Press Start 2P';font-size:10px;padding:10px">${endMsg}</div>`;
+      return;
+        }
+    
+    if (actor) {
+      // Player turn: show action buttons
+      actionsEl.innerHTML = `
+        <div style="margin-bottom:8px">
+          <span style="color:var(--gold);font-family:'Press Start 2P';font-size:9px">
+            ▶ ${actor.name} IS READY
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-danger" onclick="groundAction('attack')">⚔ ATTACK</button>
+          <button class="btn btn-sm btn-warn" onclick="groundAction('special')">✨ ${actor.perk || 'SPECIAL'}</button>
+          <button class="btn btn-sm btn-safe" onclick="groundAction('heal')">💊 HEAL</button>
+          <button class="btn btn-sm" onclick="groundAction('flee')">🏃 FLEE</button>
+        </div>
+        ${gc.selectedTarget ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedTarget)?.name || 'None'}</div>` : ''}
+      `;
+    } else {
+      // Waiting for ATB
+      actionsEl.innerHTML = `<div style="color:var(--metal);font-size:13px">Waiting for turn...</div>`;
+    }
+  }
+  
+  // Update canvas/sprite layer if implemented
+  updateCombatSprites(gc);
 }
-function groundTick(){ groundCombatState = tickGC(groundCombatState); renderGroundCombat(); }
+
+// Render individual unit card (sprite-ready)
+function renderUnitCard(unit, isEnemy, gc) {
+  const alive = unit.hp > 0;
+  const atb = Math.min(100, unit.atb || 0);
+  const isFlashing = gc.flashId === unit.id;
+  const isSelected = gc.selectedTarget === unit.id && !isEnemy && gc.actingUnit;
+  const isActing = gc.actingUnit === unit.id;
+  
+  // Color scheme
+  const borderColor = alive 
+    ? (isSelected ? 'var(--gold)' : isEnemy ? 'var(--hazard)' : 'var(--cyan)')
+    : 'var(--border)';
+  const bgColor = isFlashing 
+    ? (isEnemy ? 'rgba(196,30,58,0.25)' : 'rgba(0,229,255,0.15)')
+    : (isEnemy ? 'rgba(196,30,58,0.08)' : 'rgba(0,229,255,0.05)');
+  
+  // SPRITE HOOK: Add data attributes for sprite system
+  return `
+    <div class="gc-unit-card ${isActing?'acting':''}" 
+         data-unit-id="${unit.id}"
+         data-is-enemy="${isEnemy}"
+         data-sprite="${unit.spriteId || unit.id}"
+         style="
+           background:${bgColor};
+           border:1px solid ${borderColor};
+           padding:8px;
+           margin-bottom:6px;
+           cursor:${isSelected && alive ? 'pointer' : 'default'};
+           opacity:${alive ? 1 : 0.4};
+           transition:all 0.1s ease;
+           ${isFlashing ? 'animation: flash 0.3s ease-in-out 2;' : ''}
+         "
+         ${isSelected && alive ? `onclick="selectGroundTarget('${unit.id}')"` : ''}
+    >
+      <!-- SPRITE CONTAINER (for future expansion) -->
+      <div class="unit-sprite" style="width:40px;height:40px;margin:0 auto 6px;background:var(--panel);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:24px">
+        ${unit.emoji || (isEnemy ? '👾' : '👤')}
+      </div>
+      
+      <!-- Name & HP -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="color:${isEnemy?'var(--hazard)':'var(--cyan)'};font-family:'Press Start 2P';font-size:8px">
+          ${unit.icon || '◈'} ${unit.name || unit.role}
+        </span>
+        <span style="color:var(--metal);font-size:11px">${unit.hp}/${unit.maxHp}</span>
+      </div>
+      
+      <!-- HP Bar -->
+      <div style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:4px">
+        <div style="height:100%;width:${(unit.hp/unit.maxHp)*100}%;background:${isEnemy?'var(--hazard)':'var(--safe)'};transition:width 0.15s"></div>
+      </div>
+      
+      <!-- ATB Bar -->
+      <div style="display:flex;align-items:center;gap:4px">
+        <div style="flex:1;height:3px;background:rgba(0,0,0,0.3);border-radius:1px;overflow:hidden">
+          <div style="height:100%;width:${atb}%;background:var(--gold);transition:width 0.05s"></div>
+        </div>
+        <span style="color:var(--gold);font-size:9px;font-family:'VT323'">${Math.floor(atb)}%</span>
+      </div>
+      
+      <!-- Status Effects -->
+      ${unit.status ? `<div style="margin-top:4px;color:var(--warn);font-size:10px">[${unit.status.toUpperCase()}]</div>` : ''}
+    </div>
+  `;
+}
+
+// Select target for attack/special
+function selectGroundTarget(id) {
+  if (!groundCombatState || !groundCombatState.actingUnit) return;
+  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
+  if (!actor) return;
+  
+  groundCombatState.selectedTarget = id;
+  renderGroundCombat();
+}
+
+// Handle player action button clicks
+function groundAction(action) {
+  if (!groundCombatState || groundCombatState.phase !== 'active') return;
+  if (!groundCombatState.actingUnit) return;
+  
+  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
+  if (!actor) return;
+  
+  // For attack/special, require target selection
+  if ((action === 'attack' || action === 'special') && !groundCombatState.selectedTarget) {
+    addLog('Select a target first!');
+    return;
+  }
+  
+  // Execute action
+  groundCombatState = executeGroundAction(groundCombatState, action, groundCombatState.selectedTarget);
+  renderGroundCombat();
+  checkCombatEnd();
+  
+  // Start enemy turn cycle
+  if (groundCombatState.phase === 'active') {
+    requestAnimationFrame(() => {
+      groundCombatState = updateGroundCombat(groundCombatState);
+      renderGroundCombat();
+    });
+  }
+}
+
+// Close ground combat and return to galaxy
+function closeGroundCombat() {
+  groundCombatState = null;
+  showScreen('galaxy-screen');
+  updateHUD();
+  updateRP();
+  updateLP();
+}
+
+// Sprite system hook (for future expansion)
+function updateCombatSprites(gc) {
+  // Placeholder: Add sprite animation logic here later
+  // Example: document.querySelectorAll('.unit-sprite').forEach(el => { ... });
+}
+
+// Add CSS animation for flash effect
+const combatStyles = document.createElement('style');
+combatStyles.textContent = `
+  @keyframes flash {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+  }
+  .gc-unit-card.acting {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .unit-sprite {
+    background-size: cover;
+    background-position: center;
+  }
+`;
+document.head.appendChild(combatStyles);  
+
+
+
+// ========== GROUND COMBAT: RENDERER (Sprite-Ready) ==========
+
+function renderGroundCombat() {
+  const gc = groundCombatState;
+  if (!gc) return;
+  
+  // Party Panel
+  const partyEl = document.getElementById('gc-party');
+  if (partyEl) {
+    partyEl.innerHTML = gc.party.map(unit => renderUnitCard(unit, false, gc)).join('');
+  }
+  
+  // Enemy Panel
+  const enemiesEl = document.getElementById('gc-enemies');
+  if (enemiesEl) {
+    enemiesEl.innerHTML = gc.enemies.map(unit => renderUnitCard(unit, true, gc)).join('');
+  }
+  
+  // Combat Log
+  const logEl = document.getElementById('gc-log');
+  if (logEl) {
+    logEl.innerHTML = gc.log.map((msg, i) => 
+      `<div style="color:${i===0?'var(--star)':'var(--metal)'};font-size:13px;line-height:1.5">${msg}</div>`
+    ).join('');
+    logEl.scrollTop = 0; // Auto-scroll to top
+  }
+  
+  // Action Panel
+  const actionsEl = document.getElementById('gc-actions');
+  if (actionsEl) {
+    const actor = gc.party.find(p => p.id === gc.actingUnit);
+    
+    if (gc.phase !== 'active') {
+      // End state
+      const endMsg = gc.phase === 'victory' ? '★ VICTORY ★' : 
+                    gc.phase === 'fled' ? '— ESCAPED —' : '✖ DEFEATED ✖';
+      const endColor = gc.phase === 'victory' ? 'var(--safe)' : 
+                      gc.phase === 'fled' ? 'var(--warn)' : 'var(--hazard)';
+      actionsEl.innerHTML = `<div style="text-align:center;color:${endColor};font-family:'Press Start 2P';font-size:10px;padding:10px">${endMsg}</div>`;
+      return;
+        }
+    
+    if (actor) {
+      // Player turn: show action buttons
+      actionsEl.innerHTML = `
+        <div style="margin-bottom:8px">
+          <span style="color:var(--gold);font-family:'Press Start 2P';font-size:9px">
+            ▶ ${actor.name} IS READY
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-danger" onclick="groundAction('attack')">⚔ ATTACK</button>
+          <button class="btn btn-sm btn-warn" onclick="groundAction('special')">✨ ${actor.perk || 'SPECIAL'}</button>
+          <button class="btn btn-sm btn-safe" onclick="groundAction('heal')">💊 HEAL</button>
+          <button class="btn btn-sm" onclick="groundAction('flee')">🏃 FLEE</button>
+        </div>
+        ${gc.selectedTarget ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedTarget)?.name || 'None'}</div>` : ''}
+      `;
+    } else {
+      // Waiting for ATB
+      actionsEl.innerHTML = `<div style="color:var(--metal);font-size:13px">Waiting for turn...</div>`;
+    }
+  }
+  
+  // Update canvas/sprite layer if implemented
+  updateCombatSprites(gc);
+}
+
+// Render individual unit card (sprite-ready)
+function renderUnitCard(unit, isEnemy, gc) {
+  const alive = unit.hp > 0;
+  const atb = Math.min(100, unit.atb || 0);
+  const isFlashing = gc.flashId === unit.id;
+  const isSelected = gc.selectedTarget === unit.id && !isEnemy && gc.actingUnit;
+  const isActing = gc.actingUnit === unit.id;
+  
+  // Color scheme
+  const borderColor = alive 
+    ? (isSelected ? 'var(--gold)' : isEnemy ? 'var(--hazard)' : 'var(--cyan)')
+    : 'var(--border)';
+  const bgColor = isFlashing 
+    ? (isEnemy ? 'rgba(196,30,58,0.25)' : 'rgba(0,229,255,0.15)')
+    : (isEnemy ? 'rgba(196,30,58,0.08)' : 'rgba(0,229,255,0.05)');
+  
+  // SPRITE HOOK: Add data attributes for sprite system
+  return `
+    <div class="gc-unit-card ${isActing?'acting':''}" 
+         data-unit-id="${unit.id}"
+         data-is-enemy="${isEnemy}"
+         data-sprite="${unit.spriteId || unit.id}"
+         style="
+           background:${bgColor};
+           border:1px solid ${borderColor};
+           padding:8px;
+           margin-bottom:6px;
+           cursor:${isSelected && alive ? 'pointer' : 'default'};
+           opacity:${alive ? 1 : 0.4};
+           transition:all 0.1s ease;
+           ${isFlashing ? 'animation: flash 0.3s ease-in-out 2;' : ''}
+         "
+         ${isSelected && alive ? `onclick="selectGroundTarget('${unit.id}')"` : ''}
+    >
+      <!-- SPRITE CONTAINER (for future expansion) -->
+      <div class="unit-sprite" style="width:40px;height:40px;margin:0 auto 6px;background:var(--panel);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:24px">
+        ${unit.emoji || (isEnemy ? '👾' : '👤')}
+      </div>
+      
+      <!-- Name & HP -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="color:${isEnemy?'var(--hazard)':'var(--cyan)'};font-family:'Press Start 2P';font-size:8px">
+          ${unit.icon || '◈'} ${unit.name || unit.role}
+        </span>
+        <span style="color:var(--metal);font-size:11px">${unit.hp}/${unit.maxHp}</span>
+      </div>
+      
+      <!-- HP Bar -->
+      <div style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:4px">
+        <div style="height:100%;width:${(unit.hp/unit.maxHp)*100}%;background:${isEnemy?'var(--hazard)':'var(--safe)'};transition:width 0.15s"></div>
+      </div>
+      
+      <!-- ATB Bar -->
+      <div style="display:flex;align-items:center;gap:4px">
+        <div style="flex:1;height:3px;background:rgba(0,0,0,0.3);border-radius:1px;overflow:hidden">
+          <div style="height:100%;width:${atb}%;background:var(--gold);transition:width 0.05s"></div>
+        </div>
+        <span style="color:var(--gold);font-size:9px;font-family:'VT323'">${Math.floor(atb)}%</span>
+      </div>
+      
+      <!-- Status Effects -->
+      ${unit.status ? `<div style="margin-top:4px;color:var(--warn);font-size:10px">[${unit.status.toUpperCase()}]</div>` : ''}
+    </div>
+  `;
+}
+
+// Select target for attack/special
+function selectGroundTarget(id) {
+  if (!groundCombatState || !groundCombatState.actingUnit) return;
+  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
+  if (!actor) return;
+  
+  groundCombatState.selectedTarget = id;
+  renderGroundCombat();
+}
+
+// Handle player action button clicks
+function groundAction(action) {
+  if (!groundCombatState || groundCombatState.phase !== 'active') return;
+  if (!groundCombatState.actingUnit) return;
+  
+  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
+  if (!actor) return;
+  
+  // For attack/special, require target selection
+  if ((action === 'attack' || action === 'special') && !groundCombatState.selectedTarget) {
+    addLog('Select a target first!');
+    return;
+  }
+  
+  // Execute action
+  groundCombatState = executeGroundAction(groundCombatState, action, groundCombatState.selectedTarget);
+  renderGroundCombat();
+  checkCombatEnd();
+  
+  // Start enemy turn cycle
+  if (groundCombatState.phase === 'active') {
+    requestAnimationFrame(() => {
+      groundCombatState = updateGroundCombat(groundCombatState);
+      renderGroundCombat();
+    });
+  }
+}
+
+// Close ground combat and return to galaxy
+function closeGroundCombat() {
+  groundCombatState = null;
+  showScreen('galaxy-screen');
+  updateHUD();
+  updateRP();
+  updateLP();
+}
+
+// Sprite system hook (for future expansion)
+function updateCombatSprites(gc) {
+  // Placeholder: Add sprite animation logic here later
+  // Example: document.querySelectorAll('.unit-sprite').forEach(el => { ... });
+}
+
+// Add CSS animation for flash effect
+const combatStyles = document.createElement('style');
+combatStyles.textContent = `
+  @keyframes flash {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+  }
+  .gc-unit-card.acting {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .unit-sprite {
+    background-size: cover;
+    background-position: center;
+  }
+`;
+document.head.appendChild(combatStyles);
+
+
+  
 function closeGroundCombat(){ showScreen('galaxy-screen'); updateHUD(); updateRP(); }
 function exitCombat(won){
   if(won){const e=G.combat.enemy;const cr=Math.floor(e.loot.cr[0]+G.rng.next()*(e.loot.cr[1]-e.loot.cr[0]));G.flagship.credits+=cr;G.flagship.scrap=(G.flagship.scrap||0)+(e.loot.scrap||2);addLog(`Salvaged ${cr}cr and ${e.loot.scrap} scrap.`);}
