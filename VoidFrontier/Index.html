@@ -471,7 +471,8 @@ const GOODS = [
   { id: 'luxury_goods', name: 'Luxury Goods', emoji: '💎', basePrice: 300, legal: true, wt: 1 },
   { id: 'weapon_schematics', name: 'Weapon Schematics', emoji: '📜', basePrice: 600, legal: false, wt: 0 },
   { id: 'slaves', name: 'Slaves', emoji: '⛓️', basePrice: 1200, legal: false, wt: 5 },
-  { id: 'cryo_pods', name: 'Cryo Pods', emoji: '❄️', basePrice: 250, legal: true, wt: 4 }
+  { id: 'cryo_pods', name: 'Cryo Pods', emoji: '❄️', basePrice: 250, legal: true, wt: 4 },
+  { id: 'dark_matter', name: 'Dark Matter', emoji: '🌑', basePrice: 12000, legal: true, wt: 1, use: { galaxyJump: true } }
 ];
 
 // ---------- MODULES (more ship upgrades) ----------
@@ -1019,7 +1020,7 @@ const E_TYPES = [
 const EVENTS = [
   // ---------- SPACE ENCOUNTERS ----------
   { id: 'derelict', title: '⚠ DERELICT VESSEL', body: 'A ship drifts silently. No life signs, but power readings flicker.', choices: [
-    { text: '[ BOARD ] Risk crew for salvage', skillCheck: { skill: 'engineering', dc: 12 }, success: { eff: { cr: 450, scrap: 3, log: 'Salvaged valuable components from the wreck.' } }, failure: { eff: { hull: -15, log: 'Security drones activated! Hull took damage.' }, combat: true } },
+    { text: '[ BOARD ] Risk crew for salvage', skillCheck: { skill: 'engineering', dc: 12 }, success: { eff: { cr: 450, darkMatterChance: 0.01, scrap: 3, log: 'Salvaged valuable components from the wreck.' } }, failure: { eff: { hull: -15, log: 'Security drones activated! Hull took damage.' }, combat: true } },
     { text: '[ SCAN REMOTELY ] Safe intel', eff: { cr: 150, log: 'Scanned and sold the derelict\'s location data.' } },
     { text: '[ AVOID ] Continue journey', eff: {} }
   ] },
@@ -1052,7 +1053,7 @@ const EVENTS = [
   
   { id: 'anomaly', title: '🌀 SPATIAL ANOMALY', body: 'Strange energy readings ahead. Instruments are going haywire.', choices: [
     { text: '[ SCAN ] Document for science guilds', skillCheck: { skill: 'science', dc: 14 }, success: { eff: { cr: 300, log: 'Detailed scan data sold to researchers.' } }, failure: { eff: { hull: -10, log: 'Anomaly surged! Minor hull damage.' } } },
-    { text: '[ FLY THROUGH ] Risk it for rewards', eff: { cr: 800, hull: -20, log: 'Made it through! Found a cache of valuable materials on the other side.' } },
+    { text: '[ FLY THROUGH ] Risk it for rewards', eff: { cr: 300, darkMatterChance: 0.3, hull: -20, log: 'Made it through! Found some stabilized dark matter.' } },
     { text: '[ AVOID ] Chart and bypass', eff: { log: 'Charted the anomaly and plotted a safe course around.' } }
   ] },
   
@@ -1176,7 +1177,7 @@ const EVENTS = [
   
   // ---------- SPECIAL / RARE EVENTS ----------
   { id: 'time_anomaly', title: '⏳ TEMPORAL ANOMALY', body: 'Your ship is caught in a temporal distortion! Time flows strangely.', choices: [
-    { text: '[ RIDE IT OUT ]', eff: { fuel: 30, hull: -15, log: 'You emerged with extra fuel but hull stress.' } },
+    { text: '[ RIDE IT OUT ]', eff: { fuel: 30, darkMatterChance: 0.1, hull: -15, log: 'You emerged with extra fuel but hull stress.' } },
     { text: '[ CALIBRATE SHIELDS ]', skillCheck: { skill: 'science', dc: 16 }, success: { eff: { artifact: 1, log: 'You stabilized the anomaly and extracted a temporal crystal!' } }, failure: { eff: { crewAge: true, log: 'Crew aged several years! Morale plummets.' } } }
   ] },
   
@@ -1461,6 +1462,19 @@ const DRAMA_EVENTS = [
   ] }
 ];
 
+// ---------- STARTER CREW POOL ----------
+const CREW_POOL = [
+  { name: 'Zoya Kas', role: 'Engineer', emoji: '⚙️', loyalty: 70, bio: 'Seasoned mechanic.', hp: 40, maxHp: 40, atk: 8, spd: 5, skill: 6, species: 'Human' },
+  { name: 'REX-7', role: 'Security', emoji: '🤖', loyalty: 55, bio: 'Combat android.', hp: 50, maxHp: 50, atk: 12, spd: 4, skill: 4, species: 'Android' },
+  { name: 'Mira Tong', role: 'Navigator', emoji: '🔭', loyalty: 65, bio: 'Former cartographer.', hp: 35, maxHp: 35, atk: 7, spd: 6, skill: 7, species: 'Human' },
+  { name: 'Jax Varley', role: 'Gunner', emoji: '🔫', loyalty: 60, bio: 'Ex-military, quick temper.', hp: 45, maxHp: 45, atk: 11, spd: 5, skill: 5, species: 'Human' },
+  { name: 'Lyra Nox', role: 'Medic', emoji: '💉', loyalty: 75, bio: 'Pacifist doctor.', hp: 35, maxHp: 35, atk: 5, spd: 4, skill: 8, species: 'Human' },
+  { name: 'Orin Vex', role: 'Scout', emoji: '🔍', loyalty: 50, bio: 'Quiet, observant.', hp: 38, maxHp: 38, atk: 9, spd: 7, skill: 6, species: 'Human' },
+  { name: 'Kael Thorn', role: 'Technician', emoji: '🔧', loyalty: 55, bio: 'Hacker with a past.', hp: 40, maxHp: 40, atk: 7, spd: 5, skill: 7, species: 'Human' },
+  { name: 'Nova Chen', role: 'Pilot', emoji: '🚀', loyalty: 65, bio: 'Ace pilot, cocky.', hp: 42, maxHp: 42, atk: 8, spd: 6, skill: 7, species: 'Human' }
+];
+
+  
 // ---------- STARTER CREW (with more attributes) ----------
 const STARTER_CREW = [
   { name: 'Zoya Kas', nick: '', role: 'Engineer', emoji: '⚙️', loyalty: 70, bio: 'Seasoned mechanic.', hp: 40, maxHp: 40, atk: 8, spd: 5, skill: 6, alive: true, xp: 0, level: 1, equippedWeapon: null, species: 'Human', biotype: 'Human', traits: ['Steady Hands'] },
@@ -1531,7 +1545,22 @@ function initState(seed, difficulty='normal') {
   }];
   G.curShipIdx = 0;
   G.rep = {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0};
-  G.crew = JSON.parse(JSON.stringify(STARTER_CREW)).map(c=>({...c, id:'c'+Math.random().toString(36), alive:true, hp:c.maxHp, maxHp:c.hp, atk:c.atk||8, spd:c.spd||5, skill:c.skill||5}));
+  // Randomly pick 2 unique crew from the pool
+const shuffled = [...CREW_POOL].sort(() => G.rng.next() - 0.5);
+const selectedCrew = shuffled.slice(0, 2);
+G.crew = selectedCrew.map(c => ({
+  ...c,
+  id: 'c' + Math.random().toString(36),
+  alive: true,
+  hp: c.maxHp,
+  maxHp: c.hp,
+  atk: c.atk || 8,
+  spd: c.spd || 5,
+  skill: c.skill || 5,
+  level: 1,
+  xp: 0,
+  equippedWeapon: null
+}));
   G.cargo = []; G.soldExplorationData = []; G.probedFeatures = {};
   G.contracts = []; G.log = ['The stars await.']; G.ccStep = 0; G.jumps = 0; G.dramaTimer = 0;
   
@@ -1759,17 +1788,45 @@ function genGalaxy(rng,W,H){
   const systems=pos.map((p,i)=>{
     const st=STAR_TYPES[Math.floor(rng.next()*STAR_TYPES.length)];
     const fac=FACTIONS[Math.floor(rng.next()*FACTIONS.length)];
-    const f1=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)],f2=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
+    const f1=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
+    const f2=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
     const name=SYS_PFXS[Math.floor(rng.next()*SYS_PFXS.length)]+(rng.next()>.45?' '+SYS_SFXS[Math.floor(rng.next()*SYS_SFXS.length)]:'');
-    const wealth=Math.floor(rng.next()*5)+1,security=Math.floor(rng.next()*5)+1;
-    return{id:i,name,x:p.x,y:p.y,starType:st.type,starColor:st.color,faction:fac,features:[f1,f2].filter((v,i,a)=>a.indexOf(v)===i),danger:security,wealth,hasStation:true,stationType:wealth>=4?'Hub':'Outpost',hasPlanet:rng.next()>.35,visited:i===0,revealed:i===0,rx:0,ry:0};
+    const wealth=Math.floor(rng.next()*5)+1;
+    const security=Math.floor(rng.next()*5)+1;
+    const availableModules = ST_NODES.filter(n => {
+      if (wealth < (n.minWealth || 1)) return false;
+      if (n.requiresLowSecurity && security > 3) return false;
+      return true;
+    });
+    const count = Math.min(availableModules.length, 3 + Math.floor(wealth / 2));
+    const shuffled = [...availableModules].sort(() => rng.next() - 0.5);
+    const stationModules = shuffled.slice(0, count);
+    return {
+      id:i, name, x:p.x, y:p.y, starType:st.type, starColor:st.color, faction:fac,
+      features:[f1,f2].filter((v,i,a)=>a.indexOf(v)===i), danger:security, wealth,
+      hasStation:true, stationType:wealth>=4?'Hub':'Outpost', hasPlanet:rng.next()>.35,
+      visited:i===0, revealed:i===0, rx:0, ry:0,
+      stationModules    // <-- Added property
+    };
   });
+  
   const conns=[];const cset=new Set();
-  for(let i=0;i<systems.length;i++){const dists=[];for(let j=0;j<systems.length;j++){if(i===j)continue;const d=Math.hypot(systems[i].x-systems[j].x,systems[i].y-systems[j].y);if(d<165)dists.push({j,d});}dists.sort((a,b)=>a.d-b.d);dists.slice(0,Math.floor(rng.next()*3)+2).forEach(({j})=>{const k=Math.min(i,j)+'_'+Math.max(i,j);if(!cset.has(k)){cset.add(k);conns.push([i,j]);}});}
+  for(let i=0;i<systems.length;i++){
+    const dists=[];
+    for(let j=0;j<systems.length;j++){
+      if(i===j)continue;
+      const d=Math.hypot(systems[i].x-systems[j].x,systems[i].y-systems[j].y);
+      if(d<165)dists.push({j,d});
+    }
+    dists.sort((a,b)=>a.d-b.d);
+    dists.slice(0,Math.floor(rng.next()*3)+2).forEach(({j})=>{
+      const k=Math.min(i,j)+'_'+Math.max(i,j);
+      if(!cset.has(k)){cset.add(k);conns.push([i,j]);}
+    });
+  }
   return{systems,conns};
 }
-function reachable(){const r=new Set();G.galaxy.conns.forEach(([a,b])=>{if(a===G.curSys)r.add(b);if(b===G.curSys)r.add(a);});return r;}
-
+  
 // ========== MAP ==========
 let gxCanvas,gxCtx,gxPulse=0,gxAniming=false;
 function initGalaxy(){
@@ -1885,18 +1942,23 @@ function travelTo(id){
   G.fleet.forEach(s=> s.fuel = Math.max(0, s.fuel - Math.ceil(10 * s.fuelUse)));
   G.curSys=id; const sys=G.galaxy.systems[id]; sys.visited=true; sys.revealed=true; revealConnected(id);
   G.selSys=id; G.jumps++; G.dramaTimer++;
-  G.probedFeatures={}; // reset for new system
+  //G.probedFeatures={}; // reset for new system
   checkContractCompletion(sys.name);
   addLog(`Jumped to ${sys.name}.`); updateHUD(); updateLP();
   if(G.dramaTimer>=3&&G.crew.filter(c=>c.alive).length>=2){G.dramaTimer=0;setTimeout(checkDrama,800);}
   else setTimeout(triggerEvent,700);
 }
 function exploreSys(){
-  const sysId=G.curSys; const count=G.probedFeatures['explored']||0;
-  if(count>=2){addLog('Nothing more to explore here.');return;}
-  G.probedFeatures['explored']=count+1;
-  setTimeout(triggerEvent,400);
+  const sysId = G.curSys;
+  const count = G.probedFeatures['explored_' + sysId] || 0;
+  if (count >= 2) {
+    addLog('Nothing more to explore here.');
+    return;
+  }
+  G.probedFeatures['explored_' + sysId] = count + 1;
+  setTimeout(triggerEvent, 400);
 }
+  
 function checkDrama(){
   const alive=G.crew.filter(c=>c.alive);if(alive.length<2)return triggerEvent();
   const ev=DRAMA_EVENTS[Math.floor(G.rng.next()*DRAMA_EVENTS.length)];
@@ -1907,14 +1969,32 @@ function checkDrama(){
   document.getElementById('drama-overlay').classList.add('open');
 }
 function resolveDrama(i){const ch=currentDrama.choices[i],e=ch.eff;if(e.cr)G.ship.credits=Math.max(0,G.ship.credits+e.cr);if(e.mora)G.ship.morale=Math.min(100,Math.max(0,G.ship.morale+e.mora));addLog(e.log||'Drama resolved.');document.getElementById('drama-overlay').classList.remove('open');updateHUD();setTimeout(triggerEvent,300);}
+
+  //trigger events
 function triggerEvent(){
-  const sys=G.galaxy.systems[G.curSys];
-  if(sys.danger>=4&&G.rng.next()<0.3){startCombat();return;}
-  const ev=EVENTS[Math.floor(G.rng.next()*EVENTS.length)];currentEvent=ev;
-  document.getElementById('ev-title').textContent=ev.title;document.getElementById('ev-body').textContent=ev.body;
-  document.getElementById('ev-choices').innerHTML=ev.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`).join('');
+  console.log('triggerEvent called');
+  const sys = G.galaxy.systems[G.curSys];
+  // Danger check: chance to trigger combat instead of event
+  if (sys.danger >= 4 && G.rng.next() < 0.3) {
+    startCombat();
+    return;
+  }
+  // Pick a random event from the EVENTS array
+  const ev = EVENTS[Math.floor(G.rng.next() * EVENTS.length)];
+  if (!ev) {
+    addLog('Nothing unusual happens.');
+    return;
+  }
+  currentEvent = ev;
+  document.getElementById('ev-title').textContent = ev.title;
+  document.getElementById('ev-body').textContent = ev.body;
+  document.getElementById('ev-choices').innerHTML = ev.choices.map((c, i) => 
+    `<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`
+  ).join('');
   document.getElementById('ev-overlay').classList.add('open');
 }
+  
+ //Resolve choices 
 function resolveChoice(i){
   let choice = currentEvent.choices[i];
   document.getElementById('ev-overlay').classList.remove('open');
@@ -1933,6 +2013,7 @@ function resolveChoice(i){
   if (eff.rep_federation) G.rep.federation += eff.rep_federation;
   if (eff.scrap) G.flagship.scrap = (G.flagship.scrap || 0) + eff.scrap;
   if (eff.artifact) { addCargo('artifacts',1) && addLog('Found an Ancient Artifact!'); }
+  if (eff.darkMatterChance && G.rng.next() < eff.darkMatterChance) {addCargo('dark_matter', 1) && addLog('Found a Dark Matter shard!');  }
   if (eff.crewGain) { const newCrew=generateRandomCrew(); G.crew.push(newCrew); addLog(`${newCrew.name} joins your crew!`); }
   if (eff.crewDeath) { const alive=G.crew.filter(c=>c.alive); if(alive.length){ const victim=alive[Math.floor(G.rng.next()*alive.length)]; victim.alive=false; addLog(`${victim.name} has died.`); } }
   addLog(eff.log || 'Event resolved.');
@@ -1942,7 +2023,21 @@ function resolveChoice(i){
 }
 
 // ========== STATION (expanded) ==========
-const ST_NODES=[{id:'cantina',name:'CANTINA',emoji:'🍺'},{id:'maintenance',name:'MAINTENANCE',emoji:'🔧'},{id:'market',name:'MARKET',emoji:'💹'},{id:'guild',name:'GUILD',emoji:'📋'},{id:'blackmarket',name:'BLACK MARKET',emoji:'🌑'},{id:'dataexchange',name:'DATA EXCHANGE',emoji:'📡'},{id:'smuggler',name:'SMUGGLER\'S DEN',emoji:'🥷'},{id:'bordello',name:'BORDELLO',emoji:'💋'},{id:'pleasure',name:'PLEASURE HOUSE',emoji:'🎰'}];
+const ST_NODES = [
+  { id: 'cantina', name: 'CANTINA', emoji: '🍺', minWealth: 1 },
+  { id: 'maintenance', name: 'MAINTENANCE', emoji: '🔧', minWealth: 1 },
+  { id: 'market', name: 'MARKET', emoji: '💹', minWealth: 2 },
+  { id: 'guild', name: 'GUILD OFFICE', emoji: '📋', minWealth: 2 },
+  { id: 'blackmarket', name: 'BLACK MARKET', emoji: '🌑', minWealth: 1, requiresLowSecurity: true },
+  { id: 'dataexchange', name: 'DATA EXCHANGE', emoji: '📡', minWealth: 2 },
+  { id: 'bordello', name: 'BORDELLO', emoji: '💋', minWealth: 2 },
+  { id: 'shrine', name: 'VOID SHRINE', emoji: '🛐', minWealth: 1 },
+  { id: 'gambling', name: 'GAMBLING DEN', emoji: '🎲', minWealth: 2 },
+  { id: 'smuggler', name: 'SMUGGLER\'S DEN', emoji: '🥷', minWealth: 1, requiresLowSecurity: true },
+  { id: 'pleasure', name: 'PLEASURE HOUSE', emoji: '🎭', minWealth: 3 },
+  { id: 'armory', name: 'ARMORY', emoji: '🔫', minWealth: 2 },
+  { id: 'embassy', name: 'EMBASSY', emoji: '🏛️', minWealth: 3 }
+];
 function stationPrice(goodId,sysIdx,buying){const g=GOODS.find(x=>x.id===goodId);if(!g)return 0;const srng=new RNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17);const variance=0.85+srng.next()*0.30;const wealthMod=0.6+G.galaxy.systems[sysIdx].wealth*0.18;let price=Math.round(g.basePrice*wealthMod*variance);
  if(buying)price=Math.round(price*1.18); else price = Math.round(price * (G.flagship.tradeSellMult || 1.0));return Math.max(1,price);}
 function stationGoods(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*251);return GOODS.filter(g=>g.legal).sort(()=>srng.next()-.5).slice(0,5);}
@@ -1950,50 +2045,192 @@ function stationRumors(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*421);re
 function genContracts(){G.contracts=[{id:'c1',title:'Delivery',reward:800,target:null,desc:'Transport cargo.'}];}
 function checkContractCompletion(sysName){G.contracts.forEach(c=>{if(c.active && c.target===sysName){G.flagship.credits+=c.reward;addLog(`Contract completed: ${c.title}. +${c.reward} CR`);c.active=false;}});}
 function dockStation(){
-  const sys=G.galaxy.systems[G.curSys];stActiveNode='cantina';
-  document.getElementById('st-name').textContent=`⬡ ${sys.name} ${sys.stationType}`;
-  document.getElementById('st-meta').innerHTML=`<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
-  document.getElementById('st-credits').textContent=`💰 ${G.flagship.credits} CR`;
-  document.getElementById('st-nav').innerHTML=ST_NODES.filter(n=>{if(sys.wealth<2&&n.id==='market')return false;return true;}).map(n=>`<div class="st-node ${n.id===stActiveNode?'active':''}" onclick="stSelectNode('${n.id}')"><div class="st-node-emoji">${n.emoji}</div><div>${n.name}</div></div>`).join('');
-  renderNodeContent('cantina');showScreen('station-screen');
+  const sys = G.galaxy.systems[G.curSys];
+  if (!sys.hasStation) { addLog('No station in this system.'); return; }
+  
+  // Use the pre-generated persistent modules
+  const modules = sys.stationModules || [];
+  if (modules.length === 0) {
+    addLog('This station has no accessible facilities.');
+    return;
+  }
+  
+  stActiveNode = modules[0].id;
+  document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType}`;
+  document.getElementById('st-meta').innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
+  document.getElementById('st-credits').textContent = `💰 ${G.flagship.credits} CR`;
+  
+  document.getElementById('st-nav').innerHTML = modules.map(n => `
+    <div class="st-node ${n.id === stActiveNode ? 'active' : ''}" onclick="stSelectNode('${n.id}')">
+      <div class="st-node-emoji">${n.emoji}</div>
+      <div class="st-node-label"><div class="st-node-name">${n.name}</div></div>
+    </div>
+  `).join('');
+  
+  renderNodeContent(stActiveNode);
+  showScreen('station-screen');
+  addLog(`Docked at ${sys.name} ${sys.stationType}.`);
 }
 function stSelectNode(id){stActiveNode=id;document.querySelectorAll('.st-node').forEach(n=>n.classList.remove('active'));event.target.closest('.st-node').classList.add('active');renderNodeContent(id);}
 function renderNodeContent(nodeId){
-  const cont=document.getElementById('st-content'),sys=G.galaxy.systems[G.curSys];
-  if(nodeId==='cantina'){
-    const rumors=stationRumors(G.curSys);
-    const hiredNames=G.crew.map(c=>c.name);
-    const hirePool=generateHireableCrew(G.curSys).filter(c=>!hiredNames.includes(c.name));
-    let hireHtml=hirePool.map(c=>`<div class="trade-row"><span>${c.emoji} ${c.name} - ${c.role} 💰${c.cost} (HP:${c.hp} ATK:${c.atk})</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits<c.cost?'disabled':''}>HIRE</button></div>`).join('');
-    cont.innerHTML=`<div class="st-content-hdr">🍺 CANTINA</div>
+  const cont = document.getElementById('st-content');
+  const sys = G.galaxy.systems[G.curSys];
+  
+  if (nodeId === 'cantina') {
+    const rumors = stationRumors(G.curSys);
+    const hiredNames = G.crew.map(c => c.name);
+    const hirePool = generateHireableCrew(G.curSys).filter(c => !hiredNames.includes(c.name));
+    let hireHtml = hirePool.map(c => `<div class="trade-row"><span>${c.emoji} ${c.name} - ${c.role} 💰${c.cost} (HP:${c.hp} ATK:${c.atk})</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits < c.cost ? 'disabled' : ''}>HIRE</button></div>`).join('');
+    cont.innerHTML = `<div class="st-content-hdr">🍺 CANTINA</div>
       <div><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>
       <div style="margin-top:10px"><b>HIRE CREW</b></div>${hireHtml}
       <div style="margin-top:16px"><b>RUMORS (150cr)</b></div>${rumors.map((r,i)=>`<div class="trade-row"><span>${r}</span><button class="btn btn-sm" onclick="buyRumor(${i})">BUY</button></div>`).join('')}
       <div class="maint-row"><span>Drinks (+8 morale)</span><button class="btn btn-sm" onclick="stDrink()">50cr</button></div>
       <div><b>Talk to Crew</b> ${G.crew.filter(c=>c.alive).map(c=>`<button class="btn btn-sm" onclick="talkToCrew('${c.id}')">${c.name}</button>`).join('')}</div>`;
-  }else if(nodeId==='market'){
-    const goods=stationGoods(G.curSys);const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1)*c.qty,0);
-    cont.innerHTML=`<div class="st-content-hdr">MARKET</div><div>Cargo ${cargoWt}/${G.totalCargoCap}</div>`+goods.map(g=>{const bp=stationPrice(g.id,G.curSys,true);return`<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm" onclick="buyGood('${g.id}')">BUY</button></div>`}).join('');
-  }else if(nodeId==='maintenance'){
-    const hullCost=Math.ceil((G.flagship.maxHull-G.flagship.hull)*6);const fuelCost=Math.ceil((G.flagship.maxFuel-G.flagship.fuel)*4);
-    cont.innerHTML=`<div class="st-content-hdr">MAINTENANCE</div><div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div><div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
-      <div><b>SHIPYARD</b></div>${SHIP_HULLS.map(h=>`<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
-      <div><b>MODULES</b></div>${MODULES.map(m=>`<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
-  }else if(nodeId==='blackmarket'){
-    const illegal=GOODS.filter(g=>!g.legal);
-    cont.innerHTML=`<div class="st-content-hdr">BLACK MARKET</div>`+illegal.map(g=>{const bp=Math.round(stationPrice(g.id,G.curSys,true)*1.4);return`<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY</button></div>`}).join('');
-  }else if(nodeId==='guild'){
-    if(G.contracts.length===0) genContracts();
-    G.contracts.forEach(c=>{if(!c.target) c.target = G.galaxy.systems[Math.floor(G.rng.next()*G.galaxy.systems.length)].name;});
-    cont.innerHTML=`<div class="st-content-hdr">GUILD OFFICE</div>${G.contracts.map(c=>`<div class="trade-row"><span>${c.title} to ${c.target} (${c.reward}cr)</span><button class="btn btn-sm" onclick="acceptContract('${c.id}')" ${c.active?'disabled':''}>${c.active?'ACTIVE':'ACCEPT'}</button></div>`).join('')}`;
-  }else if(nodeId==='dataexchange'){
-    const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id)).length;
-    cont.innerHTML=`<div class="st-content-hdr">DATA EXCHANGE</div><div>Unsold systems: ${unsold}</div><button class="btn btn-sm" onclick="sellExploData()">SELL DATA (${unsold*80}cr)</button>
-      <button class="btn btn-warn" style="margin-top:20px" onclick="jumpNewGalaxy()">🌌 JUMP TO NEW GALAXY</button>`;
-  }else{
-    cont.innerHTML=`<div class="st-content-hdr">${nodeId.toUpperCase()}</div><div>Coming soon...</div>`;
+  
+  } else if (nodeId === 'market') {
+    const goods = stationGoods(G.curSys);
+    const cargoWt = G.cargo.reduce((a,c) => a + (GOODS.find(g => g.id === c.id)?.wt || 1) * c.qty, 0);
+    cont.innerHTML = `<div class="st-content-hdr">MARKET</div><div>Cargo ${cargoWt}/${G.totalCargoCap}</div>` + goods.map(g => {
+      const bp = stationPrice(g.id, G.curSys, true);
+      return `<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm" onclick="buyGood('${g.id}')">BUY</button></div>`;
+    }).join('');
+  
+  } else if (nodeId === 'maintenance') {
+    const hullCost = Math.ceil((G.flagship.maxHull - G.flagship.hull) * 6);
+    const fuelCost = Math.ceil((G.flagship.maxFuel - G.flagship.fuel) * 4);
+    cont.innerHTML = `<div class="st-content-hdr">MAINTENANCE</div>
+      <div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div>
+      <div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
+      <div><b>SHIPYARD</b></div>${SHIP_HULLS.map(h => `<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
+      <div><b>MODULES</b></div>${MODULES.map(m => `<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
+  
+  } else if (nodeId === 'blackmarket') {
+    const illegal = GOODS.filter(g => !g.legal);
+    cont.innerHTML = `<div class="st-content-hdr">BLACK MARKET</div>` + illegal.map(g => {
+      const bp = Math.round(stationPrice(g.id, G.curSys, true) * 1.4);
+      return `<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY</button></div>`;
+    }).join('');
+  
+  } else if (nodeId === 'guild') {
+    if (G.contracts.length === 0) genContracts();
+    G.contracts.forEach(c => { if (!c.target) c.target = G.galaxy.systems[Math.floor(G.rng.next() * G.galaxy.systems.length)].name; });
+    cont.innerHTML = `<div class="st-content-hdr">GUILD OFFICE</div>` + G.contracts.map(c => `<div class="trade-row"><span>${c.title} to ${c.target} (${c.reward}cr)</span><button class="btn btn-sm" onclick="acceptContract('${c.id}')" ${c.active ? 'disabled' : ''}>${c.active ? 'ACTIVE' : 'ACCEPT'}</button></div>`).join('');
+  } else if (nodeId === 'dataexchange') {
+    const unsold = G.galaxy.systems.filter(s => s.visited && !G.soldExplorationData.includes(s.id)).length;
+    cont.innerHTML = `<div class="st-content-hdr">DATA EXCHANGE</div><div>Unsold systems: ${unsold}</div>
+      <button class="btn btn-sm" onclick="sellExploData()">SELL DATA (${unsold*80}cr)</button>
+      <button class="btn btn-warn" style="margin-top:20px" onclick="jumpNewGalaxy()">🌌 JUMP TO NEW GALAXY (5 Dark Matter)</button>`;
+  } else if (nodeId === 'bordello') {
+    cont.innerHTML = `<div class="st-content-hdr">💋 BORDELLO</div>
+      <div class="maint-row"><span>Relax (50cr)</span> <button class="btn btn-sm" onclick="bordelloRelax()">+15 Morale</button></div>
+      <div class="maint-row"><span>Premium Company (200cr)</span> <button class="btn btn-sm" onclick="bordelloPremium()">+30 Morale, +5% crew loyalty</button></div>`;
+  } else if (nodeId === 'shrine') {
+    cont.innerHTML = `<div class="st-content-hdr">🛐 VOID SHRINE</div>
+      <div>Meditate to receive a blessing from the void.</div>
+      <button class="btn btn-sm" onclick="shrineBless()">Receive Blessing (Free)</button>`;
+  } else if (nodeId === 'gambling') {
+    cont.innerHTML = `<div class="st-content-hdr">🎲 GAMBLING DEN</div>
+      <div>Bet credits for a chance to win big!</div>
+      <button class="btn btn-sm" onclick="gamble(100)">Bet 100cr</button>
+      <button class="btn btn-sm" onclick="gamble(500)">Bet 500cr</button>
+      <button class="btn btn-sm" onclick="gamble(1000)">Bet 1000cr</button>`;
+  } else if (nodeId === 'armory') {
+    cont.innerHTML = `<div class="st-content-hdr">🔫 ARMORY</div>
+      <div>Purchase weapons and combat gear.</div>
+      <div class="trade-row"><span>Small Arms (210cr)</span><button class="btn btn-sm" onclick="buyGood('small_arms')">BUY</button></div>
+      <div class="trade-row"><span>Weapon Schematics (600cr)</span><button class="btn btn-sm" onclick="buyGoodIllegal('weapon_schematics')">BUY</button></div>`;
+  } else if (nodeId === 'embassy') {
+    const faction = sys.faction;
+    cont.innerHTML = `<div class="st-content-hdr">🏛️ ${faction.name} EMBASSY</div>
+      <div>Improve relations with the ${faction.name}.</div>
+      <div class="maint-row"><span>Donate 500cr</span> <button class="btn btn-sm" onclick="embassyDonate()">+10 Reputation</button></div>
+      <div class="maint-row"><span>Request Diplomatic Mission</span> <button class="btn btn-sm" onclick="embassyMission()">Accept Quest</button></div>`;
+  } else if (nodeId === 'pleasure') {
+    cont.innerHTML = `<div class="st-content-hdr">🎭 PLEASURE HOUSE</div>
+      <div>Indulge in exotic entertainments.</div>
+      <div class="maint-row"><span>Standard Package (100cr)</span> <button class="btn btn-sm" onclick="pleasureStandard()">+20 Morale</button></div>
+      <div class="maint-row"><span>Deluxe Package (300cr)</span> <button class="btn btn-sm" onclick="pleasureDeluxe()">+40 Morale, removes 'Stressed' traits</button></div>`;
+  } else if (nodeId === 'smuggler') {
+    cont.innerHTML = `<div class="st-content-hdr">🥷 SMUGGLER'S DEN</div>
+      <div>Specialized illegal goods and services.</div>
+      <div class="trade-row"><span>Hidden Cargo Module (2000cr)</span><button class="btn btn-sm" onclick="buyModule('hidden_cargo')">BUY</button></div>
+      <div class="trade-row"><span>Bribe Authorities (300cr)</span><button class="btn btn-sm" onclick="smugglerBribe()">Clear Bounty</button></div>`;
+  } else {
+    cont.innerHTML = `<div class="st-content-hdr">${nodeId.toUpperCase()}</div><div>Coming soon...</div>`;
   }
 }
+// --- Station  sites ---
+function bordelloRelax() {
+  if (G.flagship.credits < 50) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 50;
+  G.flagship.morale = Math.min(100, G.flagship.morale + 15);
+  addLog('You feel relaxed. Morale +15.');
+  updateHUD(); updateRP();
+}
+function bordelloPremium() {
+  if (G.flagship.credits < 200) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 200;
+  G.flagship.morale = Math.min(100, G.flagship.morale + 30);
+  G.crew.forEach(c => c.loyalty = Math.min(100, c.loyalty + 5));
+  addLog('Premium treatment! Morale +30, crew loyalty +5%.');
+  updateHUD(); updateRP();
+}
+function shrineBless() {
+  const blessings = ['+5 Max Hull', '+10 Fuel', '+2 Morale', 'Temporary Luck'];
+  const bless = blessings[Math.floor(Math.random() * blessings.length)];
+  if (bless.includes('Hull')) { G.flagship.maxHull += 5; G.flagship.hull += 5; }
+  else if (bless.includes('Fuel')) { G.flagship.maxFuel += 10; G.flagship.fuel += 10; }
+  else if (bless.includes('Morale')) { G.flagship.morale = Math.min(100, G.flagship.morale + 2); }
+  addLog(`Shrine blessing: ${bless}.`);
+  updateHUD(); updateRP();
+}
+function gamble(amount) {
+  if (G.flagship.credits < amount) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= amount;
+  const win = G.rng.next() < 0.45;
+  if (win) {
+    const winnings = Math.floor(amount * (1.5 + G.rng.next()));
+    G.flagship.credits += winnings;
+    addLog(`You won ${winnings} credits!`);
+  } else {
+    addLog(`You lost ${amount} credits.`);
+  }
+  updateHUD(); updateRP();
+}
+function embassyDonate() {
+  if (G.flagship.credits < 500) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 500;
+  const fac = G.galaxy.systems[G.curSys].faction.id;
+  G.rep[fac] = (G.rep[fac] || 0) + 10;
+  addLog(`Donated 500cr. ${fac} reputation +10.`);
+  updateHUD(); updateRP();
+}
+function embassyMission() {
+  addLog('Embassy mission accepted. (Quest system placeholder)');
+}
+function pleasureStandard() {
+  if (G.flagship.credits < 100) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 100;
+  G.flagship.morale = Math.min(100, G.flagship.morale + 20);
+  addLog('Morale +20.');
+  updateHUD(); updateRP();
+}
+function pleasureDeluxe() {
+  if (G.flagship.credits < 300) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 300;
+  G.flagship.morale = Math.min(100, G.flagship.morale + 40);
+  addLog('Morale +40. You feel rejuvenated.');
+  updateHUD(); updateRP();
+}
+function smugglerBribe() {
+  if (G.flagship.credits < 300) { addLog('Insufficient credits.'); return; }
+  G.flagship.credits -= 300;
+  // Clear any active bounty (placeholder)
+  addLog('Authorities bribed. Bounty cleared.');
+  updateHUD();
+}
+ 
 function generateHireableCrew(sysIdx){const rng=new RNG(hashStr(G.seed)+sysIdx*739);const pool=[];const names=['Kael','Lyra','Dax','Nova','Orin','Vex','Zane','Yara'];for(let i=0;i<3;i++){const id='hire_'+Date.now()+i;const role=rng.pick(['Gunner','Technician','Medic','Scout']);const cost=300+Math.floor(rng.next()*400);const hp=35+Math.floor(rng.next()*20);pool.push({id,name:rng.pick(names),emoji:role==='Gunner'?'🔫':role==='Medic'?'💉':'🔧',role,cost,hp,maxHp:hp,atk:6+Math.floor(rng.next()*8),spd:4+Math.floor(rng.next()*4),skill:5+Math.floor(rng.next()*6),alive:true,xp:0,level:1,equippedWeapon:null});}window._tempHirePool=pool;return pool;}
 function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);updateHUD();updateRP();renderNodeContent('cantina');}
 function talkBartender(){addLog('Bartender: "Heard the Syndicate is moving in. Watch yourself."'); G.ship.morale=Math.min(100,(G.ship.morale||75)+2); updateHUD();}
@@ -2049,7 +2286,23 @@ function buyGood(id) {
 function buyGoodIllegal(id){const price=Math.round(stationPrice(id,G.curSys,true)*1.4);if(G.flagship.credits<price||!canAddCargo(id))return;G.flagship.credits-=price;addCargo(id);const fac=G.galaxy.systems[G.curSys].faction.id;let penalty=5; if(id.includes('weapon')||id.includes('arms')) penalty=8; G.rep[fac]=Math.max(-100,(G.rep[fac]||0)-penalty);addLog(`Bought illegal goods. ${fac} rep -${penalty}.`);updateHUD();updateRP();}
 function acceptContract(id){const c=G.contracts.find(x=>x.id===id);if(c){c.active=true;addLog(`Accepted contract: ${c.title}.`);renderNodeContent('guild');}}
 function sellExploData(){const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id));const pay=unsold.length*80;G.flagship.credits+=pay;unsold.forEach(s=>G.soldExplorationData.push(s.id));addLog(`Sold data for ${pay}cr.`);updateHUD();renderNodeContent('dataexchange');}
-function jumpNewGalaxy(){const newSeed=hashStr(G.seed+'_next')|0; initState(newSeed.toString(),G.difficulty); G.ccStep=5; launchGame();}
+function jumpNewGalaxy() {
+  const dmIndex = G.cargo.findIndex(c => c.id === 'dark_matter');
+  const dmCount = dmIndex >= 0 ? G.cargo[dmIndex].qty : 0;
+  if (dmCount < 5) {
+    addLog(`Need 5 Dark Matter to jump galaxies. You have ${dmCount}.`);
+    return;
+  }
+  // Consume 5 Dark Matter
+  G.cargo[dmIndex].qty -= 5;
+  if (G.cargo[dmIndex].qty <= 0) G.cargo.splice(dmIndex, 1);
+  
+  const newSeed = hashStr(G.seed + '_next') | 0;
+  initState(newSeed.toString(), G.difficulty);
+  G.ccStep = 5;
+  launchGame();
+  addLog('Jumped to a new galaxy! 5 Dark Matter consumed.');
+}
 function undock(){addLog('Undocked.');showScreen('galaxy-screen');updateHUD();updateLP();updateRP();}
 
 // ========== COMBAT (Ship & Ground) ==========
