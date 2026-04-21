@@ -1508,8 +1508,13 @@ let G = {
   cargo: [], soldExplorationData: [], probedFeatures: {},
   contracts: [], log: [], ccStep: 0, jumps: 0, dramaTimer: 0,
   combat: null, groundCombat: null,
+  let stActiveNode = 'cantina';
   ui: { rightPanelCollapsed: false }
 };
+  
+  let currentEvent = null;
+  let currentDrama = null;
+  let combatTarget = null; 
 Object.defineProperty(G, 'flagship', { get() { return this.fleet[0]; } });
 Object.defineProperty(G, 'ship', { get() { return this.flagship; } });
 Object.defineProperty(G, 'totalCargoCap', { get() { return this.fleet.reduce((sum,s)=>sum+s.cargoMax,0); } });
@@ -1985,85 +1990,86 @@ const PROBE_OUTCOMES = {
 
 // ========== FEATURE INTERACTION AND PROBES ==========  
 function interactFeature(feature){
-  const sysId = G.curSys;
-  const key = `${sysId}_${feature}`;
-  if (G.probedFeatures[key]) { addLog('Already probed.'); return; }
-  // Find matching outcome category (case‑insensitive)
-  let outcomes = PROBE_OUTCOMES.default;
-  for (const [keyword, list] of Object.entries(PROBE_OUTCOMES)) {
-    if (feature.toLowerCase().includes(keyword.toLowerCase())) {
-      outcomes = list;
-      break;
+    // Guard: Only allow probing features in the system you're currently docked at
+    if (G.selSys !== G.curSys) { 
+        addLog('You must travel to this system to probe it.'); 
+        return; 
     }
-  }
-  // Pick a random outcome, respecting optional chance property
-  let selected = null;
-  const roll = G.rng.next();
-  let cumulative = 0;
-  for (const o of outcomes) {
-    const chance = o.chance ?? (1.0 / outcomes.length); // equal if not specified
-    cumulative += chance;
-    if (roll < cumulative || Math.abs(cumulative - 1.0) < 0.001) {
-      selected = o;
-      break;
+    
+    const sysId = G.selSys; // Use selSys to match the UI being rendered
+    const key = `${sysId}_${feature}`;
+    if (G.probedFeatures[key]) { addLog('Already probed.'); return; }
+    
+    // Find matching outcome category (case‑insensitive)
+    let outcomes = PROBE_OUTCOMES.default;
+    for (const [keyword, list] of Object.entries(PROBE_OUTCOMES)) {
+        if (feature.toLowerCase().includes(keyword.toLowerCase())) {
+            outcomes = list;
+            break;
+        }
     }
-  }
-  if (!selected) selected = outcomes[0];
-  // Mark probed BEFORE applying effects (prevents double‑dipping on errors)
-  G.probedFeatures[key] = true;
-  const eff = selected.eff || {};
-  let logMsg = selected.text;
-  // Apply effects
-  if (eff.cr) G.flagship.credits = Math.max(0, G.flagship.credits + eff.cr);
-  if (eff.hull) {
-    G.flagship.hull = Math.min(G.flagship.maxHull, Math.max(1, G.flagship.hull + eff.hull));
-    if (G.flagship.hull <= 1) triggerGameOver();
-  }
-  if (eff.fuel) G.flagship.fuel = Math.min(G.flagship.maxFuel, Math.max(0, G.flagship.fuel + eff.fuel));
-  if (eff.mora) G.ship.morale = Math.min(100, Math.max(0, (G.ship.morale||75) + eff.mora));
-  if (eff.scrap) G.flagship.scrap = (G.flagship.scrap || 0) + eff.scrap;
-  if (eff.rep_federation) G.rep.federation = (G.rep.federation || 0) + eff.rep_federation;
-  if (eff.rep_megacorp) G.rep.megacorp = (G.rep.megacorp || 0) + eff.rep_megacorp;
-  if (eff.rumor) { /* could trigger a rumor reveal */ }
-  if (eff.shrineBless) shrineBless(); // reuse existing shrine function
-  // Handle cargo rewards
-  if (eff.cargo) {
-    for (const [itemId, qty] of Object.entries(eff.cargo)) {
-      addCargo(itemId, qty);
+    
+    // Pick a random outcome, respecting optional chance property
+    let selected = null;
+    const roll = G.rng.next();
+    let cumulative = 0;
+    for (const o of outcomes) {
+        const chance = o.chance ?? (1.0 / outcomes.length);
+        cumulative += chance;
+        if (roll < cumulative || Math.abs(cumulative - 1.0) < 0.001) {
+            selected = o;
+            break;
+        }
     }
-  }
-  if (eff.artifact) addCargo('artifacts', eff.artifact);
-  // Handle crew injury
-  if (eff.crewInjury) {
-    const alive = G.crew.filter(c => c.alive);
-    if (alive.length) {
-      const victim = alive[Math.floor(G.rng.next() * alive.length)];
-      victim.hp = Math.max(1, victim.hp - 15);
-      logMsg += ` ${victim.name} was injured.`;
+    if (!selected) selected = outcomes[0];
+    
+    // Mark probed BEFORE applying effects
+    G.probedFeatures[key] = true;
+    const eff = selected.eff || {};
+    let logMsg = selected.text;
+    
+    // Apply effects
+    if (eff.cr) G.flagship.credits = Math.max(0, G.flagship.credits + eff.cr);
+    if (eff.hull) {
+        G.flagship.hull = Math.min(G.flagship.maxHull, Math.max(1, G.flagship.hull + eff.hull));
+        if (G.flagship.hull <= 1) triggerGameOver();
     }
-  }
-  // Handle combat triggers
-  if (eff.combat) {
+    if (eff.fuel) G.flagship.fuel = Math.min(G.flagship.maxFuel, Math.max(0, G.flagship.fuel + eff.fuel));
+    if (eff.mora) G.ship.morale = Math.min(100, Math.max(0, (G.ship.morale||75) + eff.mora));
+    if (eff.scrap) G.flagship.scrap = (G.flagship.scrap || 0) + eff.scrap;
+    if (eff.rep_federation) G.rep.federation = (G.rep.federation || 0) + eff.rep_federation;
+    if (eff.rep_megacorp) G.rep.megacorp = (G.rep.megacorp || 0) + eff.rep_megacorp;
+    if (eff.shrineBless) shrineBless();
+    
+    // Handle cargo rewards
+    if (eff.cargo) {
+        for (const [itemId, qty] of Object.entries(eff.cargo)) { addCargo(itemId, qty); }
+    }
+    if (eff.artifact) addCargo('artifacts', eff.artifact);
+    
+    // Handle crew injury
+    if (eff.crewInjury) {
+        const alive = G.crew.filter(c => c.alive);
+        if (alive.length) {
+            const victim = alive[Math.floor(G.rng.next() * alive.length)];
+            victim.hp = Math.max(1, victim.hp - 15);
+            logMsg += ` ${victim.name} was injured.`;
+        }
+    }
+    
+    // Handle combat triggers
+    if (eff.combat) {
+        addLog(logMsg); startCombat(); updateHUD(); updateRP(); updateLP(); return;
+    }
+    if (eff.groundCombat) {
+        addLog(logMsg); startGroundCombat({ type: feature }); updateHUD(); updateRP(); updateLP(); return;
+    }
+    if (eff.dock) {
+        addLog(logMsg); dockStation(); updateHUD(); updateRP(); updateLP(); return;
+    }
+    
     addLog(logMsg);
-    startCombat();
     updateHUD(); updateRP(); updateLP();
-    return;
-  }
-  if (eff.groundCombat) {
-    addLog(logMsg);
-    startGroundCombat({ type: feature });
-    updateHUD(); updateRP(); updateLP();
-    return;
-  }
-  if (eff.dock) {
-    addLog(logMsg);
-    dockStation();
-    updateHUD(); updateRP(); updateLP();
-    return;
-  }
-  
-  addLog(logMsg);
-  updateHUD(); updateRP(); updateLP();
 }
   
 function updateRP(){
