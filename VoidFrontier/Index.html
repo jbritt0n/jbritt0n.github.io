@@ -3985,21 +3985,25 @@ function updateCombatSprites(gc) {
 }
 
 // Add CSS animation for flash effect
-const combatStyles = document.createElement('style');
-combatStyles.textContent = `
-  @keyframes flash {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.4); }
-  }
-  .gc-unit-card.acting {
-    box-shadow: 0 0 0 2px var(--gold);
-  }
-  .unit-sprite {
-    background-size: cover;
-    background-position: center;
-  }
-`;
-document.head.appendChild(combatStyles);  
+// Inject combat styles only once
+if (!window._combatStylesInjected) {
+    const combatStyles = document.createElement('style');
+    combatStyles.textContent = `
+        @keyframes flash {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.4); }
+        }
+        .gc-unit-card.acting {
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+        .unit-sprite {
+            background-size: cover;
+            background-position: center;
+        }
+    `;
+    document.head.appendChild(combatStyles);
+    window._combatStylesInjected = true; // Prevent duplicate injection
+}
 
 
 
@@ -4189,24 +4193,25 @@ function updateCombatSprites(gc) {
   // Placeholder: Add sprite animation logic here later
   // Example: document.querySelectorAll('.unit-sprite').forEach(el => { ... });
 }
-
-// Add CSS animation for flash effect
-const combatStyles = document.createElement('style');
-combatStyles.textContent = `
-  @keyframes flash {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.4); }
-  }
-  .gc-unit-card.acting {
-    box-shadow: 0 0 0 2px var(--gold);
-  }
-  .unit-sprite {
-    background-size: cover;
-    background-position: center;
-  }
-`;
-document.head.appendChild(combatStyles);
-
+// Inject combat styles only once
+if (!window._combatStylesInjected) {
+    const combatStyles = document.createElement('style');
+    combatStyles.textContent = `
+        @keyframes flash {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.4); }
+        }
+        .gc-unit-card.acting {
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+        .unit-sprite {
+            background-size: cover;
+            background-position: center;
+        }
+    `;
+    document.head.appendChild(combatStyles);
+    window._combatStylesInjected = true; // Prevent duplicate injection
+}
 
   
 function closeGroundCombat(){ showScreen('galaxy-screen'); updateHUD(); updateRP(); }
