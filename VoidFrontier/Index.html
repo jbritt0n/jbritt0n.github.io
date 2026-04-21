@@ -1690,14 +1690,6 @@ function applyCharacterBonuses() {
   }
 }
 
-  // --- Apply Starting Reputation ---
-  if (origin?.startingRep) {
-    Object.entries(origin.startingRep).forEach(([fac, val]) => {
-      G.rep[fac] = (G.rep[fac] || 0) + val;
-    });
-  }
-}
-
   
 // ========== CHARACTER CREATION (5 steps) ==========
 const CC_TITLES=['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN','SELECT STARTER SHIP'];
