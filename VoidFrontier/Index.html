@@ -1637,15 +1637,54 @@ const DRAMA_EVENTS = [
 ];
 
 // ---------- STARTER CREW POOL ----------
+// ========== EXPANDED CREW POOL (30 total, class-aligned) ==========
 const CREW_POOL = [
-  { name: 'Zoya Kas', role: 'Engineer', emoji: '⚙️', loyalty: 70, bio: 'Seasoned mechanic.', hp: 40, maxHp: 40, atk: 8, spd: 5, skill: 6, species: 'Human' },
-  { name: 'REX-7', role: 'Security', emoji: '🤖', loyalty: 55, bio: 'Combat android.', hp: 50, maxHp: 50, atk: 12, spd: 4, skill: 4, species: 'Android' },
-  { name: 'Mira Tong', role: 'Navigator', emoji: '🔭', loyalty: 65, bio: 'Former cartographer.', hp: 35, maxHp: 35, atk: 7, spd: 6, skill: 7, species: 'Human' },
-  { name: 'Jax Varley', role: 'Gunner', emoji: '🔫', loyalty: 60, bio: 'Ex-military, quick temper.', hp: 45, maxHp: 45, atk: 11, spd: 5, skill: 5, species: 'Human' },
-  { name: 'Lyra Nox', role: 'Medic', emoji: '💉', loyalty: 75, bio: 'Pacifist doctor.', hp: 35, maxHp: 35, atk: 5, spd: 4, skill: 8, species: 'Human' },
-  { name: 'Orin Vex', role: 'Scout', emoji: '🔍', loyalty: 50, bio: 'Quiet, observant.', hp: 38, maxHp: 38, atk: 9, spd: 7, skill: 6, species: 'Human' },
-  { name: 'Kael Thorn', role: 'Technician', emoji: '🔧', loyalty: 55, bio: 'Hacker with a past.', hp: 40, maxHp: 40, atk: 7, spd: 5, skill: 7, species: 'Human' },
-  { name: 'Nova Chen', role: 'Pilot', emoji: '🚀', loyalty: 65, bio: 'Ace pilot, cocky.', hp: 42, maxHp: 42, atk: 8, spd: 6, skill: 7, species: 'Human' }
+  // === VANGUARD (Tank) - High HP, Defense Focus ===
+  { name: 'Zoya Kas', role: 'Vanguard', emoji: '🛡️', loyalty: 70, bio: 'Ex-military shield specialist. Never leaves a crewmate behind.', hp: 52, maxHp: 52, atk: 9, spd: 4, skill: 5, species: 'Human', classId: 'vanguard' },
+  { name: 'Grom Ironhide', role: 'Vanguard', emoji: '🪨', loyalty: 65, bio: 'Stone-scaled alien mercenary. Takes hits so others don\'t have to.', hp: 58, maxHp: 58, atk: 11, spd: 3, skill: 4, species: 'Korvax', classId: 'vanguard' },
+  { name: 'Vera "Bulwark" Singh', role: 'Vanguard', emoji: '🧱', loyalty: 75, bio: 'Former riot control. Expert at holding the line under pressure.', hp: 50, maxHp: 50, atk: 8, spd: 5, skill: 6, species: 'Human', classId: 'vanguard' },
+  
+  // === MARKSMAN (Ranged DPS) - High ATK, Precision ===
+  { name: 'Jax Varley', role: 'Marksman', emoji: '🎯', loyalty: 60, bio: 'Ex-military sniper. Quick temper, quicker trigger finger.', hp: 42, maxHp: 42, atk: 14, spd: 5, skill: 6, species: 'Human', classId: 'marksman' },
+  { name: 'Kira "Hawkeye" Voss', role: 'Marksman', emoji: '🔭', loyalty: 55, bio: 'Bounty hunter with cybernetic eye. Never misses twice.', hp: 38, maxHp: 38, atk: 16, spd: 6, skill: 7, species: 'Cyborg', classId: 'marksman' },
+  { name: 'Rook', role: 'Marksman', emoji: '🦅', loyalty: 50, bio: 'Silent avian-human hybrid. Prefers to observe, then eliminate.', hp: 40, maxHp: 40, atk: 13, spd: 7, skill: 5, species: 'Avian-Hybrid', classId: 'marksman' },
+  
+  // === TECHNICIAN (Support/Repair) - High Skill, Utility ===
+  { name: 'Kael Thorn', role: 'Technician', emoji: '🔧', loyalty: 55, bio: 'Hacker with a mysterious past. Can fix anything... or break everything.', hp: 36, maxHp: 36, atk: 6, spd: 5, skill: 9, species: 'Human', classId: 'technician' },
+  { name: 'REX-7', role: 'Technician', emoji: '🤖', loyalty: 55, bio: 'Combat android repurposed for engineering. Logic over emotion.', hp: 48, maxHp: 48, atk: 10, spd: 4, skill: 8, species: 'Android', classId: 'technician' },
+  { name: 'Tala "Wrench" Miro', role: 'Technician', emoji: '⚡', loyalty: 70, bio: 'Mechanic prodigy who built her first reactor at age 12. Talks to machines.', hp: 40, maxHp: 40, atk: 7, spd: 6, skill: 10, species: 'Human', classId: 'technician' },
+  
+  // === MEDIC (Healer) - High Skill, Support Focus ===
+  { name: 'Lyra Nox', role: 'Medic', emoji: '💉', loyalty: 75, bio: 'Pacifist doctor who believes every life is worth saving. Even pirates.', hp: 34, maxHp: 34, atk: 4, spd: 5, skill: 10, species: 'Human', classId: 'medic' },
+  { name: 'Dr. Eli Vance', role: 'Medic', emoji: '🏥', loyalty: 65, bio: 'Former xenobiologist. Specializes in alien physiology and trauma care.', hp: 38, maxHp: 38, atk: 5, spd: 4, skill: 9, species: 'Human', classId: 'medic' },
+  { name: 'Nyx', role: 'Medic', emoji: '🌙', loyalty: 60, bio: 'Mysterious healer from a void-touched colony. Uses unconventional methods.', hp: 32, maxHp: 32, atk: 3, spd: 6, skill: 11, species: 'Void-Touched', classId: 'medic' },
+  
+  // === OPERATIVE (Stealth/Control) - High SPD, Debuff Focus ===
+  { name: 'Orin Vex', role: 'Operative', emoji: '🥷', loyalty: 50, bio: 'Quiet observer. Prefers to strike from shadows, not headlines.', hp: 35, maxHp: 35, atk: 10, spd: 8, skill: 7, species: 'Human', classId: 'operative' },
+  { name: 'Sable', role: 'Operative', emoji: '🌑', loyalty: 45, bio: 'Former corporate spy. Knows how to disappear... and make others disappear.', hp: 33, maxHp: 33, atk: 11, spd: 9, skill: 6, species: 'Human', classId: 'operative' },
+  { name: 'Zephyr', role: 'Operative', emoji: '💨', loyalty: 55, bio: 'Wind-walker from a gas giant colony. Moves like a breeze, strikes like a storm.', hp: 36, maxHp: 36, atk: 9, spd: 10, skill: 5, species: 'Aetherian', classId: 'operative' },
+  
+  // === PSION (Psychic) - High Skill, Control/Magic ===
+  { name: 'Mira "Seer" Tong', role: 'Psion', emoji: '🧠', loyalty: 65, bio: 'Former cartographer who discovered latent psionic abilities. Sees patterns others miss.', hp: 30, maxHp: 30, atk: 7, spd: 5, skill: 10, species: 'Human', classId: 'psion' },
+  { name: 'Kaelen Void', role: 'Psion', emoji: '🌀', loyalty: 40, bio: 'Survivor of a psychic catastrophe. Powers are unstable but potent.', hp: 28, maxHp: 28, atk: 8, spd: 4, skill: 12, species: 'Void-Touched', classId: 'psion' },
+  { name: 'Luna', role: 'Psion', emoji: '✨', loyalty: 70, bio: 'Empathic healer who can sense emotions across light-years. Gentle but powerful.', hp: 32, maxHp: 32, atk: 5, spd: 6, skill: 11, species: 'Empath', classId: 'psion' },
+  
+  // === WILD CARDS (Flexible Roles) ===
+  { name: 'Nova Chen', role: 'Pilot', emoji: '🚀', loyalty: 65, bio: 'Ace pilot with a cocky streak. Can fly anything with an engine.', hp: 40, maxHp: 40, atk: 8, spd: 7, skill: 8, species: 'Human', classId: 'marksman' },
+  { name: 'Bax "Boom" Rourke', role: 'Demolitions', emoji: '💣', loyalty: 50, bio: 'Explosives expert who believes every problem has a solution involving C4.', hp: 44, maxHp: 44, atk: 12, spd: 4, skill: 6, species: 'Human', classId: 'vanguard' },
+  { name: 'Echo', role: 'Scout', emoji: '👁️', loyalty: 55, bio: 'Cybernetically enhanced scout. Sees in multiple spectra simultaneously.', hp: 37, maxHp: 37, atk: 9, spd: 8, skill: 7, species: 'Cyborg', classId: 'operative' },
+  { name: 'Doc "Stitch" Morales', role: 'Combat Medic', emoji: '🩹', loyalty: 80, bio: 'Battlefield surgeon who\'s kept more people alive than the Federation medical corps.', hp: 39, maxHp: 39, atk: 6, spd: 5, skill: 9, species: 'Human', classId: 'medic' },
+  { name: 'Vex "Ghost" Kael', role: 'Infiltrator', emoji: '👻', loyalty: 35, bio: 'Master of disguise. No one remembers what they really look like.', hp: 31, maxHp: 31, atk: 10, spd: 9, skill: 8, species: 'Shapeshifter', classId: 'operative' },
+  { name: 'Aria', role: 'Diplomat', emoji: '🕊️', loyalty: 75, bio: 'Former ambassador who can talk down a supernova. Words are her weapons.', hp: 33, maxHp: 33, atk: 4, spd: 6, skill: 10, species: 'Human', classId: 'psion' },
+  { name: 'Rook "Ironfist" Valen', role: 'Heavy Gunner', emoji: '🔫', loyalty: 60, bio: 'Ex-mercenary who believes in overwhelming firepower. Subtlety is for cowards.', hp: 46, maxHp: 46, atk: 15, spd: 3, skill: 5, species: 'Human', classId: 'marksman' },
+  { name: 'Tinker', role: 'Gadgeteer', emoji: '🔩', loyalty: 65, bio: 'Inventor who builds useful things from scrap. Every tool has three uses.', hp: 38, maxHp: 38, atk: 7, spd: 6, skill: 9, species: 'Human', classId: 'technician' },
+  { name: 'Shade', role: 'Assassin', emoji: '🗡️', loyalty: 40, bio: 'Silent killer with a code: only targets who deserve it. Mostly.', hp: 34, maxHp: 34, atk: 13, spd: 8, skill: 6, species: 'Human', classId: 'operative' },
+  { name: 'Solara', role: 'Energy Specialist', emoji: '⚡', loyalty: 70, bio: 'Expert in plasma and energy systems. Can overload a reactor or power a city.', hp: 36, maxHp: 36, atk: 8, spd: 5, skill: 10, species: 'Human', classId: 'technician' },
+  { name: 'Grizzle', role: 'Berserker', emoji: '🐻', loyalty: 55, bio: 'Former gladiator who fights with pure rage. Calm is a foreign concept.', hp: 54, maxHp: 54, atk: 14, spd: 4, skill: 3, species: 'Ursine-Hybrid', classId: 'vanguard' },
+  { name: 'Whisper', role: 'Telepath', emoji: '📡', loyalty: 50, bio: 'Can hear thoughts within 10 meters. Sometimes wishes they couldn\'t.', hp: 29, maxHp: 29, atk: 6, spd: 7, skill: 11, species: 'Psionic', classId: 'psion' },
+  { name: 'Forge', role: 'Artificer', emoji: '🔨', loyalty: 75, bio: 'Master craftsman who can forge weapons from asteroid metal. Art is in the details.', hp: 42, maxHp: 42, atk: 9, spd: 4, skill: 10, species: 'Human', classId: 'technician' },
+  { name: 'Raven', role: 'Scout/Spotter', emoji: '🦅', loyalty: 60, bio: 'Eyes in the sky for the crew. Never misses a detail, never forgets a face.', hp: 35, maxHp: 35, atk: 8, spd: 9, skill: 8, species: 'Avian-Hybrid', classId: 'marksman' },
+  { name: 'Cipher', role: 'Codebreaker', emoji: '🔐', loyalty: 45, bio: 'Cryptographer who speaks in riddles. Secrets are their currency.', hp: 33, maxHp: 33, atk: 5, spd: 7, skill: 12, species: 'Human', classId: 'operative' }
 ];
 
   
@@ -1775,51 +1814,83 @@ function renderQuests() {
   
 // ========== INIT ==========
 function initState(seed, difficulty='normal') {
-  G.seed = seed; G.rng = mkRNG(seed); G.difficulty = difficulty;
-  G.captain = { name:'Captain', origin:null, cls:null, job:null, skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1}, xp:0, level:1 };
-  
-  // Initialize flagship with default values
-G.fleet = [{
-  id:'ship0', name:'VAGRANT STAR', type:'Scout', class:'Explorer', baseCost: 1000,
-  hull:100, maxHull:100, shields:50, maxShields:50,
-  fuel:80, maxFuel:100, cargoMax:10, modules:[], scrap:0, fuelUse:1.0, credits:1000, morale:75,
-  moduleSlots: 1 
-}];
-  G.curShipIdx = 0;
-  G.rep = {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0};
-  // Randomly pick 2 unique crew from the pool
-const shuffled = [...CREW_POOL].sort(() => G.rng.next() - 0.5);
-const selectedCrew = shuffled.slice(0, 2);
-G.crew = selectedCrew.map(c => ({
-  ...c,
-  id: 'c' + Math.random().toString(36),
-  alive: true,
-  hp: c.maxHp,
-  maxHp: c.hp,
-  atk: c.atk || 8,
-  spd: c.spd || 5,
-  skill: c.skill || 5,
-  classId: 'vanguard', // Pick randomly or from pool
-  classTier: 1,
-  advancedClass: null,
-  xp: 0,
-  level: 1
-  equippedWeapon: null
-}));
-  G.cargo = []; G.soldExplorationData = []; G.probedFeatures = {};
-  G.contracts = []; G.log = ['The stars await.']; G.ccStep = 0; G.jumps = 0; G.dramaTimer = 0;
-  G.activeQuests = [];
-  // Apply difficulty multipliers (moved before usage)
-  const mult = {easy:1.5, normal:1.0, hard:0.6};
-  G.flagship.credits = Math.floor(1000 * mult[difficulty]);
-  
-  if (difficulty === 'easy') {
-    G.crew.push(generateRandomCrew());
-    G.flagship.credits += 500;
-  } else if (difficulty === 'hard') {
-    G.crew = G.crew.slice(0,1);
-    G.flagship.credits = Math.floor(G.flagship.credits * 0.7);
-  }
+    G.seed = seed; 
+    G.rng = mkRNG(seed); 
+    G.difficulty = difficulty;
+    
+    G.captain = { 
+        name:'Captain', 
+        origin:null, 
+        cls:null, 
+        job:null, 
+        skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1}, 
+        xp:0, 
+        level:1 
+    };
+    
+    // Initialize flagship with default values
+    G.fleet = [{
+        id:'ship0', 
+        name:'VAGRANT STAR', 
+        type:'Scout', 
+        hull:100, 
+        maxHull:100, 
+        shields:50, 
+        maxShields:50,
+        fuel:80, 
+        maxFuel:100, 
+        cargoMax:10, 
+        modules:[], 
+        scrap:0, 
+        fuelUse:1.0, 
+        credits:1000, 
+        morale:75
+    }];
+    
+    G.curShipIdx = 0;
+    G.rep = {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0};
+    
+    // Randomly pick 2 unique crew from the pool
+    const shuffled = [...CREW_POOL].sort(() => G.rng.next() - 0.5);
+    const selectedCrew = shuffled.slice(0, 2);
+    
+    // Fixed: Properly closed object literal in map callback
+    G.crew = selectedCrew.map(c => {
+        return {
+            ...c,
+            id: 'c' + Math.random().toString(36),
+            alive: true,
+            hp: c.maxHp,
+            maxHp: c.hp,
+            atk: c.atk || 8,
+            spd: c.spd || 5,
+            skill: c.skill || 5,
+            level: 1,
+            xp: 0,
+            equippedWeapon: null
+        };
+    });
+    
+    G.cargo = []; 
+    G.soldExplorationData = []; 
+    G.probedFeatures = {};
+    G.contracts = []; 
+    G.log = ['The stars await.']; 
+    G.ccStep = 0; 
+    G.jumps = 0; 
+    G.dramaTimer = 0;
+    
+    // Apply difficulty multipliers
+    const mult = {easy:1.5, normal:1.0, hard:0.6};
+    G.flagship.credits = Math.floor(1000 * mult[difficulty]);
+    
+    if (difficulty === 'easy') {
+        G.crew.push(generateRandomCrew());
+        G.flagship.credits += 500;
+    } else if (difficulty === 'hard') {
+        G.crew = G.crew.slice(0,1);
+        G.flagship.credits = Math.floor(G.flagship.credits * 0.7);
+    }
 }
 
 // ========== SCREENS ==========
