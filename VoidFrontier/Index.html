@@ -1820,32 +1820,55 @@ function interactFeature(feature){
 }
   
 function updateRP(){
-  document.getElementById('rp-rep').innerHTML=FACTIONS.map(f=>{const r=G.rep[f.id]||0;return`<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r>=0?'+'+r:r}</span></div>`;}).join('');
-  const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1)*c.qty,0);
-  document.getElementById('cargo-count').textContent=`${cargoWt}/${G.totalCargoCap}`;
-  let cargoHtml=G.cargo.map(c=>{const g=GOODS.find(x=>x.id===c.id);return`<div style="display:flex;justify-content:space-between;padding:4px 10px"><span>${g?.emoji} ${g?.name} ${c.qty}</span><button class="btn btn-sm" style="padding:2px 6px" onclick="useCargoItem('${c.id}')">USE</button></div>`;}).join('');
-  document.getElementById('rp-cargo').innerHTML=cargoHtml||'<div style="color:var(--metal)">Empty</div>';
-  document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>`<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv.${c.level||1} ${c.hp}/${c.maxHp}</div><div class="crew-role">${c.role}</div></div></div>`).join('');
-  const or=ORIGINS.find(o=>o.id===G.captain.origin);document.getElementById('rp-cap').innerHTML=`<div>${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji} ${or?.name}</div><div>Skills: CHA ${G.captain.skills.charisma} INT ${G.captain.skills.intelligence} ENG ${G.captain.skills.engineering} CMB ${G.captain.skills.combat} HCK ${G.captain.skills.hacking}</div>`;
-  document.getElementById('rp-fleet').innerHTML=G.fleet.map((s,i)=>`<div style="padding:5px;border-bottom:1px solid #333"><b>${s.name}</b> (${s.type})<br>Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}<br>Cargo: ${s.cargoMax}</div>`).join('');
-  // 🔹 QUESTS PANEL
-  const questPanel = document.getElementById('rp-quests');
-  if (questPanel) {
-      const activeQuests = G.activeQuests.map(qid => {
-          const q = G.contracts?.find(c => c.id === qid);
-          if (!q || q.completed) return null;
-          return `<div class="quest-item">
-              <div class="quest-hdr">${q.title}</div>
-              <div class="quest-obj">🎯 ${q.desc}</div>
-              <div style="color:var(--cyan);font-size:11px">📍 ${q.targetSysName}</div>
-              <div class="quest-rw">💰 ${q.reward} CR</div>
-          </div>`;
-      }).filter(Boolean).join('');
-      
-      questPanel.innerHTML = activeQuests 
-          ? activeQuests 
-          : '<div style="color:var(--metal);font-size:12px;padding:5px">No active quests</div>';
-  }
+    // REPUTATION
+    document.getElementById('rp-rep').innerHTML = FACTIONS.map(f => {
+        const r = G.rep[f.id] || 0;
+        return `<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r >= 0 ? '+' + r : r}</span></div>`;
+    }).join('');
+    
+    // CARGO
+    const cargoWt = G.cargo.reduce((a, c) => a + (GOODS.find(g => g.id === c.id)?.wt || 1) * c.qty, 0);
+    document.getElementById('cargo-count').textContent = `${cargoWt}/${G.totalCargoCap}`;
+    
+    let cargoHtml = G.cargo.map(c => {
+        const g = GOODS.find(x => x.id === c.id);
+        return `<div style="display:flex;justify-content:space-between;padding:4px 10px"><span>${g?.emoji} ${g?.name} ${c.qty}</span><button class="btn btn-sm" style="padding:2px 6px" onclick="useCargoItem('${c.id}')">USE</button></div>`;
+    }).join('');
+    document.getElementById('rp-cargo').innerHTML = cargoHtml || '<div style="color:var(--metal)">Empty</div>';
+    
+    // CREW
+    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => 
+        `<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv.${c.level || 1} ${c.hp}/${c.maxHp}</div><div class="crew-role">${c.role}</div></div></div>`
+    ).join('');
+    
+    // CAPTAIN
+    const or = ORIGINS.find(o => o.id === G.captain.origin);
+    document.getElementById('rp-cap').innerHTML = `<div>${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji} ${or?.name}</div><div>Skills: CHA ${G.captain.skills.charisma} INT ${G.captain.skills.intelligence} ENG ${G.captain.skills.engineering} CMB ${G.captain.skills.combat} HCK ${G.captain.skills.hacking}</div>`;
+    
+    // FLEET
+    document.getElementById('rp-fleet').innerHTML = G.fleet.map((s, i) => 
+        `<div style="padding:5px;border-bottom:1px solid #333"><b>${s.name}</b> (${s.type})<br>Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}<br>Cargo: ${s.cargoMax}</div>`
+    ).join('');
+    
+    // QUESTS PANEL (new)
+    const questPanel = document.getElementById('rp-quests');
+    if (questPanel) {
+        const activeQuests = (G.activeQuests || []).map(qid => {
+            const q = G.contracts?.find(c => c.id === qid);
+            if (!q || q.completed) return null;
+            return `<div class="quest-item">
+                <div class="quest-hdr">${q.title}</div>
+                <div class="quest-obj">🎯 ${q.desc}</div>
+                <div style="color:var(--cyan);font-size:11px">📍 ${q.targetSysName}</div>
+                <div class="quest-rw">💰 ${q.reward} CR</div>
+            </div>`;
+        }).filter(Boolean).join('');
+        
+        questPanel.innerHTML = activeQuests 
+            ? activeQuests 
+            : '<div style="color:var(--metal);font-size:12px;padding:5px">No active quests</div>';
+    }
+}  // ← End UpdateRP
   
 function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map(e=>`<div class="log-line">${e}</div>`).join('');}
 function addLog(msg){G.log.unshift(msg);if(G.log.length>30)G.log.pop();updateLog();}
