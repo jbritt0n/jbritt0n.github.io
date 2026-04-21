@@ -1897,17 +1897,20 @@ function updateLP(){
   const body=document.getElementById('lp-body'),acts=document.getElementById('lp-actions');
   if(G.selSys===null){body.innerHTML='<div style="color:var(--metal)">Select a system.</div>';acts.innerHTML='';return;}
   const sys=G.galaxy.systems[G.selSys],isCur=G.selSys===G.curSys,reach=reachable(),canTravel=reach.has(G.selSys)&&!isCur;
-  let featHtml = sys.features.map(f=>{
-    const key=`${sys.id}_${f}`; const probed=G.probedFeatures[key];
-    return `<div style="display:flex;gap:5px"><span>◈ ${f}</span> ${!probed?`<button class="btn btn-sm" onclick="interactFeature('${f}')">PROBE</button>`:'✅'}</div>`;
-  }).join('');
+  let featHtml = sys.features.map(f => {
+  const key = `${sys.id}_${f}`;
+  const probed = G.probedFeatures[key];
+  const escapedFeature = f.replace(/'/g, "\\'");
+  return `<div style="display:flex;gap:5px"><span>◈ ${f}</span> ${!probed ? `<button class="btn btn-sm" onclick="interactFeature('${escapedFeature}')">PROBE</button>` : '✅'}</div>`;
+}).join('');
   body.innerHTML=`<div style="display:flex;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${sys.starColor}"></div><b>${sys.name}</b></div><div>${sys.starType}</div><div><span class="tag" style="border-color:${sys.faction.color}">${sys.faction.short}</span> ${sys.hasStation?'<span class="tag">⬡ '+sys.stationType+'</span>':''}</div><div>Danger: ${'▮'.repeat(sys.danger)}</div><div>Wealth: ${'◆'.repeat(sys.wealth)}</div>${featHtml}`;
   if(canTravel) acts.innerHTML=`<button class="btn btn-gold btn-full" onclick="travelTo(${G.selSys})" ${G.fleet.every(s=>s.fuel>=Math.ceil(10*s.fuelUse))?'':'disabled'}>▶ JUMP</button>`;
   else if(isCur) acts.innerHTML=`<button class="btn btn-safe btn-full" onclick="exploreSys()">◈ EXPLORE</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK</button>`:''}`;
   else acts.innerHTML=`<div style="color:var(--metal)">Out of range.</div>`;
 }
 function interactFeature(feature){
-  const sysId=G.curSys; const key=`${sysId}_${feature}`;
+  const sysId = G.curSys;
+  const key = `${sysId}_${feature}`;
   if(G.probedFeatures[key]){addLog('Already probed.');return;}
   G.probedFeatures[key]=true;
   if(feature.includes('Ruins')){addCargo('artifacts',1)&&addLog('Found artifact!');}
@@ -1967,7 +1970,8 @@ function exploreSys(){
     return;
   }
   G.probedFeatures['explored_' + sysId] = count + 1;
-  setTimeout(triggerEvent, 400);
+  console.log('exploreSys: calling triggerEvent');
+  setTimeout(() => triggerEvent(), 400);
 }
   
 function checkDrama(){
@@ -2003,6 +2007,7 @@ function triggerEvent(){
     `<button class="choice-btn" onclick="resolveChoice(${i})">${c.text}</button>`
   ).join('');
   document.getElementById('ev-overlay').classList.add('open');
+  console.log('Event overlay opened:', ev.title);
 }
   
  //Resolve choices 
@@ -2059,15 +2064,16 @@ function dockStation(){
   const sys = G.galaxy.systems[G.curSys];
   if (!sys.hasStation) { addLog('No station in this system.'); return; }
   
-  // Use the pre-generated persistent modules
-  const modules = sys.stationModules || [];
-  if (modules.length === 0) {
-    addLog('This station has no accessible facilities.');
-    return;
+  let modules = sys.stationModules;
+  if (!modules || modules.length === 0) {
+    // Fallback: generate basic modules based on wealth
+    const wealth = sys.wealth || 1;
+    modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1));
+    if (modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
   }
   
   stActiveNode = modules[0].id;
-  document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType}`;
+  document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType || 'Station'}`;
   document.getElementById('st-meta').innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
   document.getElementById('st-credits').textContent = `💰 ${G.flagship.credits} CR`;
   
@@ -2080,7 +2086,7 @@ function dockStation(){
   
   renderNodeContent(stActiveNode);
   showScreen('station-screen');
-  addLog(`Docked at ${sys.name} ${sys.stationType}.`);
+  addLog(`Docked at ${sys.name} ${sys.stationType || 'Station'}.`);
 }
 function stSelectNode(id){stActiveNode=id;document.querySelectorAll('.st-node').forEach(n=>n.classList.remove('active'));event.target.closest('.st-node').classList.add('active');renderNodeContent(id);}
 function renderNodeContent(nodeId){
