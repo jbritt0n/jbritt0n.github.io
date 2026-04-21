@@ -241,10 +241,11 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 </div>
 
 <!-- STATION -->
-<div id="station-screen" class="screen">
-  <div class="st-header"><div class="st-name" id="st-name"></div><div class="st-meta" id="st-meta"></div><div id="st-credits"></div></div>
-  <div class="st-body"><div class="st-nav" id="st-nav"></div><div class="st-content" id="st-content"></div></div>
-  <div class="st-footer"><button class="btn btn-warn" onclick="undock()">◀ UNDOCK</button><div id="st-status"></div></div>
+<div id="station-screen" class="screen" style="flex-direction:column; justify-content:center; align-items:center; background:rgba(0,0,0,0.9);">
+  <div class="panel" style="width:80%; max-width:500px; text-align:center;">
+    <h1 style="color:var(--cyan); margin-bottom:20px;">STATION DOCK</h1>
+    <div id="station-content"></div>
+  </div>
 </div>
 
 <!-- COMBAT (Ship) -->
