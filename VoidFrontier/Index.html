@@ -1908,17 +1908,164 @@ function updateLP(){
   else if(isCur) acts.innerHTML=`<button class="btn btn-safe btn-full" onclick="exploreSys()">◈ EXPLORE</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK</button>`:''}`;
   else acts.innerHTML=`<div style="color:var(--metal)">Out of range.</div>`;
 }
+
+// ========== PROBE OUTCOMES ==========
+const PROBE_OUTCOMES = {
+  // Keywords are matched case‑insensitively using .includes()
+  'Ruins': [
+    { text: 'Found an ancient artifact!', eff: { cargo: { id: 'artifacts', qty: 1 } } },
+    { text: 'Discovered valuable data.', eff: { cr: 250 } },
+    { text: 'Collapsing structure! Crew injured.', eff: { crewInjury: true } },
+    { text: 'Unearthed a dark matter shard!', eff: { cargo: { id: 'dark_matter', qty: 1 } }, chance: 0.1 },
+  ],
+  'Mineral': [
+    { text: 'Mined +5 scrap.', eff: { scrap: 5 } },
+    { text: 'Rich vein! +12 scrap.', eff: { scrap: 12 } },
+    { text: 'Cave‑in! Minor hull damage.', eff: { hull: -10 } },
+  ],
+  'Asteroid': [
+    { text: 'Harvested +3 scrap.', eff: { scrap: 3 } },
+    { text: 'Found a rare ore deposit.', eff: { cr: 150 } },
+    { text: 'Dangerous gases vented.', eff: { hull: -5, crewInjury: true } },
+  ],
+  'Habitable': [
+    { text: 'Friendly locals share supplies.', eff: { cr: 100, mora: 5 } },
+    { text: 'Hostile natives attack!', eff: { groundCombat: true } },
+    { text: 'Discovered a pristine water source.', eff: { cargo: { id: 'water', qty: 2 } } },
+  ],
+  'Trade Hub': [
+    { text: 'You dock at the bustling hub.', eff: { dock: true } },
+  ],
+  'Alien Life': [
+    { text: 'Collected biological samples.', eff: { cr: 200 } },
+    { text: 'Aggressive fauna!', eff: { groundCombat: true } },
+  ],
+  'Pirate Den': [
+    { text: 'Raided a pirate cache!', eff: { cr: 350, cargo: { id: 'small_arms', qty: 1 } } },
+    { text: 'Ambushed by pirates!', eff: { combat: true } },
+    { text: 'Found nothing – they already moved out.', eff: {} },
+  ],
+  'Research Outpost': [
+    { text: 'Traded data for credits.', eff: { cr: 300 } },
+    { text: 'Hacked a terminal for secret research.', eff: { cr: 500, rep_megacorp: -5 } },
+  ],
+  'Military Installation': [
+    { text: 'Scanned from a safe distance.', eff: { cr: 80 } },
+    { text: 'Detected! They open fire.', eff: { combat: true } },
+    { text: 'Bribed a guard for intel.', eff: { cr: -150, rumor: true } },
+  ],
+  'Derelict Megastructure': [
+    { text: 'Salvaged advanced components.', eff: { cr: 600, scrap: 8 } },
+    { text: 'Automated defenses still active!', eff: { combat: true } },
+    { text: 'Found a dark matter core!', eff: { cargo: { id: 'dark_matter', qty: 2 } }, chance: 0.15 },
+  ],
+  'Shrine World': [
+    { text: 'Received a blessing.', eff: { shrineBless: true } },
+    { text: 'Donated credits for good karma.', eff: { cr: -100, mora: 10 } },
+  ],
+  'Nomad Fleet': [
+    { text: 'Traded stories and goods.', eff: { cr: 150, artifact: 1 } },
+    { text: 'They ignored your hails.', eff: {} },
+  ],
+  'Unstable Wormhole': [
+    { text: 'Scanned from a safe distance.', eff: { cr: 200 } },
+    { text: 'Pulled in! Took damage but found dark matter.', eff: { hull: -20, cargo: { id: 'dark_matter', qty: 1 } } },
+    { text: 'Escaped just in time.', eff: { fuel: -10 } },
+  ],
+  'Gas Giant': [
+    { text: 'Skimmed fuel.', eff: { fuel: 15 } },
+    { text: 'Atmospheric disturbance.', eff: { hull: -8 } },
+  ],
+  // Default fallback for unrecognised features
+  'default': [
+    { text: 'Nothing unusual detected.', eff: {} },
+    { text: 'Minor sensor readings sold.', eff: { cr: 50 } },
+  ]
+};
+
+// ========== FEATURE INTERACTION AND PROBES ==========  
 function interactFeature(feature){
   const sysId = G.curSys;
   const key = `${sysId}_${feature}`;
-  if(G.probedFeatures[key]){addLog('Already probed.');return;}
-  G.probedFeatures[key]=true;
-  if(feature.includes('Ruins')){addCargo('artifacts',1)&&addLog('Found artifact!');}
-  else if(feature.includes('Mineral')){G.flagship.scrap=(G.flagship.scrap||0)+5;addLog('+5 scrap');}
-  else if(feature.includes('Habitable')||feature.includes('Trade Hub')){dockStation();return;}
-  else{addLog(`Probed ${feature}. Nothing unusual.`);}
-  updateHUD();updateRP();updateLP();
+  if (G.probedFeatures[key]) { addLog('Already probed.'); return; }
+  // Find matching outcome category (case‑insensitive)
+  let outcomes = PROBE_OUTCOMES.default;
+  for (const [keyword, list] of Object.entries(PROBE_OUTCOMES)) {
+    if (feature.toLowerCase().includes(keyword.toLowerCase())) {
+      outcomes = list;
+      break;
+    }
+  }
+  // Pick a random outcome, respecting optional chance property
+  let selected = null;
+  const roll = G.rng.next();
+  let cumulative = 0;
+  for (const o of outcomes) {
+    const chance = o.chance ?? (1.0 / outcomes.length); // equal if not specified
+    cumulative += chance;
+    if (roll < cumulative || Math.abs(cumulative - 1.0) < 0.001) {
+      selected = o;
+      break;
+    }
+  }
+  if (!selected) selected = outcomes[0];
+  // Mark probed BEFORE applying effects (prevents double‑dipping on errors)
+  G.probedFeatures[key] = true;
+  const eff = selected.eff || {};
+  let logMsg = selected.text;
+  // Apply effects
+  if (eff.cr) G.flagship.credits = Math.max(0, G.flagship.credits + eff.cr);
+  if (eff.hull) {
+    G.flagship.hull = Math.min(G.flagship.maxHull, Math.max(1, G.flagship.hull + eff.hull));
+    if (G.flagship.hull <= 1) triggerGameOver();
+  }
+  if (eff.fuel) G.flagship.fuel = Math.min(G.flagship.maxFuel, Math.max(0, G.flagship.fuel + eff.fuel));
+  if (eff.mora) G.ship.morale = Math.min(100, Math.max(0, (G.ship.morale||75) + eff.mora));
+  if (eff.scrap) G.flagship.scrap = (G.flagship.scrap || 0) + eff.scrap;
+  if (eff.rep_federation) G.rep.federation = (G.rep.federation || 0) + eff.rep_federation;
+  if (eff.rep_megacorp) G.rep.megacorp = (G.rep.megacorp || 0) + eff.rep_megacorp;
+  if (eff.rumor) { /* could trigger a rumor reveal */ }
+  if (eff.shrineBless) shrineBless(); // reuse existing shrine function
+  // Handle cargo rewards
+  if (eff.cargo) {
+    for (const [itemId, qty] of Object.entries(eff.cargo)) {
+      addCargo(itemId, qty);
+    }
+  }
+  if (eff.artifact) addCargo('artifacts', eff.artifact);
+  // Handle crew injury
+  if (eff.crewInjury) {
+    const alive = G.crew.filter(c => c.alive);
+    if (alive.length) {
+      const victim = alive[Math.floor(G.rng.next() * alive.length)];
+      victim.hp = Math.max(1, victim.hp - 15);
+      logMsg += ` ${victim.name} was injured.`;
+    }
+  }
+  // Handle combat triggers
+  if (eff.combat) {
+    addLog(logMsg);
+    startCombat();
+    updateHUD(); updateRP(); updateLP();
+    return;
+  }
+  if (eff.groundCombat) {
+    addLog(logMsg);
+    startGroundCombat({ type: feature });
+    updateHUD(); updateRP(); updateLP();
+    return;
+  }
+  if (eff.dock) {
+    addLog(logMsg);
+    dockStation();
+    updateHUD(); updateRP(); updateLP();
+    return;
+  }
+  
+  addLog(logMsg);
+  updateHUD(); updateRP(); updateLP();
 }
+  
 function updateRP(){
   document.getElementById('rp-rep').innerHTML=FACTIONS.map(f=>{const r=G.rep[f.id]||0;return`<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r>=0?'+'+r:r}</span></div>`;}).join('');
   const cargoWt=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1)*c.qty,0);
