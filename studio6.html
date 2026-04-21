@@ -357,6 +357,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="numbcollage" title="Collage of drifting paper rectangles with Chinese text '麻木的'">📰 Numb Collage</button>
         <button class="mb" data-mode="numbpoem" title="Each stanza of the poem drifts on its own paper block">📜 Numb Poem</button>
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
+        <button class="mb" data-mode="greengardens" title="GreenGardens">GreenGardens</button>
         <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
       </div>
     </div>
@@ -12953,7 +12954,7 @@ new p5(function(p){
     p.randomSeed(Math.random() * 99999);
     // Initialize state frame count if missing
     if (S.fc === undefined) S.fc = 0;
-    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); initYandinsky(p); initNewspaper(p);
+    initRain(W,H); initTess(W,H); initMatrix(W,H); initShatter(W,H); initYandinsky(p); initGreenGardens(p); initNewspaper(p);
     initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p); initNumbPoem(p);
     recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
@@ -13102,7 +13103,8 @@ function rd() {
       case 'circlefield':    drawCircleField(p, t);     break;  
       case 'trabeculum':     drawTrabeculum(p, t);     break;  
       case 'poetictendrils': drawPoeticTendrils(p, t); break;
-      case 'yandinsky': drawYandinsky(p, t); break;  
+      case 'yandinsky': drawYandinsky(p, t); break;
+      case 'greengardens': drawGreenGardens(p, t); break;   
       case 'newspaper': drawNewspaper(p, t); break; 
       case 'numbcollage': drawNumbCollage(p, t); break;
       case 'numbpoem': drawNumbPoem(p, t); break;
