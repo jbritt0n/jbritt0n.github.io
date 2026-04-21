@@ -123,7 +123,9 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .cargo-row{background:rgba(241,196,15,.04);border:1px solid rgba(241,196,15,.15);padding:8px 14px;display:flex;align-items:center;gap:10px;margin-bottom:5px}
 .mod-card{background:var(--panel);border:1px solid var(--border);padding:14px;margin-bottom:8px}
 .mod-name{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold)}
-
+/* QUEST */
+.quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
+  
 /* COMBAT */
 #combat-screen{flex-direction:column}
 .cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:20px;height:44px}
@@ -226,14 +228,16 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
       <div class="panel-hdr">◈ REPUTATION <span class="collapse-btn" onclick="toggleRightPanel()">◀</span></div>
       <div class="panel-content">
         <div id="rp-rep"></div>
-        <div class="panel-hdr">◈ CARGO <span id="cargo-count"></span></div>
+        <div class="panel-hdr">◈ CARGO <span id="cargo-count" style="padding:8px"></span></div>
         <div id="rp-cargo"></div>
+        <div class="panel-hdr">◈ QUESTS</div>
+        <div id="rp-quests" style="padding:8px"></div>
         <div class="panel-hdr">◈ CREW</div>
-        <div id="rp-crew"></div>
+        <div id="rp-crew" style="padding:8px"></div>
         <div class="panel-hdr">◈ CAPTAIN</div>
-        <div class="cap-info" id="rp-cap"></div>
+        <div class="cap-info" id="rp-cap" style="padding:8px"></div>
         <div class="panel-hdr">◈ FLEET</div>
-        <div id="rp-fleet"></div>
+        <div id="rp-fleet" style="padding:8px"></div>
       </div>
     </div>
   </div>
@@ -1516,6 +1520,7 @@ let G = {
   rep: {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0},
   crew: [],
   cargo: [], soldExplorationData: [], probedFeatures: {},
+  quests: [],
   contracts: [], log: [], ccStep: 0, jumps: 0, dramaTimer: 0,
   combat: null, groundCombat: null,
   ui: { rightPanelCollapsed: false }
@@ -1549,6 +1554,59 @@ function generateRandomCrew() {
   return {id:'c'+Math.random().toString(36),name:names[Math.floor(Math.random()*names.length)],role:roles[Math.floor(Math.random()*roles.length)],emoji:'👤',loyalty:50,bio:'Recruit.',hp:40,maxHp:40,atk:8,spd:5,skill:5,alive:true,xp:0,level:1,equippedWeapon:null};
 }
 
+
+// ========== QUESTS ========== 
+function addQuest(q) {
+    const id = q.id || 'q_' + Date.now();
+    if (G.quests.find(qs => qs.id === id && !qs.completed)) return;
+    G.quests.push({
+        id, title: q.title || 'Active Objective', objective: q.objective || 'Unknown',
+        targetSystem: q.targetSystem || null, reward: q.reward || {cr:0}, completed: false
+    });
+    renderQuests();
+    addLog(`📜 New Quest: ${q.title}`);
+}
+
+function completeQuest(id) {
+    const q = G.quests.find(qs => qs.id === id && !qs.completed);
+    if (!q) return;
+    q.completed = true;
+    const r = q.reward;
+    if (r.cr) G.flagship.credits += r.cr;
+    if (r.rep) Object.entries(r.rep).forEach(([f,v]) => G.rep[f] = (G.rep[f]||0) + v);
+    if (r.cargo) r.cargo.forEach(c => addCargo(c.id, c.qty));
+    addLog(`✅ Quest Complete: ${q.title}`);
+    updateHUD(); renderQuests();
+}
+
+function checkQuestProgress() {
+    const sys = G.galaxy.systems[G.curSys];
+    G.quests.forEach(q => {
+        if (!q.completed && q.targetSystem && sys.name === q.targetSystem) {
+            completeQuest(q.id);
+        }
+    });
+}
+
+function renderQuests() {
+    const el = document.getElementById('rp-quests');
+    if (!el) return;
+    const active = G.quests.filter(q => !q.completed);
+    if (active.length === 0) {
+        el.innerHTML = '<div style="color:var(--metal);font-size:12px;padding:5px">No active quests</div>';
+        return;
+    }
+    el.innerHTML = active.map(q => `
+        <div class="quest-item">
+            <div class="quest-hdr">${q.title}</div>
+            <div class="quest-obj">🎯 ${q.objective}</div>
+            ${q.targetSystem ? `<div style="color:var(--cyan);font-size:11px">📍 Target: ${q.targetSystem}</div>` : ''}
+            <div class="quest-rw">💰 ${q.reward.cr || 0} CR${q.reward.rep ? ' | 🤝 Rep' : ''}</div>
+        </div>
+    `).join('');
+}
+
+  
 // ========== INIT ==========
 function initState(seed, difficulty='normal') {
   G.seed = seed; G.rng = mkRNG(seed); G.difficulty = difficulty;
@@ -2092,7 +2150,9 @@ function updateRP(){
   document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>`<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv.${c.level||1} ${c.hp}/${c.maxHp}</div><div class="crew-role">${c.role}</div></div></div>`).join('');
   const or=ORIGINS.find(o=>o.id===G.captain.origin);document.getElementById('rp-cap').innerHTML=`<div>${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji} ${or?.name}</div><div>Skills: CHA ${G.captain.skills.charisma} INT ${G.captain.skills.intelligence} ENG ${G.captain.skills.engineering} CMB ${G.captain.skills.combat} HCK ${G.captain.skills.hacking}</div>`;
   document.getElementById('rp-fleet').innerHTML=G.fleet.map((s,i)=>`<div style="padding:5px;border-bottom:1px solid #333"><b>${s.name}</b> (${s.type})<br>Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}<br>Cargo: ${s.cargoMax}</div>`).join('');
+  renderQuests();
 }
+
 function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map(e=>`<div class="log-line">${e}</div>`).join('');}
 function addLog(msg){G.log.unshift(msg);if(G.log.length>30)G.log.pop();updateLog();}
 function toggleRightPanel(){
@@ -2120,7 +2180,7 @@ function travelTo(id){
   G.fleet.forEach(s=> s.fuel = Math.max(0, s.fuel - Math.ceil(10 * s.fuelUse)));
   G.curSys=id; const sys=G.galaxy.systems[id]; sys.visited=true; sys.revealed=true; revealConnected(id);
   G.selSys=id; G.jumps++; G.dramaTimer++;
-  //G.probedFeatures={}; // reset for new system
+  checkQuestProgress();
   checkContractCompletion(sys.name);
   addLog(`Jumped to ${sys.name}.`); updateHUD(); updateLP();
   if(G.dramaTimer>=3&&G.crew.filter(c=>c.alive).length>=2){G.dramaTimer=0;setTimeout(checkDrama,800);}
@@ -2191,6 +2251,7 @@ function resolveChoice(i){
   if (eff.rep_federation) G.rep.federation += eff.rep_federation;
   if (eff.scrap) G.flagship.scrap = (G.flagship.scrap || 0) + eff.scrap;
   if (eff.artifact) { addCargo('artifacts',1) && addLog('Found an Ancient Artifact!'); }
+  if (eff.quest) {const targetSys = eff.questTarget || G.galaxy.systems[Math.floor(G.rng.next() * G.galaxy.systems.length)].name;addQuest({id: eff.quest + '_' + G.jumps,title: eff.questTitle || 'Contract Accepted',objective: eff.log || 'Complete the assignment.',targetSystem: targetSys,reward: { cr: eff.cr || 500, rep: eff.questFac ? { [eff.questFac]: 10 } : null }});}
   if (eff.darkMatterChance && G.rng.next() < eff.darkMatterChance) {addCargo('dark_matter', 1) && addLog('Found a Dark Matter shard!');  }
   if (eff.crewGain) { const newCrew=generateRandomCrew(); G.crew.push(newCrew); addLog(`${newCrew.name} joins your crew!`); }
   if (eff.crewDeath) { const alive=G.crew.filter(c=>c.alive); if(alive.length){ const victim=alive[Math.floor(G.rng.next()*alive.length)]; victim.alive=false; addLog(`${victim.name} has died.`); } }
