@@ -1421,16 +1421,18 @@ function renderCC(){
     body.innerHTML=`<div class="name-step"><div class="name-group"><div class="name-label">CAPTAIN NAME</div><input type="text" id="cap-name" value="${G.captain.name}" maxlength="22"/></div><div class="name-group"><div class="name-label">SHIP NAME</div><input type="text" id="ship-name-in" value="${G.flagship.name}" maxlength="22"/></div><div class="dossier"><div class="dossier-title">DOSSIER</div><div class="dossier-row">Origin: <span>${ORIGINS.find(o=>o.id===G.captain.origin)?.name||'—'}</span></div><div class="dossier-row">Class: <span>${CLASSES.find(c=>c.id===G.captain.cls)?.name||'—'}</span></div><div class="dossier-row">Job: <span>${JOBS.find(j=>j.id===G.captain.job)?.name||'—'}</span></div></div></div>`;
     nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="ccNext()">▶ CONTINUE</button>`;return;
   }
-if(s===4){
+if (s === 4) {
   // Filter only Tier 0 ships for starter selection
-  const starterShips = SHIP_HULLS.filter(ship => ship.tier === 0);
-  body.innerHTML = `<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><p>Credits: ${G.flagship.credits} CR</p>
-    <div class="opt-grid cols-3">${starterShips.map(ship=>`
+  const starterShips = (typeof SHIP_TEMPLATES !== 'undefined' ? SHIP_TEMPLATES : SHIP_HULLS).filter(ship => ship.tier === 0);
+  // Safely get credits from fleet[0] since flagship is a getter
+  const credits = (G.fleet[0]?.credits ?? 1000);
+  body.innerHTML = `<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><p>Credits: ${credits} CR</p>
+    <div class="opt-grid cols-3">${starterShips.map(ship => `
       <div class="opt-card" onclick="selectShip('${ship.id}')">
         <div class="oc-emoji">🚀</div>
         <div class="oc-name">${ship.name}</div>
         <div class="oc-desc">Hull:${ship.hull} Shields:${ship.shields} Cargo:${ship.cargo}</div>
-        <div class="oc-bonus">${ship.passive} | Cost: ${ship.cost} CR</div>
+        <div class="oc-bonus">${ship.passive} | Cost: ${ship.cost ?? ship.baseCost ?? 0} CR</div>
       </div>`).join('')}</div>
     <p>Remaining credits after purchase will be your starting funds.</p></div>`;
   nav.innerHTML = `<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;
@@ -1441,22 +1443,53 @@ if(s===4){
   body.innerHTML=`<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it=>`<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc||it.ability||it.effect}</div><div class="oc-bonus">◈ ${it.bonus||it.passive||it.bonus||''}</div></div>`).join('')}</div>`;
   nav.innerHTML=`${s>0?'<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>':''}<button class="btn btn-gold" ${sel?'':'disabled'} onclick="ccNext()">▶ CONTINUE</button>`;
 }
-function ccSelect(id){if(G.ccStep===0){G.captain.origin=id;const o=ORIGINS.find(x=>x.id===id);if(o)G.flagship.credits=o.credits;}else if(G.ccStep===1)G.captain.cls=id;else if(G.ccStep===2)G.captain.job=id;renderCC();}
+function ccSelect(id) {
+  if (G.ccStep === 0) {
+    G.captain.origin = id;
+    const o = ORIGINS.find(x => x.id === id);
+    if (o && G.fleet[0]) {
+      // Set credits directly on fleet[0], not the getter
+      G.fleet[0].credits = o.credits ?? 1000;
+    }
+  } else if (G.ccStep === 1) {
+    G.captain.cls = id;
+  } else if (G.ccStep === 2) {
+    G.captain.job = id;
+  }
+  renderCC();
+}
 function ccNext(){if((G.ccStep===0&&G.captain.origin)||(G.ccStep===1&&G.captain.cls)||(G.ccStep===2&&G.captain.job)||G.ccStep===3){G.ccStep++;renderCC();}}
-function selectShip(id){
-  const hull = SHIP_HULLS.find(h=>h.id===id);
-  if (!hull || G.flagship.credits < hull.cost) { alert('Insufficient credits!'); return; }
-  G.flagship.credits -= hull.cost;
-  const oldShip = G.flagship;
+function selectShip(id) {
+  // Support both old and new ship arrays
+  const shipArray = typeof SHIP_TEMPLATES !== 'undefined' ? SHIP_TEMPLATES : SHIP_HULLS;
+  const hull = shipArray.find(h => h.id === id);
+  
+  // Safely get credits and cost
+  const credits = G.fleet[0]?.credits ?? 1000;
+  const cost = hull?.cost ?? hull?.baseCost ?? 0;
+  
+  if (!hull || credits < cost) { 
+    alert(`Insufficient credits! Need ${cost}, have ${credits}`); 
+    return; 
+  }
+  // Deduct from fleet[0] directly since flagship is a getter
+  G.fleet[0].credits -= cost;
+  const oldShip = G.fleet[0];
   G.fleet[0] = {
-  id: 'ship0', name: oldShip.name, type: hull.name,
-  hull: hull.hull, maxHull: hull.hull, shields: hull.shields, maxShields: hull.shields,
-  fuel: oldShip.fuel, maxFuel: oldShip.maxFuel, cargoMax: hull.cargo, modules: oldShip.modules,
-  scrap: oldShip.scrap, fuelUse: hull.fuelUse, credits: oldShip.credits, morale: oldShip.morale || 75,
-  moduleSlots: hull.moduleSlots || 1 
-};
+    id: 'ship0', name: oldShip.name, type: hull.name,
+    hull: hull.hull, maxHull: hull.hull, 
+    shields: hull.shields, maxShields: hull.shields,
+    fuel: oldShip.fuel, maxFuel: oldShip.maxFuel, 
+    cargoMax: hull.cargo, modules: oldShip.modules,
+    scrap: oldShip.scrap, fuelUse: hull.fuelUse, 
+    credits: G.fleet[0].credits, morale: oldShip.morale || 75,
+    moduleSlots: hull.moduleSlots || 1,
+    // Include rolled stats if using templates
+    ...(hull.maxHull && { maxHull: hull.maxHull }),
+    ...(hull.maxShields && { maxShields: hull.maxShields })
+  };
+  
   addLog(`Acquired ${hull.name}.`);
-  // Launch the game immediately – no need for a sixth step
   launchGame();
 }
 function launchGame(){
