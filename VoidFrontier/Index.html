@@ -618,29 +618,332 @@ function rollShipFromTemplate(template, sysIdx) {
   };
 }
   
-// ---------- ENEMY SHIPS (space combat) more variety ----------
-const ENEMY_SHIPS = [
-  { type: 'Pirate Gunship', emoji: '💀', color: '#e67e22', hull: 55, maxHull: 55, shield: 15, maxShield: 15, desc: 'Battered raider.', loot: { cr: [350, 600], scrap: 3 }, systems: { weapons: { name: 'Laser Cannons', hp: 30, maxHp: 30 }, shields: { name: 'Deflector Array', hp: 15, maxHp: 15 }, engines: { name: 'Afterburners', hp: 20, maxHp: 20 } } },
-  { type: 'Cartel Enforcer', emoji: '⚠️', color: '#c41e3a', hull: 75, maxHull: 75, shield: 30, maxShield: 30, desc: 'Syndicate muscle.', loot: { cr: [600, 900], scrap: 5 }, systems: { weapons: { name: 'Dual Railguns', hp: 40, maxHp: 40 }, shields: { name: 'Shield Matrix', hp: 30, maxHp: 30 }, engines: { name: 'Boost Drive', hp: 25, maxHp: 25 } } },
-  { type: 'Empire Patrol', emoji: '🪖', color: '#2ecc71', hull: 90, maxHull: 90, shield: 45, maxShield: 45, desc: 'Military interceptor.', loot: { cr: [250, 500], scrap: 2 }, systems: { weapons: { name: 'Ion Array', hp: 45, maxHp: 45 }, shields: { name: 'Military Shields', hp: 45, maxHp: 45 }, engines: { name: 'Plasma Drive', hp: 30, maxHp: 30 } } },
-  { type: 'Nomad Cruiser', emoji: '🛸', color: '#1abc9c', hull: 100, maxHull: 100, shield: 60, maxShield: 60, desc: 'Mysterious nomadic vessel.', loot: { cr: [400, 700], artifact: 1 }, systems: { weapons: { name: 'Energy Lance', hp: 50, maxHp: 50 }, shields: { name: 'Phase Barrier', hp: 60, maxHp: 60 }, engines: { name: 'Warp Coil', hp: 40, maxHp: 40 } } },
-  { type: 'Cultist Zealot', emoji: '☩', color: '#9b59b6', hull: 65, maxHull: 65, shield: 25, maxShield: 25, desc: 'Fanatics with suicide drones.', loot: { cr: [200, 400], scrap: 4 }, systems: { weapons: { name: 'Drone Swarm', hp: 35, maxHp: 35 }, shields: { name: 'Improvised Shield', hp: 25, maxHp: 25 }, engines: { name: 'Rusted Thrusters', hp: 20, maxHp: 20 } } },
-  { type: 'Megacorp Security', emoji: '🏢', color: '#00e5ff', hull: 120, maxHull: 120, shield: 70, maxShield: 70, desc: 'Corporate enforcer.', loot: { cr: [800, 1200], scrap: 6 }, systems: { weapons: { name: 'Precision Lasers', hp: 60, maxHp: 60 }, shields: { name: 'Corporate Shields', hp: 70, maxHp: 70 }, engines: { name: 'Efficient Drive', hp: 50, maxHp: 50 } } }
+
+// ---------- ENEMY SHIPS (Faction-based, Tier-scalable) ----------
+const ENEMY_TEMPLATES = [
+  // === PIRATES / SYNDICATE ===
+  { id: 'pirate_raider', faction: 'syndicate', tier: 1, emoji: '💀', color: '#e67e22', 
+    baseStats: { hull: [45, 65], shield: [10, 25], weapons: [25, 40], engines: [15, 30] },
+    desc: 'Scavenged hull, aggressive tactics.', 
+    loot: { cr: [200, 500], scrap: [2, 5], contrabandChance: 0.3 },
+    abilities: ['board_attempt', 'evasive_burst'], 
+    aggression: 0.8, encounterWeight: { early: 60, mid: 40, late: 15 }
+  },
+  { id: 'pirate_gunship', faction: 'syndicate', tier: 2, emoji: '☠️', color: '#d35400',
+    baseStats: { hull: [70, 95], shield: [20, 40], weapons: [35, 55], engines: [25, 45] },
+    desc: 'Heavily armed raider with boarding pods.',
+    loot: { cr: [400, 800], scrap: [4, 8], weaponDropChance: 0.2 },
+    abilities: ['board_attempt', 'shield_pierce', 'ramming'],
+    aggression: 0.9, encounterWeight: { early: 30, mid: 55, late: 25 }
+  },
+  { id: 'cartel_enforcer', faction: 'cartel', tier: 3, emoji: '⚠️', color: '#c41e3a',
+    baseStats: { hull: [90, 120], shield: [35, 60], weapons: [50, 75], engines: [30, 50] },
+    desc: 'Syndicate muscle. Ruthless and well-equipped.',
+    loot: { cr: [600, 1200], scrap: [5, 10], techDropChance: 0.25 },
+    abilities: ['shield_pierce', 'targeting_array', 'intimidate'],
+    aggression: 0.7, encounterWeight: { early: 10, mid: 45, late: 60 }
+  },
+  { id: 'syndicate_dread', faction: 'syndicate', tier: 5, emoji: '🩸', color: '#8b0000',
+    baseStats: { hull: [180, 240], shield: [80, 130], weapons: [90, 140], engines: [50, 80] },
+    desc: 'Flagship-class raider. Avoid if unprepared.',
+    loot: { cr: [1500, 3000], scrap: [10, 20], artifactChance: 0.15 },
+    abilities: ['shield_pierce', 'targeting_array', 'boarding_swarm', 'fear_aura'],
+    aggression: 0.95, encounterWeight: { early: 0, mid: 15, late: 50 }
+  },
+
+  // === FEDERATION / EMPIRE MILITARY ===
+  { id: 'empire_patrol', faction: 'empire', tier: 2, emoji: '🪖', color: '#2ecc71',
+    baseStats: { hull: [80, 105], shield: [40, 65], weapons: [40, 60], engines: [25, 45] },
+    desc: 'Standard military interceptor. By-the-book tactics.',
+    loot: { cr: [200, 450], scrap: [1, 4], intelDropChance: 0.3 },
+    abilities: ['formation_fire', 'shield_regen'],
+    aggression: 0.4, encounterWeight: { early: 20, mid: 50, late: 30 },
+    hostilityMod: { federation: -0.3, empire: 0.2 } // Less likely if fed rep high
+  },
+  { id: 'federation_cutter', faction: 'federation', tier: 2, emoji: '🛡️', color: '#3498db',
+    baseStats: { hull: [75, 100], shield: [45, 70], weapons: [35, 55], engines: [30, 50] },
+    desc: 'Federation patrol vessel. Defensive posture.',
+    loot: { cr: [150, 400], scrap: [1, 3], medDropChance: 0.25 },
+    abilities: ['shield_regen', 'evade_protocol', 'call_backup'],
+    aggression: 0.3, encounterWeight: { early: 25, mid: 45, late: 20 },
+    hostilityMod: { federation: -0.4, empire: 0.1 }
+  },
+  { id: 'empire_destroyer', faction: 'empire', tier: 4, emoji: '⚔️', color: '#16a085',
+    baseStats: { hull: [140, 190], shield: [70, 110], weapons: [70, 105], engines: [40, 70] },
+    desc: 'Heavy warship. Imperial doctrine: overwhelming force.',
+    loot: { cr: [800, 1600], scrap: [6, 12], weaponBlueprintChance: 0.2 },
+    abilities: ['formation_fire', 'shield_regen', 'siege_mode', 'command_link'],
+    aggression: 0.6, encounterWeight: { early: 0, mid: 30, late: 55 },
+    hostilityMod: { empire: 0.3, federation: -0.2 }
+  },
+  { id: 'federation_battlecruiser', faction: 'federation', tier: 5, emoji: '🔷', color: '#2980b9',
+    baseStats: { hull: [200, 270], shield: [100, 150], weapons: [85, 130], engines: [55, 90] },
+    desc: 'Federation flagship. Advanced systems, disciplined crew.',
+    loot: { cr: [1200, 2500], scrap: [8, 15], techBlueprintChance: 0.25 },
+    abilities: ['shield_regen', 'evade_protocol', 'command_link', 'precision_strike'],
+    aggression: 0.5, encounterWeight: { early: 0, mid: 20, late: 45 },
+    hostilityMod: { federation: -0.5, empire: 0.15 }
+  },
+
+  // === NOMADS / INDEPENDENTS ===
+  { id: 'nomad_skiff', faction: 'nomads', tier: 1, emoji: '🛸', color: '#1abc9c',
+    baseStats: { hull: [40, 60], shield: [15, 35], weapons: [20, 35], engines: [35, 60] },
+    desc: 'Agile nomad vessel. Prefers evasion over combat.',
+    loot: { cr: [150, 400], artifactChance: 0.2, bioSampleChance: 0.15 },
+    abilities: ['phase_shift', 'sensor_jam', 'trade_offer'],
+    aggression: 0.2, encounterWeight: { early: 40, mid: 35, late: 20 },
+    hostilityMod: { independent: -0.3, nomads: 0.4 }
+  },
+  { id: 'nomad_cruiser', faction: 'nomads', tier: 3, emoji: '🌀', color: '#16a085',
+    baseStats: { hull: [95, 130], shield: [55, 85], weapons: [45, 70], engines: [50, 80] },
+    desc: 'Mysterious nomadic cruiser. Advanced alien tech.',
+    loot: { cr: [400, 900], artifactChance: 0.35, darkMatterChance: 0.1 },
+    abilities: ['phase_shift', 'sensor_jam', 'void_pulse', 'trade_offer'],
+    aggression: 0.3, encounterWeight: { early: 10, mid: 40, late: 50 },
+    hostilityMod: { independent: -0.2, nomads: 0.5 }
+  },
+  { id: 'free_trader_escort', faction: 'independent', tier: 2, emoji: '🚚', color: '#95a5a6',
+    baseStats: { hull: [70, 95], shield: [30, 55], weapons: [30, 50], engines: [35, 55] },
+    desc: 'Independent convoy guard. Defensive but capable.',
+    loot: { cr: [250, 550], cargoDropChance: 0.3 },
+    abilities: ['evade_protocol', 'call_backup'],
+    aggression: 0.25, encounterWeight: { early: 30, mid: 45, late: 25 },
+    hostilityMod: { independent: -0.4, guild: 0.2 }
+  },
+
+  // === CULT / FANATICAL ===
+  { id: 'cult_zealot', faction: 'cult', tier: 2, emoji: '☩', color: '#9b59b6',
+    baseStats: { hull: [60, 85], shield: [20, 45], weapons: [35, 60], engines: [25, 45] },
+    desc: 'Fanatical cult vessel. Unpredictable tactics.',
+    loot: { cr: [150, 400], artifactChance: 0.25, essenceChance: 0.1 },
+    abilities: ['suicide_drone', 'fear_aura', 'void_ritual'],
+    aggression: 0.85, encounterWeight: { early: 25, mid: 40, late: 35 },
+    hostilityMod: { cult: 0.5, federation: -0.2 }
+  },
+  { id: 'cult_apostle', faction: 'cult', tier: 4, emoji: '✝️', color: '#8e44ad',
+    baseStats: { hull: [120, 170], shield: [50, 90], weapons: [60, 95], engines: [35, 65] },
+    desc: 'High-ranking cult warship. Reality-bending weapons.',
+    loot: { cr: [600, 1400], artifactChance: 0.4, darkMatterChance: 0.2 },
+    abilities: ['suicide_drone', 'fear_aura', 'void_ritual', 'reality_tear'],
+    aggression: 0.9, encounterWeight: { early: 5, mid: 30, late: 60 },
+    hostilityMod: { cult: 0.7, federation: -0.3 }
+  },
+
+  // === MEGACORP / CORPORATE ===
+  { id: 'megacorp_security', faction: 'megacorp', tier: 3, emoji: '🏢', color: '#00e5ff',
+    baseStats: { hull: [100, 135], shield: [60, 95], weapons: [55, 85], engines: [40, 70] },
+    desc: 'Corporate security vessel. Efficient and well-funded.',
+    loot: { cr: [500, 1100], techDropChance: 0.35, dataChipChance: 0.25 },
+    abilities: ['targeting_array', 'shield_regen', 'drone_swarm'],
+    aggression: 0.5, encounterWeight: { early: 15, mid: 50, late: 45 },
+    hostilityMod: { megacorp: 0.3, syndicate: -0.2 }
+  },
+  { id: 'megacorp_enforcer', faction: 'megacorp', tier: 5, emoji: '💼', color: '#00bcd4',
+    baseStats: { hull: [170, 230], shield: [90, 140], weapons: [80, 125], engines: [50, 85] },
+    desc: 'Elite corporate warship. Cutting-edge weaponry.',
+    loot: { cr: [1000, 2200], techBlueprintChance: 0.3, artifactChance: 0.15 },
+    abilities: ['targeting_array', 'shield_regen', 'drone_swarm', 'ai_tactical'],
+    aggression: 0.6, encounterWeight: { early: 0, mid: 25, late: 55 },
+    hostilityMod: { megacorp: 0.4, syndicate: -0.3 }
+  },
+
+  // === EXOTIC / LEGENDARY ===
+  { id: 'void_wraith', faction: 'independent', tier: 6, emoji: '👻', color: '#7f8c8d',
+    baseStats: { hull: [140, 190], shield: [0, 0], weapons: [70, 110], engines: [80, 130] },
+    desc: 'Phantom vessel. Ethereal, hard to target.',
+    loot: { cr: [800, 1800], essenceChance: 0.5, artifactChance: 0.3 },
+    abilities: ['phase_shift', 'intangible', 'void_strike', 'fear_aura'],
+    aggression: 0.7, encounterWeight: { early: 0, mid: 5, late: 30 },
+    special: 'ethereal' // Takes reduced damage from conventional weapons
+  },
+  { id: 'precursor_sentinel', faction: 'independent', tier: 8, emoji: '🔮', color: '#f39c12',
+    baseStats: { hull: [300, 450], shield: [150, 250], weapons: [120, 200], engines: [70, 120] },
+    desc: 'Ancient guardian. Do not provoke unless prepared.',
+    loot: { cr: [2000, 5000], artifactChance: 0.8, darkMatterChance: 0.4, relicChance: 0.2 },
+    abilities: ['reality_tear', 'shield_regen', 'precision_strike', 'ancient_ward'],
+    aggression: 0.1, encounterWeight: { early: 0, mid: 0, late: 10 },
+    special: 'boss', requiresQuest: true
+  }
 ];
 
 // ---------- GROUND COMBAT ENEMY TYPES (more variety) ----------
-const E_TYPES = [
-  { name: "Guard Drone", hp: 45, maxHp: 45, atk: 10, spd: 4, icon: "▣", loot: { cr: [20, 40], scrap: 1 }, abilities: [] },
-  { name: "Pirate Raider", hp: 55, maxHp: 55, atk: 13, spd: 5, icon: "⚔", loot: { cr: [30, 60], weapon: 'small_arms' }, abilities: ['flank'] },
-  { name: "Alien Warrior", hp: 60, maxHp: 60, atk: 12, spd: 6, icon: "✦", loot: { cr: [25, 50], bio: true }, abilities: ['pounce'] },
-  { name: "Syndicate Agent", hp: 50, maxHp: 50, atk: 15, spd: 5, icon: "◆", loot: { cr: [40, 80], contraband: true }, abilities: ['poison'] },
-  { name: "Cult Zealot", hp: 65, maxHp: 65, atk: 11, spd: 4, icon: "☩", loot: { cr: [10, 30], artifact: true }, abilities: ['berserk'] },
-  { name: "Rogue Android", hp: 70, maxHp: 70, atk: 14, spd: 3, icon: "◉", loot: { cr: [50, 100], tech: true }, abilities: ['overload'] },
-  { name: "Mutant Beast", hp: 80, maxHp: 80, atk: 18, spd: 3, icon: "★", loot: { cr: [20, 50], bio: true }, abilities: ['frenzy'] },
-  { name: "Corporate Operative", hp: 45, maxHp: 45, atk: 12, spd: 6, icon: "💼", loot: { cr: [60, 120], data: true }, abilities: ['stealth'] },
-  { name: "Void Wraith", hp: 35, maxHp: 35, atk: 16, spd: 8, icon: "🌫️", loot: { cr: [0, 0], essence: true }, abilities: ['phase'] },
-  { name: "Mercenary Captain", hp: 90, maxHp: 90, atk: 20, spd: 5, icon: "👑", loot: { cr: [150, 300], gear: true }, abilities: ['command'] }
+// ---------- GROUND COMBAT ENEMY TYPES (Faction-based, Scalable) ----------
+const GROUND_ENEMY_TEMPLATES = [
+  // === PIRATES / SYNDICATE ===
+  { id: 'pirate_scavenger', faction: 'syndicate', tier: 1, icon: '⚔', color: '#e67e22',
+    baseStats: { hp: [40, 60], atk: [10, 16], spd: [4, 7] },
+    desc: 'Desperate raider with makeshift gear.',
+    loot: { cr: [15, 40], scrap: [1, 2] },
+    abilities: ['flank', 'desperate_strike'],
+    encounterWeight: { early: 70, mid: 40, late: 15 }
+  },
+  { id: 'syndicate_merc', faction: 'syndicate', tier: 3, icon: '💀', color: '#c0392b',
+    baseStats: { hp: [65, 90], atk: [14, 22], spd: [5, 8] },
+    desc: 'Professional mercenary. Well-trained and ruthless.',
+    loot: { cr: [40, 90], weapon: 'small_arms', techChance: 0.2 },
+    abilities: ['flank', 'suppressing_fire', 'tactical_retreat'],
+    encounterWeight: { early: 15, mid: 55, late: 50 }
+  },
+  { id: 'cartel_enforcer_ground', faction: 'cartel', tier: 4, icon: '🔪', color: '#8b0000',
+    baseStats: { hp: [85, 120], atk: [18, 28], spd: [4, 7] },
+    desc: 'Elite cartel shock trooper. Heavy armor, brutal tactics.',
+    loot: { cr: [70, 150], weapon: 'heavy_arms', armorDropChance: 0.3 },
+    abilities: ['armor_plating', 'berserk', 'intimidate'],
+    encounterWeight: { early: 0, mid: 30, late: 60 }
+  },
+
+  // === FEDERATION / EMPIRE ===
+  { id: 'empire_conscript', faction: 'empire', tier: 2, icon: '🪖', color: '#27ae60',
+    baseStats: { hp: [50, 75], atk: [11, 17], spd: [4, 6] },
+    desc: 'Standard infantry. Follows orders, minimal initiative.',
+    loot: { cr: [20, 50], intelChance: 0.25 },
+    abilities: ['formation', 'cover_fire'],
+    encounterWeight: { early: 40, mid: 50, late: 30 },
+    hostilityMod: { empire: 0.2, federation: -0.3 }
+  },
+  { id: 'federation_marine', faction: 'federation', tier: 3, icon: '🛡️', color: '#2980b9',
+    baseStats: { hp: [70, 95], atk: [13, 20], spd: [5, 7] },
+    desc: 'Trained marine. Disciplined and well-equipped.',
+    loot: { cr: [35, 80], medkitChance: 0.3 },
+    abilities: ['formation', 'cover_fire', 'first_aid'],
+    encounterWeight: { early: 20, mid: 55, late: 40 },
+    hostilityMod: { federation: -0.4, empire: 0.1 }
+  },
+  { id: 'empire_shock_trooper', faction: 'empire', tier: 5, icon: '⚡', color: '#16a085',
+    baseStats: { hp: [100, 140], atk: [20, 32], spd: [6, 9] },
+    desc: 'Elite imperial assault unit. Advanced combat tech.',
+    loot: { cr: [90, 200], weapon: 'pulse_rifle', techBlueprintChance: 0.2 },
+    abilities: ['formation', 'shield_burst', 'tactical_advance', 'overcharge'],
+    encounterWeight: { early: 0, mid: 25, late: 65 },
+    hostilityMod: { empire: 0.4, federation: -0.2 }
+  },
+
+  // === NOMADS / ALIEN ===
+  { id: 'nomad_raider', faction: 'nomads', tier: 2, icon: '✦', color: '#1abc9c',
+    baseStats: { hp: [45, 70], atk: [12, 19], spd: [6, 10] },
+    desc: 'Agile alien warrior. Unpredictable combat style.',
+    loot: { cr: [25, 60], bioSampleChance: 0.3, artifactChance: 0.15 },
+    abilities: ['pounce', 'evasive', 'primal_fury'],
+    encounterWeight: { early: 50, mid: 40, late: 25 },
+    hostilityMod: { nomads: 0.3, independent: -0.2 }
+  },
+  { id: 'alien_warrior', faction: 'independent', tier: 3, icon: '👾', color: '#9b59b6',
+    baseStats: { hp: [60, 90], atk: [14, 23], spd: [5, 9] },
+    desc: 'Native alien combatant. Strange biology, fierce loyalty.',
+    loot: { cr: [30, 75], bioSampleChance: 0.4, exoticMatChance: 0.2 },
+    abilities: ['pounce', 'toxic_blood', 'pack_hunter'],
+    encounterWeight: { early: 25, mid: 50, late: 45 }
+  },
+  { id: 'void_stalker', faction: 'independent', tier: 5, icon: '🌫️', color: '#7f8c8d',
+    baseStats: { hp: [50, 80], atk: [18, 30], spd: [8, 13] },
+    desc: 'Ethereal predator. Phases in and out of reality.',
+    loot: { cr: [60, 140], essenceChance: 0.5, artifactChance: 0.3 },
+    abilities: ['phase', 'void_strike', 'fear_aura', 'intangible'],
+    encounterWeight: { early: 0, mid: 15, late: 50 },
+    special: 'ethereal'
+  },
+
+  // === CULT / FANATICAL ===
+  { id: 'cult_acolyte', faction: 'cult', tier: 2, icon: '☩', color: '#9b59b6',
+    baseStats: { hp: [45, 70], atk: [10, 17], spd: [4, 7] },
+    desc: 'Devoted cultist. Willing to die for the cause.',
+    loot: { cr: [15, 45], artifactChance: 0.2, essenceChance: 0.1 },
+    abilities: ['berserk', 'suicide_rush', 'void_whisper'],
+    encounterWeight: { early: 40, mid: 45, late: 35 },
+    hostilityMod: { cult: 0.5, federation: -0.2 }
+  },
+  { id: 'cult_prelate', faction: 'cult', tier: 4, icon: '✝️', color: '#8e44ad',
+    baseStats: { hp: [75, 110], atk: [16, 26], spd: [5, 8] },
+    desc: 'High-ranking cult warrior. Wields forbidden powers.',
+    loot: { cr: [55, 130], artifactChance: 0.35, darkMatterChance: 0.15 },
+    abilities: ['berserk', 'void_ritual', 'mind_flay', 'sacrifice'],
+    encounterWeight: { early: 10, mid: 40, late: 60 },
+    hostilityMod: { cult: 0.7, federation: -0.3 }
+  },
+
+  // === MEGACORP / CORPORATE ===
+  { id: 'corp_security', faction: 'megacorp', tier: 3, icon: '💼', color: '#00e5ff',
+    baseStats: { hp: [60, 85], atk: [13, 20], spd: [5, 8] },
+    desc: 'Corporate security operative. Professional and efficient.',
+    loot: { cr: [40, 95], dataChipChance: 0.3, techChance: 0.25 },
+    abilities: ['suppressing_fire', 'tactical_retreat', 'comms_jam'],
+    encounterWeight: { early: 20, mid: 55, late: 45 },
+    hostilityMod: { megacorp: 0.3, syndicate: -0.2 }
+  },
+  { id: 'corp_elite', faction: 'megacorp', tier: 5, icon: '🎯', color: '#00bcd4',
+    baseStats: { hp: [90, 130], atk: [19, 30], spd: [6, 10] },
+    desc: 'Elite corporate agent. Cutting-edge gear and training.',
+    loot: { cr: [80, 180], weapon: 'smart_pistol', techBlueprintChance: 0.25 },
+    abilities: ['suppressing_fire', 'tactical_retreat', 'ai_assist', 'precision_shot'],
+    encounterWeight: { early: 0, mid: 30, late: 60 },
+    hostilityMod: { megacorp: 0.4, syndicate: -0.3 }
+  },
+
+  // === EXOTIC / BOSS ===
+  { id: 'ancient_guardian', faction: 'independent', tier: 7, icon: '🗿', color: '#f39c12',
+    baseStats: { hp: [200, 350], atk: [25, 45], spd: [3, 6] },
+    desc: 'Ancient automated defender. Do not engage lightly.',
+    loot: { cr: [200, 500], artifactChance: 0.7, relicChance: 0.3 },
+    abilities: ['ancient_ward', 'energy_blast', 'self_repair', 'overload'],
+    encounterWeight: { early: 0, mid: 0, late: 15 },
+    special: 'boss', requiresQuest: true
+  }
 ];
+
+// Scale ground enemy stats
+function scaleGroundEnemy(template, playerPower) {
+  const tierScale = Math.min(1, playerPower * 1.5);
+  const rng = new RNG(hashStr(G.seed) + G.jumps * 419 + template.id.charCodeAt(0));
+  
+  const scaleStat = (baseRange) => {
+    const [min, max] = baseRange;
+    const base = min + (max - min) * 0.5;
+    const variance = (max - min) * 0.3;
+    const scaled = base + (base * tierScale * 0.8);
+    return Math.floor(scaled + (rng.next() - 0.5) * variance);
+  };
+  
+  return {
+    hp: scaleStat(template.baseStats.hp),
+    maxHp: scaleStat(template.baseStats.hp),
+    atk: scaleStat(template.baseStats.atk),
+    spd: scaleStat(template.baseStats.spd),
+    // Scale loot
+    loot: {
+      cr: template.loot.cr ? [
+        Math.floor(template.loot.cr[0] * (1 + tierScale * 0.5)),
+        Math.floor(template.loot.cr[1] * (1 + tierScale * 0.7))
+      ] : [0, 0],
+      ...template.loot
+    }
+  };
+}
+
+// Generate scaled ground enemy
+function generateGroundEnemy(sysIdx = G.curSys) {
+  const playerPower = getPlayerPower();
+  const faction = getEncounterFaction(sysIdx);
+  const candidates = GROUND_ENEMY_TEMPLATES.filter(t => t.faction === faction);
+  const template = candidates.length > 0 
+    ? candidates[Math.floor(G.rng.next() * candidates.length)]
+    : GROUND_ENEMY_TEMPLATES[0];
+  
+  const stats = scaleGroundEnemy(template, playerPower);
+  
+  return {
+    id: template.id + '_gc_' + Date.now(),
+    name: template.desc.split('.')[0],
+    icon: template.icon,
+    color: template.color,
+    faction: template.faction,
+    tier: template.tier,
+    ...stats,
+    desc: template.desc,
+    loot: stats.loot,
+    abilities: template.abilities,
+    special: template.special || null
+  };
+}
 
 // ========== EXPANDED EVENTS FOR VOID FRONTIER ==========
 const EVENTS = [
@@ -1288,6 +1591,153 @@ function beginGame(){
   G.ccStep=0; renderCC(); showScreen('cc-screen');
 }
 
+// ========== ENEMY SCALING & ENCOUNTER LOGIC ==========
+
+// Calculate enemy stats based on player progression
+function scaleEnemyStats(template, playerPower) {
+  // playerPower: 0-1 scale based on jumps, fleet strength, captain level
+  const tierScale = Math.min(1, playerPower * 1.5); // Cap scaling
+  const rng = new RNG(hashStr(G.seed) + G.jumps * 317 + template.id.charCodeAt(0));
+  
+  const scaleStat = (baseRange) => {
+    const [min, max] = baseRange;
+    const base = min + (max - min) * 0.5; // Midpoint
+    const variance = (max - min) * 0.3; // ±30% variance
+    const scaled = base + (base * tierScale * 0.8); // Scale with player power
+    return Math.floor(scaled + (rng.next() - 0.5) * variance);
+  };
+  
+  return {
+    hull: scaleStat(template.baseStats.hull),
+    maxHull: scaleStat(template.baseStats.hull),
+    shield: scaleStat(template.baseStats.shield),
+    maxShield: scaleStat(template.baseStats.shield),
+    weapons: scaleStat(template.baseStats.weapons),
+    engines: scaleStat(template.baseStats.engines),
+    // Scale loot
+    loot: {
+      cr: template.loot.cr ? [
+        Math.floor(template.loot.cr[0] * (1 + tierScale * 0.5)),
+        Math.floor(template.loot.cr[1] * (1 + tierScale * 0.7))
+      ] : [0, 0],
+      scrap: template.loot.scrap ? [
+        Math.floor(template.loot.scrap[0] * (1 + tierScale * 0.3)),
+        Math.floor(template.loot.scrap[1] * (1 + tierScale * 0.4))
+      ] : [0, 0],
+      ...template.loot // Preserve special drop chances
+    }
+  };
+}
+
+// Calculate player power score (0-1) for scaling
+function getPlayerPower() {
+  const jumps = Math.min(G.jumps, 50); // Cap at 50 for scaling
+  const fleetStrength = G.fleet.reduce((sum, s) => sum + s.maxHull + s.maxShields, 0);
+  const captainLevel = G.captain.level || 1;
+  
+  // Weighted combination
+  const jumpScore = jumps / 50; // 0-1
+  const fleetScore = Math.min(1, fleetStrength / 2000); // Normalize to ~2000 total
+  const levelScore = Math.min(1, captainLevel / 10); // Cap at level 10
+  
+  return (jumpScore * 0.4) + (fleetScore * 0.4) + (levelScore * 0.2);
+}
+
+// Determine which faction is likely to encounter player
+function getEncounterFaction(sysIdx) {
+  const sys = G.galaxy.systems[sysIdx];
+  const dominantFaction = sys.faction.id;
+  const playerRep = G.rep[dominantFaction] || 0;
+  
+  // Base weight on faction presence
+  const weights = {};
+  FACTIONS.forEach(f => {
+    // Start with base weight from system faction
+    weights[f.id] = f.id === dominantFaction ? 50 : 10;
+    
+    // Adjust by player reputation
+    const rep = G.rep[f.id] || 0;
+    if (rep < -20) weights[f.id] += 30; // Hostile factions more likely to attack
+    else if (rep > 30) weights[f.id] -= 20; // Friendly factions less likely
+    
+    // Adjust by map progression (later game = more faction variety)
+    if (G.jumps > 20 && f.id !== dominantFaction) {
+      weights[f.id] += Math.min(20, G.jumps - 20);
+    }
+  });
+  
+  // Normalize and pick
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  const rand = G.rng.next() * total;
+  let cumulative = 0;
+  for (const [fac, w] of Object.entries(weights)) {
+    cumulative += w;
+    if (rand <= cumulative) return fac;
+  }
+  return dominantFaction;
+}
+
+// Select enemy template based on player power and faction
+function selectEnemyTemplate(faction, playerPower) {
+  const candidates = ENEMY_TEMPLATES.filter(t => 
+    t.faction === faction && 
+    t.encounterWeight.early + t.encounterWeight.mid + t.encounterWeight.late > 0
+  );
+  
+  if (candidates.length === 0) return ENEMY_TEMPLATES[0]; // Fallback
+  
+  // Weight by tier appropriateness
+  const weighted = candidates.map(t => {
+    let weight = 1;
+    if (playerPower < 0.3) weight = t.encounterWeight.early;
+    else if (playerPower < 0.7) weight = t.encounterWeight.mid;
+    else weight = t.encounterWeight.late;
+    
+    // Reduce weight for very high tier enemies if player is weak
+    if (t.tier > 4 && playerPower < 0.4) weight *= 0.1;
+    
+    return { template: t, weight: Math.max(0.1, weight) };
+  });
+  
+  const total = weighted.reduce((s, w) => s + w.weight, 0);
+  const rand = G.rng.next() * total;
+  let cumulative = 0;
+  for (const entry of weighted) {
+    cumulative += entry.weight;
+    if (rand <= cumulative) return entry.template;
+  }
+  return weighted[0].template;
+}
+
+// Generate a scaled enemy instance for combat
+function generateEnemy(sysIdx = G.curSys) {
+  const playerPower = getPlayerPower();
+  const faction = getEncounterFaction(sysIdx);
+  const template = selectEnemyTemplate(faction, playerPower);
+  const stats = scaleEnemyStats(template, playerPower);
+  
+  return {
+    id: template.id + '_' + Date.now(),
+    type: template.desc.split('.')[0], // Short name
+    emoji: template.emoji,
+    color: template.color,
+    faction: template.faction,
+    tier: template.tier,
+    ...stats,
+    desc: template.desc,
+    loot: stats.loot,
+    abilities: template.abilities,
+    aggression: template.aggression,
+    special: template.special || null,
+    systems: {
+      weapons: { name: 'Primary Array', hp: stats.weapons, maxHp: stats.weapons },
+      shields: { name: 'Deflector Grid', hp: stats.shield, maxHp: stats.shield },
+      engines: { name: 'Thruster Bank', hp: stats.engines, maxHp: stats.engines }
+    }
+  };
+}
+
+  
 // ========== BONUSES AND EFFECTS ==========
 function applyCharacterBonuses() {
   const origin = ORIGINS.find(o => o.id === G.captain.origin);
@@ -2630,7 +3080,71 @@ function jumpNewGalaxy() {
 function undock(){addLog('Undocked.');showScreen('galaxy-screen');updateHUD();updateLP();updateRP();}
 
 // ========== COMBAT (Ship & Ground) ==========
-function startCombat(enemy=null){const e=enemy||ENEMY_SHIPS[Math.floor(G.rng.next()*ENEMY_SHIPS.length)];G.combat={enemy:JSON.parse(JSON.stringify(e)),playerSys:{weapons:{hp:30,maxHp:30},shields:{hp:50,maxHp:50},engines:{hp:25,maxHp:25}},log:[],evasionActive:false,round:0,won:false};combatTarget=null;addCombatLog(`⚔ ${e.type} engages!`);renderCombat();showScreen('combat-screen');}
+// Update startCombat to use generateEnemy
+function startCombat(enemy = null) {
+  const e = enemy || generateEnemy(G.curSys); // Use new generator
+  G.combat = {
+    enemy: JSON.parse(JSON.stringify(e)),
+    playerSys: {
+      weapons: { hp: 30, maxHp: 30 },
+      shields: { hp: 50, maxHp: 50 },
+      engines: { hp: 25, maxHp: 25 }
+    },
+    log: [],
+    evasionActive: false,
+    round: 0,
+    won: false,
+    faction: e.faction // Track for reputation effects
+  };
+  combatTarget = null;
+  addCombatLog(`⚔ ${e.type} engages!`);
+  renderCombat();
+  showScreen('combat-screen');
+}
+
+// Update startGroundCombat to use generateGroundEnemy
+function startGroundCombat(enemyShip) {
+  const party = G.crew.filter(c => c.alive).map(c => ({ ...c, id: c.id }));
+  if (party.length === 0) { addLog('No crew alive to board!'); return; }
+  
+  const numE = 2 + Math.floor(G.rng.next() * 2);
+  const enemies = [];
+  for (let i = 0; i < numE; i++) {
+    enemies.push(generateGroundEnemy(G.curSys));
+  }
+  
+  groundCombatState = initGC(party, enemies, enemyShip?.type || 'Boarding Action', G.seed + G.jumps);
+  renderGroundCombat();
+  showScreen('ground-combat-screen');
+}
+
+// Update initGC to accept pre-generated enemies
+function initGC(party, enemies, loc, seed) {
+  const r = new RNG('gc' + seed);
+  // If enemies is a number, generate that many random ones (legacy fallback)
+  if (typeof enemies === 'number') {
+    const generated = [];
+    for (let i = 0; i < enemies; i++) {
+      generated.push(generateGroundEnemy());
+    }
+    enemies = generated;
+  }
+  
+  const bars = {};
+  [...party, ...enemies].forEach(u => { bars[u.id] = u.atb || r.int(0, 30); });
+  
+  return {
+    phase: 'active',
+    party,
+    enemies,
+    bars,
+    acting: null,
+    log: [`⚔ COMBAT: ${loc}`, 'Stand by...'],
+    tick: 0,
+    flashId: null,
+    selectedEnemy: null
+  };
+}
 function addCombatLog(msg,type='system'){G.combat.log.unshift({msg,type});document.getElementById('cbat-log').innerHTML=G.combat.log.map(e=>`<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');}
 function renderCombat(){
   const c=G.combat,s=G.ship,e=c.enemy;
@@ -2661,13 +3175,6 @@ function combatAction(action){
   renderCombat();
 }
 function boardEnemy(){if(!G.combat||G.combat.enemy.systems.shields.hp>0){addCombatLog('Shields must be down to board.');return;}startGroundCombat(G.combat.enemy);}
-function startGroundCombat(enemyShip){
-  const party=G.crew.filter(c=>c.alive).map(c=>({...c,id:c.id}));
-  if(party.length===0){addLog('No crew alive to board!');return;}
-  const numE=2+Math.floor(G.rng.next()*2);
-  groundCombatState=initGC(party,numE,enemyShip.type,G.seed+G.jumps);
-  renderGroundCombat();showScreen('ground-combat-screen');
-}
 let groundCombatState=null;
 function initGC(party,numE,loc,seed){const r=new RNG('gc'+seed);const enemies=Array.from({length:numE},(_,i)=>{const e=r.pick(E_TYPES);return{...e,id:'e'+Date.now()+i,hp:e.maxHp,atb:r.int(0,30),status:null};});const bars={};[...party,...enemies].forEach(u=>{bars[u.id]=u.atb||0;});return{phase:'active',party,enemies,bars,acting:null,log:[`⚔ COMBAT: ${loc}`,'Stand by...'],tick:0,flashId:null,selectedEnemy:null};}
 function tickGC(st){if(st.acting!==null||st.phase!=='active')return st;let{party,enemies,bars,log}=st;const nb={...bars};[...party.filter(p=>p.alive&&p.hp>0),...enemies.filter(e=>e.hp>0)].forEach(u=>{nb[u.id]=Math.min(100,(nb[u.id]||0)+(u.spd||5)*0.14);});const eR=enemies.find(e=>e.hp>0&&nb[e.id]>=100);if(eR){const alive=party.filter(p=>p.alive&&p.hp>0);if(!alive.length)return{...st,phase:'defeat'};const tgt=alive[Math.floor(Math.random()*alive.length)];const dmg=Math.floor(eR.atk*(0.8+Math.random()*0.4));const np=party.map(p=>p.id===tgt.id?{...p,hp:Math.max(0,p.hp-dmg),alive:p.hp-dmg>0}:p);nb[eR.id]=0;const nlog=[`${eR.name} attacks ${tgt.name||tgt.role} for ${dmg}!`,...log].slice(0,10);return{...st,party:np,bars:nb,log:nlog,phase:np.every(p=>!p.alive||p.hp<=0)?'defeat':'active',flashId:tgt.id};}
