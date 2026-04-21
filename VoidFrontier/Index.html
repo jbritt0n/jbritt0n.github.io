@@ -1422,19 +1422,31 @@ function renderCC(){
     nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="ccNext()">▶ CONTINUE</button>`;return;
   }
 if (s === 4) {
+  // Support both old SHIP_HULLS and new SHIP_TEMPLATES
+  const shipArray = typeof SHIP_TEMPLATES !== 'undefined' ? SHIP_TEMPLATES : SHIP_HULLS;
   // Filter only Tier 0 ships for starter selection
-  const starterShips = (typeof SHIP_TEMPLATES !== 'undefined' ? SHIP_TEMPLATES : SHIP_HULLS).filter(ship => ship.tier === 0);
-  // Safely get credits from fleet[0] since flagship is a getter
-  const credits = (G.fleet[0]?.credits ?? 1000);
+  const starterShips = shipArray.filter(ship => ship.tier === 0);
+  // Safely get credits from fleet[0]
+  const credits = G.fleet[0]?.credits ?? 1000;
   body.innerHTML = `<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><p>Credits: ${credits} CR</p>
-    <div class="opt-grid cols-3">${starterShips.map(ship => `
+    <div class="opt-grid cols-3">${starterShips.map(ship => {
+      // Fallback chain for ship name display
+      const displayName = ship.name || ship.className || ship.id.replace(/_/g, ' ').toUpperCase();
+      const displayCost = ship.cost ?? ship.baseCost ?? 0;
+      const displayHull = ship.hull ?? ship.statRanges?.hull?.[0] ?? 100;
+      const displayShields = ship.shields ?? ship.statRanges?.shields?.[0] ?? 50;
+      const displayCargo = ship.cargo ?? ship.statRanges?.cargo?.[0] ?? 10;
+      const displayPassive = ship.passive || 'No passive ability';
+      return `
       <div class="opt-card" onclick="selectShip('${ship.id}')">
         <div class="oc-emoji">🚀</div>
-        <div class="oc-name">${ship.name}</div>
-        <div class="oc-desc">Hull:${ship.hull} Shields:${ship.shields} Cargo:${ship.cargo}</div>
-        <div class="oc-bonus">${ship.passive} | Cost: ${ship.cost ?? ship.baseCost ?? 0} CR</div>
-      </div>`).join('')}</div>
+        <div class="oc-name">${displayName}</div>
+        <div class="oc-desc">Hull:${displayHull} Shields:${displayShields} Cargo:${displayCargo}</div>
+        <div class="oc-bonus">${displayPassive} | Cost: ${displayCost.toLocaleString()} CR</div>
+      </div>`;
+    }).join('')}</div>
     <p>Remaining credits after purchase will be your starting funds.</p></div>`;
+    
   nav.innerHTML = `<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;
   return;
 }
@@ -1472,24 +1484,38 @@ function selectShip(id) {
     alert(`Insufficient credits! Need ${cost}, have ${credits}`); 
     return; 
   }
+  
   // Deduct from fleet[0] directly since flagship is a getter
   G.fleet[0].credits -= cost;
+  
   const oldShip = G.fleet[0];
+  
+  // Handle both static hulls and rolled templates
+  const isTemplate = hull.statRanges !== undefined;
+  const finalHull = isTemplate ? hull.statRanges.hull[0] : hull.hull;
+  const finalShields = isTemplate ? hull.statRanges.shields[0] : hull.shields;
+  const finalCargo = isTemplate ? hull.statRanges.cargo[0] : hull.cargo;
+  const finalFuelUse = isTemplate ? hull.statRanges.fuelUse[0] : hull.fuelUse;
+  const finalSlots = hull.moduleSlots ?? (isTemplate ? hull.statRanges.moduleSlots?.[0] : 1) ?? 1;
+  
   G.fleet[0] = {
-    id: 'ship0', name: oldShip.name, type: hull.name,
-    hull: hull.hull, maxHull: hull.hull, 
-    shields: hull.shields, maxShields: hull.shields,
+    id: 'ship0', 
+    name: oldShip.name, 
+    type: hull.name || hull.className || hull.id,
+    class: hull.class || hull.role || 'Scout',
+    hull: finalHull, maxHull: finalHull, 
+    shields: finalShields, maxShields: finalShields,
     fuel: oldShip.fuel, maxFuel: oldShip.maxFuel, 
-    cargoMax: hull.cargo, modules: oldShip.modules,
-    scrap: oldShip.scrap, fuelUse: hull.fuelUse, 
+    cargoMax: finalCargo, modules: oldShip.modules,
+    scrap: oldShip.scrap, fuelUse: finalFuelUse, 
     credits: G.fleet[0].credits, morale: oldShip.morale || 75,
-    moduleSlots: hull.moduleSlots || 1,
-    // Include rolled stats if using templates
-    ...(hull.maxHull && { maxHull: hull.maxHull }),
-    ...(hull.maxShields && { maxShields: hull.maxShields })
+    moduleSlots: finalSlots,
+    // Store base cost for resale calculations
+    baseCost: cost,
+    cost: cost
   };
   
-  addLog(`Acquired ${hull.name}.`);
+  addLog(`Acquired ${hull.name || hull.className || hull.id}.`);
   launchGame();
 }
 function launchGame(){
