@@ -2415,14 +2415,29 @@ function renderNodeContent(nodeId){
     }).join('');
   
   } else if (nodeId === 'maintenance') {
-    const hullCost = Math.ceil((G.flagship.maxHull - G.flagship.hull) * 6);
-    const fuelCost = Math.ceil((G.flagship.maxFuel - G.flagship.fuel) * 4);
-    const availableShips = generateShipyardInventory();
-    cont.innerHTML = `<div class="st-content-hdr">MAINTENANCE BAY</div>
-    <div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div>
-    <div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
-    <div><b>SHIPYARD</b></div>${availableShips.map(h => `<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
-    <div><b>MODULES</b></div>${MODULES.map(m => `<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
+      const hullCost = Math.ceil((G.flagship.maxHull - G.flagship.hull) * 6);
+      const fuelCost = Math.ceil((G.flagship.maxFuel - G.flagship.fuel) * 4);
+      
+      // Use shipyard inventory if available, fallback to full list
+      const yardShips = (typeof generateShipyardInventory === 'function') ? generateShipyardInventory() : SHIP_HULLS;
+      
+      const ownedHtml = G.fleet.map((s, i) => {
+          const sellPrice = Math.floor((s.baseCost || 1000) * 0.6);
+          const isFlagship = i === 0;
+          return `<div class="mod-card" style="${isFlagship ? 'opacity:0.6;' : ''}">
+              <b>${s.name}</b> (${s.type})<br>
+              <span style="color:var(--metal)">Hull:${s.hull}/${s.maxHull} | Fuel:${s.fuel}/${s.maxFuel}</span><br>
+              ${isFlagship ? '<span style="color:var(--gold)">⚜ FLAGSHIP</span>' : `<button class="btn btn-sm btn-warn" onclick="sellShip(${i})">SELL (${sellPrice}cr)</button>`}
+          </div>`;
+      }).join('');
+  
+      cont.innerHTML = `<div class="st-content-hdr">MAINTENANCE BAY</div>
+      <div class="maint-row"><span>Repair Hull (${hullCost}cr)</span><button class="btn btn-sm" onclick="repairHull()">REPAIR</button></div>
+      <div class="maint-row"><span>Refuel (${fuelCost}cr)</span><button class="btn btn-sm" onclick="refuel()">REFUEL</button></div>
+      <div><b>FLEET INVENTORY</b></div>${ownedHtml}
+      <div style="margin-top:12px"><b>SHIPYARD</b></div>${yardShips.map(h => `<div class="mod-card"><b>${h.name}</b> Hull:${h.hull} Sh:${h.shields} Cargo:${h.cargo} Cost:${h.cost}cr <button class="btn btn-sm" onclick="buyShip('${h.id}')">BUY</button></div>`).join('')}
+      <div><b>MODULES</b></div>${MODULES.map(m => `<div class="mod-card"><b>${m.name}</b> ${m.desc} Cost:${m.cost}cr <button class="btn btn-sm" onclick="buyModule('${m.id}')">BUY</button></div>`).join('')}`;
+  }
   
   } else if (nodeId === 'blackmarket') {
     const illegal = GOODS.filter(g => !g.legal);
@@ -2652,30 +2667,35 @@ function repairHull() {
 }
 function refuel(){const miss=G.flagship.maxFuel-G.flagship.fuel;if(miss<=0)return;const cost=Math.ceil(miss*4);if(G.flagship.credits<cost)return;G.flagship.credits-=cost;G.flagship.fuel=G.flagship.maxFuel;updateHUD();renderNodeContent('maintenance');}
 function buyModule(id){const m=MODULES.find(x=>x.id===id);if(!m||G.flagship.credits<m.cost)return;G.flagship.credits-=m.cost;G.flagship.modules.push(m.id);addLog(`Installed ${m.name}.`);updateHUD();}
+
 function buyShip(id) {
-  const hull = SHIP_HULLS.find(h => h.id === id);
-  if (!hull || G.flagship.credits < hull.cost) {
-    addLog('Insufficient credits.');
-    return;
-  }
-  G.flagship.credits -= hull.cost;
-  const newShip = {
-    id: 'ship' + Date.now(),
-    name: `${hull.name}-${G.fleet.length + 1}`,
-    type: hull.name,
-    hull: hull.hull, maxHull: hull.hull,
-    shields: hull.shields, maxShields: hull.shields,
-    fuel: 50, maxFuel: 100,
-    cargoMax: hull.cargo,
-    modules: [],
-    scrap: 0,
-    fuelUse: hull.fuelUse,
-    credits: 0
-  };
-  G.fleet.push(newShip);
-  addLog(`Purchased ${hull.name}. Added to fleet.`);
-  updateHUD(); updateRP(); renderNodeContent('maintenance');
+    const hull = SHIP_HULLS.find(h => h.id === id);
+    if (!hull || G.flagship.credits < hull.cost) { addLog('Insufficient credits.'); return; }
+    G.flagship.credits -= hull.cost;
+    G.fleet.push({
+        id: 'ship' + Date.now(), name: `${hull.name}-${G.fleet.length + 1}`, type: hull.name,
+        baseCost: hull.cost, // 👈 Tracks original value for resale
+        hullId: hull.id,
+        hull: hull.hull, maxHull: hull.hull, shields: hull.shields, maxShields: hull.shields,
+        fuel: 50, maxFuel: 100, cargoMax: hull.cargo, modules: [], scrap: 0,
+        fuelUse: hull.fuelUse, credits: 0
+    });
+    addLog(`Purchased ${hull.name}.`); updateHUD(); updateRP(); renderNodeContent('maintenance');
 }
+
+function sellShip(idx) {
+    if (idx === 0) { addLog('⚠ Cannot sell your flagship!'); return; }
+    if (idx < 0 || idx >= G.fleet.length) return;
+    
+    const ship = G.fleet[idx];
+    const sellPrice = Math.floor((ship.baseCost || 1000) * 0.6); // 60% resale
+    G.flagship.credits += sellPrice;
+    G.fleet.splice(idx, 1);
+    
+    addLog(`📦 Sold ${ship.name} for ${sellPrice} CR.`);
+    updateHUD(); updateRP(); renderNodeContent('maintenance');
+}  
+  
 function buyGood(id) {
   const price = stationPrice(id, G.curSys, true);
   if (G.flagship.credits < price || !canAddCargo(id)) {
