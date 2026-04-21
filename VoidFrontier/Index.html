@@ -2214,36 +2214,47 @@ function stationRumors(sysIdx){const srng=new RNG(hashStr(G.seed)+sysIdx*421);re
 function genContracts(){G.contracts=[{id:'c1',title:'Delivery',reward:800,target:null,desc:'Transport cargo.'}];}
 function checkContractCompletion(sysName){G.contracts.forEach(c=>{if(c.active && c.target===sysName){G.flagship.credits+=c.reward;addLog(`Contract completed: ${c.title}. +${c.reward} CR`);c.active=false;}});}
 function dockStation(){
-  const sys = G.galaxy.systems[G.curSys];
-  if (!sys.hasStation) { addLog('No station in this system.'); return; }
-  
-  // Use pre-generated modules or build a basic set based on wealth
-  let modules = sys.stationModules;
-  if (!modules || modules.length === 0) {
-    // Fallback: generate basic modules (Cantina always present)
-    const wealth = sys.wealth || 1;
-    modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1) && !(n.requiresLowSecurity && sys.danger > 3));
-    if (modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
-    sys.stationModules = modules; // cache for future visits
-  }
-  
-  stActiveNode = modules[0].id;
-  document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType || 'Station'}`;
-  document.getElementById('st-meta').innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
-  document.getElementById('st-credits').textContent = `💰 ${G.flagship.credits} CR`;
-  
-  document.getElementById('st-nav').innerHTML = modules.map(n => `
-    <div class="st-node ${n.id === stActiveNode ? 'active' : ''}" onclick="stSelectNode('${n.id}')">
-      <div class="st-node-emoji">${n.emoji}</div>
-      <div class="st-node-label"><div class="st-node-name">${n.name}</div></div>
-    </div>
-  `).join('');
-  
-  renderNodeContent(stActiveNode);
-  showScreen('station-screen');
-  addLog(`Docked at ${sys.name} ${sys.stationType || 'Station'}.`);
+    const sys = G.galaxy.systems[G.curSys];
+    if(!sys) { console.error('Dock error: No current system data'); return; }
+    if(!sys.hasStation) { addLog('No station in this system.'); return; }
+    let modules = sys.stationModules;
+    if(!modules || modules.length === 0){
+        const wealth = sys.wealth || 1;
+        modules = ST_NODES.filter(n => wealth >= (n.minWealth || 1) && !(n.requiresLowSecurity && sys.danger > 3));
+        if(modules.length === 0) modules = [ST_NODES.find(n => n.id === 'cantina')];
+        sys.stationModules = modules; // Cache for next visit
+    }
+    stActiveNode = modules[0].id;
+    document.getElementById('st-name').textContent = `⬡ ${sys.name} ${sys.stationType || 'Station'}`;
+    document.getElementById('st-meta').innerHTML = `<span>${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
+    document.getElementById('st-credits').textContent = `💰 ${G.flagship.credits.toLocaleString()} CR`;
+    // Note: passing 'event' explicitly fixes strict-mode crashes
+    document.getElementById('st-nav').innerHTML = modules.map(n => `
+        <div class="st-node ${n.id === stActiveNode ? 'active' : ''}" onclick="stSelectNode('${n.id}', event)">
+            <div class="st-node-emoji">${n.emoji}</div>
+            <div class="st-node-name">${n.name}</div>
+        </div>
+    `).join('');
+    
+    renderNodeContent(stActiveNode);
+    showScreen('station-screen');
+    addLog(`Docked at ${sys.name}.`);
 }
-function stSelectNode(id){stActiveNode=id;document.querySelectorAll('.st-node').forEach(n=>n.classList.remove('active'));event.target.closest('.st-node').classList.add('active');renderNodeContent(id);}
+
+
+function stSelectNode(id, e){
+    if(e && e.preventDefault) e.preventDefault();
+    stActiveNode = id;
+    document.querySelectorAll('.st-node').forEach(n => n.classList.remove('active'));
+    
+    // Safe event fallback for strict mode
+    const target = e ? e.target : window.event?.target;
+    if(target){
+        const node = target.closest('.st-node');
+        if(node) node.classList.add('active');
+    }
+    renderNodeContent(id);
+}
 function renderNodeContent(nodeId){
   const cont = document.getElementById('st-content');
   const sys = G.galaxy.systems[G.curSys];
