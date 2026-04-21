@@ -13786,6 +13786,29 @@ const PARAM_REGISTRY = {
     { id: 'ynConcrete',   label: 'Concrete grain',    min: 0,   max: 1.0, step: 0.05, def: 0.3, scale: 1,
       hint: 'Adds a rough concrete texture overlay' },
   ],
+    greengardens: [
+    // ── Animation ─────────────────────────────────────────────────────────
+    { id:'ggSpeed',       label:'Animation speed',    min:1, max:30, step:1, def:10, scale:0.1,
+      hint:'Global speed multiplier — 1.0 is the contemplative default pace of the painting' },
+    { id:'ggDrift',       label:'Shape drift',        min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'Amplitude of the slow slide and hover for rectangles and the green polygon' },
+    { id:'ggLineOsc',     label:'Line oscillation',   min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'How far the construction lines and horizontal rule grow and contract' },
+    { id:'ggCircleDrift', label:'Circle drift',       min:0, max:30, step:1, def:12, scale:0.1,
+      hint:'Amplitude of the red circle bob (anxious) and black circle orbit (heavy)' },
+    // ── Grass ─────────────────────────────────────────────────────────────
+    { id:'ggGrassSpd',    label:'Grass wave speed',   min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'Speed of the golden colour temperature wave travelling through the grass' },
+    { id:'ggGrassDens',   label:'Grass density (px)', min:4, max:22, step:1, def:8,  scale:1,
+      hint:'Pixel spacing between grass blades — smaller = denser meadow' },
+    { id:'ggGrassSize',   label:'Grass blade size',   min:6, max:22, step:1, def:10, scale:1,
+      hint:'Font size of individual grass blade characters in pixels' },
+    // ── Toggles ────────────────────────────────────────────────────────────
+    { type:'toggle', id:'ggTexture',  label:'Block texture',       def:true,
+      hint:'Simulated impasto brushstroke texture on the gray rectangles and rust band' },
+    { type:'toggle', id:'ggShowGrid', label:'Construction lines',  def:true,
+      hint:'Show the fine pencil-like underdrawing lines in the right quadrant' },
+  ],
     newspaper: [
     { id:'npManualSeed', label:'Force Seed', type:'text', def:'',
       hint:'Enter any number. Different seeds yield different layouts.',
