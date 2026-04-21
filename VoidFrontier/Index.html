@@ -1826,6 +1826,17 @@ function genGalaxy(rng,W,H){
   }
   return{systems,conns};
 }
+
+
+function reachable() {
+  const r = new Set();
+  G.galaxy.conns.forEach(([a, b]) => {
+    if (a === G.curSys) r.add(b);
+    if (b === G.curSys) r.add(a);
+  });
+  return r;
+}
+
   
 // ========== MAP ==========
 let gxCanvas,gxCtx,gxPulse=0,gxAniming=false;
