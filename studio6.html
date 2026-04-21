@@ -11396,6 +11396,575 @@ function drawYandinsky(p, t) {
 }
 
 
+
+// ── GREEN GARDENS OF DISCONTENT ───────────────────────────────────────────────
+// Animated geometric abstraction based on the original painting.
+//
+// Elements (back → front):
+//   §1  Off-white ground — warm cream upper-left, cool blue-grey lower-right
+//   §2  Green grass band background (dark forest green, static geometry)
+//   §3  Grass characters — thin blades fill the band, color waves green→gold
+//   §4  Pale green stepped polygon (upper-left) — breathes and hovers
+//   §5  Large light-gray rectangle — slides left-right with impasto texture
+//   §6  Darker gray rectangle — independent diagonal slide
+//   §7  Rust/earth horizontal band — width breathes, slides vertically
+//   §8  Small dark rectangle (right side) — very subtle drift
+//   §9  Construction lines — each independently grows and shrinks
+//   §10 Black vertical bar — slow sinusoidal x-oscillation
+//   §11 Small black rect at base of vertical bar (grass zone, static)
+//   §12 Small black rect (lower-right, grass zone, static)
+//   §13 Horizontal black line — both endpoints contract/extend independently
+//   §14 Small red accent dot — drifts near vertical bar
+//   §15 Tiny pencil accent dot (static)
+//   §16 Red circle — compound two-frequency bob (the painting's focal tension)
+//   §17 Black circle (lower-right) — slow elliptical orbit
+//
+// S properties consumed:
+//   ggSpeed       — global animation speed multiplier (stored: def×scale = 1.0)
+//   ggDrift       — block/polygon drift amplitude (stored: 1.0)
+//   ggLineOsc     — construction line oscillation amplitude (stored: 1.0)
+//   ggCircleDrift — circle drift amplitude (stored: 1.2)
+//   ggGrassSpd    — grass wave speed multiplier (stored: 1.0)
+//   ggGrassDens   — grass character spacing in px (stored raw: 8)
+//   ggGrassSize   — grass character font size px (stored raw: 10)
+//   ggTexture     — toggle: brushstroke texture on gray and rust blocks
+//   ggShowGrid    — toggle: construction / pencil lines visible
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+// ══════════════════════════════════════════════════════════════════════════════
+// MODULE STATE — rebuilt on init or canvas resize
+// ══════════════════════════════════════════════════════════════════════════════
+ 
+let _ggS = null;
+ 
+ 
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT — generates all scene geometry from the painting's proportions
+// ══════════════════════════════════════════════════════════════════════════════
+ 
+function initGreenGardens(p) {
+  let W = p.width, H = p.height;
+ 
+  // Helper: drift configuration — each element has its own phase, speed and range
+  function dCfg(seed, dxFrac, dyFrac) {
+    return {
+      phase: p.random(Math.PI * 2) + seed,
+      speed: 0.38 + p.random(0.44),   // element-speed multiplier in [0.38, 0.82]
+      dx:    W * dxFrac,               // max horizontal drift amplitude in px
+      dy:    H * dyFrac                // max vertical drift amplitude in px
+    };
+  }
+ 
+  // Helper: line oscillation config
+  function lCfg(seed) {
+    return {
+      phase: p.random(Math.PI * 2) + seed,
+      speed: 0.28 + p.random(0.45)    // each line breathes at its own rate
+    };
+  }
+ 
+  // ── Pale green stepped polygon (upper-left architectural silhouette) ────────
+  // Represents the abstract building form in the painting.
+  // Shape is an L with one step — 6 vertices.
+  let polyPts = [
+    {x:0.000, y:0.552}, {x:0.000, y:0.124},
+    {x:0.368, y:0.124}, {x:0.368, y:0.270},
+    {x:0.212, y:0.270}, {x:0.212, y:0.552}
+  ];
+  // Centroid (used as rotation pivot so the shape rotates about its own centre)
+  let polyCX = polyPts.reduce((s, pt) => s + pt.x, 0) / polyPts.length;
+  let polyCY = polyPts.reduce((s, pt) => s + pt.y, 0) / polyPts.length;
+ 
+  _ggS = {
+    W, H,
+ 
+    // §4 Pale green polygon
+    polygon: {
+      pts: polyPts, pcx: polyCX, pcy: polyCY,
+      rotAmt: 0.007,                // max rotation ≈ ±0.4° — barely perceptible
+      d: dCfg(0.0, 0.007, 0.005)
+    },
+ 
+    // §5 Large light-gray rectangle (main painted block, center-left)
+    rectGrayMain: {
+      x:0.175, y:0.450, w:0.375, h:0.276,
+      col: '#9aa0a8',
+      d: dCfg(1.1, 0.014, 0.004)   // primarily horizontal slide
+    },
+ 
+    // §6 Darker overlapping gray rectangle
+    rectGrayDark: {
+      x:0.347, y:0.383, w:0.175, h:0.336,
+      col: '#78808a',
+      d: dCfg(2.2, 0.008, 0.008)   // diagonal — moves against §5 for tension
+    },
+ 
+    // §7 Rust/ochre horizontal band (upper right of centre)
+    rustBand: {
+      x:0.530, y:0.272, wBase:0.430, h:0.082,
+      col: '#b8905a',
+      // Width breathes (dwAmt) while the whole band drifts slightly vertically
+      d: { phase: p.random(Math.PI * 2) + 2.8, speed: 0.26,
+           dwAmt: W * 0.030, dy: H * 0.006 }
+    },
+ 
+    // §8 Small dark rectangle (isolated, right side)
+    rectSmall: {
+      x:0.768, y:0.458, w:0.060, h:0.082,
+      col: '#1e2428',
+      d: dCfg(5.0, 0.005, 0.007)
+    },
+ 
+    // §10 Black vertical bar (dominant structural spine)
+    vertBar: {
+      x:0.508, y0:0.133, y1:0.840,
+      w:0.042,
+      oscPhase: p.random(Math.PI * 2) + 0.5,
+      oscSpeed: 0.45,
+      oscAmt:   W * 0.009             // ±0.9% of W — architectural restraint
+    },
+ 
+    // §11 Small black rect at base of vertical bar (straddles grass boundary)
+    rectBaseBot: { x:0.502, y:0.776, w:0.058, h:0.083 },
+ 
+    // §12 Small black rect (lower right, embedded in grass zone)
+    rectGrassBot: { x:0.598, y:0.835, w:0.038, h:0.058 },
+ 
+    // §13 Long black horizontal line
+    horzLine: {
+      y: 0.733,
+      x0Base: 0.077, x1Base: 0.942,
+      lw: 1.8,
+      // Each endpoint oscillates independently for an asymmetric breathing feel
+      d0: { phase: p.random(Math.PI * 2) + 1.7, speed: 0.38, oscAmt: W * 0.042 },
+      d1: { phase: p.random(Math.PI * 2) + 3.1, speed: 0.51, oscAmt: W * 0.022 }
+    },
+ 
+    // §16 Red circle — compound bob: two superimposed frequencies
+    // The primary drift is slow and wide; the secondary is faster and smaller.
+    // Together they create an anxious, unsettled movement matching "discontent."
+    circleRed: {
+      cx: 0.618, cy: 0.093, r: 0.052,
+      d1: dCfg(3.1, 0.007, 0.018),                          // slow, wide
+      d2: { phase: p.random(Math.PI * 2) + 5.5, speed: 0.87, dy: H * 0.009 } // faster
+    },
+ 
+    // §14 Small red accent dot (center, near vertical bar)
+    dotRed: {
+      cx: 0.506, cy: 0.562, r: 0.009,
+      d: dCfg(1.4, 0.003, 0.005)
+    },
+ 
+    // §15 Tiny pencil accent dot (upper area, static — like a stray brushmark)
+    accentDot: { cx: 0.597, cy: 0.067, r: 0.0035 },
+ 
+    // §17 Black circle (lower-right, anchoring weight)
+    circleBlack: {
+      cx: 0.874, cy: 0.748, r: 0.057,
+      d: dCfg(4.2, 0.020, 0.013)    // wider orbit — feels like rolling, resolving
+    },
+ 
+    // §9 Construction / pencil lines
+    // Each line grows and shrinks between ~78–100% of its natural length,
+    // with the contraction centred at the midpoint so both ends move symmetrically.
+    cLines: [
+      // Vertical centre-line (runs through red circle, down the composition)
+      {x0:0.618, y0:0.000, x1:0.618, y1:0.845, lw:0.45, lc:lCfg(0.0)},
+      // Long horizontal (upper — spans from gray block to right edge)
+      {x0:0.345, y0:0.298, x1:0.945, y1:0.298, lw:0.50, lc:lCfg(0.8)},
+      // Secondary horizontals descending through the right quadrant
+      {x0:0.530, y0:0.422, x1:0.960, y1:0.422, lw:0.38, lc:lCfg(1.6)},
+      {x0:0.530, y0:0.577, x1:0.950, y1:0.577, lw:0.35, lc:lCfg(2.4)},
+      {x0:0.542, y0:0.662, x1:0.940, y1:0.662, lw:0.32, lc:lCfg(3.2)},
+      // Vertical construction lines forming the right-side crosshatch grid
+      {x0:0.776, y0:0.422, x1:0.776, y1:0.682, lw:0.30, lc:lCfg(4.0)},
+      {x0:0.831, y0:0.422, x1:0.831, y1:0.692, lw:0.28, lc:lCfg(4.8)},
+      {x0:0.886, y0:0.447, x1:0.886, y1:0.674, lw:0.25, lc:lCfg(5.6)},
+      {x0:0.938, y0:0.462, x1:0.938, y1:0.662, lw:0.22, lc:lCfg(6.4)}
+    ],
+ 
+    // §2/§3 Bottom green grass band
+    grassBand: { y: 0.826, h: 0.174 }
+  };
+}
+// ══════════════════════════════════════════════════════════════════════════════
+// DRIFT HELPER — converts a drift config + tick into a {x, y} pixel offset
+// Two independent sine/cosine channels with a 1.23× speed ratio prevent
+// the motion from ever feeling perfectly circular or mechanical.
+// ══════════════════════════════════════════════════════════════════════════════
+ 
+function _ggDrift(d, tick, scale) {
+  let tt = tick * d.speed;
+  return {
+    x: Math.sin(d.phase + tt)         * d.dx * scale,
+    y: Math.cos(d.phase + tt * 1.23)  * d.dy * scale
+  };
+}
+ 
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN DRAW — called every frame by the p5 draw loop
+// ══════════════════════════════════════════════════════════════════════════════
+ 
+function drawGreenGardens(p, t) {
+  // Self-initialise or re-initialise on canvas resize
+  if (!_ggS || _ggS.W !== p.width || _ggS.H !== p.height) initGreenGardens(p);
+ 
+  let G = _ggS;
+  let W = G.W, H = G.H;
+ 
+  // ── Read all S parameters once ────────────────────────────────────────────
+  let speed       = Math.max(0.01, S.ggSpeed       ?? 1.0);
+  let driftScale  = S.ggDrift        ?? 1.0;
+  let lineOsc     = S.ggLineOsc      ?? 1.0;
+  let circDrift   = S.ggCircleDrift  ?? 1.2;
+  let gSpd        = S.ggGrassSpd     ?? 1.0;
+  let gDens       = Math.max(5, Math.round(S.ggGrassDens  ?? 8));
+  let gSize       = Math.max(6, Math.round(S.ggGrassSize  ?? 10));
+  let showTex     = S.ggTexture      !== false;
+  let showGrid    = S.ggShowGrid     !== false;
+ 
+  // Base animation clock. At default S.speed (0.004) and 60fps:
+  //   tick grows at 0.24/s → drift oscillates once per ~52s (barely perceptible)
+  //   tick * 2.5 → line breathing cycle ~10s (gentle)
+  //   tick * 8   → grass wave sweeps ~3s (visible, organic)
+  let tick = t * speed;
+  // ── §1. Background ────────────────────────────────────────────────────────
+  // Warm ivory upper-left → neutral white → cool blue-grey lower-right.
+  // Matches the painting's off-white ground with its subtle temperature shift.
+  CTX.save();
+  let bgGr = CTX.createLinearGradient(0, 0, W * 0.7, H);
+  bgGr.addColorStop(0,   '#eee8e0');  // warm cream
+  bgGr.addColorStop(0.4, '#e8e8e4');  // neutral
+  bgGr.addColorStop(1,   '#e2e4e8');  // cool blue-grey
+  CTX.fillStyle = bgGr;
+  CTX.fillRect(0, 0, W, H);
+  CTX.restore();
+  // ── §2. Grass band background ──────────────────────────────────────────────
+  let gy0 = H * G.grassBand.y;
+  let gH  = H * G.grassBand.h;
+  CTX.save();
+  // Vertical gradient: darkest at base, slightly lighter at the "horizon" edge
+  let gBgGr = CTX.createLinearGradient(0, gy0, 0, gy0 + gH);
+  gBgGr.addColorStop(0,   '#1c4a10');
+  gBgGr.addColorStop(0.5, '#214d12');
+  gBgGr.addColorStop(1,   '#183c0e');
+  CTX.fillStyle = gBgGr;
+  CTX.fillRect(0, gy0, W, gH);
+  CTX.restore();
+  // ── §3. Grass characters ──────────────────────────────────────────────────
+  // Thin blade characters fill the band. A colour wave travels left-to-right,
+  // making zones glow golden as if lit by shifting sunlight or wind.
+  _ggDrawGrass(p, G, tick, gSpd, gDens, gSize, gy0, gH, W);
+  // ── §4. Pale green polygon (hovering, rotating) ───────────────────────────
+  {
+    let od  = _ggDrift(G.polygon.d, tick, driftScale);
+    let rot = Math.sin(G.polygon.d.phase + tick * G.polygon.d.speed * 0.6)
+              * G.polygon.rotAmt * driftScale;
+    let cx  = W * G.polygon.pcx, cy = H * G.polygon.pcy;
+    CTX.save();
+    CTX.translate(cx + od.x, cy + od.y);
+    CTX.rotate(rot);
+    CTX.beginPath();
+    G.polygon.pts.forEach((pt, i) => {
+      let px = (pt.x - G.polygon.pcx) * W;
+      let py = (pt.y - G.polygon.pcy) * H;
+      i === 0 ? CTX.moveTo(px, py) : CTX.lineTo(px, py);
+    });
+    CTX.closePath();
+    // Very pale translucent mint — barely tinted, almost white
+    CTX.fillStyle = 'rgba(186, 215, 158, 0.30)';
+    CTX.fill();
+    CTX.restore();
+  }
+  // ── §5. Large light-gray rectangle (slides left-right) ────────────────────
+  {
+    let d  = _ggDrift(G.rectGrayMain.d, tick, driftScale);
+    let rx = W * G.rectGrayMain.x + d.x;
+    let ry = H * G.rectGrayMain.y + d.y;
+    let rw = W * G.rectGrayMain.w;
+    let rh = H * G.rectGrayMain.h;
+    CTX.save();
+    CTX.fillStyle = G.rectGrayMain.col;
+    CTX.fillRect(rx, ry, rw, rh);
+    // Simulated impasto brushstroke texture (horizontal marks at varying opacity)
+    if (showTex) {
+      CTX.lineCap = 'round';
+      let nM = Math.floor(rh / 7);
+      for (let i = 0; i < nM; i++) {
+        let my  = ry + p.noise(1000 + i * 0.42) * rh;
+        let mx0 = rx + p.noise(1100 + i * 0.31) * rw * 0.22;
+        let mx1 = rx + rw * (0.38 + p.noise(1200 + i * 0.27) * 0.62);
+        CTX.strokeStyle = 'rgba(152,160,170,0.9)';
+        CTX.lineWidth   = 0.5 + p.noise(1400 + i * 0.51) * 1.2;
+        CTX.globalAlpha = 0.05 + p.noise(1300 + i * 0.38) * 0.10;
+        CTX.beginPath(); CTX.moveTo(mx0, my); CTX.lineTo(mx1, my); CTX.stroke();
+      }
+    }
+    CTX.globalAlpha = 1;
+    CTX.restore();
+  }
+  // ── §6. Darker gray rectangle (diagonal slide, creates tension with §5) ───
+  {
+    let d  = _ggDrift(G.rectGrayDark.d, tick, driftScale);
+    let rx = W * G.rectGrayDark.x + d.x;
+    let ry = H * G.rectGrayDark.y + d.y;
+    let rw = W * G.rectGrayDark.w;
+    let rh = H * G.rectGrayDark.h;
+    CTX.save();
+    CTX.fillStyle = G.rectGrayDark.col;
+    CTX.fillRect(rx, ry, rw, rh);
+    if (showTex) {
+      CTX.lineCap = 'round';
+      let nM = Math.floor(rh / 7);
+      for (let i = 0; i < nM; i++) {
+        let my  = ry + p.noise(2000 + i * 0.38) * rh;
+        let mx0 = rx + p.noise(2100 + i * 0.29) * rw * 0.18;
+        let mx1 = rx + rw * (0.22 + p.noise(2200 + i * 0.33) * 0.78);
+        CTX.strokeStyle = 'rgba(95,105,115,0.9)';
+        CTX.lineWidth   = 0.4 + p.noise(2400 + i * 0.57) * 1.0;
+        CTX.globalAlpha = 0.06 + p.noise(2300 + i * 0.44) * 0.09;
+        CTX.beginPath(); CTX.moveTo(mx0, my); CTX.lineTo(mx1, my); CTX.stroke();
+      }
+    }
+    CTX.globalAlpha = 1;
+    CTX.restore();
+  }
+  // ── §7. Rust/earth band (width breathes, vertical drift) ──────────────────
+  {
+    let rb   = G.rustBand;
+    // Width oscillation: one endpoint stays fixed, the right edge extends/contracts
+    let oscW = Math.sin(rb.d.phase + tick * rb.d.speed * 2.2) * rb.d.dwAmt * lineOsc;
+    let ody  = Math.cos(rb.d.phase + tick * rb.d.speed * 0.7) * rb.d.dy * driftScale;
+    let rbx  = W * rb.x;
+    let rby  = H * rb.y + ody;
+    let rbw  = W * rb.wBase + oscW;
+    let rbh  = H * rb.h;
+    CTX.save();
+    CTX.fillStyle = rb.col;
+    CTX.fillRect(rbx, rby, rbw, rbh);
+    // Warm sienna/ochre horizontal brushstrokes simulating the painting's texture
+    if (showTex) {
+      CTX.lineCap = 'round';
+      let nM = Math.floor(rbw / 5);
+      for (let i = 0; i < nM; i++) {
+        let my  = rby + p.noise(3000 + i * 0.35) * rbh;
+        let mx0 = rbx + p.noise(3100 + i * 0.28) * rbw * 0.08;
+        let mx1 = rbx + rbw * (0.28 + p.noise(3200 + i * 0.42) * 0.72);
+        let warm = p.noise(3300 + i * 0.36) > 0.52;
+        CTX.strokeStyle = warm ? 'rgba(88,48,14,0.9)' : 'rgba(168,108,42,0.9)';
+        CTX.lineWidth   = 0.5 + p.noise(3400 + i * 0.61) * 1.4;
+        CTX.globalAlpha = 0.12 + p.noise(3500 + i * 0.47) * 0.22;
+        CTX.beginPath(); CTX.moveTo(mx0, my); CTX.lineTo(mx1, my); CTX.stroke();
+      }
+    }
+    CTX.globalAlpha = 1;
+    CTX.restore();
+  }
+  // ── §8. Small dark rectangle (right side, isolated) ──────────────────────
+  {
+    let d  = _ggDrift(G.rectSmall.d, tick, driftScale);
+    CTX.fillStyle = G.rectSmall.col;
+    CTX.fillRect(
+      W * G.rectSmall.x + d.x,
+      H * G.rectSmall.y + d.y,
+      W * G.rectSmall.w,
+      H * G.rectSmall.h
+    );
+  }
+  // ── §9. Construction / pencil lines ───────────────────────────────────────
+  // Each line breathes between ~78% and 100% of its natural length.
+  // The contraction is symmetric about the midpoint — both ends pull inward.
+  // This mimics the way a draftsman's underdrawing seems to hover on the surface.
+  if (showGrid) {
+    CTX.save();
+    CTX.lineCap     = 'butt';
+    CTX.strokeStyle = 'rgba(40,40,50,0.30)';
+    G.cLines.forEach(ln => {
+      // Progress in [0.78, 1.0] — never fully collapses
+      let progress = 0.78 + 0.22 * (
+        Math.sin(ln.lc.phase + tick * ln.lc.speed * 2.5) * 0.5 + 0.5
+      ) * lineOsc;
+      let mx  = (ln.x0 + ln.x1) * 0.5 * W;
+      let my  = (ln.y0 + ln.y1) * 0.5 * H;
+      let ax0 = mx + (ln.x0 * W - mx) * progress;
+      let ay0 = my + (ln.y0 * H - my) * progress;
+      let ax1 = mx + (ln.x1 * W - mx) * progress;
+      let ay1 = my + (ln.y1 * H - my) * progress;
+      CTX.lineWidth = ln.lw;
+      CTX.beginPath(); CTX.moveTo(ax0, ay0); CTX.lineTo(ax1, ay1); CTX.stroke();
+    });
+ 
+    CTX.restore();
+  }
+  // ── §10. Black vertical bar (oscillates x — the painting's spine) ─────────
+  {
+    let vb   = G.vertBar;
+    let xOsc = Math.sin(vb.oscPhase + tick * vb.oscSpeed) * vb.oscAmt * driftScale;
+    let bx   = W * vb.x + xOsc;
+    CTX.fillStyle = '#141414';
+    CTX.fillRect(bx, H * vb.y0, W * vb.w, H * (vb.y1 - vb.y0));
+  }
+  // ── §11. Small black rect at base of vertical bar (straddles grass) ────────
+  CTX.fillStyle = '#141414';
+  CTX.fillRect(W * G.rectBaseBot.x, H * G.rectBaseBot.y, W * G.rectBaseBot.w, H * G.rectBaseBot.h);
+  // ── §12. Small black rect embedded in grass (lower-right of bar) ───────────
+  CTX.fillStyle = '#141414';
+  CTX.fillRect(W * G.rectGrassBot.x, H * G.rectGrassBot.y, W * G.rectGrassBot.w, H * G.rectGrassBot.h);
+  // ── §13. Horizontal black line ────────────────────────────────────────────
+  // Left endpoint oscillates independently (grows to the left, contracts right).
+  // Right endpoint has a smaller counter-phase oscillation.
+  // The asymmetry gives the line a sense of unresolved tension.
+  {
+    let hl  = G.horzLine;
+    let o0  = Math.sin(hl.d0.phase + tick * hl.d0.speed * 2.5) * hl.d0.oscAmt * lineOsc;
+    let o1  = Math.cos(hl.d1.phase + tick * hl.d1.speed * 2.5) * hl.d1.oscAmt * lineOsc * 0.4;
+    let lx0 = W * hl.x0Base - o0;
+    let lx1 = W * hl.x1Base + o1;
+    let ly  = H * hl.y;
+    CTX.save();
+    CTX.strokeStyle = '#141414';
+    CTX.lineWidth   = hl.lw;
+    CTX.lineCap     = 'square';
+    CTX.beginPath(); CTX.moveTo(lx0, ly); CTX.lineTo(lx1, ly); CTX.stroke();
+    CTX.restore();
+  }
+  // ── §14. Small red accent dot ──────────────────────────────────────────────
+  {
+    let d   = _ggDrift(G.dotRed.d, tick, driftScale);
+    CTX.fillStyle = '#ce1010';
+    CTX.beginPath();
+    CTX.arc(W * G.dotRed.cx + d.x, H * G.dotRed.cy + d.y, W * G.dotRed.r, 0, Math.PI * 2);
+    CTX.fill();
+  }
+  // ── §15. Tiny pencil accent dot (static — errant brushmark) ───────────────
+  CTX.fillStyle = 'rgba(55,55,65,0.62)';
+  CTX.beginPath();
+  CTX.arc(W * G.accentDot.cx, H * G.accentDot.cy, W * G.accentDot.r, 0, Math.PI * 2);
+  CTX.fill();
+ 
+  // ── §16. Red circle — compound two-frequency bob ───────────────────────────
+  // First drift (slow, wide): the circle's territory of movement.
+  // Second drift (faster): a smaller oscillation superimposed on the first.
+  // The two frequencies beating against each other produce an organic irregularity
+  // that never repeats — like something about to slip free of its position.
+  {
+    let d1  = _ggDrift(G.circleRed.d1, tick, circDrift);
+    let d2y = Math.sin(G.circleRed.d2.phase + tick * G.circleRed.d2.speed)
+              * G.circleRed.d2.dy * circDrift;
+    let rcx = W * G.circleRed.cx + d1.x;
+    let rcy = H * G.circleRed.cy + d1.y + d2y;
+    let rr  = W * G.circleRed.r;
+    CTX.save();
+    // Solid red disc — the painting's primary focal accent
+    CTX.fillStyle = '#d41010';
+    CTX.beginPath(); CTX.arc(rcx, rcy, rr, 0, Math.PI * 2); CTX.fill();
+    // The thin vertical line that bisects the circle (runs from the vertical bar)
+    // It drifts with the circle since it's an attachment point in the painting.
+    CTX.strokeStyle = 'rgba(12,12,12,0.68)';
+    CTX.lineWidth   = 0.8;
+    CTX.beginPath();
+    CTX.moveTo(rcx + rr * 0.14, rcy - rr * 1.85);
+    CTX.lineTo(rcx + rr * 0.14, rcy + rr * 2.20);
+    CTX.stroke();
+    CTX.restore();
+  }
+ 
+  // ── §17. Black circle (lower-right — resolving gravity) ───────────────────
+  // Drifts on a slow elliptical path. Larger x-range than y-range makes
+  // it feel like it's rolling along a surface rather than floating — heavy.
+  {
+    let d   = _ggDrift(G.circleBlack.d, tick, circDrift);
+    CTX.fillStyle = '#141414';
+    CTX.beginPath();
+    CTX.arc(W * G.circleBlack.cx + d.x, H * G.circleBlack.cy + d.y,
+            W * G.circleBlack.r, 0, Math.PI * 2);
+    CTX.fill();
+  }
+}
+ 
+// ══════════════════════════════════════════════════════════════════════════════
+// GRASS CHARACTER FILL
+// Draws thin blade characters across the bottom green band.
+// A colour wave travels left-to-right making sections shift from deep
+// forest green → lime → yellow-green → golden straw, evoking wind through grass.
+// A secondary slower wave adds width variation so no two passes look the same.
+// Individual characters lean slightly with the wave direction (±~13°).
+// ══════════════════════════════════════════════════════════════════════════════
+ 
+// Blade characters — all narrow vertical strokes, ASCII + one thin CJK stroke
+const GG_GRASS_CHARS = ['|', '/', '\\', 'l', 'i', '|', '/', '\\', 'l'];
+// (| and / and \ weighted more: they're the best grass-blade shapes)
+function _ggDrawGrass(p, G, tick, gSpd, gDens, gSize, gy0, gH, W) {
+  CTX.save();
+  // Hard clip to band — characters must not overflow onto the painting
+  CTX.beginPath();
+  CTX.rect(0, gy0, W, gH);
+  CTX.clip();
+  CTX.textAlign    = 'center';
+  CTX.textBaseline = 'middle';
+  CTX.font = `${gSize}px "Courier New", monospace`;
+  let halfDens = gDens * 0.5;
+  for (let gx = halfDens; gx < W; gx += gDens) {
+    for (let gy = gy0 + gSize * 0.55; gy < gy0 + gH; gy += gDens * 0.88) {
+      // ── Primary colour wave (fast, tight — the wind ripple) ────────────────
+      let phase1 = (gx / W) * Math.PI * 5.5 - tick * 1.4 * gSpd;
+      let wave1  = Math.sin(phase1) * 0.5 + 0.5;                  // [0, 1]
+      // ── Secondary wave (slow, broad — the underlying light shift) ──────────
+      let phase2 = (gx / W) * Math.PI * 2.1 - tick * 0.48 * gSpd + 1.8;
+      let wave2  = Math.sin(phase2) * 0.28 + 0.28;                // [0, 0.56]
+      // ── Per-position organic noise (breaks up the perfectly uniform wave) ──
+      let nv = p.noise(gx * 0.032, gy * 0.048) * 0.22;
+      // ── Vertical tipping: tips glow warmer than the base ──────────────────
+      let yFrac = 1.0 - (gy - gy0) / gH;   // 1.0 at top of band, 0.0 at base
+      // Combined heat [0, 1] — higher = warmer/more golden
+      let heat = Math.max(0, Math.min(1, wave1 * 0.50 + wave2 * 0.22 + nv + yFrac * 0.07));
+      // ── Colour interpolation ───────────────────────────────────────────────
+      // Stops: deep forest green → lime green → yellow-green → golden straw
+      let r, gC, b;
+      if (heat < 0.30) {
+        // Deep forest green → mid green
+        let f = heat / 0.30;
+        r  = (22  + f * 55)  | 0;   // 22  → 77
+        gC = (80  + f * 78)  | 0;   // 80  → 158
+        b  = (14  + f * 5)   | 0;   // 14  → 19
+      } else if (heat < 0.62) {
+        // Mid green → yellow-green
+        let f = (heat - 0.30) / 0.32;
+        r  = (77  + f * 112) | 0;   // 77  → 189
+        gC = (158 + f * 44)  | 0;   // 158 → 202
+        b  = (19  + f * 5)   | 0;   // 19  → 24
+      } else {
+        // Yellow-green → golden straw → amber
+        let f = (heat - 0.62) / 0.38;
+        r  = (189 + f * 50)  | 0;   // 189 → 239
+        gC = (202 - f * 58)  | 0;   // 202 → 144
+        b  = (24  - f * 14)  | 0;   // 24  → 10
+      }
+ 
+      // ── Character and lean ─────────────────────────────────────────────────
+      // Character is deterministic from position (not time) — the blades don't
+      // flicker between shapes, only their color and lean change.
+      let charIdx = Math.floor(p.noise(gx * 0.08, gy * 0.08) * GG_GRASS_CHARS.length);
+      let ch      = GG_GRASS_CHARS[charIdx % GG_GRASS_CHARS.length];
+      // Lean (tilt in radians) tracks the primary wave — grasses bend with wind
+      let lean = Math.sin(phase1 + 0.55) * 0.22;  // ≈ ±12.6°
+      // Opacity: slight variation so the band has depth; base never near zero
+      let opacity = 0.58 + nv * 1.6;
+      opacity = Math.min(1, opacity);
+      CTX.save();
+      CTX.translate(gx, gy);
+      CTX.rotate(lean);
+      CTX.globalAlpha = opacity;
+      CTX.fillStyle   = `rgb(${r},${gC},${b})`;
+      CTX.fillText(ch, 0, 0);
+      CTX.restore();
+    }
+  }
+ 
+  CTX.globalAlpha = 1;
+  CTX.restore();
+}
+
   
   
 // ── POETIC TENDRILS MODE (Enhanced with line spacing & noise bias) ────────────
