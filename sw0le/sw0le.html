@@ -611,6 +611,9 @@ const exerciseDB = [
   const pilatesOnly = document.getElementById('pilates-only')?.checked ?? false;
 
   return exerciseDB.filter(ex => {
+    // Exclude yoga moves from normal workouts (they are only for Yoga Mode)
+    if (ex.isYoga) return false;
+
     if (!ex.equipment.every(r => equip.includes(r))) return false;
     if (ex.progressionLevel > userLevel) return false;
     
