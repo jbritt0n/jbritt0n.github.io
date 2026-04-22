@@ -715,37 +715,121 @@ const exerciseDB = [
 
       // ---------- METRICS ----------
       let weightChart, xpChart;
-      function updateMetrics() {
-        const select = document.getElementById('exercise-select-metrics');
-        select.innerHTML = '<option value="">-- Select --</option>' + 
-          [...new Set(weightLogs.map(l => l.exerciseId))].map(id => {
-            const name = weightLogs.find(l => l.exerciseId === id).exerciseName;
-            return `<option value="${id}">${name}</option>`;
-          }).join('');
-        
-        if (weightChart) weightChart.destroy();
-        if (xpChart) xpChart.destroy();
-        
-        const ctx1 = document.getElementById('weight-chart').getContext('2d');
-        weightChart = new Chart(ctx1, { type:'line', data:{ labels:[], datasets:[] }, options:{ responsive:true } });
-        
-        const ctx2 = document.getElementById('xp-chart').getContext('2d');
-        const last7 = [...Array(7)].map((_,i) => {
-          const d = new Date(); d.setDate(d.getDate()-i);
-          return d.toLocaleDateString();
-        }).reverse();
-        const xpData = last7.map(day => workoutHistory.filter(e => e.date.includes(day)).reduce((s,e)=>s+e.xp,0));
-        xpChart = new Chart(ctx2, { type:'bar', data:{ labels:last7, datasets:[{ label:'XP', data:xpData, backgroundColor:'#00e6ff' }] } });
-        
-        select.addEventListener('change', (e) => {
-          const exId = e.target.value;
-          if (!exId) return;
-          const logs = weightLogs.filter(l => l.exerciseId === exId).sort((a,b)=>new Date(a.date)-new Date(b.date));
-          weightChart.data.labels = logs.map(l => new Date(l.date).toLocaleDateString());
-          weightChart.data.datasets = [{ label:'Weight (lbs)', data:logs.map(l=>l.weight), borderColor:'#00ffaa' }];
-          weightChart.update();
-        });
+     function updateMetrics() {
+  const select = document.getElementById('exercise-select-metrics');
+  select.innerHTML = '<option value="">-- Select --</option>' +
+    [...new Set(weightLogs.map(l => l.exerciseId))].map(id => {
+      const name = weightLogs.find(l => l.exerciseId === id).exerciseName;
+      return `<option value="${id}">${name}</option>`;
+    }).join('');
+
+  if (weightChart) weightChart.destroy();
+  if (xpChart) xpChart.destroy();
+
+  // Weight + Reps chart (dual axis)
+  const ctx1 = document.getElementById('weight-chart').getContext('2d');
+  weightChart = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              let label = context.dataset.label || '';
+              if (label) label += ': ';
+              label += context.parsed.y;
+              if (context.dataset.yAxisID === 'y') label += ' lbs';
+              else label += ' reps';
+              return label;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: { display: true, text: 'Weight (lbs)', color: '#00ffaa' },
+          grid: { color: '#1e4a6e' },
+          ticks: { color: '#b0f0ff' }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: { display: true, text: 'Reps', color: '#ffaa00' },
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#b0f0ff' }
+        }
       }
+    }
+  });
+
+  // XP chart (unchanged)
+  const ctx2 = document.getElementById('xp-chart').getContext('2d');
+  const last7 = [...Array(7)].map((_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    return d.toLocaleDateString();
+  }).reverse();
+  const xpData = last7.map(day => workoutHistory.filter(e => e.date.includes(day)).reduce((s, e) => s + e.xp, 0));
+  xpChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: last7,
+      datasets: [{ label: 'XP', data: xpData, backgroundColor: '#00e6ff' }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true, grid: { color: '#1e4a6e' }, ticks: { color: '#b0f0ff' } } },
+      plugins: { legend: { labels: { color: '#b0f0ff' } } }
+    }
+  });
+
+  select.addEventListener('change', (e) => {
+    const exId = e.target.value;
+    if (!exId) {
+      weightChart.data.labels = [];
+      weightChart.data.datasets = [];
+      weightChart.update();
+      return;
+    }
+    const logs = weightLogs
+      .filter(l => l.exerciseId === exId)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const labels = logs.map(l => new Date(l.date).toLocaleDateString());
+    const weightData = logs.map(l => l.weight);
+    const repsData = logs.map(l => l.reps);
+
+    weightChart.data.labels = labels;
+    weightChart.data.datasets = [
+      {
+        label: 'Weight (lbs)',
+        data: weightData,
+        borderColor: '#00ffaa',
+        backgroundColor: '#00ffaa33',
+        yAxisID: 'y',
+        tension: 0.1,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Reps',
+        data: repsData,
+        borderColor: '#ffaa00',
+        backgroundColor: '#ffaa0033',
+        yAxisID: 'y1',
+        tension: 0.1,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }
+    ];
+    weightChart.update();
+  });
+}
 
       // ---------- EXPORT AS MARKDOWN (OBSIDIAN) ----------
       function exportMarkdown() {
