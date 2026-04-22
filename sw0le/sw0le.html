@@ -985,9 +985,40 @@ const exerciseDB = [
       // Pick a random one from the filtered pool
       return pool[Math.floor(Math.random() * pool.length)];
     }
+
+    // ---------- RECORD SET COMPLETION HELPER ----------
+        // Record a set completion for an exercise (used by guided mode)
+    function recordSetForExercise(ex, workout) {
+      const status = workout.setsStatus[ex.id];
+      if (!status) return;
+      
+      // Increment completed sets (but not beyond total sets for this circuit? Let's not cap here)
+      status.completedSets = (status.completedSets || 0) + 1;
+      
+      const loggedReps = parseInt(status.reps) || ex.defaultReps;
+      const loggedWeight = parseFloat(status.weight) || 0;
+      
+      // Update performance tracking
+      if (!exercisePerformance[ex.id]) {
+        exercisePerformance[ex.id] = { bestReps: 0, lastReps: 0, attempts: 0 };
+      }
+      exercisePerformance[ex.id].lastReps = loggedReps;
+      exercisePerformance[ex.id].bestReps = Math.max(exercisePerformance[ex.id].bestReps, loggedReps);
+      exercisePerformance[ex.id].attempts++;
+      
+      // Log weight
+      weightLogs.push({
+        date: new Date().toISOString(),
+        exerciseId: ex.id,
+        exerciseName: ex.name,
+        weight: loggedWeight,
+        reps: loggedReps
+      });
+      
+      saveAll(); // persist immediately
+    }
     
     // ---------- RENDERING WORKOUT ----------
-        // ---------- RENDERING WORKOUT ----------
     function renderWorkout(workout) {
       const container = document.getElementById('workout-container');
       if (!workout || (!workout.circuitA.length && !workout.circuitB.length)) {
@@ -1214,19 +1245,27 @@ const exerciseDB = [
       let totalXP = 0;
       let allSets = 0, completedSets = 0;
       const getProgressionMultiplier = (level) => 1 + (level - 1) * 0.2;
+      
+      // Use dynamic sets per circuit
+      const setsPer = workout.setsPerCircuit || { A: 3, B: 2, C: 1 };
+      
       ['A','B','C'].forEach(circ => {
         const arr = workout['circuit'+circ];
-        const setsPer = circ==='A' ? 3 : (circ==='B' ? 2 : 1);
-        const baseSetXP = circ==='C' ? 6 : 5;
+        const setsForCircuit = setsPer[circ] || 0;
+        const baseSetXP = circ === 'C' ? 6 : 5;
+        
         arr.forEach(ex => {
-          allSets += setsPer;
+          allSets += setsForCircuit;
           const stat = workout.setsStatus[ex.id];
-          completedSets += stat.completedSets;
+          const completed = stat ? stat.completedSets : 0;
+          completedSets += completed;
+          
           const weight = ex.difficultyWeight || 1.0;
           const progMult = getProgressionMultiplier(ex.progressionLevel || 1);
-          totalXP += stat.completedSets * baseSetXP * progMult * weight;
+          totalXP += completed * baseSetXP * progMult * weight;
         });
       });
+      
       if (workout.isBoss) totalXP += 30;
       totalXP = Math.round(totalXP);
       awardXP(totalXP);
@@ -1427,6 +1466,12 @@ function renderYogaFlow(flow) {
     }
 
     function startRestTimer(workout) {
+      // First, record that the user completed a set of the current exercise
+      const currentEx = guidedExerciseList[guidedCurrentIndex];
+      if (currentEx) {
+        recordSetForExercise(currentEx, workout);
+      }
+      
       const restSec = parseInt(document.getElementById('rest-duration').value) || 30;
       let remaining = restSec;
       const timerEl = document.getElementById('guided-timer');
@@ -1435,11 +1480,17 @@ function renderYogaFlow(flow) {
       timerEl.textContent = remaining + 's';
       document.getElementById('guided-phase-label').textContent = '⏸ Rest';
       document.getElementById('guided-next').textContent = 'Skip Rest ⏭';
-      document.getElementById('guided-next').onclick = () => { clearInterval(guidedRestTimer); nextGuidedEx(workout); };
+      document.getElementById('guided-next').onclick = () => { 
+        clearInterval(guidedRestTimer); 
+        nextGuidedEx(workout); 
+      };
       guidedRestTimer = setInterval(() => {
         remaining--;
         timerEl.textContent = remaining + 's';
-        if (remaining <= 0) { clearInterval(guidedRestTimer); nextGuidedEx(workout); }
+        if (remaining <= 0) { 
+          clearInterval(guidedRestTimer); 
+          nextGuidedEx(workout); 
+        }
       }, 1000);
     }
 
@@ -1459,6 +1510,13 @@ function renderYogaFlow(flow) {
       clearInterval(guidedRestTimer);
       guidedMode = false;
       document.getElementById('guided-overlay').classList.remove('active');
+      // Optionally, ask user if they want to finish the workout now
+      if (confirm('Exit guided mode. Do you want to finish the workout and claim XP?')) {
+        finishWorkout(currentWorkout);
+      } else {
+        // Re-render the workout panel so they can see updated set progress
+        if (currentWorkout) renderWorkout(currentWorkout);
+      }
     }
 
     // ---------- BUILDER MODE ----------
