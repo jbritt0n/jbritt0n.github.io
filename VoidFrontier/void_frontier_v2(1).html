@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VOID FRONTIER · FLEET EDITION v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --void:#0a0c10;--void2:#0d1117;--star:#e8f0ff;
+  --nebula:#1a3a5a;--hazard:#c41e3a;--warn:#e67e22;
+  --safe:#2ecc71;--alien:#8e44ad;--metal:#7f8c8d;
+  --gold:#f1c40f;--cyan:#00e5ff;
+  --border:rgba(0,229,255,0.22);--panel:#0d1117;
+}
+body{background:var(--void);color:var(--star);font-family:'VT323',monospace;font-size:18px;overflow:hidden;height:100vh;width:100vw;user-select:none}
+#game{width:100vw;height:100vh;position:relative}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+#title-screen{align-items:center;justify-content:center}
+#sf-canvas{position:absolute;inset:0;z-index:0}
+.title-wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px}
+.logo{font-family:'Press Start 2P',monospace;font-size:clamp(28px,5vw,52px);color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4);letter-spacing:6px;animation:logoPulse 3s ease-in-out infinite}
+.logo-sub{font-family:'VT323',monospace;font-size:20px;color:var(--metal);letter-spacing:10px;margin-top:8px;text-align:center}
+@keyframes logoPulse{0%,100%{text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4)}50%{text-shadow:0 0 40px rgba(0,229,255,1),0 0 100px rgba(0,229,255,.6)}}
+.seed-box{background:var(--panel);border:1px solid var(--border);padding:28px 32px;display:flex;flex-direction:column;gap:14px;min-width:380px}
+.seed-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);letter-spacing:2px}
+.seed-row{display:flex;gap:10px}
+input,select{background:var(--void);border:1px solid var(--cyan);color:var(--star);font-family:'VT323',monospace;font-size:18px;padding:8px 12px;outline:none;width:100%}
+.btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:9px;padding:10px 15px;cursor:pointer;transition:all .15s;letter-spacing:1px;white-space:nowrap}
+.btn:hover{background:var(--cyan);color:var(--void)}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn-gold{border-color:var(--gold);color:var(--gold)}.btn-gold:hover{background:var(--gold);color:var(--void)}
+.btn-safe{border-color:var(--safe);color:var(--safe)}.btn-safe:hover{background:var(--safe);color:var(--void)}
+.btn-warn{border-color:var(--warn);color:var(--warn)}.btn-warn:hover{background:var(--warn);color:var(--void)}
+.btn-danger{border-color:var(--hazard);color:var(--hazard)}.btn-danger:hover{background:var(--hazard);color:#fff}
+.btn-alien{border-color:var(--alien);color:var(--alien)}.btn-alien:hover{background:var(--alien);color:#fff}
+.btn-sm{font-size:8px;padding:6px 10px}
+.btn-full{width:100%}
+#cc-screen{padding:16px 24px;gap:12px;overflow:hidden}
+.cc-header{text-align:center;flex-shrink:0}
+.cc-step-label{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--cyan)}
+.cc-step-desc{font-size:16px;color:var(--metal)}
+.cc-progress{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.cc-pip{width:40px;height:4px;background:rgba(255,255,255,.1)}.cc-pip.done{background:var(--cyan)}.cc-pip.active{background:var(--gold)}
+.opt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow-y:auto;flex:1;padding:4px 2px}
+.opt-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.opt-card{background:var(--panel);border:1px solid var(--border);padding:12px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;position:relative}
+.opt-card:hover{border-color:var(--cyan);background:rgba(0,229,255,.04)}
+.opt-card.selected{border-color:var(--gold);background:rgba(241,196,15,.07)}
+.opt-card .oc-emoji{font-size:22px}.opt-card .oc-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star)}
+.opt-card .oc-desc{font-size:13px;color:var(--metal)}.opt-card .oc-bonus{font-size:13px;color:var(--safe)}
+.opt-card .oc-check{position:absolute;top:6px;right:8px;color:var(--gold);font-size:16px;display:none}
+.opt-card.selected .oc-check{display:block}
+.cc-nav{display:flex;justify-content:center;gap:14px;flex-shrink:0;margin-top:8px}
+.name-step{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:28px}
+.name-group{display:flex;flex-direction:column;gap:8px;width:340px}
+.name-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal)}
+.dossier{background:var(--panel);border:1px solid var(--border);padding:20px;width:340px}
+.dossier-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);margin-bottom:10px}
+.dossier-row{font-size:16px;color:var(--metal);line-height:2}.dossier-row span{color:var(--star)}
+.hud{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:14px;flex-shrink:0;height:44px;overflow:hidden}
+.hud-ship{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);white-space:nowrap}
+.stat{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.stat-lbl{font-size:12px;color:var(--metal);white-space:nowrap}
+.bar-track{width:60px;height:7px;background:rgba(255,255,255,.08);flex-shrink:0}.bar-fill{height:100%}
+.stat-val{font-size:14px;color:var(--star);white-space:nowrap;min-width:22px}
+.hud-creds{margin-left:auto;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);white-space:nowrap}
+.main-area{flex:1;display:flex;overflow:hidden}
+.lp{width:210px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.panel-hdr{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);display:flex;justify-content:space-between;align-items:center}
+.lp-body{padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.lp-actions{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
+.rp{width:186px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.rp-section{border-bottom:1px solid var(--border)}
+.rp-toggle{cursor:pointer;user-select:none}
+.collapse-btn{transition:transform 0.2s ease;display:inline-block;font-size:10px}
+.rp-toggle.collapsed-header .collapse-btn{transform:rotate(-90deg)}
+.rp-content{overflow-y:auto;max-height:160px}
+.rp-content.collapsed{display:none}
+.gc{flex:1;position:relative;overflow:hidden;background:#050709;min-width:200px}
+#gx-canvas{display:block;image-rendering:pixelated;cursor:crosshair}
+#sys-tooltip{position:absolute;background:var(--panel);border:1px solid var(--border);padding:4px 8px;font-size:13px;pointer-events:none;display:none;z-index:10;white-space:nowrap}
+#ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
+#ev-overlay.open{display:flex}
+.ev-card{background:var(--panel);border:1px solid var(--cyan);padding:24px 28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto}
+.ev-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold);margin-bottom:10px}
+.ev-body{font-size:17px;color:var(--star);line-height:1.6;margin:8px 0 12px}
+.ev-choices{display:flex;flex-direction:column;gap:8px}
+.choice-btn{background:transparent;border:1px solid var(--border);color:var(--star);font-family:'VT323',monospace;font-size:17px;padding:10px 14px;cursor:pointer;text-align:left;transition:all .1s}
+.choice-btn:hover{border-color:var(--cyan);background:rgba(0,229,255,.08)}
+.log-bar{background:var(--panel);border-top:1px solid var(--border);padding:6px 14px;height:72px;overflow:hidden;flex-shrink:0}
+.log-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--cyan);margin-bottom:4px}
+.log-line{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.rep-row{display:flex;justify-content:space-between;padding:4px 10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
+.crew-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
+.crew-emoji{font-size:17px}.crew-info{display:flex;flex-direction:column}
+.crew-name{font-size:13px;color:var(--star)}.crew-role{font-size:11px;color:var(--metal)}
+.cap-info{padding:8px;font-size:13px;color:var(--metal)}
+.tag{display:inline-block;padding:2px 5px;font-size:11px;border:1px solid;margin:2px 2px 0 0}
+.st-header{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:18px;height:48px;flex-shrink:0}
+.st-name{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan)}
+.st-meta{font-size:15px;color:var(--metal);display:flex;gap:14px;flex:1}
+.st-body{flex:1;display:flex;overflow:hidden}
+.st-nav{width:190px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.st-node{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;display:flex;align-items:center;gap:8px}
+.st-node:hover{background:rgba(0,229,255,.06)}.st-node.active{background:rgba(0,229,255,.09);border-left:3px solid var(--cyan)}
+.st-node-emoji{font-size:20px}.st-node-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star)}
+.st-content{flex:1;padding:16px;overflow-y:auto}
+.st-content-hdr{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.st-footer{background:var(--panel);border-top:1px solid var(--border);padding:8px 18px;display:flex;justify-content:space-between;align-items:center;height:44px;flex-shrink:0}
+.trade-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.mod-card{background:var(--panel);border:1px solid var(--border);padding:12px;margin-bottom:8px}
+.maint-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:15px}
+.quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:7px;margin-bottom:5px;font-size:13px}
+.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}
+#combat-screen{flex-direction:column}
+.cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:16px;height:44px;flex-shrink:0}
+.cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard)}
+.cbat-body{flex:1;display:flex;overflow:hidden}
+.cbat-ship{width:240px;background:var(--panel);border-right:1px solid var(--border);padding:12px;overflow-y:auto;flex-shrink:0}
+.cbat-ship.enemy-panel{border-right:none;border-left:1px solid var(--border)}
+.cbat-center{flex:1;display:flex;flex-direction:column;background:var(--void);overflow:hidden}
+.cbat-ship-name{font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:8px}
+.cbat-bar-row{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:5px}
+.cbat-bar-lbl{width:42px;color:var(--metal);font-size:12px}.cbat-bar-track{flex:1;height:8px;background:rgba(255,255,255,.07)}.cbat-bar-fill{height:100%;transition:width 0.3s}
+.sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+.sys-cell{border:1px solid rgba(255,255,255,.15);padding:6px 3px;text-align:center;font-size:12px}
+.sys-cell.targetable{cursor:pointer;transition:border-color 0.1s}.sys-cell.targetable:hover{border-color:var(--warn)}
+.sys-cell.targeted{border-color:var(--gold)!important;background:rgba(241,196,15,.1)}
+.cbat-log{flex:1;overflow-y:auto;padding:12px;font-size:14px}
+.cbat-log-entry{padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}.cbat-log-entry.player{color:var(--cyan)}.cbat-log-entry.enemy{color:var(--hazard)}.cbat-log-entry.hazard{color:var(--warn)}.cbat-log-entry.system{color:var(--metal)}
+.cbat-actions{background:var(--panel);border-top:1px solid var(--border);padding:10px 16px;display:flex;flex-direction:column;gap:7px;flex-shrink:0}
+.station-panel{background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);padding:7px;margin-top:8px}
+.station-slot{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.hazard-alert{background:rgba(230,126,34,.12);border:1px solid var(--warn);padding:6px 12px;font-size:13px;color:var(--warn);flex-shrink:0}
+#ground-combat-screen{overflow-y:auto}
+.gc-unit-card{border:1px solid var(--border);padding:8px;margin-bottom:6px;transition:all 0.1s ease}
+.gc-unit-card.acting{box-shadow:0 0 0 2px var(--gold)}
+.unit-sprite{width:36px;height:36px;margin:0 auto 5px;background:var(--panel);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:20px}
+@keyframes flash{0%,100%{filter:brightness(1)}50%{filter:brightness(1.7)}}
+@keyframes slideIn{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
+#drama-overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);display:none;align-items:center;justify-content:center;z-index:100}
+#drama-overlay.open{display:flex}
+.drama-card{background:var(--panel);border:1px solid var(--alien);padding:24px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;animation:slideIn 0.2s ease}
+.drama-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--alien);margin-bottom:10px}
+#xeno-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:90}
+#xeno-overlay.open{display:flex}
+.xeno-card{background:var(--panel);border:1px solid var(--alien);padding:24px;max-width:500px;width:90%;animation:slideIn 0.2s ease}
+.xeno-alien-text{font-size:22px;color:var(--alien);letter-spacing:4px;margin:10px 0;min-height:30px;animation:xenoPulse 2s infinite}
+@keyframes xenoPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+#gameover-overlay{position:fixed;inset:0;background:rgba(0,0,0,.93);display:none;align-items:center;justify-content:center;z-index:200}
+#gameover-overlay.open{display:flex}
+.go-card{background:var(--panel);border:1px solid var(--hazard);padding:36px;text-align:center;max-width:380px}
+.go-title{font-family:'Press Start 2P',monospace;font-size:16px;color:var(--hazard);margin-bottom:16px}
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:1000}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--void)}::-webkit-scrollbar-thumb{background:var(--nebula)}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div id="game">
+
+<div id="title-screen" class="screen active">
+  <canvas id="sf-canvas"></canvas>
+  <div class="title-wrap">
+    <div><div class="logo">VOID FRONTIER</div><div class="logo-sub">FLEET EDITION v2</div></div>
+    <div class="seed-box">
+      <div class="seed-label">▸ MISSION SEED</div>
+      <div class="seed-row" style="width:100%">
+        <input type="text" id="seed-inp" placeholder="Enter seed..." maxlength="24" style="flex:1"/>
+        <button class="btn btn-sm" onclick="randomSeed()" style="flex-shrink:0">⚡</button>
+      </div>
+      <div class="seed-label">▸ DIFFICULTY</div>
+      <select id="difficulty-select">
+        <option value="easy">EASY – More credits</option>
+        <option value="normal" selected>NORMAL – Standard</option>
+        <option value="hard">HARD – Scarcity</option>
+      </select>
+      <button class="btn btn-gold btn-full" onclick="beginGame()">▶ BEGIN MISSION</button>
+      <button class="btn btn-sm btn-full" onclick="loadGamePrompt()" style="margin-top:4px">📂 LOAD SAVE</button>
+    </div>
+    <div style="font-size:13px;color:rgba(127,140,141,.6);text-align:center">Explore, fight, trade. Crew can die. Fleet expands.</div>
+  </div>
+</div>
+
+<div id="cc-screen" class="screen">
+  <div class="cc-header">
+    <div class="cc-step-label" id="cc-title">CHOOSE YOUR ORIGIN</div>
+    <div class="cc-step-desc" id="cc-desc">Step 1 of 5</div>
+    <div class="cc-progress" id="cc-pips"></div>
+  </div>
+  <div id="cc-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 10px"></div>
+  <div class="cc-nav" id="cc-nav"></div>
+</div>
+
+<div id="galaxy-screen" class="screen">
+  <div class="hud">
+    <div class="hud-ship" id="hud-ship">VAGRANT STAR</div>
+    <div class="stat"><div class="stat-lbl">HULL</div><div class="bar-track"><div class="bar-fill" id="b-hull" style="width:100%;background:var(--safe)"></div></div><div class="stat-val" id="v-hull">100</div></div>
+    <div class="stat"><div class="stat-lbl">SHLD</div><div class="bar-track"><div class="bar-fill" id="b-shld" style="width:100%;background:var(--cyan)"></div></div><div class="stat-val" id="v-shld">50</div></div>
+    <div class="stat"><div class="stat-lbl">FUEL</div><div class="bar-track"><div class="bar-fill" id="b-fuel" style="width:80%;background:var(--warn)"></div></div><div class="stat-val" id="v-fuel">80</div></div>
+    <div class="stat"><div class="stat-lbl">MOR</div><div class="bar-track"><div class="bar-fill" id="b-mora" style="width:75%;background:var(--alien)"></div></div><div class="stat-val" id="v-mora">75</div></div>
+    <div class="hud-creds" id="hud-creds">💰 1,000 CR</div>
+    <button class="btn btn-sm" onclick="saveGame()" style="margin-left:8px;padding:4px 8px">💾</button>
+  </div>
+  <div class="main-area">
+    <div class="lp">
+      <div class="panel-hdr">◈ SYSTEM INTEL</div>
+      <div class="lp-body" id="lp-body"></div>
+      <div class="lp-actions" id="lp-actions"></div>
+    </div>
+    <div class="gc">
+      <canvas id="gx-canvas"></canvas>
+      <div id="sys-tooltip"></div>
+      <div id="ev-overlay"><div class="ev-card">
+        <div class="ev-title" id="ev-title"></div>
+        <div class="ev-body" id="ev-body"></div>
+        <div class="ev-choices" id="ev-choices"></div>
+      </div></div>
+    </div>
+    <div class="rp" id="right-panel">
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ REP <span class="collapse-btn">▼</span></div><div id="rp-rep" class="rp-content"></div></div>
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CARGO <span id="cargo-count" style="font-size:9px;color:var(--metal)"></span> <span class="collapse-btn">▼</span></div><div id="rp-cargo" class="rp-content"></div></div>
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ QUESTS <span class="collapse-btn">▼</span></div><div id="rp-quests" class="rp-content" style="padding:8px"></div></div>
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CREW <span class="collapse-btn">▼</span></div><div id="rp-crew" class="rp-content"></div></div>
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ CAPTAIN <span class="collapse-btn">▼</span></div><div id="rp-cap" class="cap-info rp-content"></div></div>
+      <div class="rp-section"><div class="panel-hdr rp-toggle" onclick="toggleSection(this)">◈ FLEET <span class="collapse-btn">▼</span></div><div id="rp-fleet" class="rp-content" style="padding:8px"></div></div>
+    </div>
+  </div>
+  <div class="log-bar"><div class="log-hdr">▸ CAPTAIN'S LOG</div><div id="log-list"></div></div>
+</div>
+
+<div id="station-screen" class="screen">
+  <div class="st-header">
+    <div class="st-name" id="st-name"></div>
+    <div class="st-meta" id="st-meta"></div>
+    <div id="st-credits" style="color:var(--gold);font-family:'Press Start 2P';font-size:9px"></div>
+  </div>
+  <div class="st-body">
+    <div class="st-nav" id="st-nav"></div>
+    <div class="st-content" id="st-content"></div>
+  </div>
+  <div class="st-footer">
+    <button class="btn btn-warn" onclick="undock()">◀ UNDOCK</button>
+    <div id="st-status" style="color:var(--metal);font-size:14px"></div>
+  </div>
+</div>
+
+<div id="combat-screen" class="screen">
+  <div class="cbat-hdr">
+    <div class="cbat-title">⚔ SHIP COMBAT</div>
+    <div style="flex:1"></div>
+    <div id="cbat-round" style="font-size:13px;color:var(--metal)">Round 1</div>
+    <div id="cbat-phase-hdr" style="font-size:13px;color:var(--cyan);margin-left:12px">YOUR TURN</div>
+  </div>
+  <div id="cbat-hazard-bar"></div>
+  <div class="cbat-body">
+    <div class="cbat-ship">
+      <div class="cbat-ship-name" id="cbat-player-name"></div>
+      <div id="cbat-player-bars"></div>
+      <div class="sys-grid" id="cbat-player-sys"></div>
+      <div id="cbat-stations" class="station-panel"></div>
+    </div>
+    <div class="cbat-center">
+      <div class="cbat-log" id="cbat-log"></div>
+    </div>
+    <div class="cbat-ship enemy-panel">
+      <div class="cbat-ship-name" id="cbat-enemy-name"></div>
+      <div id="cbat-enemy-bars"></div>
+      <div class="sys-grid" id="cbat-enemy-sys"></div>
+      <div id="cbat-enemy-desc" style="font-size:12px;color:var(--metal);margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="cbat-actions">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="cbat-target-lbl" style="color:var(--metal);font-size:13px">Target: None</span>
+      <span id="cbat-station-bonus" style="color:var(--safe);font-size:12px"></span>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-danger btn-sm" onclick="combatAction('fire')">🎯 FIRE</button>
+      <button class="btn btn-sm" onclick="combatAction('boost_shields')">🛡 SHIELDS</button>
+      <button class="btn btn-warn btn-sm" onclick="combatAction('evasive')">⚡ EVADE</button>
+      <button class="btn btn-safe btn-sm" onclick="combatAction('flee')">🚀 FLEE</button>
+      <button class="btn btn-alien btn-sm" onclick="boardEnemy()">⚔ BOARD</button>
+      <button class="btn btn-gold btn-sm" onclick="combatAction('special')">💥 SPECIAL</button>
+    </div>
+  </div>
+</div>
+
+<div id="ground-combat-screen" class="screen" style="padding:16px;overflow-y:auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0">
+    <div style="font-family:'Press Start 2P';font-size:10px;color:var(--hazard)">⚔ GROUND COMBAT</div>
+    <div id="gc-round-display" style="color:var(--metal);font-size:14px">Round 1</div>
+  </div>
+  <div style="display:flex;gap:16px;flex:1">
+    <div style="flex:2">
+      <div class="panel-hdr">YOUR PARTY</div>
+      <div id="gc-party" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"></div>
+      <div class="panel-hdr" style="margin-top:8px">ENEMIES <span style="font-size:11px;color:var(--metal)">(click to target)</span></div>
+      <div id="gc-enemies" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"></div>
+    </div>
+    <div style="flex:1;background:var(--panel);padding:10px;display:flex;flex-direction:column;min-width:200px">
+      <div class="panel-hdr">COMBAT LOG</div>
+      <div id="gc-log" style="flex:1;overflow-y:auto;font-size:13px;padding:6px 0;min-height:120px"></div>
+      <div id="gc-actions" style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<div id="xeno-overlay">
+  <div class="xeno-card">
+    <div id="xeno-title" style="font-family:'Press Start 2P';font-size:9px;color:var(--alien);margin-bottom:10px">👽 ALIEN CONTACT</div>
+    <div id="xeno-body" style="font-size:15px;color:var(--metal);line-height:1.6;margin-bottom:10px"></div>
+    <div class="xeno-alien-text" id="xeno-lang"></div>
+    <div id="xeno-translation" style="font-size:13px;color:var(--star);font-style:italic;margin-top:4px;min-height:18px"></div>
+    <div id="xeno-choices" style="margin-top:14px;display:flex;flex-direction:column;gap:7px"></div>
+    <div id="xeno-translate-bar" style="margin-top:10px;background:rgba(142,68,173,.15);border:1px solid var(--alien);padding:8px;display:none">
+      <div style="font-size:11px;color:var(--alien);margin-bottom:4px">TRANSLATOR PROGRESS</div>
+      <div style="height:5px;background:rgba(255,255,255,.1)"><div id="xeno-translate-fill" style="height:100%;background:var(--alien);width:0%;transition:width 0.5s"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="drama-overlay">
+  <div class="drama-card">
+    <div class="drama-title" id="drama-title"></div>
+    <div class="ev-body" id="drama-body"></div>
+    <div class="ev-choices" id="drama-choices"></div>
+  </div>
+</div>
+
+<div id="gameover-overlay">
+  <div class="go-card">
+    <div class="go-title">SHIP DESTROYED</div>
+    <div id="go-sub" style="color:var(--metal);font-size:15px;margin:10px 0"></div>
+    <div id="go-stats" style="color:var(--metal);font-size:13px;margin:10px 0;line-height:1.8"></div>
+    <button class="btn btn-gold" onclick="location.reload()">▶ NEW MISSION</button>
+  </div>
+</div>
+
+</div>
+<script>
+'use strict';
+// ===== RNG =====
+class RNG{constructor(s){this.s=(s|0)||1;}next(){this.s=(this.s*1103515245+12345)&0x7fffffff;return this.s/0x7fffffff;}int(a,b){return Math.floor(this.next()*(b-a+1))+a;}pick(arr){return arr[Math.floor(this.next()*arr.length)];}}
+function mkRNG(s){return new RNG(hashStr(s));}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h;}
+function rndSeedStr(){return ['VOID','NOVA','DEEP','IRON','GHOST','WARP','NEBULA','DARK'][Math.floor(Math.random()*8)]+'-'+(1000+Math.floor(Math.random()*9000));}
+
+// ===== DATA =====
+const ORIGINS=[
+  {id:'military',name:'Military Veteran',emoji:'🪖',desc:'Served in the Federation Navy.',bonus:'+15 Max Hull',credits:500,startingRep:{federation:15},trait:'Disciplined',effect:{maxHullBonus:15}},
+  {id:'merchant',name:"Merchant's Child",emoji:'💰',desc:'Raised bartering across systems.',bonus:'+15% Trade Prices',credits:1500,startingRep:{guild:20},trait:'Silver Tongue',effect:{tradeSellMult:1.15}},
+  {id:'refugee',name:'Planetary Refugee',emoji:'🌍',desc:'Homeworld lost. Survivor.',bonus:'Halved Disaster Morale Loss',credits:300,startingRep:{independent:10},trait:'Survivor',effect:{disasterMoraleLossMult:0.5}},
+  {id:'dropout',name:'Research Dropout',emoji:'🔬',desc:'Xenobiologist gone rogue.',bonus:'+25% Artifact Discovery',credits:700,startingRep:{megacorp:-5},trait:'Curious',effect:{artifactFindChanceBonus:0.25}},
+  {id:'criminal',name:'Reformed Criminal',emoji:'⛓️',desc:'Ran with pirates. Black market access.',bonus:'Black Market Access',credits:800,startingRep:{syndicate:20,federation:-10},trait:'Underworld Contacts',effect:{blackMarketAccess:true}},
+  {id:'noble',name:'Fallen Noble',emoji:'👑',desc:'Disgraced aristocrat.',bonus:'+2 Charisma checks',credits:2000,startingRep:{empire:10},trait:'Noble Bearing',effect:{diplomacyBonus:2}},
+  {id:'voidborn',name:'Voidborn Monk',emoji:'🌌',desc:'Monastery ship childhood.',bonus:'Void sense — detect hidden threats',credits:400,startingRep:{independent:15},trait:'Meditative',effect:{voidSense:true}},
+  {id:'frontier_kid',name:'Frontier Settler',emoji:'⛏️',desc:'Mining colony childhood.',bonus:'+15% Scrap Yield',credits:600,startingRep:{independent:10},trait:'Resourceful',effect:{scrapYieldMult:1.15}},
+  {id:'telepath',name:'Latent Telepath',emoji:'🧠',desc:'Minor psionic abilities.',bonus:'+2 Alien Social Checks',credits:400,startingRep:{empire:-10},trait:'Empathic',effect:{alienSocialBonus:2}},
+  {id:'war_orphan',name:'War Orphan',emoji:'🕊️',desc:'Survivor of a border conflict.',bonus:'+20% Crew XP Gain',credits:300,startingRep:{federation:5,empire:-5},trait:'Hardened',effect:{crewXpGainMult:1.20}},
+  {id:'diplomat_child',name:"Diplomat's Child",emoji:'🤝',desc:'Grew up in embassies.',bonus:'+10% Rep Gains',credits:900,startingRep:{federation:10,empire:10},trait:'Charming',effect:{repGainMult:1.10}},
+  {id:'fugitive',name:'Corporate Fugitive',emoji:'🔫',desc:'Stole proprietary tech.',bonus:'Start with Cloaking Device',credits:600,startingRep:{megacorp:-20},trait:'Paranoid',effect:{startingModule:'cloaking_device'}},
+];
+const CLASSES=[
+  {id:'vanguard',name:'Vanguard',emoji:'🛡️',role:'Tank',tags:['MELEE','DEFENSE'],passive:'desc:+15% HP, threat gen',
+   groundMoves:[{id:'shield_bash',name:'Shield Bash',desc:'Damage+stun 50%',cost:2,dmgMult:1.2,stunChance:0.5},{id:'fortify',name:'Fortify',desc:'+30% defense',cost:2,defenseBuff:0.3},{id:'provoke',name:'Provoke',desc:'Taunt all enemies',cost:3,aoeTaunt:true}],
+   tier2Options:['juggernaut','dreadnought']},
+  {id:'marksman',name:'Marksman',emoji:'🎯',role:'Ranged DPS',tags:['RANGED','DAMAGE'],passive:'desc:+10% crit chance',
+   groundMoves:[{id:'aimed_shot',name:'Aimed Shot',desc:'High single-target',cost:2,dmgMult:1.8},{id:'suppressing_fire',name:'Suppressing Fire',desc:'AOE + accuracy debuff',cost:3,dmgMult:0.7,aoe:true},{id:'headshot',name:'Headshot',desc:'3x dmg vs injured',cost:4,dmgMult:3.0}],
+   tier2Options:['sniper','gunslinger']},
+  {id:'technician',name:'Technician',emoji:'🔧',role:'Support/Repair',tags:['TECH','REPAIR'],passive:'desc:Repairs 30% cheaper',
+   groundMoves:[{id:'overload',name:'Overload',desc:'Damage+stun mechs',cost:2,dmgMult:1.4,stunChance:0.4},{id:'repair_drone',name:'Repair Drone',desc:'Heal ally 20HP',cost:3,heal:20},{id:'emp_grenade',name:'EMP Grenade',desc:'AOE stun all enemies',cost:4,aoe:true,stunChance:0.6,dmgMult:0.5}],
+   tier2Options:['engineer','hacker']},
+  {id:'medic',name:'Medic',emoji:'💉',role:'Healer',tags:['HEALING','SUPPORT'],passive:'desc:Crew survive lethal +20%',
+   groundMoves:[{id:'healing_wave',name:'Healing Wave',desc:'AOE heal 15HP',cost:3,aoeHeal:15},{id:'adrenaline_shot',name:'Adrenaline Shot',desc:'Buff ally dmg+speed',cost:2,dmgBuff:0.3},{id:'revive',name:'Revive',desc:'Revive KO ally 25% HP',cost:5,reviveAlly:true}],
+   tier2Options:['surgeon','field_medic']},
+  {id:'operative',name:'Operative',emoji:'🥷',role:'Control/Stealth',tags:['STEALTH','DEBUFF'],passive:'desc:+25% hack success',
+   groundMoves:[{id:'backstab',name:'Backstab',desc:'2.5x dmg from shadows',cost:2,dmgMult:2.5},{id:'smoke_bomb',name:'Smoke Bomb',desc:'Party stealth 2 turns',cost:2,stealth:true},{id:'sabotage',name:'Sabotage',desc:'Disable enemy 2 turns',cost:3,disable:true}],
+   tier2Options:['saboteur','infiltrator']},
+  {id:'psion',name:'Psion',emoji:'🧠',role:'Psychic Caster',tags:['PSYCHIC','CONTROL'],passive:'desc:+20% psychic resist',
+   groundMoves:[{id:'mind_blast',name:'Mind Blast',desc:'Psychic dmg+stun 60%',cost:2,dmgMult:1.4,stunChance:0.6},{id:'mind_control',name:'Mind Control',desc:'Confuse enemy 2 turns',cost:4,confuse:true},{id:'psychic_scream',name:'Psychic Scream',desc:'AOE psychic + panic',cost:3,dmgMult:0.9,aoe:true,panicChance:0.3}],
+   tier2Options:['telepath_cls','kinetic']},
+];
+const TIER2_CLASSES={
+  juggernaut:{name:'Juggernaut',emoji:'🦾',newMove:{id:'unstoppable_charge',name:'Unstoppable Charge',desc:'Charge through enemies',cost:4,dmgMult:2.0,aoe:true}},
+  dreadnought:{name:'Dreadnought',emoji:'⚓',newMove:{id:'iron_wall',name:'Iron Wall',desc:'Massive AOE defense buff',cost:4,aoeDefenseBuff:true}},
+  sniper:{name:'Sniper',emoji:'🔭',newMove:{id:'perfect_shot',name:'Perfect Shot',desc:'Massive dmg, ignore armor',cost:5,dmgMult:4.5}},
+  gunslinger:{name:'Gunslinger',emoji:'🤠',newMove:{id:'bullet_storm',name:'Bullet Storm',desc:'3 hits on all enemies',cost:4,aoe:true,dmgMult:0.8}},
+  engineer:{name:'Engineer',emoji:'⚙️',newMove:{id:'sentry_gun',name:'Sentry Gun',desc:'Deploy turret (auto-attacks)',cost:5,summon:true}},
+  hacker:{name:'Hacker',emoji:'💻',newMove:{id:'system_crash',name:'System Crash',desc:'Stun all mechanical',cost:4,aoe:true,stunChance:0.9}},
+  surgeon:{name:'Surgeon',emoji:'🏥',newMove:{id:'mass_revive',name:'Mass Revive',desc:'Revive all fallen allies',cost:7,reviveAll:true}},
+  field_medic:{name:'Field Medic',emoji:'⛑️',newMove:{id:'combat_stims',name:'Combat Stims',desc:'AOE dmg+speed buff',cost:4,aoe:true,dmgBuff:0.25}},
+  saboteur:{name:'Saboteur',emoji:'💣',newMove:{id:'plant_explosives',name:'Plant Explosives',desc:'Delayed AOE blast',cost:5,dmgMult:3.0,aoe:true}},
+  infiltrator:{name:'Infiltrator',emoji:'🕶️',newMove:{id:'assassinate',name:'Assassinate',desc:'Execute target <25% HP',cost:5,dmgMult:6.0}},
+  telepath_cls:{name:'Telepath',emoji:'📡',newMove:{id:'dominate',name:'Dominate',desc:'Permanently charm enemy',cost:7,permCharm:true}},
+  kinetic:{name:'Kinetic',emoji:'💥',newMove:{id:'force_crush',name:'Force Crush',desc:'Massive single-target',cost:5,dmgMult:3.5}},
+};
+const JOBS=[
+  {id:'bounty',name:'Bounty Hunter',emoji:'🎯',effect:'Track targets galaxy-wide',bonus:'Bounty targets on map',jobEffect:{showBountyTargets:true}},
+  {id:'trader',name:'Trader',emoji:'💹',effect:'Know market prices ahead',bonus:'Trade route visibility',jobEffect:{showTradeRoutes:true,pricePrediction:true}},
+  {id:'explorer',name:'Explorer',emoji:'🔭',effect:'Reveal hidden anomalies',bonus:'Adjacent auto-reveal',jobEffect:{revealAdjacentSectors:true}},
+  {id:'merc',name:'Mercenary',emoji:'⚔️',effect:'+1 Boarding Strength',bonus:'Conflict zones marked',jobEffect:{boardingStrengthBonus:1}},
+  {id:'smuggler_job',name:'Smuggler',emoji:'📦',effect:'Hidden Cargo Bay',bonus:'Black market routes',jobEffect:{hiddenCargoModule:true}},
+  {id:'diplomat_job',name:'Ambassador',emoji:'🏛️',effect:'Double Rep Gains',bonus:'Faction territories shown',jobEffect:{repGainMult:2.0}},
+  {id:'archaeologist',name:'Xeno-Archaeologist',emoji:'🏺',effect:'Ancient ruins highlighted',bonus:'Artifact sites marked',jobEffect:{highlightRuins:true}},
+  {id:'salvager',name:'Salvager',emoji:'🔧',effect:'+50% scrap from derelicts',bonus:'Wreck density on map',jobEffect:{scrapYieldMult:1.50}},
+  {id:'corsair',name:'Corsair',emoji:'☠️',effect:'Attack pirates without rep loss',bonus:'Pirate fleets tracked',jobEffect:{noRepLossVsPirates:true}},
+  {id:'miner',name:'Asteroid Miner',emoji:'⛏️',effect:'Extract resources from belts',bonus:'Mineral-rich highlights',jobEffect:{miningYieldMult:1.30}},
+];
+const FACTIONS=[
+  {id:'federation',name:'Galactic Federation',short:'FED',color:'#2ecc71'},{id:'empire',name:'Drakon Empire',short:'EMP',color:'#c41e3a'},
+  {id:'syndicate',name:'Crimson Syndicate',short:'SYN',color:'#8e44ad'},{id:'guild',name:'Merchant Guild',short:'GLD',color:'#f1c40f'},
+  {id:'independent',name:'Free Worlds',short:'IND',color:'#7f8c8d'},{id:'megacorp',name:'Aethelgard Corp',short:'MCO',color:'#00e5ff'},
+  {id:'cult',name:'Cult of Silence',short:'CUL',color:'#9b59b6'},{id:'cartel',name:'Red Hand Cartel',short:'RHC',color:'#e67e22'},
+  {id:'nomads',name:'Stellar Nomads',short:'NMD',color:'#1abc9c'},{id:'symbionts',name:'The Symbionts',short:'SYM',color:'#3498db'},
+];
+const STAR_TYPES=[
+  {type:'Yellow Dwarf',color:'#FFE566'},{type:'Red Giant',color:'#FF5533'},{type:'Blue Giant',color:'#88AAFF'},
+  {type:'White Dwarf',color:'#DDEEFF'},{type:'Neutron Star',color:'#AAFFDD',radiation:true},{type:'Binary Star',color:'#FFCC44'},
+  {type:'Pulsar',color:'#FF77FF',radiation:true},{type:'Black Hole',color:'#4a2080',dangerous:true},{type:'Brown Dwarf',color:'#8B4513'},
+];
+const SYS_PFXS=['Vega','Alpha','Beta','Delta','Nova','Sol','Tau','Lyra','Proxima','Kepler','Wolf','Rigel','Antares','Deneb','Polaris','Sirius','Arcturus','Canopus','Procyon','Capella'];
+const SYS_SFXS=['Prime','Major','Gate','Crossing','Deep','Edge','Core','Reach','Void','Haven','Expanse','Rim','Passage','Junction','Post','Watch','Outpost','Colony','Nexus','Station'];
+const SYS_FEATURES=['Gas Giant System','Rocky Inner Planets','Ancient Ruins','Dense Asteroid Belt','Habitable World','High Radiation Zone','Mineral Rich Veins','Alien Life Detected','Trade Hub Station','Military Installation','Research Outpost','Pirate Den','Derelict Megastructure','Nomad Fleet Present','Unstable Wormhole','Shrine World','Terraformed World','Ocean Planet','Volcanic World','Abandoned Colony'];
+const GOODS=[
+  {id:'fuel_cells',name:'Fuel Cells',emoji:'⚡',basePrice:55,legal:true,wt:1},{id:'medicine',name:'Medicine',emoji:'💊',basePrice:85,legal:true,wt:1},
+  {id:'protein_packs',name:'Protein Packs',emoji:'🥫',basePrice:32,legal:true,wt:2},{id:'tech_parts',name:'Tech Components',emoji:'🔩',basePrice:130,legal:true,wt:1},
+  {id:'small_arms',name:'Small Arms',emoji:'🔫',basePrice:210,legal:true,wt:2},{id:'alien_fauna',name:'Alien Fauna',emoji:'👾',basePrice:380,legal:false,wt:3},
+  {id:'void_spice',name:'Void Spice',emoji:'🌀',basePrice:520,legal:false,wt:1},{id:'corp_data',name:'Corporate Secrets',emoji:'💾',basePrice:450,legal:false,wt:0},
+  {id:'artifacts',name:'Ancient Artifacts',emoji:'🏺',basePrice:850,legal:true,wt:1},{id:'water',name:'Purified Water',emoji:'💧',basePrice:20,legal:true,wt:2},
+  {id:'ore',name:'Raw Ore',emoji:'🪨',basePrice:45,legal:true,wt:3},{id:'luxury_goods',name:'Luxury Goods',emoji:'💎',basePrice:300,legal:true,wt:1},
+  {id:'weapon_schematics',name:'Weapon Schematics',emoji:'📜',basePrice:600,legal:false,wt:0},{id:'cryo_pods',name:'Cryo Pods',emoji:'❄️',basePrice:250,legal:true,wt:4},
+  {id:'dark_matter',name:'Dark Matter',emoji:'🌑',basePrice:12000,legal:true,wt:1},
+];
+const MODULES=[
+  {id:'reinforced_frame',name:'Reinforced Frame',emoji:'🛡️',cost:3800,rarity:'common',desc:'+20% Max Hull, -15% Speed.'},
+  {id:'phase_shields',name:'Phase Shields',emoji:'🌀',cost:5500,rarity:'rare',desc:'3s invuln, then brief vulnerability.'},
+  {id:'ai_assistant',name:'AI Combat Assistant',emoji:'🤖',cost:6000,rarity:'rare',desc:'30% chance auto-repair each round.'},
+  {id:'cloaking_device',name:'Cloaking Device',emoji:'🌫️',cost:7000,rarity:'legendary',desc:'Avoid combat, bypass scans.'},
+  {id:'cargo_expander',name:'Cargo Expander',emoji:'📦',cost:2000,rarity:'common',desc:'+10 Cargo Space.'},
+  {id:'med_bay_plus',name:'Advanced Med Bay',emoji:'🏥',cost:3500,rarity:'uncommon',desc:'Crew heal 50% faster.'},
+  {id:'long_range_sensors',name:'Long-Range Sensors',emoji:'📡',cost:2800,rarity:'common',desc:'Reveal systems 3 jumps away.'},
+  {id:'drone_hangar',name:'Drone Hangar',emoji:'🛸',cost:4500,rarity:'uncommon',desc:'Deploy 2 combat drones.'},
+  {id:'shield_regen',name:'Regen Shield Grid',emoji:'🔋',cost:4200,rarity:'uncommon',desc:'+30% Shield Regen Rate.'},
+  {id:'targeting_comp',name:'Quantum Targeting',emoji:'🎯',cost:5100,rarity:'rare',desc:'+25% Critical Hit Chance.'},
+  {id:'void_drive',name:'Experimental Void Drive',emoji:'⚡',cost:6500,rarity:'legendary',desc:'-40% Fuel Cost, occasional glitches.'},
+  {id:'salvage_arm',name:'Magnetic Salvage Arm',emoji:'🧲',cost:2900,rarity:'common',desc:'+35% Scrap from combat.'},
+  {id:'neural_link',name:"Captain's Neural Link",emoji:'🧠',cost:7500,rarity:'legendary',desc:'+2 to all Skill Checks.'},
+  {id:'plasma_injector',name:'Plasma Injector',emoji:'💥',cost:5800,rarity:'rare',desc:'+40% Weapon Damage.'},
+  {id:'bio_hull',name:'Bio-Organic Plating',emoji:'🦠',cost:9000,rarity:'mythic',desc:'Heals 1% Hull per jump.'},
+];
+const CREW_STATIONS={
+  weapons:{name:'Weapons Officer',emoji:'🎯',desc:'Boosts weapon damage'},
+  shields:{name:'Shield Officer',emoji:'🛡️',desc:'Speeds shield regen'},
+  engines:{name:'Helm Officer',emoji:'🚀',desc:'Improves evasion'},
+  medical:{name:'Medical Officer',emoji:'💉',desc:'Crew recover faster'},
+};
+const COMBAT_HAZARDS=[
+  {id:'chrono_leak',title:'⏳ CHRONO-LEAK',desc:'Temporal distortion slows targeting! Accuracy reduced.',effect:{playerAccuracyMod:-0.2}},
+  {id:'nanite_swarm',title:'🦠 NANITE SWARM',desc:'Nanites chew through plating!',effect:{hullDrain:6}},
+  {id:'gravity_surge',title:'🌀 GRAVITY SURGE',desc:'Micro-singularity disrupts shields!',effect:{shieldDrain:18}},
+  {id:'emp_pulse',title:'⚡ EMP PULSE',desc:'Weapons knocked offline this turn!',effect:{disableWeapons:true}},
+  {id:'debris_field',title:'💥 DEBRIS FIELD',desc:'Collision! Hull impact.',effect:{immediateHullDmg:10}},
+  {id:'radiation_burst',title:'☢ RADIATION BURST',desc:'Cosmic radiation degrades shields!',effect:{shieldDrain:22}},
+];
+const XENO_LANGUAGES={
+  nomads:{name:'Drift-Speak',greetings:['Vel-ta-krix!','Zho-varum, star-walker.','Kael-sun bok.'],translations:{0:'[intent unclear]',1:'[peaceful contact]',2:'[trade offer detected]',3:'[full conversation achieved]'}},
+  alien:{name:'Symbiont-Pulse',greetings:['*resonant triad hum*','*cascading bioluminescence*','*deep harmonic pulse*'],translations:{0:'[biological signal]',1:'[non-hostile resonance]',2:'[complex message — partial]',3:'[full neural handshake]'}},
+  cult:{name:'Void-Script',greetings:['KAL-VETH MOURN','Silence-born, we see you.','The Void watches.'],translations:{0:'[ominous chanting]',1:'[religious greeting]',2:'[cryptic message]',3:'[full translation — disturbing]'}},
+};
+const SHIP_TEMPLATES=[
+  {id:'scrap_skiff',class:'Survival',tier:0,rarity:'common',namePool:['Rustbucket','Scrap Hopper','Barebones Drifter'],statRanges:{hull:[40,60],shields:[0,15],cargo:[4,7],fuelUse:[1.3,1.7],crewMax:[1,2],moduleSlots:[1,1]},passive:'Repairs -25% cost, damage +10%'},
+  {id:'shuttle',class:'Utility',tier:0,rarity:'common',namePool:['Decommissioned Shuttle','Navy Dropship','Old Transport'],statRanges:{hull:[50,70],shields:[15,30],cargo:[5,8],fuelUse:[0.8,1.2],crewMax:[2,3],moduleSlots:[1,1]},passive:'Old Military Frame: +10% evade vs missiles'},
+  {id:'burnt_hopper',class:'Explorer',tier:0,rarity:'common',namePool:['Burnt-Out Hopper','Scorched Runner','Cinder Skipper'],statRanges:{hull:[30,50],shields:[0,15],cargo:[3,6],fuelUse:[1.8,2.2],crewMax:[1,1],moduleSlots:[1,1]},passive:'+20% evade, 10% internal damage chance/combat'},
+  {id:'scout',class:'Explorer',tier:1,rarity:'common',namePool:['Star Skipper','Void Runner','Nebula Dart','Horizon Chaser'],statRanges:{hull:[70,90],shields:[25,35],cargo:[6,10],fuelUse:[0.6,0.8],crewMax:[2,3],moduleSlots:[2,3]},passive:'Survey Scanner: +15% hidden node reveal'},
+  {id:'freighter',class:'Trade',tier:2,rarity:'common',namePool:['Cargo Hauler','Bulk Transport','Trade Wind'],statRanges:{hull:[110,130],shields:[35,45],cargo:[18,22],fuelUse:[1.0,1.4],crewMax:[4,6],moduleSlots:[3,4]},passive:'Trade profits +10%'},
+  {id:'corvette',class:'Combat',tier:3,rarity:'common',namePool:['Corvette','Patrol Vessel','Ironclad'],statRanges:{hull:[140,160],shields:[55,65],cargo:[10,14],fuelUse:[1.3,1.7],crewMax:[5,7],moduleSlots:[4,4]},passive:'Balanced Systems: +5% all stats'},
+  {id:'gunship',class:'Combat',tier:3,rarity:'uncommon',namePool:['Assault Gunship','War Hammer','Broadside'],statRanges:{hull:[160,180],shields:[45,55],cargo:[8,12],fuelUse:[1.5,1.9],crewMax:[5,7],moduleSlots:[4,5]},passive:'Heavy Barrage: +15% weapon damage'},
+  {id:'explorer_ship',class:'Explorer',tier:4,rarity:'uncommon',namePool:['Deep Space Explorer','Pathfinder','Star Cartographer'],statRanges:{hull:[170,190],shields:[90,110],cargo:[25,35],fuelUse:[1.0,1.4],crewMax:[6,8],moduleSlots:[4,5]},passive:'Deep Scan: +25% anomaly rewards'},
+  {id:'frigate',class:'Combat',tier:5,rarity:'uncommon',namePool:['Frigate','Escort Vessel','Shield Wall'],statRanges:{hull:[210,230],shields:[85,95],cargo:[16,20],fuelUse:[1.8,2.2],crewMax:[7,9],moduleSlots:[5,5]},passive:'Shield Matrix: +20% shield regen'},
+  {id:'phase_runner',class:'Stealth',tier:6,rarity:'legendary',namePool:['Phase Runner','Ghost Vessel','Quantum Drifter'],statRanges:{hull:[170,190],shields:[150,170],cargo:[8,12],fuelUse:[0.8,1.2],crewMax:[4,6],moduleSlots:[5,5]},passive:'Phase Shift: 20% dodge all damage'},
+];
+const ENEMY_TEMPLATES=[
+  {id:'pirate_raider',faction:'syndicate',tier:1,emoji:'💀',color:'#e67e22',baseStats:{hull:[45,65],shield:[10,25],weapons:[25,40],engines:[15,30]},desc:'Scavenged hull, aggressive tactics.',loot:{cr:[200,500],scrap:[2,5]},aggression:0.8},
+  {id:'pirate_gunship',faction:'syndicate',tier:2,emoji:'☠️',color:'#d35400',baseStats:{hull:[70,95],shield:[20,40],weapons:[35,55],engines:[25,45]},desc:'Heavily armed raider with boarding pods.',loot:{cr:[400,800],scrap:[4,8]},aggression:0.9},
+  {id:'empire_patrol',faction:'empire',tier:2,emoji:'🪖',color:'#2ecc71',baseStats:{hull:[80,105],shield:[40,65],weapons:[40,60],engines:[25,45]},desc:'Standard military interceptor.',loot:{cr:[200,450],scrap:[1,4]},aggression:0.4},
+  {id:'cartel_enforcer',faction:'cartel',tier:3,emoji:'⚠️',color:'#c41e3a',baseStats:{hull:[90,120],shield:[35,60],weapons:[50,75],engines:[30,50]},desc:'Ruthless cartel muscle.',loot:{cr:[600,1200],scrap:[5,10]},aggression:0.7},
+  {id:'nomad_skiff',faction:'nomads',tier:1,emoji:'🛸',color:'#1abc9c',baseStats:{hull:[40,60],shield:[15,35],weapons:[20,35],engines:[35,60]},desc:'Agile nomad vessel. Prefers evasion.',loot:{cr:[150,400],scrap:[1,3]},aggression:0.2},
+  {id:'cult_zealot',faction:'cult',tier:2,emoji:'☩',color:'#9b59b6',baseStats:{hull:[60,85],shield:[20,45],weapons:[35,60],engines:[25,45]},desc:'Fanatical cult vessel. Unpredictable.',loot:{cr:[150,400],scrap:[2,4]},aggression:0.85},
+  {id:'megacorp_security',faction:'megacorp',tier:3,emoji:'🏢',color:'#00e5ff',baseStats:{hull:[100,135],shield:[60,95],weapons:[55,85],engines:[40,70]},desc:'Corporate security vessel. Efficient.',loot:{cr:[500,1100],scrap:[3,7]},aggression:0.5},
+  {id:'void_wraith',faction:'independent',tier:6,emoji:'👻',color:'#7f8c8d',baseStats:{hull:[140,190],shield:[0,0],weapons:[70,110],engines:[80,130]},desc:'Phantom vessel. Ethereal, hard to target.',loot:{cr:[800,1800],scrap:[5,10]},aggression:0.7,special:'ethereal'},
+];
+const GROUND_ENEMY_TEMPLATES=[
+  {id:'pirate_scavenger',faction:'syndicate',tier:1,icon:'⚔',color:'#e67e22',baseStats:{hp:[40,60],atk:[10,16],spd:[4,7]},desc:'Desperate raider.',loot:{cr:[15,40]}},
+  {id:'syndicate_merc',faction:'syndicate',tier:3,icon:'💀',color:'#c0392b',baseStats:{hp:[65,90],atk:[14,22],spd:[5,8]},desc:'Professional mercenary.',loot:{cr:[40,90]}},
+  {id:'empire_conscript',faction:'empire',tier:2,icon:'🪖',color:'#27ae60',baseStats:{hp:[50,75],atk:[11,17],spd:[4,6]},desc:'Standard infantry.',loot:{cr:[20,50]}},
+  {id:'alien_warrior',faction:'independent',tier:3,icon:'👾',color:'#9b59b6',baseStats:{hp:[60,90],atk:[14,23],spd:[5,9]},desc:'Native alien combatant.',loot:{cr:[30,75]}},
+  {id:'cult_acolyte',faction:'cult',tier:2,icon:'☩',color:'#8e44ad',baseStats:{hp:[45,70],atk:[10,17],spd:[4,7]},desc:'Devoted cultist.',loot:{cr:[15,45]}},
+  {id:'corp_security',faction:'megacorp',tier:3,icon:'💼',color:'#00e5ff',baseStats:{hp:[60,85],atk:[13,20],spd:[5,8]},desc:'Corporate security operative.',loot:{cr:[40,95]}},
+  {id:'ancient_guardian',faction:'independent',tier:7,icon:'🗿',color:'#f39c12',baseStats:{hp:[200,350],atk:[25,45],spd:[3,6]},desc:'Ancient automated defender.',loot:{cr:[200,500]},special:'boss'},
+];
+const CREW_POOL=[
+  {name:'Zoya Kas',role:'Vanguard',emoji:'🛡️',loyalty:70,bio:'Ex-military shield specialist.',hp:52,maxHp:52,atk:9,spd:4,skill:5,species:'Human',classId:'vanguard'},
+  {name:'Jax Varley',role:'Marksman',emoji:'🎯',loyalty:60,bio:'Ex-military sniper. Quick temper.',hp:42,maxHp:42,atk:14,spd:5,skill:6,species:'Human',classId:'marksman'},
+  {name:'Kael Thorn',role:'Technician',emoji:'🔧',loyalty:55,bio:'Hacker with a mysterious past.',hp:36,maxHp:36,atk:6,spd:5,skill:9,species:'Human',classId:'technician'},
+  {name:'Lyra Nox',role:'Medic',emoji:'💉',loyalty:75,bio:'Pacifist doctor. Believes every life matters.',hp:34,maxHp:34,atk:4,spd:5,skill:10,species:'Human',classId:'medic'},
+  {name:'REX-7',role:'Combat Android',emoji:'🤖',loyalty:55,bio:'Combat android repurposed for engineering.',hp:48,maxHp:48,atk:10,spd:4,skill:8,species:'Android',classId:'technician'},
+  {name:'Mira Tong',role:'Psion',emoji:'🔭',loyalty:65,bio:'Former cartographer with latent psionic abilities.',hp:30,maxHp:30,atk:7,spd:5,skill:10,species:'Human',classId:'psion'},
+  {name:'Orin Vex',role:'Operative',emoji:'🥷',loyalty:50,bio:'Quiet observer. Prefers striking from shadows.',hp:35,maxHp:35,atk:10,spd:8,skill:7,species:'Human',classId:'operative'},
+  {name:'Nova Chen',role:'Pilot/Marksman',emoji:'🚀',loyalty:65,bio:'Ace pilot with a cocky streak.',hp:40,maxHp:40,atk:8,spd:7,skill:8,species:'Human',classId:'marksman'},
+  {name:'Grom Ironhide',role:'Vanguard',emoji:'🪨',loyalty:65,bio:'Stone-scaled alien mercenary. Takes hits for others.',hp:58,maxHp:58,atk:11,spd:3,skill:4,species:'Korvax',classId:'vanguard'},
+  {name:'Shade',role:'Operative/Assassin',emoji:'🗡️',loyalty:40,bio:'Silent killer with a code.',hp:34,maxHp:34,atk:13,spd:8,skill:6,species:'Human',classId:'operative'},
+  {name:'Doc Morales',role:'Combat Medic',emoji:'🩹',loyalty:80,bio:'Battlefield surgeon. Kept more alive than the Federation corps.',hp:39,maxHp:39,atk:6,spd:5,skill:9,species:'Human',classId:'medic'},
+  {name:'Cipher',role:'Codebreaker',emoji:'🔐',loyalty:45,bio:'Cryptographer who speaks in riddles.',hp:33,maxHp:33,atk:5,spd:7,skill:12,species:'Human',classId:'operative'},
+  {name:'Aria',role:'Diplomat/Psion',emoji:'🕊️',loyalty:75,bio:'Former ambassador. Words are her weapons.',hp:33,maxHp:33,atk:4,spd:6,skill:10,species:'Human',classId:'psion'},
+  {name:'Bax Rourke',role:'Demolitions',emoji:'💣',loyalty:50,bio:'Every problem has a solution involving explosives.',hp:44,maxHp:44,atk:12,spd:4,skill:6,species:'Human',classId:'vanguard'},
+  {name:'Solara',role:'Energy Specialist',emoji:'⚡',loyalty:70,bio:'Expert in plasma and energy systems.',hp:36,maxHp:36,atk:8,spd:5,skill:10,species:'Human',classId:'technician'},
+];
+const RUMOR_POOL=[
+  'Scavengers near {sys} struck gold on a derelict warship.',
+  'The {fac} is consolidating power. Watch your rep.',
+  'Black market prices on Void Spice are up 40%.',
+  'Pirate activity near {sys} has spiked dramatically.',
+  'Strange signals detected in the {sys} sector.',
+  'Ancient ruins discovered on a moon of {sys}.',
+  'Nomad fleet sighted passing through {sys}.',
+  'Corporate war brewing between two megacorps.',
+  'Cult activity increasing near shrine worlds.',
+  'A legendary captain disappeared last month in {sys}.',
+];
+const ST_NODES=[
+  {id:'cantina',name:'CANTINA',emoji:'🍺',minWealth:1},{id:'maintenance',name:'MAINTENANCE',emoji:'🔧',minWealth:1},
+  {id:'market',name:'MARKET',emoji:'💹',minWealth:2},{id:'guild',name:'GUILD OFFICE',emoji:'📋',minWealth:2},
+  {id:'blackmarket',name:'BLACK MARKET',emoji:'🌑',minWealth:1,requiresLowSecurity:true},{id:'dataexchange',name:'DATA EXCHANGE',emoji:'📡',minWealth:2},
+  {id:'shrine',name:'VOID SHRINE',emoji:'🛐',minWealth:1},{id:'gambling',name:'GAMBLING DEN',emoji:'🎲',minWealth:2},
+  {id:'armory',name:'ARMORY',emoji:'🔫',minWealth:2},{id:'embassy',name:'EMBASSY',emoji:'🏛️',minWealth:3},
+];
+// ===== EVENTS =====
+const EVENTS=[
+  {id:'derelict',title:'⚠ DERELICT VESSEL',body:'A ship drifts silently ahead. No life signs — but power readings flicker.',choices:[
+    {text:'[ BOARD ] Risk crew for salvage',skillCheck:{skill:'engineering',dc:12},success:{eff:{cr:450,scrap:3,log:'Salvaged valuable components!'}},failure:{eff:{hull:-15,log:'Security drones activated!'},combat:true}},
+    {text:'[ SCAN REMOTELY ] Sell the location data',eff:{cr:150,log:"Sold the derelict's location to salvagers."}},
+    {text:'[ AVOID ] Continue on',eff:{}},
+  ]},
+  {id:'pirate_ambush',title:'🏴‍☠️ PIRATE INTERCEPT',body:'"Heave to, {ship_name}! Prepare to be boarded!" A pirate demands your cargo.',choices:[
+    {text:'[ FIGHT ] Engage weapons',eff:{combat:true,log:'You power up weapons!'}},
+    {text:'[ PAY ] Hand over 500 credits',eff:{cr:-500,log:'Paid the pirates. Pride stings.'}},
+    {text:'[ FLEE ] Emergency FTL jump',skillCheck:{skill:'piloting',dc:13},success:{eff:{fuel:-20,log:'Escaped into FTL!'}},failure:{eff:{hull:-25,log:'Failed to escape!'},combat:true}},
+    {text:'[ NEGOTIATE ] Try talking',skillCheck:{skill:'charisma',dc:15},success:{eff:{cr:-200,log:'Talked them down.'}},failure:{eff:{combat:true,log:"They attacked."}}},
+  ]},
+  {id:'distress',title:'📡 DISTRESS SIGNAL',body:'A weak beacon pulses from a nearby moon. Survivors — or bait?',choices:[
+    {text:'[ INVESTIGATE ]',skillCheck:{skill:'charisma',dc:10},
+     success:{eff:{cr:400,mora:8,log:'Rescued stranded colonists!'},followUp:{title:'GRATEFUL SURVIVORS',body:'They offer thanks.',choices:[{text:'Accept credits',eff:{cr:200}},{text:'Recruit them',eff:{crewGain:true,log:'A colonist joins your crew.'}}]}},
+     failure:{eff:{log:'Pirate ambush! It was a trap.'},combat:true}},
+    {text:'[ REPORT ] Notify authorities',eff:{cr:100,rep_federation:5,log:"Finder's fee paid."}},
+    {text:'[ IGNORE ]',eff:{mora:-5,log:'The crew is unsettled.'}},
+  ]},
+  {id:'wandering_trader',title:'🛒 WANDERING TRADER',body:'"Captain {captain_name}! Care to trade?" A freighter hails on open channel.',choices:[
+    {text:'[ BUY FUEL ] 300cr — +25 fuel',eff:{cr:-300,fuel:25,log:'Topped off fuel.'}},
+    {text:'[ BUY REPAIRS ] 400cr — +20 hull',eff:{cr:-400,hull:20,log:'Hull patched.'}},
+    {text:'[ HIRE CREW ] Browse their manifest',eff:{crewGain:true,log:'Traded crew rosters.'}},
+    {text:'[ DECLINE ]',eff:{}},
+  ]},
+  {id:'anomaly',title:'🌀 SPATIAL ANOMALY',body:'Strange energy readings ahead. Instruments haywire. The crew looks nervous.',choices:[
+    {text:'[ SCAN ] Document for science guilds',skillCheck:{skill:'science',dc:14},success:{eff:{cr:300,log:'Scan data sold to researchers.'}},failure:{eff:{hull:-10,log:'Anomaly surged! Hull damage.'}}},
+    {text:'[ FLY THROUGH ] Risk it for rewards',eff:{cr:300,hull:-20,darkMatterChance:0.3,log:'Made it through! Found stabilized dark matter.'}},
+    {text:'[ AVOID ] Safe route',eff:{log:'Charted a safe bypass.'}},
+  ]},
+  {id:'alien_encounter',title:'👽 ALIEN CONTACT',body:'An unknown vessel approaches. Your translator struggles with the signal.',choices:[
+    {text:'[ OPEN HAIL ] Attempt communication',skillCheck:{skill:'charisma',dc:12},success:{eff:{cr:400,mora:10,rep_nomads:5,log:'Peaceful contact! Exchanged cultural data.'}},failure:{eff:{combat:true,log:'They interpreted your hail as aggression!'}}},
+    {text:'[ RAISE SHIELDS ] Defensive posture',eff:{log:'They observed and moved on.'}},
+    {text:'[ XENO PROTOCOL ] Activate deep translator',eff:{xenoEncounter:true,log:'Activating translator.'}},
+  ]},
+  {id:'ruins',title:'🏛️ ANCIENT RUINS',body:'Your scanner detects ancient structures on the surface below.',choices:[
+    {text:'[ SEND AWAY TEAM ]',skillCheck:{skill:'science',dc:12},success:{eff:{cr:600,artifact:2,log:'Discovered valuable artifacts!'}},failure:{eff:{crewInjury:true,log:'Structure collapsed — crew injured!'}}},
+    {text:'[ DRONE SURVEY ] Safer approach',eff:{cr:200,log:'Drones recovered minor items.'}},
+    {text:'[ LEAVE ]',eff:{}},
+  ]},
+  {id:'fuel_crisis',title:'⛽ FUEL SHORTAGE',body:'Critical fuel warning. A nearby gas giant offers a risky refuelling option.',choices:[
+    {text:'[ SKIM GAS GIANT ] Dangerous but free',skillCheck:{skill:'piloting',dc:14},success:{eff:{fuel:40,log:'Successfully skimmed fuel!'}},failure:{eff:{hull:-30,log:'Atmospheric turbulence hit hard!'}}},
+    {text:'[ BROADCAST DISTRESS ]',eff:{fuel:20,mora:-3,log:'A passing freighter shares fuel — for a future favour.'}},
+    {text:'[ CONSERVE POWER ] Drift',eff:{mora:-10,log:'Drifting to conserve fuel. Crew morale drops.'}},
+  ]},
+  {id:'mineral_deposit',title:'💎 MINERAL DEPOSIT',body:'Scanners reveal a massive vein of valuable ore below.',choices:[
+    {text:'[ DEPLOY MINING DRONES ]',eff:{cr:350,log:'Good haul from drones.'}},
+    {text:'[ MANUAL MINING ] Crew effort',skillCheck:{skill:'engineering',dc:11},success:{eff:{cr:600,scrap:5,log:'Massive haul!'}},failure:{eff:{cr:150,log:'Minor yield. Crew exhausted.'}}},
+    {text:'[ SELL COORDINATES ]',eff:{cr:120,log:'Sold coordinates to a mining corp.'}},
+  ]},
+  {id:'bounty_target',title:'🎯 BOUNTY TARGET SPOTTED',body:'Your scanner flags a vessel matching an active wanted notice.',choices:[
+    {text:'[ ENGAGE ] Collect the bounty',eff:{combat:true,bountyBonus:true,log:'Moving to intercept!'}},
+    {text:'[ REPORT POSITION ]',eff:{cr:200,rep_federation:5,log:'Reported location. Small payout.'}},
+    {text:'[ LET THEM GO ]',eff:{log:'You let the target slip away.'}},
+  ]},
+  {id:'crew_conflict',title:'💢 CREW CONFLICT',body:'{crew1} and {crew2} are at each others\' throats. Morale suffers.',choices:[
+    {text:'[ MEDIATE ]',skillCheck:{skill:'charisma',dc:12},success:{eff:{mora:8,log:'Conflict resolved. Common ground found.'}},failure:{eff:{mora:-10,log:'Mediation failed. Tensions remain.'}}},
+    {text:'[ PUNISH BOTH ] Extra duties',eff:{mora:-5,log:'Forced peace. Grudging compliance.'}},
+    {text:'[ IGNORE IT ]',eff:{mora:-12,log:'The conflict festers.'}},
+  ]},
+  {id:'black_market_tip',title:'🌑 BLACK MARKET CONTACT',body:'A hooded figure slides you a datapad. "Interested in... off-record goods?"',choices:[
+    {text:'[ BROWSE WARES ]',eff:{blackMarket:true,log:'You peruse illegal goods.'}},
+    {text:'[ BUY INTEL ] 300cr',eff:{cr:-300,log:'Purchased a tip about a hidden cache.'}},
+    {text:'[ REPORT TO SECURITY ]',eff:{cr:100,rep_federation:5,log:'Turned in the contact.'}},
+    {text:'[ DECLINE ]',eff:{}},
+  ]},
+  {id:'derelict_station',title:'🛰️ ABANDONED STATION',body:'An old research station orbits silently. Evacuated years ago — or so the records say.',choices:[
+    {text:'[ DOCK AND EXPLORE ]',skillCheck:{skill:'engineering',dc:13},success:{eff:{cr:500,artifact:1,log:'Found research data and artifacts.'}},failure:{eff:{hull:-20,combat:true,log:'Automated defenses still active!'}}},
+    {text:'[ QUICK SCAN ]',eff:{cr:150,log:'Minor valuables identified remotely.'}},
+    {text:'[ SELL COORDINATES ]',eff:{cr:100,log:'Sold location to salvagers.'}},
+  ]},
+  {id:'guild_contract_offer',title:'📜 GUILD CONTRACT',body:'The Merchant Guild broadcasts a lucrative delivery offer on secure channels.',choices:[
+    {text:'[ ACCEPT ]',eff:{questGenerate:true,cr:600,log:'Contract accepted.'}},
+    {text:'[ NEGOTIATE ]',skillCheck:{skill:'charisma',dc:14},success:{eff:{questGenerate:true,cr:900,log:'Better rate secured!'}},failure:{eff:{questGenerate:true,cr:600,log:'Rate unchanged.'}}},
+    {text:'[ DECLINE ]',eff:{}},
+  ]},
+  {id:'cult_ritual',title:'☩ CULT RITUAL',body:'You stumble upon a Cult of Final Silence ceremony. They haven\'t noticed you yet.',choices:[
+    {text:'[ OBSERVE ] Gather intel',skillCheck:{skill:'stealth',dc:13},success:{eff:{artifact:1,log:'Learned of a hidden shrine world.'}},failure:{eff:{combat:true,log:'They spotted you!'}}},
+    {text:'[ INTERRUPT ] Disrupt the ritual',eff:{combat:true,log:'You charge in to stop them.'}},
+    {text:'[ LEAVE QUIETLY ]',eff:{}},
+  ]},
+  {id:'nomad_trade',title:'🌌 NOMAD FLEET',body:'A fleet of Stellar Nomad vessels drifts nearby. They rarely interact with outsiders.',choices:[
+    {text:'[ HAIL THEM ]',skillCheck:{skill:'charisma',dc:14},success:{eff:{cr:300,artifact:1,rep_nomads:10,log:'They shared ancient star charts!'}},failure:{eff:{log:'They ignored your hail.'}}},
+    {text:'[ OBSERVE ] Keep safe distance',eff:{log:'You observe from afar.'}},
+  ]},
+];
+// ===== DRAMA EVENTS =====
+const DRAMA_EVENTS=[
+  {title:'💬 HEATED ARGUMENT',body:'{crew1} and {crew2} are locked in a heated argument at the mess hall.',choices:[
+    {text:'[ MEDIATE ]',skillCheck:{skill:'charisma',dc:12},success:{eff:{mora:8,log:'You resolved it. Common ground found.'}},failure:{eff:{mora:-6,log:"Your intervention made it worse."}}},
+    {text:'[ LET THEM SORT IT ]',eff:{mora:-4,log:'They exhausted themselves. Tension remains.'}},
+    {text:'[ BUY DRINKS ] 80cr',eff:{cr:-80,mora:12,log:'Alcohol solved the problem. For now.'}},
+  ]},
+  {title:'❤️ BUDDING ROMANCE',body:'{crew1} and {crew2} have been spending a lot of time together. Something\'s developing.',choices:[
+    {text:'[ ENCOURAGE THEM ]',eff:{mora:10,log:'You gave your blessing. Crew atmosphere lifts.'}},
+    {text:'[ POLICY REMINDER ]',eff:{mora:-8,log:'You reminded them of fraternization rules. Awkward.'}},
+    {text:'[ SHORE LEAVE ] 100cr',eff:{cr:-100,mora:16,log:'A romantic evening. They return refreshed.'}},
+  ]},
+  {title:'😰 PANIC ATTACK',body:'{crew1} freezes during a tense moment. Hyperventilating, unable to function.',choices:[
+    {text:'[ COACH THEM THROUGH IT ]',skillCheck:{skill:'charisma',dc:10},success:{eff:{mora:6,log:'{crew1} steadied. They\'re grateful.'}},failure:{eff:{mora:-8,log:'Your attempts to help made it worse.'}}},
+    {text:'[ RELIEVE THEM ]',eff:{mora:-5,log:'{crew1} stands down. They feel like a failure.'}},
+    {text:'[ IGNORE IT ]',eff:{mora:-15,log:'The crew saw you do nothing. Trust shaken.'}},
+  ]},
+  {title:'🎂 BIRTHDAY FORGOTTEN',body:'It\'s {crew1}\'s birthday and everyone forgot. They\'re quietly devastated.',choices:[
+    {text:'[ THROW A PARTY ] 200cr',eff:{cr:-200,mora:22,log:'Last-minute celebration! They\'re touched.'}},
+    {text:'[ PERSONAL APOLOGY ]',eff:{mora:8,log:'Your sincere apology meant a lot.'}},
+    {text:'[ DO NOTHING ]',eff:{mora:-12,log:'The day passes. They won\'t forget this.'}},
+  ]},
+  {title:'🧠 EXISTENTIAL CRISIS',body:'{crew1} questions their purpose. "Captain {captain_name}, why are we really out here?"',choices:[
+    {text:'[ PHILOSOPHICAL TALK ]',skillCheck:{skill:'charisma',dc:12},success:{eff:{mora:10,log:'Your words gave them perspective.'}},failure:{eff:{mora:-15,log:'You made it worse. They\'re spiraling.'}}},
+    {text:'[ DISTRACT WITH WORK ]',eff:{mora:-4,log:'Busy hands, quiet mind. Temporarily.'}},
+    {text:'[ DISMISS ]',eff:{mora:-20,log:'You brushed them off. They feel alone.'}},
+  ]},
+  {title:'🏆 PERSONAL MILESTONE',body:'{crew1} just hit a milestone — a certification, sobriety anniversary, personal best.',choices:[
+    {text:'[ CELEBRATE PUBLICLY ]',eff:{mora:16,log:'You announced it. {crew1} beams.'}},
+    {text:'[ QUIET CONGRATULATIONS ]',eff:{mora:9,log:'A sincere private word. They appreciate it.'}},
+    {text:'[ SMALL GIFT ] 75cr',eff:{cr:-75,mora:20,log:'A thoughtful gift. They\'re deeply touched.'}},
+  ]},
+  {title:'🎉 CREW BONDING MOMENT',body:'After a rough mission, the crew has gathered in the mess hall. Spirits unexpectedly high.',choices:[
+    {text:'[ SHIP PARTY ] 200cr',eff:{cr:-200,mora:26,log:'A night of celebration. Feels like family.'}},
+    {text:'[ CREW BONUSES ] 500cr',eff:{cr:-500,mora:20,log:'Credits speak louder than words.'}},
+    {text:'[ PERSONAL COMPLIMENTS ]',eff:{mora:13,log:'You thanked each one personally. It meant a lot.'}},
+  ]},
+  {title:'💊 CONCERNING BEHAVIOUR',body:'You\'ve noticed {crew1} acting erratically. A search reveals stimulant use.',choices:[
+    {text:'[ COMPASSIONATE APPROACH ]',skillCheck:{skill:'charisma',dc:13},success:{eff:{mora:6,log:'{crew1} accepted help. You may have saved them.'}},failure:{eff:{mora:-8,log:'They denied everything.'}}},
+    {text:'[ ARRANGE TREATMENT ] 500cr',eff:{cr:-500,mora:8,log:'{crew1} goes for treatment. Grateful.'}},
+    {text:'[ IGNORE IT ]',eff:{mora:-14,log:'Performance degrades. An incident follows.'}},
+  ]},
+];
+// ===== NONHOSTILE ENCOUNTERS =====
+const NONHOSTILE_ENCOUNTERS=[
+  {id:'nomad_vessel',faction:'nomads',title:'🌌 NOMAD VESSEL',
+   intro:'A sleek vessel materialises from drift. Their hail is... musical in nature.',xenoLang:'nomads',
+   choices:[
+     {text:'Respond in Standard',skillCheck:{skill:'charisma',dc:10},success:{eff:{cr:300,log:'Trade established.'},trade:true},failure:{eff:{log:'They drifted away, confused.'}}},
+     {text:'Attempt their language (high risk, high reward)',skillCheck:{skill:'intelligence',dc:15},success:{eff:{cr:600,artifact:1,mora:10,rep_nomads:15,log:'They are delighted! Rare goods exchanged.'}},failure:{eff:{cr:100,log:'They laughed but traded a little.'}}},
+     {text:'Universal trade signals (safe)',eff:{cr:200,log:'Basic exchange completed.'}},
+     {text:'Maintain silence',eff:{log:'They observed briefly and moved on.'}},
+   ]},
+  {id:'lost_probe',faction:'independent',title:'📡 ANCIENT PROBE',
+   intro:'A centuries-old probe drifts nearby, broadcasting a repeating signal on ancient frequencies.',
+   choices:[
+     {text:'Decode the signal',skillCheck:{skill:'intelligence',dc:12},success:{eff:{artifact:1,cr:200,log:'Ancient star charts recovered!'}},failure:{eff:{log:'Signal too degraded.'}}},
+     {text:'Salvage the probe',eff:{scrap:4,cr:150,log:'Salvaged for parts and historical data.'}},
+     {text:'Report to Guild',eff:{cr:200,rep_guild:5,log:'Guild credits the discovery.'}},
+   ]},
+  {id:'stricken_freighter',faction:'guild',title:'🚢 STRICKEN FREIGHTER',
+   intro:'A merchant freighter drifts, engines dead. The captain broadcasts an emergency plea for help.',
+   choices:[
+     {text:'Lend engineering crew',skillCheck:{skill:'engineering',dc:11},success:{eff:{cr:500,rep_guild:10,mora:8,log:'Engine repaired. Guild grateful.'}},failure:{eff:{cr:100,log:'Partial repair only.'}}},
+     {text:'Donate supplies (200cr)',eff:{cr:-200,rep_guild:8,mora:5,log:'Donated supplies. Crew morale up.'}},
+     {text:'Tow them to station',eff:{fuel:-15,cr:400,rep_guild:12,log:'Significant reward paid.'}},
+     {text:'Ignore them',eff:{mora:-8,log:'You left them. The crew disapproves.'}},
+   ]},
+  {id:'symbionts_contact',faction:'symbionts',title:'💠 SYMBIONT VESSEL',
+   intro:'A vessel of writhing organic hull approaches. Pulsing lights seem to spell a message.',xenoLang:'alien',
+   choices:[
+     {text:'Attempt neural handshake',skillCheck:{skill:'intelligence',dc:15},success:{eff:{cr:800,artifact:2,rep_symbionts:20,log:'Full contact! Ancient knowledge shared.'}},failure:{eff:{hull:-10,log:'Neural overload! Hull stress.'}}},
+     {text:'Visual signals only',skillCheck:{skill:'charisma',dc:12},success:{eff:{cr:300,rep_symbionts:8,log:'Basic communication achieved.'}},failure:{eff:{log:'They retreated, uncertain.'}}},
+     {text:'Passive scan only',eff:{cr:150,log:'Recorded biodata for research.'}},
+   ]},
+];
+// ===== GLOBAL STATE =====
+let G={
+  seed:'',rng:null,difficulty:'normal',
+  captain:{name:'',origin:null,cls:null,job:null,
+    skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1,piloting:1,science:1,stealth:1},xp:0,level:1},
+  fleet:[],curShipIdx:0,
+  galaxy:null,curSys:0,selSys:null,
+  rep:{federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0,nomads:0,cult:0,cartel:0,symbionts:0},
+  crew:[],cargo:[],soldExplorationData:[],probedFeatures:{},
+  contracts:[],activeQuests:[],availableContracts:[],
+  log:[],ccStep:0,jumps:0,dramaTimer:0,
+  combat:null,groundCombat:null,crewStations:{},xenoTranslations:{},
+  ui:{rightPanelCollapsed:false,collapsedSections:[]},gamePaused:false,galaxyFlags:{},
+};
+Object.defineProperty(G,'flagship',{get(){return this.fleet[0];}});
+Object.defineProperty(G,'ship',{get(){return this.flagship;}});
+Object.defineProperty(G,'totalCargoCap',{get(){return this.fleet.reduce((s,sh)=>s+sh.cargoMax,0);}});
+let stActiveNode='cantina',currentEvent=null,currentDrama=null,combatTarget=null,groundCombatState=null;
+const MAX_ACTIVE_QUESTS=5;
+
+// ===== TEXT PROCESSING =====
+function processText(text){
+  if(!text)return text;
+  const alive=G.crew.filter(c=>c.alive);
+  const c1=alive[0]?.name||'Crew Member';const c2=alive[1]?.name||'Crew Member';
+  const sys=G.galaxy?.systems[G.curSys]?.name||'Unknown System';
+  const fac=FACTIONS[Math.floor((G.rng?.next()||Math.random())*FACTIONS.length)]?.name||'Unknown Faction';
+  return text.replace(/\{crew1\}/g,c1).replace(/\{crew2\}/g,c2).replace(/\{captain_name\}/g,G.captain.name||'Captain')
+    .replace(/\{ship_name\}/g,G.flagship?.name||'Your Ship').replace(/\{system\}/g,sys).replace(/\{fac\}/g,fac)
+    .replace(/\{crewMember\}/g,c1).replace(/\{alienSpecies\}/g,'Zyrathi').replace(/\{disposition\}/g,'cautiously friendly')
+    .replace(/\{colonyName\}/g,'Colony Sigma-7').replace(/\{contrabandStatus\}/g,Math.random()<0.4?'nothing illegal':'contraband!');
+}
+
+// ===== UTILS =====
+function canAddCargo(id,qty=1){const g=GOODS.find(x=>x.id===id);if(!g)return false;const w=G.cargo.reduce((s,c)=>s+(GOODS.find(x=>x.id===c.id)?.wt||1)*c.qty,0);return(w+g.wt*qty)<=G.totalCargoCap;}
+function addCargo(id,qty=1){if(!canAddCargo(id,qty)){addLog('Cargo hold full!');return false;}const ex=G.cargo.find(c=>c.id===id);if(ex)ex.qty+=qty;else G.cargo.push({id,qty});return true;}
+function generateRandomCrew(){const b=CREW_POOL[Math.floor(G.rng.next()*CREW_POOL.length)];return{...b,id:'c'+Math.random().toString(36).slice(2),alive:true,hp:b.maxHp,xp:0,level:1,equippedWeapon:null,classTier:1,advancedClass:null,ap:4,maxAp:4};}
+function rollShip(tmpl){
+  const r=new RNG(hashStr(G.seed)+tmpl.id.charCodeAt(0)*17);
+  const ri=(a,b)=>Math.floor(r.next()*(b-a+1))+a;
+  return{hull:ri(...tmpl.statRanges.hull),shields:ri(...tmpl.statRanges.shields),cargo:ri(...tmpl.statRanges.cargo),fuelUse:+(ri(tmpl.statRanges.fuelUse[0]*10,tmpl.statRanges.fuelUse[1]*10)/10).toFixed(1),moduleSlots:ri(...tmpl.statRanges.moduleSlots),crewMax:ri(...tmpl.statRanges.crewMax)};
+}
+
+// ===== QUESTS =====
+function addQuest(q){
+  if(G.activeQuests.length>=MAX_ACTIVE_QUESTS){addLog('Quest log full!');return;}
+  const id=q.id||'q_'+Date.now();if(G.contracts.find(c=>c.id===id&&!c.completed))return;
+  const quest={id,title:q.title||'Contract',objective:q.objective||'Complete the task.',targetSysId:q.targetSysId||null,targetSysName:q.targetSysName||'Unknown',reward:q.reward||{cr:400},completed:false,type:q.type||'Generic'};
+  G.contracts.push(quest);G.activeQuests.push(id);updateRP();addLog(`📜 Quest: ${quest.title}`);
+}
+function checkQuestCompletion(sysId){
+  let anyDone=false;
+  G.activeQuests.forEach(qid=>{
+    const q=G.contracts.find(c=>c.id===qid);if(!q||q.completed)return;
+    if(q.targetSysId===sysId||q.targetSysName===G.galaxy.systems[sysId]?.name){
+      q.completed=true;const r=q.reward||{};
+      if(r.cr){G.flagship.credits+=r.cr;addLog(`✅ Quest Complete: ${q.title}! +${r.cr} CR`);}
+      if(r.rep)Object.entries(r.rep).forEach(([f,v])=>{G.rep[f]=(G.rep[f]||0)+v;});
+      anyDone=true;
+    }
+  });
+  if(anyDone){G.activeQuests=G.activeQuests.filter(qid=>{const q=G.contracts.find(c=>c.id===qid);return q&&!q.completed;});updateHUD();updateRP();}
+}
+function genContracts(){
+  const out=[];const count=2+Math.floor(G.rng.next()*3);
+  for(let i=0;i<count;i++){
+    const sys=G.galaxy.systems[Math.floor(G.rng.next()*G.galaxy.systems.length)];if(sys.id===G.curSys)continue;
+    const types=['Delivery','Escort','Bounty','Recon','Salvage'];const type=types[Math.floor(G.rng.next()*types.length)];
+    const reward=400+Math.floor(G.rng.next()*600)+(sys.wealth*50);
+    out.push({id:`q_${Date.now()}_${i}`,title:`${type} Contract`,desc:`${type} mission to ${sys.name}.`,targetSysId:sys.id,targetSysName:sys.name,reward,accepted:false,completed:false,type});
+  }
+  return out;
+}
+
+// ===== INIT =====
+function initState(seed,difficulty='normal'){
+  G.seed=seed;G.rng=mkRNG(seed);G.difficulty=difficulty;
+  G.captain={name:'Captain',origin:null,cls:null,job:null,skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1,piloting:1,science:1,stealth:1},xp:0,level:1};
+  G.fleet=[{id:'ship0',name:'VAGRANT STAR',type:'Scout',class:'Scout',hull:100,maxHull:100,shields:50,maxShields:50,fuel:80,maxFuel:100,cargoMax:10,modules:[],scrap:0,fuelUse:1.0,credits:1000,morale:75,moduleSlots:2,baseCost:0}];
+  G.curShipIdx=0;G.rep={federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0,nomads:0,cult:0,cartel:0,symbionts:0};
+  const shuffled=[...CREW_POOL].sort(()=>G.rng.next()-0.5);
+  G.crew=shuffled.slice(0,2).map(c=>({...c,id:'c'+Math.random().toString(36).slice(2),alive:true,hp:c.maxHp,xp:0,level:1,equippedWeapon:null,classTier:1,advancedClass:null,ap:4,maxAp:4}));
+  G.cargo=[];G.soldExplorationData=[];G.probedFeatures={};G.contracts=[];G.activeQuests=[];G.availableContracts=[];
+  G.log=['The stars await.'];G.ccStep=0;G.jumps=0;G.dramaTimer=0;G.crewStations={};G.xenoTranslations={};
+  G.ui={rightPanelCollapsed:false,collapsedSections:[]};G.gamePaused=false;G.galaxyFlags={};
+  const mult={easy:1.5,normal:1.0,hard:0.6};G.flagship.credits=Math.floor(1000*mult[difficulty]);
+  if(difficulty==='easy'){G.crew.push(generateRandomCrew());G.flagship.credits+=500;}
+  else if(difficulty==='hard'){G.crew=G.crew.slice(0,1);G.flagship.credits=Math.floor(G.flagship.credits*0.7);}
+}
+function applyCharacterBonuses(){
+  const origin=ORIGINS.find(o=>o.id===G.captain.origin);
+  if(origin?.effect){const e=origin.effect;
+    if(e.maxHullBonus){G.flagship.maxHull+=e.maxHullBonus;G.flagship.hull=G.flagship.maxHull;}
+    if(e.tradeSellMult)G.flagship.tradeSellMult=(G.flagship.tradeSellMult||1)*e.tradeSellMult;
+    if(e.blackMarketAccess)G.flagship.blackMarketAccess=true;
+    if(e.startingModule&&!G.flagship.modules.includes(e.startingModule))G.flagship.modules.push(e.startingModule);
+    if(e.diplomacyBonus)G.captain.skills.charisma+=e.diplomacyBonus;
+    if(e.alienSocialBonus)G.captain.skills.charisma+=e.alienSocialBonus;
+    if(e.repGainMult)G.flagship.repGainMult=(G.flagship.repGainMult||1)*e.repGainMult;
+    if(e.scrapYieldMult)G.flagship.scrapYieldMult=(G.flagship.scrapYieldMult||1)*e.scrapYieldMult;
+    if(e.crewXpGainMult)G.flagship.crewXpGainMult=(G.flagship.crewXpGainMult||1)*e.crewXpGainMult;
+  }
+  if(origin?.startingRep)Object.entries(origin.startingRep).forEach(([f,v])=>{G.rep[f]=(G.rep[f]||0)+v;});
+  const job=JOBS.find(j=>j.id===G.captain.job);
+  if(job?.jobEffect){const e=job.jobEffect;
+    if(e.repGainMult)G.flagship.repGainMult=(G.flagship.repGainMult||1)*e.repGainMult;
+    if(e.scrapYieldMult)G.flagship.scrapYieldMult=(G.flagship.scrapYieldMult||1)*e.scrapYieldMult;
+    if(e.hiddenCargoModule&&!G.flagship.modules.includes('cargo_expander'))G.flagship.modules.push('cargo_expander');
+    if(e.boardingStrengthBonus)G.galaxyFlags.boardingStrengthBonus=e.boardingStrengthBonus;
+    if(e.highlightRuins)G.galaxyFlags.highlightRuins=true;
+    if(e.miningYieldMult)G.flagship.miningYieldMult=e.miningYieldMult;
+    if(e.noRepLossVsPirates)G.galaxyFlags.noRepLossVsPirates=true;
+  }
+}
+
+// ===== SAVE / LOAD =====
+function saveGame(){
+  try{const save={G:JSON.stringify(G),ts:Date.now()};localStorage.setItem('vf2_save',JSON.stringify(save));addLog('💾 Game saved.');}
+  catch(e){addLog('Save failed: '+e.message);}
+}
+function loadGamePrompt(){
+  try{const raw=localStorage.getItem('vf2_save');if(!raw){alert('No save found.');return;}
+  const save=JSON.parse(raw);G=JSON.parse(save.G);
+  // Reinitialize after load
+  const gc=document.querySelector('.gc');const W=Math.max(600,gc.clientWidth||800),H=Math.max(400,gc.clientHeight||600);
+  if(!G.galaxy)G.galaxy=genGalaxy(mkRNG(G.seed),W,H);
+  showScreen('galaxy-screen');initGalaxy();updateHUD();updateLP();updateRP();updateLog();addLog('📂 Game loaded.');}
+  catch(e){alert('Load failed: '+e.message);}
+}
+
+// ===== SCREENS =====
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// ===== TITLE =====
+let sfCtx,sfStars=[],sfAnim=false;
+function initStarfield(){
+  const c=document.getElementById('sf-canvas');c.width=window.innerWidth;c.height=window.innerHeight;
+  sfCtx=c.getContext('2d');sfStars=[];
+  for(let i=0;i<220;i++)sfStars.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()-.5)*.015+.005});
+  sfAnim=true;animSF();
+}
+function animSF(){if(!sfAnim)return;const c=sfCtx.canvas;sfCtx.fillStyle='#0a0c10';sfCtx.fillRect(0,0,c.width,c.height);sfStars.forEach(s=>{s.a+=s.da;if(s.a<=0){s.a=0;s.da=Math.abs(s.da);}if(s.a>=1){s.a=1;s.da=-Math.abs(s.da);}sfCtx.beginPath();sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);sfCtx.fillStyle=`rgba(232,240,255,${s.a})`;sfCtx.fill();});requestAnimationFrame(animSF);}
+function randomSeed(){document.getElementById('seed-inp').value=rndSeedStr();}
+function beginGame(){sfAnim=false;const sv=document.getElementById('seed-inp').value.trim()||rndSeedStr();document.getElementById('seed-inp').value=sv;const diff=document.getElementById('difficulty-select').value;initState(sv,diff);G.ccStep=0;renderCC();showScreen('cc-screen');}
+
+// ===== CHARACTER CREATION =====
+const CC_TITLES=['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN','SELECT STARTER SHIP'];
+function renderCC(){
+  const s=G.ccStep;document.getElementById('cc-title').textContent=CC_TITLES[s];document.getElementById('cc-desc').textContent=`Step ${s+1} of 5`;
+  document.getElementById('cc-pips').innerHTML=[0,1,2,3,4].map(i=>`<div class="cc-pip ${i<s?'done':i===s?'active':''}"></div>`).join('');
+  const body=document.getElementById('cc-body'),nav=document.getElementById('cc-nav');
+  if(s===3){
+    body.innerHTML=`<div class="name-step"><div class="name-group"><div class="name-label">CAPTAIN NAME</div><input type="text" id="cap-name" value="${G.captain.name}" maxlength="22"/></div><div class="name-group"><div class="name-label">SHIP NAME</div><input type="text" id="ship-name-in" value="${G.flagship.name}" maxlength="22"/></div><div class="dossier"><div class="dossier-title">DOSSIER</div><div class="dossier-row">Origin: <span>${ORIGINS.find(o=>o.id===G.captain.origin)?.name||'—'}</span></div><div class="dossier-row">Class: <span>${CLASSES.find(c=>c.id===G.captain.cls)?.name||'—'}</span></div><div class="dossier-row">Job: <span>${JOBS.find(j=>j.id===G.captain.job)?.name||'—'}</span></div></div></div>`;
+    nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="ccNext()">▶ CONTINUE</button>`;return;
+  }
+  if(s===4){
+    const starters=SHIP_TEMPLATES.filter(t=>t.tier===0);
+    body.innerHTML=`<div class="name-step" style="gap:16px"><div style="font-family:'Press Start 2P';font-size:9px;color:var(--cyan)">SELECT STARTER SHIP</div><div class="opt-grid cols-3">${starters.map(tmpl=>{const rs=rollShip(tmpl);return`<div class="opt-card" onclick="selectShip('${tmpl.id}')"><div class="oc-emoji">🚀</div><div class="oc-name">${tmpl.namePool[0]}</div><div class="oc-desc">H:${rs.hull} S:${rs.shields} C:${rs.cargo} F:${rs.fuelUse}/jump</div><div class="oc-bonus" style="font-size:11px">${tmpl.passive}</div></div>`;}).join('')}</div></div>`;
+    nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;return;
+  }
+  const data=s===0?ORIGINS:s===1?CLASSES:JOBS;const sel=s===0?G.captain.origin:s===1?G.captain.cls:G.captain.job;
+  body.innerHTML=`<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it=>`<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc||it.effect||''}</div><div class="oc-bonus">◈ ${it.bonus||it.passive||''}</div></div>`).join('')}</div>`;
+  nav.innerHTML=`${s>0?'<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>':''}<button class="btn btn-gold" ${sel?'':'disabled'} onclick="ccNext()">▶ CONTINUE</button>`;
+}
+function ccSelect(id){
+  if(G.ccStep===0){G.captain.origin=id;const o=ORIGINS.find(x=>x.id===id);if(o&&G.fleet[0])G.fleet[0].credits=o.credits||1000;}
+  else if(G.ccStep===1)G.captain.cls=id;else if(G.ccStep===2)G.captain.job=id;
+  renderCC();
+}
+function ccNext(){if((G.ccStep===0&&G.captain.origin)||(G.ccStep===1&&G.captain.cls)||(G.ccStep===2&&G.captain.job)||G.ccStep===3){G.ccStep++;renderCC();}}
+function selectShip(id){
+  const tmpl=SHIP_TEMPLATES.find(h=>h.id===id);if(!tmpl)return;
+  const rs=rollShip(tmpl);const old=G.fleet[0];
+  G.fleet[0]={id:'ship0',name:old.name,type:tmpl.class,class:tmpl.class,hull:rs.hull,maxHull:rs.hull,shields:rs.shields,maxShields:rs.shields,fuel:old.fuel,maxFuel:old.maxFuel,cargoMax:rs.cargo,modules:old.modules,scrap:0,fuelUse:rs.fuelUse,credits:old.credits,morale:75,moduleSlots:rs.moduleSlots,baseCost:0,passive:tmpl.passive};
+  addLog(`Acquired ${tmpl.namePool[0]}.`);launchGame();
+}
+function launchGame(){
+  const cn=document.getElementById('cap-name')?.value.trim(),sn=document.getElementById('ship-name-in')?.value.trim();
+  if(cn)G.captain.name=cn;if(sn)G.flagship.name=sn.toUpperCase();
+  applyCharacterBonuses();
+  const gc=document.querySelector('.gc');const W=Math.max(600,gc.clientWidth||800),H=Math.max(400,gc.clientHeight||600);
+  G.galaxy=genGalaxy(G.rng,W,H);G.curSys=0;G.selSys=0;G.availableContracts=genContracts();
+  addLog(`Captain ${G.captain.name} takes the helm of ${G.flagship.name}.`);
+  showScreen('galaxy-screen');initGalaxy();updateHUD();updateLP();updateRP();updateLog();
+}
+
+// ===== GALAXY GENERATION =====
+function genGalaxy(rng,W,H){
+  const NUM=40,MARGIN=55,MIN_D=64;const pos=[];let att=0;
+  while(pos.length<NUM&&att<8000){att++;const x=MARGIN+rng.next()*(W-MARGIN*2),y=MARGIN+rng.next()*(H-MARGIN*2);if(!pos.some(p=>Math.hypot(p.x-x,p.y-y)<MIN_D))pos.push({x,y});}
+  const systems=pos.map((p,i)=>{
+    const st=STAR_TYPES[Math.floor(rng.next()*STAR_TYPES.length)],fac=FACTIONS[Math.floor(rng.next()*FACTIONS.length)];
+    const f1=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)],f2=SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
+    const name=SYS_PFXS[Math.floor(rng.next()*SYS_PFXS.length)]+(rng.next()>.45?' '+SYS_SFXS[Math.floor(rng.next()*SYS_SFXS.length)]:'');
+    const wealth=Math.floor(rng.next()*5)+1,danger=Math.floor(rng.next()*5)+1;
+    const avail=ST_NODES.filter(n=>wealth>=(n.minWealth||1)&&!(n.requiresLowSecurity&&danger>3));
+    const mods=[...avail].sort(()=>rng.next()-0.5).slice(0,Math.min(avail.length,4+Math.floor(wealth/2)));
+    return{id:i,name,x:p.x,y:p.y,starType:st.type,starColor:st.color,faction:fac,features:[f1,f2].filter((v,i,a)=>a.indexOf(v)===i),danger,wealth,hasStation:true,stationType:wealth>=4?'Hub':'Outpost',hasPlanet:rng.next()>.35,visited:i===0,revealed:i===0,rx:0,ry:0,stationModules:mods};
+  });
+  const conns=[],cset=new Set();
+  for(let i=0;i<systems.length;i++){
+    const dists=[];for(let j=0;j<systems.length;j++){if(i===j)continue;const d=Math.hypot(systems[i].x-systems[j].x,systems[i].y-systems[j].y);if(d<165)dists.push({j,d});}
+    dists.sort((a,b)=>a.d-b.d);dists.slice(0,Math.floor(rng.next()*3)+2).forEach(({j})=>{const k=Math.min(i,j)+'_'+Math.max(i,j);if(!cset.has(k)){cset.add(k);conns.push([i,j]);}});
+  }
+  return{systems,conns};
+}
+function reachable(){const r=new Set();G.galaxy.conns.forEach(([a,b])=>{if(a===G.curSys)r.add(b);if(b===G.curSys)r.add(a);});return r;}
+function revealConnected(sysId){G.galaxy.systems[sysId].revealed=true;G.galaxy.conns.forEach(([a,b])=>{if(a===sysId)G.galaxy.systems[b].revealed=true;if(b===sysId)G.galaxy.systems[a].revealed=true;});}
+
+// ===== MAP RENDERING =====
+let gxCanvas,gxCtx,gxAniming=false;
+function initGalaxy(){
+  gxCanvas=document.getElementById('gx-canvas');gxCtx=gxCanvas.getContext('2d');
+  const gc=document.querySelector('.gc');gxCanvas.width=gc.clientWidth||600;gxCanvas.height=gc.clientHeight||400;
+  const sys=G.galaxy.systems;let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  sys.forEach(s=>{x0=Math.min(x0,s.x);x1=Math.max(x1,s.x);y0=Math.min(y0,s.y);y1=Math.max(y1,s.y);});
+  const pad=52,scX=(gxCanvas.width-pad*2)/(x1-x0||1),scY=(gxCanvas.height-pad*2)/(y1-y0||1),sc=Math.min(scX,scY,.95);
+  const ox=pad+(gxCanvas.width-pad*2-(x1-x0)*sc)/2-x0*sc,oy=pad+(gxCanvas.height-pad*2-(y1-y0)*sc)/2-y0*sc;
+  sys.forEach(s=>{s.rx=Math.round(s.x*sc+ox);s.ry=Math.round(s.y*sc+oy);});
+  gxCanvas.onclick=onGxClick;gxCanvas.onmousemove=onGxHover;gxCanvas.onmouseleave=()=>{document.getElementById('sys-tooltip').style.display='none';};
+  const resizeObs=new ResizeObserver(()=>{gxCanvas.width=gc.clientWidth;gxCanvas.height=gc.clientHeight;initGalaxy();});resizeObs.observe(gc);
+  gxAniming=true;drawGalaxy();
+}
+function drawGalaxy(){
+  if(!gxAniming)return;const ctx=gxCtx,{systems,conns}=G.galaxy,W=gxCanvas.width,H=gxCanvas.height;
+  ctx.fillStyle='#050709';ctx.fillRect(0,0,W,H);
+  const reach=reachable();
+  conns.forEach(([a,b])=>{const sa=systems[a],sb=systems[b];if(sa.revealed&&sb.revealed){ctx.beginPath();ctx.moveTo(sa.rx,sa.ry);ctx.lineTo(sb.rx,sb.ry);ctx.strokeStyle='rgba(0,229,255,.14)';ctx.lineWidth=1;ctx.stroke();}});
+  systems.forEach((s,i)=>{
+    const isCur=i===G.curSys,isSel=i===G.selSys,isReach=reach.has(i);if(!s.revealed&&!isReach&&!isCur)return;
+    const r=isCur?7:5,cx=s.rx,cy=s.ry;
+    if(s.revealed&&s.hasStation){ctx.beginPath();ctx.arc(cx,cy,r+4,0,Math.PI*2);ctx.strokeStyle='rgba(0,229,255,0.12)';ctx.lineWidth=1;ctx.stroke();}
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=s.revealed?s.starColor:s.starColor+'55';ctx.fill();
+    if(s.revealed){ctx.font='10px VT323';ctx.fillStyle='rgba(232,240,255,.72)';ctx.textAlign='center';ctx.fillText(s.name,cx,cy+r+13);}
+    if(isCur){ctx.beginPath();ctx.arc(cx,cy,r+6,0,Math.PI*2);ctx.strokeStyle='#00e5ff';ctx.lineWidth=2;ctx.stroke();}
+    if(isSel&&!isCur){ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.strokeStyle='#f1c40f';ctx.lineWidth=1.5;ctx.stroke();}
+    if(isReach&&!isCur&&!s.revealed){ctx.font='10px VT323';ctx.fillStyle='rgba(232,240,255,0.35)';ctx.textAlign='center';ctx.fillText('?',cx,cy+r+13);}
+  });
+  requestAnimationFrame(drawGalaxy);
+}
+function onGxClick(e){
+  const rect=gxCanvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top,reach=reachable();
+  let best=null,bestD=20;G.galaxy.systems.forEach((s,i)=>{const d=Math.hypot(mx-s.rx,my-s.ry);if(d<bestD&&(s.revealed||reach.has(i)||i===G.curSys)){bestD=d;best=i;}});
+  if(best!==null){G.selSys=best;updateLP();}
+}
+function onGxHover(e){
+  const rect=gxCanvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top,reach=reachable();
+  const tt=document.getElementById('sys-tooltip');let found=false;
+  G.galaxy.systems.forEach((s,i)=>{if(Math.hypot(mx-s.rx,my-s.ry)<12&&(s.revealed||reach.has(i)||i===G.curSys)){tt.textContent=s.revealed?`${s.name} — ${s.faction.name}`:`${s.name} — UNSCANNED`;tt.style.display='block';tt.style.left=(mx+14)+'px';tt.style.top=(my-10)+'px';found=true;}});
+  if(!found)tt.style.display='none';
+}
+
+// ===== HUD & UI =====
+function updateHUD(){
+  const s=G.flagship;document.getElementById('hud-ship').textContent=s.name;
+  document.getElementById('b-hull').style.width=(s.hull/s.maxHull*100)+'%';document.getElementById('v-hull').textContent=s.hull;
+  document.getElementById('b-shld').style.width=(s.shields/s.maxShields*100)+'%';document.getElementById('v-shld').textContent=s.shields;
+  document.getElementById('b-fuel').style.width=(s.fuel/s.maxFuel*100)+'%';document.getElementById('v-fuel').textContent=s.fuel;
+  const m=s.morale||75;document.getElementById('b-mora').style.width=m+'%';document.getElementById('v-mora').textContent=m;
+  document.getElementById('hud-creds').textContent=`💰 ${s.credits.toLocaleString()} CR`;
+}
+function updateLP(){
+  const body=document.getElementById('lp-body'),acts=document.getElementById('lp-actions');
+  if(G.selSys===null){body.innerHTML='<div style="color:var(--metal)">Select a system.</div>';acts.innerHTML='';return;}
+  const sys=G.galaxy.systems[G.selSys],isCur=G.selSys===G.curSys,reach=reachable(),canTravel=reach.has(G.selSys)&&!isCur;
+  const featHtml=sys.features.map(f=>{const key=`${sys.id}_${f}`,probed=G.probedFeatures[key];const ef=f.replace(/'/g,"\\'");return`<div style="display:flex;gap:5px;align-items:center;margin:2px 0;font-size:13px"><span>◈ ${f}</span>${!probed&&isCur?`<button class="btn btn-sm" style="padding:2px 5px;font-size:6px" onclick="interactFeature('${ef}')">PROBE</button>`:`<span style="font-size:11px">${probed?'✅':''}</span>`}</div>`;}).join('');
+  body.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><div style="width:10px;height:10px;border-radius:50%;background:${sys.starColor};flex-shrink:0"></div><b>${sys.name}</b></div><div style="font-size:12px;color:var(--metal)">${sys.starType}</div><div style="margin:4px 0"><span class="tag" style="border-color:${sys.faction.color};color:${sys.faction.color}">${sys.faction.short}</span>${sys.hasStation?`<span class="tag" style="color:var(--cyan)">⬡${sys.stationType}</span>`:''}</div><div style="font-size:13px">Danger:<span style="color:var(--hazard)">${'▮'.repeat(sys.danger)}</span> Wealth:<span style="color:var(--gold)">${'◆'.repeat(sys.wealth)}</span></div><div style="margin-top:8px">${featHtml}</div>`;
+  if(canTravel){const ok=G.fleet.every(s=>s.fuel>=Math.ceil(10*s.fuelUse));acts.innerHTML=`<button class="btn btn-gold btn-full" onclick="travelTo(${G.selSys})" ${ok?'':'disabled'}>▶ JUMP</button>${!ok?'<div style="color:var(--hazard);font-size:12px">Low fuel!</div>':''}`;}
+  else if(isCur)acts.innerHTML=`<button class="btn btn-safe btn-full" onclick="exploreSys()">◈ EXPLORE</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK</button>`:''}`;
+  else acts.innerHTML=`<div style="color:var(--metal);font-size:13px">Out of range.</div>`;
+}
+function updateRP(){
+  document.getElementById('rp-rep').innerHTML=FACTIONS.slice(0,6).map(f=>{const r=G.rep[f.id]||0;return`<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span style="color:${r>0?'var(--safe)':r<0?'var(--hazard)':'var(--metal)'}">${r>=0?'+'+r:r}</span></div>`;}).join('');
+  const cw=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1)*c.qty,0);document.getElementById('cargo-count').textContent=`${cw}/${G.totalCargoCap}`;
+  document.getElementById('rp-cargo').innerHTML=G.cargo.length?G.cargo.map(c=>{const g=GOODS.find(x=>x.id===c.id);return`<div style="display:flex;justify-content:space-between;padding:3px 8px;font-size:13px"><span>${g?.emoji||'📦'} ${g?.name||c.id} ×${c.qty}</span><button class="btn btn-sm" style="padding:1px 5px;font-size:7px" onclick="useCargoItem('${c.id}')">USE</button></div>`;}).join(''):'<div style="color:var(--metal);padding:5px 8px;font-size:13px">Empty</div>';
+  const aq=G.activeQuests.map(qid=>G.contracts.find(c=>c.id===qid)).filter(q=>q&&!q.completed);
+  document.getElementById('rp-quests').innerHTML=aq.length?aq.map(q=>`<div class="quest-item"><div class="quest-hdr">${q.title}</div><div style="color:var(--star)">🎯 ${q.desc||q.objective||'Task pending'}</div><div style="color:var(--cyan);font-size:11px">📍 ${q.targetSysName}</div><div style="color:var(--gold);font-size:11px">💰 ${q.reward} CR</div></div>`).join(''):'<div style="color:var(--metal);font-size:12px">No active quests</div>';
+  document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>{const cls=CLASSES.find(x=>x.id===c.classId);const t2=c.advancedClass?TIER2_CLASSES[c.advancedClass]:null;const st=Object.entries(G.crewStations).find(([k,v])=>v===c.id)?.[0];return`<div class="crew-row"><div class="crew-emoji">${c.emoji}</div><div class="crew-info"><div class="crew-name">${c.name} Lv${c.level||1}${st?` <span style="color:var(--gold)">[${CREW_STATIONS[st]?.emoji}]</span>`:''}</div><div class="crew-role">${t2?t2.emoji+' '+t2.name:cls?cls.emoji+' '+cls.name:c.role}</div><div style="font-size:11px;color:var(--metal)">❤${c.hp}/${c.maxHp} ⚔${c.atk} ✦${c.skill}</div></div></div>`;}).join('');
+  const or=ORIGINS.find(o=>o.id===G.captain.origin);
+  document.getElementById('rp-cap').innerHTML=`<div style="color:var(--star)">${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji||''} ${or?.name||''}</div><div style="margin-top:4px;font-size:12px">CHA:${G.captain.skills.charisma} INT:${G.captain.skills.intelligence} ENG:${G.captain.skills.engineering}</div>`;
+  document.getElementById('rp-fleet').innerHTML=G.fleet.map((s,i)=>`<div style="padding:4px;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px"><b style="color:${i===0?'var(--gold)':'var(--star)'}">${s.name}</b><br>H:${s.hull}/${s.maxHull} F:${s.fuel}</div>`).join('');
+}
+function updateLog(){document.getElementById('log-list').innerHTML=G.log.slice(0,3).map((e,i)=>`<div class="log-line" style="${i>0?'opacity:0.55':'color:var(--star)'}">${e}</div>`).join('');}
+function addLog(msg){G.log.unshift(msg);if(G.log.length>50)G.log.pop();updateLog();}
+function toggleSection(h){const c=h.nextElementSibling;if(!c)return;c.classList.toggle('collapsed');h.classList.toggle('collapsed-header');}
+// ===== CARGO =====
+function useCargoItem(id){
+  const idx=G.cargo.findIndex(c=>c.id===id);if(idx<0)return;
+  if(id==='fuel_cells'){G.flagship.fuel=Math.min(G.flagship.maxFuel,G.flagship.fuel+10);addLog('Fuel cell used. +10 fuel.');}
+  else if(id==='medicine'){const v=G.crew.find(c=>c.alive&&c.hp<c.maxHp);if(v){v.hp=Math.min(v.maxHp,v.hp+15);addLog(`${v.name} healed 15 HP.`);}else addLog('No injured crew.');}
+  else if(id==='protein_packs'){G.flagship.morale=Math.min(100,(G.flagship.morale||75)+4);addLog('Morale +4.');}
+  else if(id==='artifacts'){G.flagship.maxHull+=5;G.flagship.hull=Math.min(G.flagship.maxHull,G.flagship.hull+5);addLog('Artifact analyzed. Hull capacity +5.');}
+  else if(id==='dark_matter'){addLog('Dark Matter: Use at Data Exchange → Jump New Galaxy.');}
+  else addLog(`${GOODS.find(g=>g.id===id)?.name||id} used.`);
+  G.cargo[idx].qty--;if(G.cargo[idx].qty<=0)G.cargo.splice(idx,1);updateHUD();updateRP();
+}
+
+// ===== APPLY EFFECTS =====
+function applyEff(eff){
+  if(!eff)return;
+  if(eff.cr)G.flagship.credits=Math.max(0,G.flagship.credits+eff.cr);
+  if(eff.hull){G.flagship.hull=Math.min(G.flagship.maxHull,Math.max(1,G.flagship.hull+eff.hull));if(G.flagship.hull<=1)triggerGameOver();}
+  if(eff.fuel)G.flagship.fuel=Math.min(G.flagship.maxFuel,Math.max(0,G.flagship.fuel+eff.fuel));
+  if(eff.mora||eff.morale){const v=eff.mora||eff.morale;G.flagship.morale=Math.min(100,Math.max(0,(G.flagship.morale||75)+v));}
+  if(eff.scrap)G.flagship.scrap=(G.flagship.scrap||0)+eff.scrap;
+  if(eff.artifact)addCargo('artifacts',eff.artifact);
+  if(eff.darkMatterChance&&G.rng.next()<eff.darkMatterChance){addCargo('dark_matter',1);addLog('Found Dark Matter shard!');}
+  Object.keys(eff).forEach(k=>{if(k.startsWith('rep_')){const f=k.slice(4);G.rep[f]=(G.rep[f]||0)+eff[k];}});
+  if(eff.crewGain){const nc=generateRandomCrew();G.crew.push(nc);addLog(`${nc.name} joins the crew!`);}
+  if(eff.crewInjury){const alive=G.crew.filter(c=>c.alive);if(alive.length){const v=alive[Math.floor(G.rng.next()*alive.length)];v.hp=Math.max(1,v.hp-15);addLog(`${v.name} was injured.`);}}
+  if(eff.questGenerate){const t=G.galaxy.systems[Math.floor(G.rng.next()*G.galaxy.systems.length)];if(t&&t.id!==G.curSys)addQuest({id:'q_'+Date.now(),title:'Guild Delivery',objective:'Deliver goods to system.',targetSysId:t.id,targetSysName:t.name,reward:{cr:eff.cr||500},type:'Delivery'});}
+}
+
+// ===== TRAVEL =====
+function travelTo(id){
+  if(G.fleet.some(s=>s.fuel<Math.ceil(10*s.fuelUse))){addLog('Not enough fuel!');return;}
+  G.fleet.forEach(s=>s.fuel=Math.max(0,s.fuel-Math.ceil(10*s.fuelUse)));
+  G.curSys=id;const sys=G.galaxy.systems[id];sys.visited=true;sys.revealed=true;revealConnected(id);G.selSys=id;G.jumps++;G.dramaTimer++;
+  checkQuestCompletion(id);
+  if(G.flagship.modules.includes('bio_hull'))G.flagship.hull=Math.min(G.flagship.maxHull,G.flagship.hull+Math.ceil(G.flagship.maxHull*0.01));
+  if(G.flagship.modules.includes('void_drive')&&G.rng.next()<0.05){addLog('⚡ Void Drive glitch!');G.flagship.hull=Math.max(1,G.flagship.hull-5);}
+  addLog(`Jumped to ${sys.name}. [${G.jumps} jumps]`);updateHUD();updateLP();updateRP();
+  if(G.dramaTimer>=3&&G.crew.filter(c=>c.alive).length>=2){G.dramaTimer=0;setTimeout(checkDrama,800);}
+  else setTimeout(()=>{if(!tryNonHostileEncounter())triggerEvent();},700);
+}
+function exploreSys(){
+  const k='explored_'+G.curSys;const ct=G.probedFeatures[k]||0;
+  if(ct>=2){addLog('Nothing more to explore here.');return;}
+  G.probedFeatures[k]=ct+1;setTimeout(()=>{if(!tryNonHostileEncounter())triggerEvent();},400);
+}
+function tryNonHostileEncounter(){
+  if(G.rng.next()>0.14)return false;
+  const enc=NONHOSTILE_ENCOUNTERS[Math.floor(G.rng.next()*NONHOSTILE_ENCOUNTERS.length)];
+  showXenoEncounter(enc);return true;
+}
+
+// ===== XENO ENCOUNTERS =====
+function showXenoEncounter(enc){
+  const lang=enc.xenoLang?XENO_LANGUAGES[enc.xenoLang]:null;
+  document.getElementById('xeno-title').textContent=enc.title;
+  document.getElementById('xeno-body').textContent=processText(enc.intro);
+  document.getElementById('xeno-lang').textContent=lang?lang.greetings[Math.floor(Math.random()*lang.greetings.length)]:'';
+  const tl=G.xenoTranslations[enc.xenoLang||'']||0;
+  document.getElementById('xeno-translation').textContent=lang&&lang.translations[tl]?`[${lang.translations[tl]}]`:'';
+  const bar=document.getElementById('xeno-translate-bar');
+  if(lang){bar.style.display='block';document.getElementById('xeno-translate-fill').style.width=(tl/3*100)+'%';}else bar.style.display='none';
+  document.getElementById('xeno-choices').innerHTML=enc.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveXenoChoice(${i})">${processText(c.text)}</button>`).join('');
+  document.getElementById('xeno-overlay').classList.add('open');
+  window._curXenoEnc=enc;
+}
+function resolveXenoChoice(i){
+  document.getElementById('xeno-overlay').classList.remove('open');
+  const enc=window._curXenoEnc;if(!enc)return;
+  let ch=enc.choices[i],outcome=ch;
+  if(ch.skillCheck){const{skill,dc}=ch.skillCheck;const roll=Math.floor(G.rng.next()*20)+(G.captain.skills[skill]||1);
+    if(roll>=dc){outcome=ch.success||ch;addLog('Success!');G.captain.skills[skill]=Math.min(10,(G.captain.skills[skill]||1)+1);}
+    else{outcome=ch.failure||{eff:{log:'Failed.'}};addLog('Failed.');}
+  }
+  const eff=outcome.eff||{};applyEff(eff);
+  if(enc.xenoLang)G.xenoTranslations[enc.xenoLang]=Math.min(3,(G.xenoTranslations[enc.xenoLang]||0)+1);
+  addLog(eff.log||'Encounter resolved.');updateHUD();updateRP();
+  setTimeout(()=>{if(eff.combat)startCombat();else triggerEvent();},300);
+}
+
+// ===== DRAMA =====
+function checkDrama(){
+  const alive=G.crew.filter(c=>c.alive);if(alive.length<2)return triggerEvent();
+  const ev=DRAMA_EVENTS[Math.floor(G.rng.next()*DRAMA_EVENTS.length)];
+  const c1=alive[Math.floor(G.rng.next()*alive.length)],c2=alive.filter(c=>c!==c1)[0]||c1;
+  window._curDrama={ev,c1,c2};
+  document.getElementById('drama-title').textContent=ev.title;
+  document.getElementById('drama-body').textContent=processText(ev.body).replace(/\{crew1\}/g,c1.name).replace(/\{crew2\}/g,c2.name);
+  document.getElementById('drama-choices').innerHTML=ev.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveDrama(${i})">${processText(c.text)}</button>`).join('');
+  document.getElementById('drama-overlay').classList.add('open');
+}
+function resolveDrama(i){
+  document.getElementById('drama-overlay').classList.remove('open');
+  const d=window._curDrama;if(!d)return;
+  let ch=d.ev.choices[i],outcome=ch;
+  if(ch.skillCheck){const{skill,dc}=ch.skillCheck;const roll=Math.floor(G.rng.next()*20)+(G.captain.skills[skill]||1);
+    if(roll>=dc){outcome=ch.success||ch;}else{outcome=ch.failure||{eff:{log:'Failed.'}};}}
+  const e=outcome.eff||{};applyEff(e);if(e.crewTempLoss&&d.c1)d.c1.tempAway=3;
+  addLog(e.log||'Drama resolved.');updateHUD();updateRP();setTimeout(triggerEvent,300);
+}
+
+// ===== EVENTS =====
+function triggerEvent(){
+  const sys=G.galaxy.systems[G.curSys];
+  if(sys.danger>=4&&G.rng.next()<0.35){startCombat();return;}
+  if(sys.danger>=2&&G.rng.next()<0.08){startCombat();return;}
+  const ev=EVENTS[Math.floor(G.rng.next()*EVENTS.length)];if(!ev){addLog('Nothing unusual happens.');return;}
+  currentEvent=ev;
+  document.getElementById('ev-title').textContent=processText(ev.title);
+  document.getElementById('ev-body').textContent=processText(ev.body);
+  document.getElementById('ev-choices').innerHTML=ev.choices.map((c,i)=>`<button class="choice-btn" onclick="resolveChoice(${i})">${processText(c.text)}</button>`).join('');
+  document.getElementById('ev-overlay').classList.add('open');
+}
+function resolveChoice(i){
+  document.getElementById('ev-overlay').classList.remove('open');
+  let ch=currentEvent.choices[i],outcome=ch;
+  if(ch.skillCheck){const{skill,dc}=ch.skillCheck;const roll=Math.floor(G.rng.next()*20)+(G.captain.skills[skill]||1);
+    if(roll>=dc){outcome=ch.success||ch;addLog(`Skill check: success!`);G.captain.skills[skill]=Math.min(10,(G.captain.skills[skill]||1)+1);G.captain.xp+=10;if(G.captain.xp>=G.captain.level*100){G.captain.level++;addLog(`Captain Lv.${G.captain.level}!`);}}
+    else{outcome=ch.failure||{eff:{log:'Skill check failed.'}};addLog('Skill check failed.');}}
+  const eff=outcome.eff||{};applyEff(eff);
+  if(outcome.combat||eff.combat){startCombat();return;}
+  if(eff.xenoEncounter){tryNonHostileEncounter();return;}
+  if(outcome.followUp){currentEvent=outcome.followUp;document.getElementById('ev-title').textContent=processText(currentEvent.title);document.getElementById('ev-body').textContent=processText(currentEvent.body);document.getElementById('ev-choices').innerHTML=currentEvent.choices.map((c,idx)=>`<button class="choice-btn" onclick="resolveChoice(${idx})">${processText(c.text)}</button>`).join('');document.getElementById('ev-overlay').classList.add('open');return;}
+  addLog(eff.log||'Event resolved.');updateHUD();updateLP();updateRP();
+}
+
+// ===== FEATURE PROBING =====
+const PROBE_OUTCOMES={
+  'Ruins':[{text:'Found an ancient artifact!',eff:{artifact:1}},{text:'Valuable data recovered.',eff:{cr:250}},{text:'Collapsing structure! Crew injured.',eff:{crewInjury:true}},{text:'Dark matter shard unearthed!',eff:{artifact:1,cr:200},chance:0.1}],
+  'Mineral':[{text:'Mined +5 scrap.',eff:{scrap:5}},{text:'Rich vein! +12 scrap.',eff:{scrap:12}},{text:'Cave-in! Hull damage.',eff:{hull:-10}}],
+  'Asteroid':[{text:'Harvested +3 scrap.',eff:{scrap:3}},{text:'Rare ore deposit found.',eff:{cr:150}},{text:'Gas vented — hull stress.',eff:{hull:-5}}],
+  'Habitable':[{text:'Friendly locals share supplies.',eff:{cr:100,mora:5}},{text:'Hostile natives attack!',eff:{groundCombat:true}},{text:'Pristine water source discovered.',eff:{cr:80,mora:3}}],
+  'Trade Hub':[{text:'Busy hub — docking.',eff:{dock:true}}],
+  'Alien Life':[{text:'Biological samples collected.',eff:{cr:200}},{text:'Aggressive fauna!',eff:{groundCombat:true}}],
+  'Pirate Den':[{text:'Raided a pirate cache!',eff:{cr:350,scrap:3}},{text:'Ambushed!',eff:{combat:true}},{text:'Nothing — already cleared out.',eff:{}}],
+  'Research Outpost':[{text:'Traded data for credits.',eff:{cr:300}},{text:'Hacked terminal for research.',eff:{cr:500,rep_megacorp:-5}}],
+  'Military Installation':[{text:'Scanned from safe distance.',eff:{cr:80}},{text:'Detected! They open fire.',eff:{combat:true}},{text:'Bribed a guard.',eff:{cr:-150,log:'Intel purchased.'}}],
+  'Derelict Megastructure':[{text:'Salvaged advanced components.',eff:{cr:600,scrap:8}},{text:'Defenses still active!',eff:{combat:true}},{text:'Dark matter core found!',eff:{cr:400},chance:0.15}],
+  'Shrine World':[{text:'Blessing received.',eff:{shrineBless:true}},{text:'Donated credits.',eff:{cr:-100,mora:10}}],
+  'Gas Giant':[{text:'Skimmed fuel from atmosphere.',eff:{fuel:15}},{text:'Atmospheric disturbance!',eff:{hull:-8}}],
+  'Nomad Fleet':[{text:'Traded stories and goods.',eff:{cr:150}},{text:'They ignored your hails.',eff:{}}],
+  'Wormhole':[{text:'Scanned from safe distance.',eff:{cr:200}},{text:'Pulled in! Emerged elsewhere — dark matter found.',eff:{hull:-20,cr:500}},{text:'Escaped just in time.',eff:{fuel:-10}}],
+  'default':[{text:'Nothing unusual detected.',eff:{}},{text:'Minor sensor data sold.',eff:{cr:50}}],
+};
+function interactFeature(feature){
+  if(G.selSys!==G.curSys){addLog('Travel to this system first.');return;}
+  const key=`${G.curSys}_${feature}`;if(G.probedFeatures[key]){addLog('Already probed.');return;}
+  let outcomes=PROBE_OUTCOMES.default;
+  for(const[kw,list]of Object.entries(PROBE_OUTCOMES)){if(feature.toLowerCase().includes(kw.toLowerCase())){outcomes=list;break;}}
+  let sel=null;let cum=0;const roll=G.rng.next();
+  for(const o of outcomes){const c=o.chance??(1.0/outcomes.length);cum+=c;if(roll<cum||Math.abs(cum-1.0)<0.001){sel=o;break;}}
+  if(!sel)sel=outcomes[0];G.probedFeatures[key]=true;
+  const eff=sel.eff||{};let msg=sel.text;
+  applyEff(eff);if(eff.shrineBless)shrineBless();
+  if(eff.combat){addLog(msg);startCombat();updateHUD();updateRP();updateLP();return;}
+  if(eff.groundCombat){addLog(msg);startGroundCombat({feature});updateHUD();updateRP();updateLP();return;}
+  if(eff.dock){addLog(msg);dockStation();return;}
+  addLog(msg);updateHUD();updateRP();updateLP();
+}
+
+// ===== CREW STATIONS =====
+function getStationBonus(stId){const cId=G.crewStations[stId];if(!cId)return 0;const c=G.crew.find(x=>x.id===cId&&x.alive&&x.hp>0);return c?Math.max(1,Math.floor(c.skill/2)):0;}
+function assignCrewToStation(crewId,stId){
+  Object.keys(G.crewStations).forEach(k=>{if(G.crewStations[k]===crewId)delete G.crewStations[k];});
+  if(stId&&stId!=='none')G.crewStations[stId]=crewId;updateRP();addLog('Station assignment updated.');
+}
+function renderCombatStations(){
+  const el=document.getElementById('cbat-stations');if(!el)return;
+  el.innerHTML=`<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:5px">CREW STATIONS</div>`+Object.entries(CREW_STATIONS).map(([sid,st])=>{const cId=G.crewStations[sid];const c=cId?G.crew.find(x=>x.id===cId):null;const bonus=getStationBonus(sid);return`<div class="station-slot"><span>${st.emoji}${st.name.split(' ')[0]}</span><span style="color:${c?'var(--safe)':'var(--metal)'}">${c?c.name+`+${bonus}`:'—'}</span></div>`;}).join('');
+}
+
+// ===== ENEMY GENERATION =====
+function getPlayerPower(){return(Math.min(G.jumps,50)/50)*0.4+Math.min(1,G.fleet.reduce((s,sh)=>s+sh.maxHull+(sh.maxShields||0),0)/1500)*0.4+Math.min(1,(G.captain.level||1)/10)*0.2;}
+function generateEnemy(sysIdx=G.curSys){
+  const power=getPlayerPower(),fac=G.galaxy.systems[sysIdx].faction.id;
+  const cands=ENEMY_TEMPLATES.filter(t=>t.faction===fac||t.faction==='independent')||ENEMY_TEMPLATES;
+  const tmpl=cands[Math.floor(G.rng.next()*cands.length)]||ENEMY_TEMPLATES[0];
+  const r=new RNG(hashStr(G.seed)+G.jumps*317+tmpl.id.charCodeAt(0));
+  const ri=(a,b)=>Math.floor(r.next()*(b-a+1))+a;const sc=1+power*0.8;
+  const hull=Math.floor(ri(...tmpl.baseStats.hull)*sc),shield=Math.floor(ri(...tmpl.baseStats.shield)*sc),weapons=Math.floor(ri(...tmpl.baseStats.weapons)*sc),engines=Math.floor(ri(...tmpl.baseStats.engines)*sc);
+  const lc=tmpl.loot.cr||[100,300];
+  return{id:tmpl.id+'_'+Date.now(),type:tmpl.desc.split('.')[0],emoji:tmpl.emoji,color:tmpl.color,faction:tmpl.faction,tier:tmpl.tier,hull,maxHull:hull,shield,maxShield:shield,special:tmpl.special||null,desc:tmpl.desc,aggression:tmpl.aggression||0.5,loot:{cr:[Math.floor(lc[0]*sc),Math.floor(lc[1]*sc)],scrap:tmpl.loot.scrap||[1,3]},systems:{weapons:{name:'Primary Array',hp:weapons,maxHp:weapons},shields:{name:'Shield Grid',hp:shield,maxHp:shield},engines:{name:'Thrusters',hp:engines,maxHp:engines}}};
+}
+function generateGroundEnemy(){
+  const power=getPlayerPower(),fac=G.galaxy.systems[G.curSys].faction.id;
+  const cands=GROUND_ENEMY_TEMPLATES.filter(t=>t.faction===fac);
+  const tmpl=(cands.length>0?cands:GROUND_ENEMY_TEMPLATES)[Math.floor(G.rng.next()*(cands.length>0?cands.length:GROUND_ENEMY_TEMPLATES.length))];
+  const r=new RNG(hashStr(G.seed)+G.jumps*419+tmpl.id.charCodeAt(0));const ri=(a,b)=>Math.floor(r.next()*(b-a+1))+a;const sc=1+power*0.7;
+  const hp=Math.floor(ri(...tmpl.baseStats.hp)*sc),atk=Math.floor(ri(...tmpl.baseStats.atk)*sc),spd=ri(...tmpl.baseStats.spd);
+  const lc=tmpl.loot?.cr||[20,60];
+  return{id:tmpl.id+'_'+Date.now(),name:tmpl.desc.split('.')[0],icon:tmpl.icon,color:tmpl.color||'#888',emoji:tmpl.icon,faction:tmpl.faction,tier:tmpl.tier,hp,maxHp:hp,atk,spd,loot:{cr:[Math.floor(lc[0]*sc),Math.floor(lc[1]*sc)]},special:tmpl.special||null,status:null,tookTurn:false};
+}
+// ===== SHIP COMBAT =====
+function startCombat(enemy=null){
+  const e=enemy||generateEnemy(G.curSys);
+  G.combat={enemy:JSON.parse(JSON.stringify(e)),playerSys:{weapons:{name:'Weapons',hp:30,maxHp:30},shields:{name:'Shields',hp:50,maxHp:50},engines:{name:'Engines',hp:25,maxHp:25}},log:[],evasionActive:false,round:0,won:false,hazardCooldown:0,specialUsed:false,bountyBonus:false};
+  combatTarget=null;addCombatLog(`⚔ ${e.type} engages! "${e.desc}"`);renderCombat();renderCombatStations();showScreen('combat-screen');
+}
+function addCombatLog(msg,type='system'){G.combat.log.unshift({msg,type});const el=document.getElementById('cbat-log');el.innerHTML=G.combat.log.slice(0,25).map(e=>`<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');}
+function renderCombat(){
+  if(!G.combat)return;const c=G.combat,s=G.flagship,e=c.enemy;
+  document.getElementById('cbat-player-name').textContent=s.name;
+  document.getElementById('cbat-enemy-name').innerHTML=`<span style="color:${e.color||'var(--hazard)'}">${e.emoji||'💀'} ${e.type}</span>`;
+  document.getElementById('cbat-player-bars').innerHTML=`<div class="cbat-bar-row"><span class="cbat-bar-lbl">HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.hull/s.maxHull*100}%;background:var(--safe)"></div></div><span>${s.hull}</span></div><div class="cbat-bar-row"><span class="cbat-bar-lbl">SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.shields/s.maxShields*100}%;background:var(--cyan)"></div></div><span>${s.shields}</span></div>`;
+  document.getElementById('cbat-enemy-bars').innerHTML=`<div class="cbat-bar-row"><span class="cbat-bar-lbl">HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.hull/e.maxHull*100}%;background:var(--hazard)"></div></div><span>${e.hull}</span></div><div class="cbat-bar-row"><span class="cbat-bar-lbl">SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.shield>0?e.shield/Math.max(e.maxShield,1)*100:0}%;background:var(--alien)"></div></div><span>${e.shield}</span></div>`;
+  document.getElementById('cbat-player-sys').innerHTML=Object.entries(c.playerSys).map(([k,v])=>`<div class="sys-cell" style="color:${v.hp/v.maxHp>0.5?'var(--safe)':v.hp>0?'var(--warn)':'var(--hazard)'}"><div style="font-size:9px">${k.slice(0,3).toUpperCase()}</div><div>${v.hp}</div></div>`).join('');
+  document.getElementById('cbat-enemy-sys').innerHTML=Object.entries(e.systems).map(([k,v])=>`<div class="sys-cell targetable ${combatTarget===k?'targeted':''}" onclick="setTarget('${k}')" style="color:${v.hp>0?'var(--star)':'rgba(255,255,255,0.25)'}"><div style="font-size:9px">${k.slice(0,3).toUpperCase()}</div><div>${v.hp}</div></div>`).join('');
+  document.getElementById('cbat-enemy-desc').textContent=e.desc;
+  document.getElementById('cbat-target-lbl').textContent=combatTarget?`Target: ${e.systems[combatTarget]?.name}`:'Target: None';
+  document.getElementById('cbat-round').textContent=`Round ${c.round+1}`;
+  const wb=getStationBonus('weapons'),sb=getStationBonus('shields');document.getElementById('cbat-station-bonus').textContent=`Wpn+${wb} Shld+${sb}`;
+}
+function setTarget(id){if(G.combat?.enemy.systems[id]?.hp>0){combatTarget=id;renderCombat();}}
+function combatAction(action){
+  const c=G.combat,s=G.flagship,e=c.enemy;if(!c||c.won)return;
+  const wb=getStationBonus('weapons'),sb=getStationBonus('shields'),eb=getStationBonus('engines');
+  // Apply hazard accuracy mod
+  const accMod=c.hazardAccMod||0;
+  if(action==='fire'){
+    if(!combatTarget){addCombatLog('Select a target system first!');return;}
+    if(c.playerSys.weapons.hp<=0){addCombatLog('Weapons offline!');return;}
+    if(c.hazardWeaponsDisabled){addCombatLog('Weapons knocked offline this turn!');c.hazardWeaponsDisabled=false;return;}
+    const base=12+Math.floor(G.rng.next()*15)+wb;const boost=G.flagship.modules.includes('plasma_injector')?1.4:1.0;const dmg=Math.floor(base*boost);
+    const hitChance=0.9+accMod;
+    if(G.rng.next()<hitChance){
+      const tgt=e.systems[combatTarget];tgt.hp=Math.max(0,tgt.hp-dmg);addCombatLog(`${s.name} fires on ${tgt.name} — ${dmg} dmg!`,'player');
+      if(tgt.hp<=0)addCombatLog(`${tgt.name} DESTROYED!`,'player');
+      const splash=Math.floor(dmg*0.3);if(e.shield>0){const sd=Math.min(e.shield,splash);e.shield-=sd;}else{e.hull=Math.max(0,e.hull-splash);}
+    }else addCombatLog('Shot missed!','player');
+    c.hazardAccMod=0;
+  }else if(action==='special'){
+    if(c.specialUsed){addCombatLog('Special on cooldown (3 rounds).');return;}
+    if(!combatTarget){addCombatLog('Select a target!');return;}
+    const dmg=20+wb*3;const tgt=e.systems[combatTarget];tgt.hp=Math.max(0,tgt.hp-dmg);e.hull=Math.max(0,e.hull-Math.floor(dmg*0.5));
+    c.specialUsed=true;addCombatLog(`💥 Special shot hits ${tgt.name} for ${dmg}! Hull bleed ${Math.floor(dmg*0.5)}.`,'player');
+  }else if(action==='boost_shields'){const regen=15+sb;s.shields=Math.min(s.maxShields,s.shields+regen);addCombatLog(`Shields boosted +${regen}.`,'player');
+  }else if(action==='evasive'){c.evasionActive=true;s.fuel=Math.max(0,s.fuel-5);addCombatLog(`Evasive maneuvers! Fuel -5. Evade+${25+eb}%.`,'player');
+  }else if(action==='flee'){
+    if(s.fuel<15){addCombatLog('Not enough fuel!');return;}
+    const fleeChance=0.5+(eb*0.03);
+    if(G.rng.next()<fleeChance){addCombatLog('Emergency FTL! Escaped.','player');s.fuel-=15;exitCombat(false);return;}
+    else addCombatLog('Flee failed!','player');
+  }
+  // Hazard check
+  if(!c.hazardCooldown&&G.rng.next()<0.13)triggerCombatHazard();else if(c.hazardCooldown>0)c.hazardCooldown--;
+  // Special shot cooldown recovery
+  if(c.round>0&&c.round%3===0)c.specialUsed=false;
+  // Enemy attack turn
+  if(e.systems.weapons.hp>0){
+    const evade=c.evasionActive?0.35+eb*0.02:0.7;
+    if(G.rng.next()<evade){
+      const eDmg=8+Math.floor(G.rng.next()*12);
+      if(s.shields>0){const sd=Math.min(s.shields,eDmg);s.shields-=sd;const spill=Math.max(0,eDmg-sd);if(spill>0)s.hull=Math.max(0,s.hull-spill);addCombatLog(`Enemy hits shields -${sd}${spill>0?' hull -'+spill:''}!`,'enemy');}
+      else{s.hull=Math.max(0,s.hull-eDmg);addCombatLog(`Enemy hits hull -${eDmg}!`,'enemy');}
+      // AI Assistant
+      if(G.flagship.modules.includes('ai_assistant')&&G.rng.next()<0.3){const sys=Object.values(c.playerSys).find(v=>v.hp<v.maxHp);if(sys){sys.hp=Math.min(sys.maxHp,sys.hp+8);addCombatLog('AI repairs '+sys.name,'system');}}
+    }else addCombatLog('Enemy missed!','enemy');
+  }else addCombatLog('Enemy weapons offline — cannot fire.','system');
+  c.evasionActive=false;c.round++;
+  if(s.hull<=0){triggerGameOver();return;}
+  if(e.hull<=0){c.won=true;addCombatLog('VICTORY! Enemy ship destroyed.','player');setTimeout(()=>exitCombat(true),800);return;}
+  renderCombat();
+}
+function triggerCombatHazard(){
+  const c=G.combat,h=COMBAT_HAZARDS[Math.floor(G.rng.next()*COMBAT_HAZARDS.length)];c.hazardCooldown=4;
+  const bar=document.getElementById('cbat-hazard-bar');bar.innerHTML=`<div class="hazard-alert">⚠ ${h.title}: ${h.desc}</div>`;setTimeout(()=>{if(bar)bar.innerHTML='';},3500);
+  const eff=h.effect;
+  if(eff.hullDrain)G.flagship.hull=Math.max(1,G.flagship.hull-eff.hullDrain);
+  if(eff.shieldDrain)G.flagship.shields=Math.max(0,G.flagship.shields-eff.shieldDrain);
+  if(eff.immediateHullDmg)G.flagship.hull=Math.max(1,G.flagship.hull-eff.immediateHullDmg);
+  if(eff.disableWeapons)c.hazardWeaponsDisabled=true;
+  if(eff.playerAccuracyMod)c.hazardAccMod=(c.hazardAccMod||0)+eff.playerAccuracyMod;
+  addCombatLog(h.title+': '+h.desc,'hazard');renderCombat();
+}
+function boardEnemy(){if(!G.combat||G.combat.enemy.systems.shields.hp>0){addCombatLog('Enemy shields must be down to board!');return;}startGroundCombat({fromShipCombat:true});}
+function exitCombat(won){
+  if(won&&G.combat){
+    const e=G.combat.enemy,lc=e.loot.cr;const cr=Math.floor(lc[0]+G.rng.next()*(lc[1]-lc[0]));const ls=e.loot.scrap||[1,3];const sc=Math.floor(ls[0]+G.rng.next()*(ls[1]-ls[0]));
+    const totalCr=G.combat.bountyBonus?Math.floor(cr*1.5):cr;
+    G.flagship.credits+=totalCr;G.flagship.scrap=(G.flagship.scrap||0)+sc;
+    if(!G.galaxyFlags.noRepLossVsPirates&&(e.faction==='syndicate'||e.faction==='cartel')){G.rep[e.faction]=Math.max(-100,(G.rep[e.faction]||0)-5);}
+    addLog(`Victory! +${totalCr} CR, +${sc} scrap.`);
+    G.crew.filter(c=>c.alive).forEach(c=>{c.xp=(c.xp||0)+20;checkCrewLevelUp(c);});
+  }
+  G.combat=null;showScreen('galaxy-screen');updateHUD();updateLP();updateRP();
+}
+function checkCrewLevelUp(c){if(c.xp>=(c.level||1)*80){c.level=(c.level||1)+1;c.maxHp+=4;c.atk+=1;addLog(`${c.name} reached Lv.${c.level}! HP and ATK increased.`);}}
+
+// ===== GROUND COMBAT =====
+function startGroundCombat(ctx={}){
+  const count=1+Math.floor(G.rng.next()*2);const enemies=[];
+  for(let i=0;i<count;i++){const e=generateGroundEnemy();enemies.push({...e,id:e.id+'_'+i});}
+  const party=G.crew.filter(c=>c.alive&&c.hp>0).slice(0,4).map(c=>({...c,ap:4,maxAp:4,tookTurn:false}));
+  if(!party.length){addLog('No crew available!');showScreen('galaxy-screen');return;}
+  groundCombatState={phase:'active',party,enemies,log:['⚔ Ground combat begins!'],acting:party[0]?.id||null,selectedEnemy:enemies[0]?.id||null,round:1,ctx};
+  showScreen('ground-combat-screen');renderGroundCombat();
+}
+function getCrewMoves(c){
+  const cls=CLASSES.find(x=>x.id===c.classId);if(!cls)return[];
+  const moves=[...cls.groundMoves];const t2=c.advancedClass?TIER2_CLASSES[c.advancedClass]:null;
+  if(t2?.newMove)moves.push(t2.newMove);return moves;
+}
+function executeGroundAction(moveId){
+  const st=groundCombatState;if(!st||st.phase!=='active'||!st.acting)return;
+  const actor=st.party.find(p=>p.id===st.acting);if(!actor||actor.hp<=0)return;
+  const ap=actor.ap||0;
+  if(moveId==='basic_attack'){
+    if(ap<1)return;
+    const tgt=st.enemies.find(e=>e.id===st.selectedEnemy&&e.hp>0)||st.enemies.find(e=>e.hp>0);if(!tgt){addLog('No target!');return;}
+    const dmg=Math.max(1,Math.floor((actor.atk||8)*(0.9+Math.random()*0.3)));tgt.hp=Math.max(0,tgt.hp-dmg);
+    st.log.unshift(`${actor.name} attacks ${tgt.name} for ${dmg}!`);actor.ap-=1;
+  }else{
+    const moves=getCrewMoves(actor),move=moves.find(m=>m.id===moveId);if(!move||ap<move.cost){return;}
+    actor.ap-=move.cost;const tgt=st.enemies.find(e=>e.id===st.selectedEnemy&&e.hp>0)||st.enemies.find(e=>e.hp>0);
+    // Execute move
+    if(move.dmgMult&&tgt){const dmg=Math.floor((actor.atk||8)*move.dmgMult*(0.9+Math.random()*0.2));tgt.hp=Math.max(0,tgt.hp-dmg);st.log.unshift(`${actor.name} uses ${move.name} for ${dmg}!`);if(move.stunChance&&Math.random()<move.stunChance){tgt.status='stunned';st.log.unshift(`${tgt.name} stunned!`);}if(move.aoe){st.enemies.filter(e=>e.hp>0&&e.id!==tgt.id).forEach(e=>{const ad=Math.floor(dmg*0.5);e.hp=Math.max(0,e.hp-ad);});st.log.unshift('AOE splash!');}}
+    if(move.heal){const target=st.party.filter(p=>p.hp>0).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0]||actor;const h=Math.floor((move.heal||10)+(actor.skill||5)*0.5);target.hp=Math.min(target.maxHp,target.hp+h);st.log.unshift(`${actor.name} heals ${target.name} for ${h}!`);}
+    if(move.aoeHeal){st.party.filter(p=>p.hp>0).forEach(p=>{p.hp=Math.min(p.maxHp,p.hp+Math.floor(move.aoeHeal||10));});st.log.unshift(`${actor.name} heals all allies!`);}
+    if(move.confuse&&tgt){tgt.status='confused';st.log.unshift(`${tgt.name} is confused!`);}
+    if(move.reviveAlly){const ko=st.party.find(p=>p.hp<=0);if(ko){ko.hp=Math.floor(ko.maxHp*0.25);st.log.unshift(`${actor.name} revives ${ko.name}!`);}}
+    if(move.reviveAll){st.party.filter(p=>p.hp<=0).forEach(p=>{p.hp=Math.floor(p.maxHp*0.15);});st.log.unshift(`${actor.name} revives ALL fallen allies!`);}
+    if(move.stealth){st.party.forEach(p=>{p.stealthed=2;});st.log.unshift('Party enters stealth!');}
+    if(move.disable&&tgt){tgt.disabled=2;st.log.unshift(`${tgt.name} is disabled!`);}
+    if(!move.dmgMult&&!move.heal&&!move.aoeHeal)st.log.unshift(`${actor.name} uses ${move.name}.`);
+  }
+  actor.tookTurn=true;if(st.log.length>20)st.log=st.log.slice(0,20);
+  const next=st.party.find(p=>p.hp>0&&!p.tookTurn&&p.id!==actor.id);
+  if(next){st.acting=next.id;}else{st.acting=null;setTimeout(enemyGroundTurn,350);}
+  checkGroundCombatEnd();if(st.phase==='active')renderGroundCombat();
+}
+function enemyGroundTurn(){
+  const st=groundCombatState;if(!st||st.phase!=='active')return;
+  const aliveEnemies=st.enemies.filter(e=>e.hp>0&&!e.tookTurn);const aliveParty=st.party.filter(p=>p.hp>0);
+  if(aliveEnemies.length&&aliveParty.length){
+    aliveEnemies.forEach(e=>{
+      if(e.status==='stunned'||e.disabled>0){if(e.disabled>0)e.disabled--;if(e.status==='stunned')e.status=null;st.log.unshift(`${e.name} is stunned — skips turn.`);e.tookTurn=true;return;}
+      const tgt=aliveParty.sort((a,b)=>a.hp-b.hp)[0];const dmg=Math.max(1,Math.floor((e.atk||8)*(0.85+Math.random()*0.3)));
+      // Check stealth
+      if(tgt.stealthed>0){tgt.stealthed--;st.log.unshift(`${e.name} can't find ${tgt.name} — stealth!`);e.tookTurn=true;return;}
+      tgt.hp=Math.max(0,tgt.hp-dmg);st.log.unshift(`${e.name} attacks ${tgt.name} for ${dmg}!`);e.tookTurn=true;
+    });
+  }
+  // Start new round
+  st.round++;document.getElementById('gc-round-display').textContent=`Round ${st.round}`;
+  st.party.forEach(p=>{p.tookTurn=false;if(p.hp>0){p.ap=p.maxAp||4;}});
+  st.enemies.forEach(e=>e.tookTurn=false);
+  const first=st.party.find(p=>p.hp>0);if(first)st.acting=first.id;
+  if(st.log.length>20)st.log=st.log.slice(0,20);
+  checkGroundCombatEnd();if(st.phase==='active')renderGroundCombat();
+}
+function groundFlee(){
+  const st=groundCombatState;if(!st)return;
+  const ps=st.party.reduce((s,p)=>s+(p.spd||5),0)/Math.max(1,st.party.length);
+  const es=st.enemies.filter(e=>e.hp>0).reduce((s,e)=>s+(e.spd||5),0)/Math.max(1,st.enemies.filter(e=>e.hp>0).length);
+  const ch=0.45+Math.max(0,ps-es)*0.04;
+  if(Math.random()<ch){st.phase='fled';st.log.unshift('Tactical retreat!');renderGroundCombat();setTimeout(closeGroundCombat,900);}
+  else{st.log.unshift('Retreat failed! Enemies counterattack!');st.enemies.filter(e=>e.hp>0).forEach(e=>{const t=st.party.find(p=>p.hp>0);if(t){const d=Math.floor((e.atk||8)*1.2);t.hp=Math.max(0,t.hp-d);st.log.unshift(`${e.name} hits ${t.name} for ${d}!`);}});checkGroundCombatEnd();renderGroundCombat();}
+}
+function selectGroundEnemy(id){const st=groundCombatState;if(!st)return;if(st.enemies.find(e=>e.id===id&&e.hp>0)){st.selectedEnemy=id;renderGroundCombat();}}
+function checkGroundCombatEnd(){
+  const st=groundCombatState;if(!st||st.phase!=='active')return;
+  if(st.enemies.every(e=>e.hp<=0)){
+    st.phase='victory';const cr=st.enemies.reduce((s,e)=>{const l=e.loot?.cr||[10,40];return s+Math.floor(l[0]+Math.random()*(l[1]-l[0]));},0);const sc=st.enemies.reduce((s,e)=>s+(e.loot?.scrap||0),0);
+    G.flagship.credits+=cr;G.flagship.scrap=(G.flagship.scrap||0)+sc;
+    // Sync HP back
+    st.party.forEach(p=>{const c=G.crew.find(x=>x.id===p.id);if(c)c.hp=Math.max(1,p.hp);});
+    G.crew.filter(c=>c.alive).forEach(c=>{c.xp=(c.xp||0)+15;checkCrewLevelUp(c);});
+    st.log.unshift(`★ VICTORY ★ +${cr} CR, +${sc} scrap`);renderGroundCombat();setTimeout(closeGroundCombat,1400);
+  }else if(st.party.every(p=>p.hp<=0)){
+    st.phase='defeat';G.crew.filter(c=>c.alive).forEach(c=>{c.hp=1;});G.flagship.hull=Math.max(1,G.flagship.hull-Math.floor(G.flagship.maxHull*0.2));
+    st.log.unshift('✖ DEFEAT — Barely escaped!');renderGroundCombat();setTimeout(closeGroundCombat,1400);
+  }
+}
+function closeGroundCombat(){groundCombatState=null;showScreen('galaxy-screen');updateHUD();updateRP();updateLP();}
+function renderGroundCombat(){
+  const gc=groundCombatState;if(!gc)return;
+  document.getElementById('gc-party').innerHTML=gc.party.map(u=>{const cls=CLASSES.find(c=>c.id===u.classId);const ia=gc.acting===u.id;const alive=u.hp>0;return`<div class="gc-unit-card ${ia?'acting':''}" style="background:${alive?'rgba(0,229,255,0.06)':'rgba(0,0,0,0.4)'};border-color:${ia?'var(--gold)':alive?'var(--cyan)':'rgba(255,255,255,0.12)'};opacity:${alive?1:0.4};width:130px;cursor:default"><div class="unit-sprite">${u.emoji||'👤'}</div><div style="font-family:'Press Start 2P';font-size:7px;color:${ia?'var(--gold)':'var(--cyan)'};text-align:center">${u.name}</div><div style="text-align:center;font-size:11px;color:var(--metal)">${cls?.name||u.role}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:${alive?'var(--safe)':'var(--hazard)'}"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}<div style="font-size:10px;color:var(--metal);text-align:center">AP:${u.ap||0}</div>${ia?'<div style="color:var(--gold);font-size:9px;text-align:center">▶ READY</div>':''}</div>`;}).join('');
+  document.getElementById('gc-enemies').innerHTML=gc.enemies.map(u=>{const alive=u.hp>0;const sel=gc.selectedEnemy===u.id;return`<div class="gc-unit-card" onclick="selectGroundEnemy('${u.id}')" style="background:${alive?'rgba(196,30,58,0.08)':'rgba(0,0,0,0.4)'};border-color:${sel&&alive?'var(--gold)':alive?'var(--hazard)':'rgba(255,255,255,0.1)'};opacity:${alive?1:0.4};width:120px;cursor:${alive?'pointer':'default'}"><div class="unit-sprite" style="color:${u.color||'#888'}">${u.icon||u.emoji||'👾'}</div><div style="font-family:'Press Start 2P';font-size:7px;color:var(--hazard);text-align:center">${u.name}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:var(--hazard)"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}</div>`;}).join('');
+  document.getElementById('gc-log').innerHTML=gc.log.slice(0,15).map((l,i)=>`<div style="font-size:13px;padding:2px 0;color:${i===0?'var(--star)':'var(--metal)'};">${l}</div>`).join('');
+  document.getElementById('gc-log').scrollTop=0;
+  const actEl=document.getElementById('gc-actions');
+  if(gc.phase!=='active'){const ec=gc.phase==='victory'?'var(--safe)':gc.phase==='fled'?'var(--warn)':'var(--hazard)';const em=gc.phase==='victory'?'★ VICTORY ★':gc.phase==='fled'?'— ESCAPED —':'✖ DEFEATED ✖';actEl.innerHTML=`<div style="text-align:center;color:${ec};font-family:'Press Start 2P';font-size:10px;padding:8px">${em}</div>`;return;}
+  const actor=gc.party.find(p=>p.id===gc.acting);
+  if(!actor){actEl.innerHTML=`<div style="color:var(--metal)">Waiting for next turn...</div>`;return;}
+  const moves=getCrewMoves(actor);const ap=actor.ap||0;
+  actEl.innerHTML=`<div style="color:var(--gold);font-family:'Press Start 2P';font-size:8px;margin-bottom:8px">▶ ${actor.name} — AP:${ap}/${actor.maxAp||4}</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-sm btn-danger" onclick="executeGroundAction('basic_attack')">⚔ ATTACK (1AP)</button>${moves.map(m=>`<button class="btn btn-sm" onclick="executeGroundAction('${m.id}')" ${ap<m.cost?'disabled':''} style="font-size:7px" title="${m.desc}">${m.name}(${m.cost}AP)</button>`).join('')}</div><div style="display:flex;gap:5px"><button class="btn btn-sm btn-warn" onclick="groundFlee()">🏃 FLEE</button></div>${gc.selectedEnemy?`<div style="margin-top:5px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedEnemy)?.name||'?'}</div>`:'<div style="color:var(--hazard);font-size:12px;margin-top:5px">Click an enemy to target</div>'}`;
+}
+// ===== STATION SYSTEM =====
+function stationPrice(id,sysIdx,buying){
+  const g=GOODS.find(x=>x.id===id);if(!g)return 0;
+  const r=new RNG(hashStr(G.seed)+sysIdx*137+id.charCodeAt(0)*17);const v=0.85+r.next()*0.30;const w=0.6+G.galaxy.systems[sysIdx].wealth*0.18;
+  let p=Math.round(g.basePrice*w*v);if(buying)p=Math.round(p*1.18);else p=Math.round(p*(G.flagship.tradeSellMult||1.0));return Math.max(1,p);
+}
+function stationGoods(sysIdx){const r=new RNG(hashStr(G.seed)+sysIdx*251);return GOODS.filter(g=>g.legal).sort(()=>r.next()-.5).slice(0,6);}
+function stationRumors(sysIdx){const r=new RNG(hashStr(G.seed)+sysIdx*421);return [...RUMOR_POOL].sort(()=>r.next()-.5).slice(0,3).map(t=>t.replace('{sys}',G.galaxy.systems[sysIdx].name).replace('{fac}',FACTIONS[Math.floor(r.next()*FACTIONS.length)].name));}
+function generateHireableCrew(sysIdx){
+  const r=new RNG(hashStr(G.seed)+sysIdx*739+11);const hired=G.crew.map(c=>c.name);const fn=['Kael','Lyra','Dax','Nova','Orin','Vex','Zane','Yara','Jax','Mira','Rex','Sia','Talon','Vega','Wren'];const ln=['Kas','Tong','Varley','Nox','Thorn','Chen','Rook','Silas','Frost','Steel','Vance','Cross','Blade','Ward','Moon'];
+  const ROLES=[{id:'Gunner',emoji:'🔫',hp:[40,60],atk:[10,16],spd:[3,6],skill:[4,7],base:350},{id:'Technician',emoji:'🔧',hp:[35,50],atk:[5,9],spd:[4,7],skill:[7,11],base:300},{id:'Medic',emoji:'💉',hp:[30,45],atk:[4,8],spd:[4,7],skill:[8,12],base:400},{id:'Scout',emoji:'🔍',hp:[30,45],atk:[7,11],spd:[7,11],skill:[6,10],base:320},{id:'Pilot',emoji:'🚀',hp:[35,50],atk:[5,9],spd:[8,12],skill:[7,11],base:450}];
+  const out=[];let att=0;
+  while(out.length<2&&att<60){att++;const name=`${fn[Math.floor(r.next()*fn.length)]} ${ln[Math.floor(r.next()*ln.length)]}`;if(hired.includes(name))continue;const role=ROLES[Math.floor(r.next()*ROLES.length)];const ri=(a,b)=>Math.floor(r.next()*(b-a+1))+a;const hp=ri(...role.hp),atk=ri(...role.atk),spd=ri(...role.spd),skill=ri(...role.skill);const cost=Math.floor(role.base+(atk+skill)*10+r.next()*150);out.push({id:`hire_${sysIdx}_${att}`,name,role:role.id,emoji:role.emoji,hp,maxHp:hp,atk,spd,skill,cost,loyalty:50+ri(0,20),alive:true,xp:0,level:1,equippedWeapon:null,species:'Human',bio:`${role.id} seeking work.`,classTier:1,advancedClass:null,ap:4,maxAp:4});}
+  window._tempHirePool=out;return out;
+}
+function generateModuleInventory(){
+  const r=new RNG(hashStr(G.seed)+G.curSys*1123+77);const rw={common:60,uncommon:30,rare:15,legendary:5,mythic:1};
+  const pool=[...MODULES].map(m=>({...m,w:rw[m.rarity]||20*(1+G.jumps/20)}));const sel=[];const wp=[...pool];
+  for(let i=0;i<4&&wp.length;i++){const tot=wp.reduce((s,m)=>s+m.w,0);let rr=r.next()*tot;for(let j=0;j<wp.length;j++){rr-=wp[j].w;if(rr<=0){sel.push(wp[j]);wp.splice(j,1);break;}}}
+  return sel;
+}
+
+function dockStation(){
+  if(!G.galaxy?.systems)return;const sys=G.galaxy.systems[G.curSys];
+  if(!sys?.hasStation){addLog('No station here.');return;}
+  let mods=sys.stationModules;if(!mods||!mods.length){mods=ST_NODES.filter(n=>sys.wealth>=(n.minWealth||1)&&!(n.requiresLowSecurity&&sys.danger>3));if(!mods.length)mods=[ST_NODES[0]];sys.stationModules=mods;}
+  stActiveNode=mods[0].id;
+  document.getElementById('st-name').textContent=`⬡ ${sys.name} ${sys.stationType}`;
+  document.getElementById('st-meta').innerHTML=`<span style="color:${sys.faction.color}">${sys.faction.name}</span><span>Wealth ${sys.wealth}</span>`;
+  document.getElementById('st-credits').textContent=`💰 ${G.flagship.credits.toLocaleString()} CR`;
+  document.getElementById('st-nav').innerHTML=mods.map(n=>`<div class="st-node ${n.id===stActiveNode?'active':''}" onclick="stSelectNode('${n.id}')"><div class="st-node-emoji">${n.emoji}</div><div class="st-node-name">${n.name}</div></div>`).join('');
+  renderNodeContent(stActiveNode);showScreen('station-screen');addLog(`Docked at ${sys.name}.`);
+  if(!G.availableContracts||!G.availableContracts.length)G.availableContracts=genContracts();
+}
+function stSelectNode(id){stActiveNode=id;document.querySelectorAll('.st-node').forEach(n=>{n.classList.toggle('active',n.onclick?.toString().includes(`'${id}'`));});renderNodeContent(id);}
+function refreshContracts(){G.availableContracts=genContracts();renderNodeContent('guild');addLog('Contracts refreshed.');}
+
+function renderNodeContent(nodeId){
+  const el=document.getElementById('st-content');const sys=G.galaxy.systems[G.curSys];
+  if(nodeId==='cantina'){
+    const rumors=stationRumors(G.curSys);const pool=generateHireableCrew(G.curSys);
+    el.innerHTML=`<div class="st-content-hdr">🍺 CANTINA</div>
+    <div class="maint-row"><span>Order drinks (+8 morale)</span><button class="btn btn-sm" onclick="stDrink()">50 CR</button></div>
+    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">CREW ASSIGNMENTS (Combat)</div>
+    ${G.crew.filter(c=>c.alive).map(c=>{const assigned=Object.entries(G.crewStations).find(([k,v])=>v===c.id)?.[0];return`<div class="trade-row" style="font-size:14px"><span>${c.emoji} ${c.name}</span><select onchange="assignCrewToStation('${c.id}',this.value)" style="font-size:13px;padding:3px"><option value="none">Unassigned</option>${Object.entries(CREW_STATIONS).map(([sid,st])=>`<option value="${sid}" ${assigned===sid?'selected':''}>${st.emoji} ${st.name}</option>`).join('')}</select></div>`;}).join('')}
+    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">HIRE CREW</div>
+    ${pool.map(c=>`<div class="trade-row"><span>${c.emoji} ${c.name} [${c.role}] HP:${c.hp} ATK:${c.atk} SKILL:${c.skill}</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits<c.cost?'disabled':''}>HIRE ${c.cost}CR</button></div>`).join('')}
+    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">RUMORS (150 CR)</div>
+    ${rumors.map((r,i)=>`<div class="trade-row"><span style="font-size:14px">${r}</span><button class="btn btn-sm" onclick="buyRumor(${i})">BUY</button></div>`).join('')}
+    <div style="margin-top:10px"><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>`;
+  }else if(nodeId==='market'){
+    const goods=stationGoods(G.curSys);const cw=G.cargo.reduce((a,c)=>a+(GOODS.find(g=>g.id===c.id)?.wt||1)*c.qty,0);
+    el.innerHTML=`<div class="st-content-hdr">MARKET</div><div style="color:var(--metal);font-size:14px;margin-bottom:8px">Cargo: ${cw}/${G.totalCargoCap}</div>`+goods.map(g=>{const bp=stationPrice(g.id,G.curSys,true),sp=stationPrice(g.id,G.curSys,false);const own=G.cargo.find(c=>c.id===g.id)?.qty||0;return`<div class="trade-row"><span>${g.emoji} ${g.name}${own?` <span style="color:var(--gold)">(×${own})</span>`:''}</span><span style="color:var(--safe);font-size:13px">${sp}↑</span><button class="btn btn-sm" onclick="buyGood('${g.id}')">BUY ${bp}CR</button>${own?`<button class="btn btn-sm btn-warn" onclick="sellGood('${g.id}')">SELL</button>`:''}</div>`;}).join('');
+  }else if(nodeId==='maintenance'){
+    const hc=Math.ceil((G.flagship.maxHull-G.flagship.hull)*6*(G.flagship.repairCostMult||1));const fc=Math.ceil((G.flagship.maxFuel-G.flagship.fuel)*4);
+    const su=G.flagship.modules.length,sm=G.flagship.moduleSlots||2;const mods=generateModuleInventory();
+    const instHtml=G.flagship.modules.map(mid=>{const m=MODULES.find(x=>x.id===mid);if(!m)return'';const sp=Math.floor(m.cost*0.6);return`<div class="trade-row"><span>${m.emoji} ${m.name} <span style="color:var(--safe)">[ON]</span></span><button class="btn btn-sm btn-warn" onclick="sellModule('${mid}')">SELL ${sp}CR</button></div>`;}).join('')||'<div style="color:var(--metal);font-size:13px">None installed</div>';
+    const modHtml=mods.map(m=>{const inst=G.flagship.modules.includes(m.id);const rc={common:'var(--metal)',uncommon:'var(--safe)',rare:'var(--cyan)',legendary:'var(--gold)',mythic:'var(--alien)'}[m.rarity]||'var(--metal)';const full=su>=sm&&!inst;return`<div class="mod-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><b style="color:var(--gold)">${m.emoji} ${m.name}</b><span class="tag" style="color:${rc};border-color:${rc}">${m.rarity}</span></div><div style="color:var(--metal);font-size:13px;margin-bottom:8px">${m.desc}</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--gold)">${m.cost.toLocaleString()} CR</span><button class="btn btn-sm" onclick="buyModule('${m.id}')" ${G.flagship.credits<m.cost||inst||full?'disabled':''}>${inst?'OWNED':full?'FULL':'BUY'}</button></div></div>`;}).join('');
+    el.innerHTML=`<div class="st-content-hdr">MAINTENANCE BAY</div>
+    <div class="maint-row"><span>Repair Hull (+${G.flagship.maxHull-G.flagship.hull} HP)</span><button class="btn btn-sm" onclick="repairHull()" ${G.flagship.hull>=G.flagship.maxHull?'disabled':''}>REPAIR ${hc}CR</button></div>
+    <div class="maint-row"><span>Refuel (+${G.flagship.maxFuel-G.flagship.fuel} fuel)</span><button class="btn btn-sm" onclick="refuel()" ${G.flagship.fuel>=G.flagship.maxFuel?'disabled':''}>REFUEL ${fc}CR</button></div>
+    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">INSTALLED MODULES (${su}/${sm})</div>${instHtml}
+    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">AVAILABLE MODULES</div>${modHtml}`;
+  }else if(nodeId==='guild'){
+    const ac=G.activeQuests.filter(qid=>!G.contracts.find(c=>c.id===qid)?.completed).length;
+    const cHtml=G.availableContracts.map(c=>{const isA=G.activeQuests.includes(c.id);const full=ac>=MAX_ACTIVE_QUESTS&&!isA;return`<div class="trade-row"><span>${c.title} → ${c.targetSysName} <span style="color:var(--gold)">${c.reward}CR</span></span><button class="btn btn-sm" onclick="acceptContract('${c.id}')" ${isA||full?'disabled':''}>${isA?'ACTIVE':full?'FULL':'ACCEPT'}</button></div>`;}).join('')||'<div style="color:var(--metal)">No contracts available.</div>';
+    const aHtml=G.activeQuests.map(qid=>{const q=G.contracts.find(c=>c.id===qid);if(!q||q.completed)return'';return`<div style="color:var(--safe);font-size:13px;padding:3px 0">✅ ${q.title} → ${q.targetSysName}</div>`;}).join('')||'<div style="color:var(--metal);font-size:13px">No active quests</div>';
+    el.innerHTML=`<div class="st-content-hdr">📋 GUILD OFFICE</div><div style="font-size:14px;margin-bottom:8px">Quests: <span style="color:var(--gold)">${ac}/${MAX_ACTIVE_QUESTS}</span></div>${aHtml}<div style="margin:10px 0 6px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">AVAILABLE CONTRACTS</div>${cHtml}<div style="margin-top:8px"><button class="btn btn-sm" onclick="refreshContracts()">🔄 Refresh</button></div><div style="margin-top:8px;color:var(--metal);font-size:12px">Travel to target system to complete quests.</div>`;
+  }else if(nodeId==='blackmarket'){
+    const illegal=GOODS.filter(g=>!g.legal);el.innerHTML=`<div class="st-content-hdr">BLACK MARKET</div><div style="color:var(--warn);font-size:13px;margin-bottom:8px">⚠ Illegal goods. Rep risk.</div>`+illegal.map(g=>{const bp=Math.round(stationPrice(g.id,G.curSys,true)*1.4);return`<div class="trade-row"><span>${g.emoji} ${g.name}</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY ${bp}CR</button></div>`;}).join('');
+  }else if(nodeId==='dataexchange'){
+    const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id)).length;const dm=G.cargo.find(c=>c.id==='dark_matter')?.qty||0;
+    el.innerHTML=`<div class="st-content-hdr">📡 DATA EXCHANGE</div><div class="maint-row"><span>Exploration data (${unsold} systems)</span><button class="btn btn-sm" onclick="sellExploData()" ${unsold===0?'disabled':''}>SELL ${unsold*80}CR</button></div><div class="maint-row"><span>Dark Matter: ${dm}</span></div><button class="btn btn-warn" style="margin-top:12px;width:100%" onclick="jumpNewGalaxy()" ${dm<5?'disabled':''}>🌌 JUMP NEW GALAXY (5 Dark Matter)</button>`;
+  }else if(nodeId==='shrine'){
+    el.innerHTML=`<div class="st-content-hdr">🛐 VOID SHRINE</div><div style="font-size:15px;color:var(--metal);margin-bottom:14px;line-height:1.6">The shrine hums with ancient energy. Silence falls over your crew.</div><button class="btn btn-sm btn-safe" onclick="shrineBless()">🙏 RECEIVE BLESSING (Free)</button><div class="maint-row" style="margin-top:10px"><span>Generous offering (+10 morale)</span><button class="btn btn-sm" onclick="donateShrine()">DONATE 200CR</button></div><div style="margin-top:14px;color:var(--metal);font-size:14px" id="shrine-result"></div>`;
+  }else if(nodeId==='gambling'){
+    el.innerHTML=`<div class="st-content-hdr">🎲 GAMBLING DEN</div><div style="color:var(--metal);font-size:14px;margin-bottom:12px">House edge: ~10%. Fortune favours the bold.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="gamble(100)" ${G.flagship.credits<100?'disabled':''}>BET 100CR</button><button class="btn btn-sm" onclick="gamble(500)" ${G.flagship.credits<500?'disabled':''}>BET 500CR</button><button class="btn btn-sm btn-gold" onclick="gamble(1000)" ${G.flagship.credits<1000?'disabled':''}>BET 1000CR</button><button class="btn btn-sm btn-danger" onclick="gamble(3000)" ${G.flagship.credits<3000?'disabled':''}>HIGH STAKES 3000CR</button></div><div id="gamble-result" style="margin-top:12px;font-size:16px;min-height:24px"></div>`;
+  }else if(nodeId==='armory'){
+    el.innerHTML=`<div class="st-content-hdr">🔫 ARMORY</div><div style="color:var(--metal);font-size:13px;margin-bottom:8px">Weapons boost crew ATK in ground combat.</div><div class="trade-row"><span>🔫 Combat Sidearm (+3 ATK)</span><button class="btn btn-sm" onclick="buyWeapon('sidearm',200)" ${G.flagship.credits<200?'disabled':''}>200CR</button></div><div class="trade-row"><span>⚔ Combat Blade (+5 ATK, melee)</span><button class="btn btn-sm" onclick="buyWeapon('blade',350)" ${G.flagship.credits<350?'disabled':''}>350CR</button></div><div class="trade-row"><span>🎯 Sniper Rifle (+8 ATK, ranged)</span><button class="btn btn-sm" onclick="buyWeapon('sniper',600)" ${G.flagship.credits<600?'disabled':''}>600CR</button></div><div class="trade-row"><span>💥 Plasma Caster (+12 ATK, energy)</span><button class="btn btn-sm btn-warn" onclick="buyWeapon('plasma',1200)" ${G.flagship.credits<1200?'disabled':''}>1200CR</button></div><div style="margin-top:12px;font-family:'Press Start 2P';font-size:7px;color:var(--cyan)">EQUIP TO CREW</div>${G.crew.filter(c=>c.alive).map(c=>`<div class="trade-row" style="font-size:13px"><span>${c.emoji} ${c.name} | Weapon: ${c.equippedWeapon||'None'}</span><button class="btn btn-sm" onclick="equipWeaponToCrew('${c.id}')">EQUIP</button></div>`).join('')}`;
+  }else if(nodeId==='embassy'){
+    el.innerHTML=`<div class="st-content-hdr">🏛️ ${sys.faction.name.toUpperCase()} EMBASSY</div><div style="font-size:15px;color:var(--metal);margin-bottom:12px;line-height:1.6">The Embassy can improve your standing with ${sys.faction.name}.</div><div class="maint-row"><span>Donate for goodwill</span><button class="btn btn-sm" onclick="embassyDonate(500)">DONATE 500CR (+10 Rep)</button></div><div class="maint-row"><span>Current Rep: ${G.rep[sys.faction.id]||0}</span></div><div class="maint-row"><span>Accept diplomatic mission</span><button class="btn btn-sm" onclick="embassyMission()">REQUEST MISSION</button></div><div style="margin-top:10px;color:var(--metal);font-size:13px">Improving rep opens new mission types and dialogue options.</div>`;
+  }else{
+    el.innerHTML=`<div class="st-content-hdr">${nodeId.toUpperCase()}</div><div style="color:var(--metal)">Station service available.</div>`;
+  }
+}
+
+// ===== STATION ACTIONS =====
+function hireCrew(id){const c=window._tempHirePool?.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost){addLog('Cannot hire.');return;}G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36).slice(2)});addLog(`Hired ${c.name}.`);updateHUD();updateRP();renderNodeContent('cantina');}
+function talkBartender(){addLog('Bartender: "Word is the Syndicate\'s hiring. Credits up front."');G.flagship.morale=Math.min(100,(G.flagship.morale||75)+2);updateHUD();}
+function buyRumor(i){if(G.flagship.credits<150){addLog('Not enough credits.');return;}G.flagship.credits-=150;addLog('Rumor purchased.');updateHUD();}
+function stDrink(){if(G.flagship.credits<50){addLog('Not enough credits.');return;}G.flagship.credits-=50;G.flagship.morale=Math.min(100,(G.flagship.morale||75)+8);addLog('Drinks purchased. Morale +8.');updateHUD();}
+function repairHull(){const miss=G.flagship.maxHull-G.flagship.hull;if(miss<=0){addLog('Hull already at max.');return;}const cost=Math.ceil(miss*6*(G.flagship.repairCostMult||1));if(G.flagship.credits<cost){addLog(`Need ${cost} CR.`);return;}G.flagship.credits-=cost;G.flagship.hull=G.flagship.maxHull;addLog(`Hull fully repaired. -${cost} CR.`);updateHUD();renderNodeContent('maintenance');}
+function refuel(){const miss=G.flagship.maxFuel-G.flagship.fuel;if(miss<=0){addLog('Fuel already full.');return;}const cost=Math.ceil(miss*4);if(G.flagship.credits<cost){addLog(`Need ${cost} CR.`);return;}G.flagship.credits-=cost;G.flagship.fuel=G.flagship.maxFuel;addLog(`Fuel topped up. -${cost} CR.`);updateHUD();renderNodeContent('maintenance');}
+function buyModule(id){const m=MODULES.find(x=>x.id===id);if(!m){return;}if(G.flagship.credits<m.cost){addLog('Not enough credits.');return;}if(G.flagship.modules.length>=G.flagship.moduleSlots){addLog(`Module bay full! (${G.flagship.modules.length}/${G.flagship.moduleSlots})`);return;}G.flagship.credits-=m.cost;G.flagship.modules.push(m.id);// Apply passive effects
+if(m.effect==='hull'){G.flagship.maxHull=Math.floor(G.flagship.maxHull*1.2);G.flagship.hull=Math.floor(G.flagship.hull*1.2);}
+else if(m.effect==='cargo')G.flagship.cargoMax+=10;
+else if(m.effect==='fuel_saver')G.flagship.fuelUse=Math.max(0.1,G.flagship.fuelUse*0.6);
+addLog(`Installed ${m.name}.`);updateHUD();updateRP();renderNodeContent('maintenance');}
+function sellModule(mid){const idx=G.flagship.modules.indexOf(mid);if(idx<0)return;const m=MODULES.find(x=>x.id===mid);if(!m)return;const sp=Math.floor(m.cost*0.6);G.flagship.modules.splice(idx,1);G.flagship.credits+=sp;// Undo passive effects
+if(m.effect==='cargo')G.flagship.cargoMax=Math.max(4,G.flagship.cargoMax-10);
+addLog(`Sold ${m.name} for ${sp} CR.`);updateHUD();updateRP();renderNodeContent('maintenance');}
+function buyGood(id){const p=stationPrice(id,G.curSys,true);if(G.flagship.credits<p){addLog('Not enough credits.');return;}if(!canAddCargo(id)){addLog('Cargo full!');return;}G.flagship.credits-=p;addCargo(id);updateHUD();updateRP();renderNodeContent('market');}
+function sellGood(id){const p=stationPrice(id,G.curSys,false);const idx=G.cargo.findIndex(c=>c.id===id);if(idx<0)return;G.flagship.credits+=p;G.cargo[idx].qty--;if(G.cargo[idx].qty<=0)G.cargo.splice(idx,1);addLog(`Sold ${GOODS.find(g=>g.id===id)?.name||id} for ${p} CR.`);updateHUD();updateRP();renderNodeContent('market');}
+function buyGoodIllegal(id){const p=Math.round(stationPrice(id,G.curSys,true)*1.4);if(G.flagship.credits<p){addLog('Not enough credits.');return;}if(!canAddCargo(id)){addLog('Cargo full!');return;}G.flagship.credits-=p;addCargo(id);const fac=G.galaxy.systems[G.curSys].faction.id;G.rep[fac]=Math.max(-100,(G.rep[fac]||0)-5);addLog(`Bought illegal goods. ${fac} rep -5.`);updateHUD();updateRP();}
+function acceptContract(id){const c=G.availableContracts?.find(x=>x.id===id);if(!c){addLog('Contract not found.');return;}const ac=G.activeQuests.filter(qid=>!G.contracts.find(x=>x.id===qid)?.completed).length;if(ac>=MAX_ACTIVE_QUESTS){addLog('Quest limit reached.');return;}if(!G.contracts)G.contracts=[];G.contracts.push({...c});G.activeQuests.push(id);addLog(`✅ Accepted: ${c.title}`);renderNodeContent('guild');updateRP();}
+function sellExploData(){const unsold=G.galaxy.systems.filter(s=>s.visited&&!G.soldExplorationData.includes(s.id));const pay=unsold.length*80;G.flagship.credits+=pay;unsold.forEach(s=>G.soldExplorationData.push(s.id));addLog(`Sold exploration data for ${pay} CR.`);updateHUD();renderNodeContent('dataexchange');}
+function jumpNewGalaxy(){const idx=G.cargo.findIndex(c=>c.id==='dark_matter');const dm=idx>=0?G.cargo[idx].qty:0;if(dm<5){addLog(`Need 5 Dark Matter. Have ${dm}.`);return;}G.cargo[idx].qty-=5;if(G.cargo[idx].qty<=0)G.cargo.splice(idx,1);const ns=hashStr(G.seed+'_next')|0;initState(ns.toString(),G.difficulty);launchGame();addLog('Jumped to new galaxy! 5 Dark Matter consumed.');}
+function shrineBless(){const bl=['+5 Max Hull','Shields +20','Fuel +20','Morale +10','Crew healed'];const b=bl[Math.floor(Math.random()*bl.length)];if(b.includes('Hull')){G.flagship.maxHull+=5;G.flagship.hull+=5;}else if(b.includes('Shield')){G.flagship.shields=Math.min(G.flagship.maxShields,G.flagship.shields+20);}else if(b.includes('Fuel')){G.flagship.fuel=Math.min(G.flagship.maxFuel,G.flagship.fuel+20);}else if(b.includes('Morale')){G.flagship.morale=Math.min(100,(G.flagship.morale||75)+10);}else{G.crew.filter(c=>c.alive).forEach(c=>{c.hp=Math.min(c.maxHp,c.hp+10);});}const r=document.getElementById('shrine-result');if(r)r.textContent=`Blessing: ${b}`;addLog(`Shrine blessing: ${b}.`);updateHUD();updateRP();}
+function donateShrine(){if(G.flagship.credits<200){addLog('Need 200 CR.');return;}G.flagship.credits-=200;G.flagship.morale=Math.min(100,(G.flagship.morale||75)+10);addLog('Donated 200 CR to the shrine. Morale +10.');updateHUD();}
+function gamble(amount){if(G.flagship.credits<amount){addLog('Not enough credits.');return;}G.flagship.credits-=amount;const win=G.rng.next()<0.45;const r=document.getElementById('gamble-result');if(win){const winnings=Math.floor(amount*(1.5+G.rng.next()));G.flagship.credits+=winnings;addLog(`You won ${winnings} CR!`);if(r)r.innerHTML=`<span style="color:var(--safe)">WIN! +${winnings} CR</span>`;}else{addLog(`Lost ${amount} CR.`);if(r)r.innerHTML=`<span style="color:var(--hazard)">LOSS. -${amount} CR</span>`;}updateHUD();}
+function embassyDonate(amount){if(G.flagship.credits<amount){addLog('Not enough credits.');return;}G.flagship.credits-=amount;const fac=G.galaxy.systems[G.curSys].faction.id;G.rep[fac]=(G.rep[fac]||0)+10;addLog(`Donated ${amount} CR. ${fac} rep +10.`);updateHUD();updateRP();}
+function embassyMission(){const sys=G.galaxy.systems[G.curSys];addQuest({id:'q_embassy_'+Date.now(),title:`${sys.faction.name} Mission`,objective:`Complete a diplomatic task for ${sys.faction.name}.`,targetSysId:sys.id,targetSysName:sys.name,reward:{cr:700,rep:{[sys.faction.id]:15}},type:'Diplomatic'});renderNodeContent('embassy');}
+function buyWeapon(type,cost){if(G.flagship.credits<cost){addLog('Not enough credits.');return;}G.flagship.credits-=cost;const wepNames={sidearm:'Combat Sidearm',blade:'Combat Blade',sniper:'Sniper Rifle',plasma:'Plasma Caster'};const wepAtk={sidearm:3,blade:5,sniper:8,plasma:12};addCargo('small_arms',1);window._lastBoughtWeapon={type,name:wepNames[type],atkBonus:wepAtk[type]};addLog(`Bought ${wepNames[type]}.`);updateHUD();renderNodeContent('armory');}
+function equipWeaponToCrew(crewId){const w=window._lastBoughtWeapon;if(!w){addLog('No weapon in hand. Buy one first.');return;}const c=G.crew.find(x=>x.id===crewId);if(!c)return;if(c.equippedWeapon){addLog(`${c.name} already has a weapon equipped.`);return;}c.equippedWeapon=w.name;c.atk+=w.atkBonus;window._lastBoughtWeapon=null;addLog(`${c.name} equipped ${w.name}. ATK +${w.atkBonus}.`);updateRP();renderNodeContent('armory');}
+function undock(){addLog('Undocked.');showScreen('galaxy-screen');updateHUD();updateLP();updateRP();}
+function triggerGameOver(){document.getElementById('go-sub').textContent=`Fell in the ${G.galaxy.systems[G.curSys].name} system.`;document.getElementById('go-stats').innerHTML=`Jumps: ${G.jumps}<br>Credits: ${G.flagship.credits.toLocaleString()} CR<br>Crew survived: ${G.crew.filter(c=>c.alive).length}<br>Seed: ${G.seed}`;document.getElementById('gameover-overlay').classList.add('open');}
+
+// ===== BOOT =====
+window.addEventListener('load',()=>{initState(rndSeedStr());document.getElementById('seed-inp').value=G.seed;showScreen('title-screen');initStarfield();});
+</script></body></html>
