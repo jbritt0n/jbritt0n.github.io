@@ -96,14 +96,20 @@
         <label><input type="checkbox" value="triceps" checked> TRICEPS</label>
         <label><input type="checkbox" value="core" checked> CORE</label>
       </div>
+      <div class="panel-title" style="margin-top:16px;">[ PILATES FILTER ]</div>
+        <div class="checkbox-group" style="margin-bottom:8px;">
+          <label><input type="checkbox" id="include-pilates" checked> 🧘 INCLUDE PILATES</label>
+        </div>
+        <button class="btn-secondary" id="pilates-only-btn" style="width:100%;">🧘 PILATES ONLY</button>
     </div>
 
     <!-- Main actions -->
     <button class="btn-primary" id="randomize-btn">⚔️ ROLL ENCOUNTER</button>
     <div class="action-bar">
-      <button class="btn-secondary" id="boss-btn">👾 SUMMON BOSS</button>
+      <button class="btn-secondary" id="boss-btn">👾 BOSS FINISHER</button>
       <button class="btn-secondary" id="builder-mode-btn">🛠️ BUILDER MODE</button>
       <button class="btn-secondary" id="yoga-btn">🧘 YOGA MODE</button>
+      <button class="btn-secondary" id="view-db-btn">📚 VIEW DATABASE</button>
       <button class="btn-secondary" id="export-btn">📀 EXPORT JSON</button>
       <button class="btn-secondary" id="md-export-btn">📝 MD EXPORT</button>
       <button class="btn-secondary" id="import-btn">📂 IMPORT</button> 
@@ -163,6 +169,18 @@
 
     <!-- File Import -->
     <input type="file" id="import-file-input" accept=".json,application/json" style="display:none;">
+
+    <!-- Database Viewer Modal -->
+    <div id="db-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; overflow-y:auto;">
+      <div style="max-width:900px; margin:40px auto; background:#0a1a2a; border:4px solid #00aaff; padding:20px; box-shadow:8px 8px 0 #001020;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h2 style="color:#b0f0ff;">📚 EXERCISE DATABASE</h2>
+          <button class="btn-secondary" id="close-db-modal">CLOSE</button>
+        </div>
+        <div id="db-content" style="max-height:70vh; overflow-y:auto; padding-right:10px;"></div>
+      </div>
+    </div>
+
     
   </div>
 
@@ -570,10 +588,21 @@ const exerciseDB = [
     function getFilteredExercises() {
       const equip = getSelectedEquipment();
       const muscles = getSelectedMuscles();
+      const includePilates = document.getElementById('include-pilates')?.checked ?? true;
+      const pilatesOnly = window.pilatesOnlyMode || false;
+    
       return exerciseDB.filter(ex => {
         if (!ex.equipment.every(r => equip.includes(r))) return false;
         if (ex.progressionLevel > userLevel) return false;
+        
+        // Pilates filtering
+        const isPilates = ex.tags && ex.tags.includes('pilates');
+        if (pilatesOnly && !isPilates) return false;
+        if (!includePilates && isPilates) return false;
+        
+        // Muscle group filter
         if (!ex.muscleGroups.some(m => muscles.includes(m))) return false;
+        
         return true;
       });
     }
@@ -940,6 +969,58 @@ function renderYogaFlow(flow) {
       });
     }
 
+    // ---------- DATABASE VIEWER ----------
+    function renderDatabaseViewer() {
+        const container = document.getElementById('db-content');
+        const unlockedIds = new Set(getFilteredExercises().map(e => e.id));
+        
+        // Group by category (we'll derive from primaryMuscle or custom groups)
+        const groups = {
+          'Squats & Lunges': e => e.motion?.direction === 'push' && e.motion?.plane === 'vertical' && e.primaryMuscle?.match(/quad|glut/),
+          'Hinge & Glutes': e => e.primaryMuscle?.match(/glut|hamstring/) && !e.isCardio && !e.isYoga,
+          'Push-ups & Chest': e => e.primaryMuscle === 'chest' || (e.motion?.direction === 'push' && e.motion?.plane === 'horizontal' && e.primaryMuscle !== 'shoulders'),
+          'Back & Pull': e => e.primaryMuscle?.match(/back|lat|bicep/) || e.motion?.direction === 'pull',
+          'Shoulders': e => e.primaryMuscle === 'shoulders',
+          'Arms': e => e.primaryMuscle === 'biceps' || e.primaryMuscle === 'triceps' || e.primaryMuscle === 'forearms',
+          'Core': e => e.primaryMuscle === 'core' && !e.tags?.includes('pilates'),
+          'Pilates': e => e.tags?.includes('pilates'),
+          'Yoga': e => e.isYoga,
+          'Cardio & Finishers': e => e.isCardio,
+          'Calves & Full Body': e => e.primaryMuscle === 'calves' || e.primaryMuscle === 'full body',
+          'Other': () => true
+        };
+      
+        let html = '';
+        for (const [groupName, filterFn] of Object.entries(groups)) {
+          const exercises = exerciseDB.filter(filterFn);
+          if (exercises.length === 0) continue;
+          
+          html += `<h3 style="color:#00e6ff; margin-top:20px; border-bottom:2px solid #004466;">${groupName}</h3>`;
+          html += `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:8px;">`;
+          exercises.sort((a,b) => a.name.localeCompare(b.name)).forEach(ex => {
+            const unlocked = unlockedIds.has(ex.id);
+            const icon = unlocked ? '✅' : '🔒';
+            const levelBadge = `Lv.${ex.progressionLevel}`;
+            const eqIcons = ex.equipment.map(eq => {
+              if (eq === 'bodyweight') return '🦾';
+              if (eq === 'dumbbells') return '🏋️';
+              if (eq === 'pull-up bar') return '🔩';
+              if (eq === 'resistance bands') return '🎗️';
+              if (eq === 'exercise ball') return '⚽';
+              return '';
+            }).join('');
+            html += `<div style="background:#102838; padding:8px; border:1px solid #006699;">
+              <span style="color:${unlocked ? '#00ffaa' : '#888'};">${icon} ${ex.name}</span><br>
+              <span style="font-size:0.7rem; color:#7aaacc;">${levelBadge} ${eqIcons}</span>
+            </div>`;
+          });
+          html += `</div>`;
+        }
+        
+        container.innerHTML = html || '<p>No exercises found.</p>';
+      }
+
+    
     // ---------- METRICS (with dual-axis chart) ----------
     let weightChart, xpChart;
     function updateMetrics() {
@@ -1064,6 +1145,8 @@ function renderYogaFlow(flow) {
       const importFileInput = document.getElementById('import-file-input');
       const tabBtns = document.querySelectorAll('.tab-btn');
       const yogaBtn = document.getElementById('yoga-btn');
+      const includePilatesChk = document.getElementById('include-pilates');
+      const pilatesOnlyBtn = document.getElementById('pilates-only-btn');
       
       randomizeBtn.addEventListener('click', () => {
         currentWorkout = generateWorkout(false);
@@ -1085,7 +1168,26 @@ function renderYogaFlow(flow) {
         currentWorkout = generateYogaFlow();
         renderYogaFlow(currentWorkout);
       });
+      pilatesOnlyBtn.addEventListener('click', () => {
+        window.pilatesOnlyMode = true;
+        includePilatesChk.checked = true;
+        includePilatesChk.disabled = true;
+        pilatesOnlyBtn.style.background = '#aa66ff';
+        // Optionally re-roll or just notify
+        alert('🧘 Pilates Only Mode Active. Roll a new workout!');
+      });
       
+      // Reset pilates-only mode when toggling include manually
+      includePilatesChk.addEventListener('change', () => {
+        if (!includePilatesChk.checked) {
+          window.pilatesOnlyMode = false;
+          pilatesOnlyBtn.style.background = '';
+          includePilatesChk.disabled = false;
+        } else if (window.pilatesOnlyMode) {
+          // Keep disabled if in pilates-only mode
+          includePilatesChk.disabled = true;
+        }
+      });
       buildCustomBtn.addEventListener('click', () => {
         if (customSelectedExercises.length === 0) { alert('Select at least one exercise!'); return; }
         const circuitA = customSelectedExercises.slice(0,5);
@@ -1108,6 +1210,17 @@ function renderYogaFlow(flow) {
         const json = JSON.stringify(exportData, null, 2);
         navigator.clipboard?.writeText(json).then(() => alert('✅ Full progress exported to clipboard!'));
       });
+      document.getElementById('view-db-btn').addEventListener('click', () => {
+          renderDatabaseViewer();
+          document.getElementById('db-modal').style.display = 'block';
+        });
+        document.getElementById('close-db-modal').addEventListener('click', () => {
+          document.getElementById('db-modal').style.display = 'none';
+        });
+        // Close modal on background click
+        document.getElementById('db-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'db-modal') document.getElementById('db-modal').style.display = 'none';
+        });
       mdExportBtn.addEventListener('click', exportMarkdown);
 
       importBtn.addEventListener('click', () => importFileInput.click());
