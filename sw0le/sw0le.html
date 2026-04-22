@@ -359,12 +359,6 @@
     const XP_PER_LEVEL = 100;
     let workoutHistory = [];
     let weightLogs = [];
-    let quests = [
-      { id:'first', desc:'Complete first workout', target:1, progress:0, reward:50, completed:false },
-      { id:'boss', desc:'Defeat a Boss', target:1, progress:0, reward:100, completed:false },
-      { id:'level5', desc:'Reach Level 5', target:5, progress:1, reward:120, completed:false },
-      { id:'custom', desc:'Complete a custom workout', target:1, progress:0, reward:60, completed:false },
-    ];
     window.pilatesOnlyMode = false;
     let currentWorkout = null;
     let customSelectedExercises = [];
@@ -379,6 +373,40 @@
     let guidedRestTimer = null;
     let guidedMode = false;
 
+    let quests = [
+      // Basic progression quests
+      { id:'first', desc:'Complete first workout', target:1, progress:0, reward:50, completed:false },
+      { id:'boss', desc:'Defeat a Boss', target:1, progress:0, reward:100, completed:false },
+      { id:'level5', desc:'Reach Level 5', target:5, progress:1, reward:120, completed:false },
+      { id:'custom', desc:'Complete a custom workout', target:1, progress:0, reward:60, completed:false },
+      
+      // Yoga & Pilates quests
+      { id:'yoga-session', desc:'Complete a Yoga Flow', target:1, progress:0, reward:40, completed:false },
+      { id:'pilates-master', desc:'Complete 3 Pilates exercises in one workout', target:1, progress:0, reward:70, completed:false },
+      
+      // Variety quests (themes)
+      { id:'pushup-variety', desc:'Perform 5 different Push-up variations', target:5, progress:0, reward:100, completed:false, trackedIds: new Set() },
+      { id:'squat-variety', desc:'Perform 5 different Squat/Lunge variations', target:5, progress:0, reward:100, completed:false, trackedIds: new Set() },
+      { id:'core-gauntlet', desc:'Perform 5 different Core exercises', target:5, progress:0, reward:80, completed:false, trackedIds: new Set() },
+      { id:'pull-up-pro', desc:'Complete any Pull-up Bar exercise', target:1, progress:0, reward:60, completed:false },
+      
+      // Equipment mastery
+      { id:'dumbbell-dynasty', desc:'Use dumbbells in 5 different exercises', target:5, progress:0, reward:90, completed:false, trackedIds: new Set() },
+      { id:'band-brotherhood', desc:'Use resistance bands in 3 exercises', target:3, progress:0, reward:60, completed:false, trackedIds: new Set() },
+      { id:'baller', desc:'Use exercise ball in 3 exercises', target:3, progress:0, reward:60, completed:false, trackedIds: new Set() },
+      
+      // Streak & volume quests
+      { id:'streak-3', desc:'Maintain a 3-day workout streak', target:3, progress:0, reward:50, completed:false },
+      { id:'streak-7', desc:'Maintain a 7-day workout streak', target:7, progress:0, reward:150, completed:false },
+      { id:'volume-king', desc:'Complete 100 total sets', target:100, progress:0, reward:200, completed:false },
+      
+      // Boss hunter
+      { id:'boss-hunter', desc:'Defeat 3 Bosses', target:3, progress:0, reward:200, completed:false },
+      
+      // Unlock all exercises (placeholder - you could track unlocks)
+      { id:'collector', desc:'Unlock 50 different exercises', target:50, progress:0, reward:150, completed:false }
+    ];
+    
 
 // ---------- EXERCISE DATABASE ----------
 const exerciseDB = [
@@ -1291,7 +1319,8 @@ const exerciseDB = [
         exercises: [...workout.circuitA, ...workout.circuitB, ...workout.circuitC].map(e => e.name),
         xp: totalXP,
         setsCompleted: completedSets,
-        details: workout.setsStatus
+        details: workout.setsStatus,
+        isCustom: workout.isCustom || false
       };
       workoutHistory.unshift(entry);
       saveAll();
@@ -1731,10 +1760,16 @@ window.toggleDbGroup = function(groupId) {
 
     // ---------- PERSISTENCE ----------
     function saveAll() {
+      // Convert quests trackedIds Sets to arrays for JSON
+      const questsToSave = quests.map(q => ({
+        ...q,
+        trackedIds: q.trackedIds ? Array.from(q.trackedIds) : undefined
+      }));
+      
       localStorage.setItem('sw0le_progress', JSON.stringify({ level:userLevel, xp:currentXP }));
       localStorage.setItem('sw0le_history', JSON.stringify(workoutHistory));
       localStorage.setItem('sw0le_weightlogs', JSON.stringify(weightLogs));
-      localStorage.setItem('sw0le_quests', JSON.stringify(quests));
+      localStorage.setItem('sw0le_quests', JSON.stringify(questsToSave));
       localStorage.setItem('sw0le_performance', JSON.stringify(exercisePerformance));
       localStorage.setItem('sw0le_streak', JSON.stringify(workoutStreak));
       localStorage.setItem('sw0le_favorites', JSON.stringify([...favoriteExercises]));
@@ -1746,23 +1781,64 @@ window.toggleDbGroup = function(groupId) {
         userLevel = prog.level||1; currentXP = prog.xp||0;
         workoutHistory = JSON.parse(localStorage.getItem('sw0le_history')||'[]');
         weightLogs = JSON.parse(localStorage.getItem('sw0le_weightlogs')||'[]');
-        quests = JSON.parse(localStorage.getItem('sw0le_quests')||'[]');
+        const savedQuests = JSON.parse(localStorage.getItem('sw0le_quests')||'[]');
+        
+        // Merge saved quests with default quests, restoring trackedIds Sets
+        if (savedQuests.length > 0) {
+          savedQuests.forEach(saved => {
+            const defaultQuest = quests.find(q => q.id === saved.id);
+            if (defaultQuest) {
+              defaultQuest.completed = saved.completed || false;
+              defaultQuest.progress = saved.progress || 0;
+              if (saved.trackedIds) {
+                defaultQuest.trackedIds = new Set(saved.trackedIds);
+              }
+            } else {
+              // If new quest was added in code but not in save, keep default
+            }
+          });
+        }
+        
         exercisePerformance = JSON.parse(localStorage.getItem('sw0le_performance')||'{}');
         workoutStreak = JSON.parse(localStorage.getItem('sw0le_streak')||'{"lastDate":null,"count":0}');
         favoriteExercises = new Set(JSON.parse(localStorage.getItem('sw0le_favorites')||'[]'));
         lastWorkoutExerciseIds = JSON.parse(localStorage.getItem('sw0le_lastids')||'[]');
-      } catch(e) {}
+      } catch(e) { console.warn('Load error', e); }
+      
       updateLevelDisplay();
       updateStreakDisplay();
       renderHistory();
       renderQuests();
+      updateQuests(); // Re-evaluate all quests on load
     }
+
+    function showQuestCompleteToast(quest) {
+      const toast = document.createElement('div');
+      toast.textContent = `✅ QUEST COMPLETE: ${quest.desc} (+${quest.reward} XP)`;
+      toast.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#0a1a2a; border:2px solid #00ffaa; color:#00ffaa; padding:12px 24px; box-shadow:4px 4px 0 #001020; z-index:9999; font-weight:bold;';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
     function updateLevelDisplay() {
       document.getElementById('user-level').textContent = userLevel;
       document.getElementById('xp-bar').style.width = Math.min((currentXP/XP_PER_LEVEL)*100,100)+'%';
       document.getElementById('xp-text').textContent = `${currentXP}/${XP_PER_LEVEL}`;
     }
-    function awardXP(amt) { currentXP += amt; while(currentXP>=XP_PER_LEVEL) { currentXP-=XP_PER_LEVEL; userLevel++; } updateLevelDisplay(); saveAll(); }
+    function awardXP(amt) { 
+      currentXP += amt; 
+      let leveledUp = false;
+      while(currentXP>=XP_PER_LEVEL) { 
+        currentXP-=XP_PER_LEVEL; 
+        userLevel++; 
+        leveledUp = true;
+      } 
+      updateLevelDisplay(); 
+      if (leveledUp) {
+        updateQuests(); // re-check quests like level5
+      }
+      saveAll(); 
+    }
     function renderHistory() {
       const div = document.getElementById('history-log');
       div.innerHTML = workoutHistory.slice(0,10).map(e => `<div class="history-entry"><span>${e.date}</span><span>+${e.xp} XP</span></div>`).join('') || '<div class="empty-message">No history</div>';
@@ -1771,13 +1847,178 @@ window.toggleDbGroup = function(groupId) {
       const list = document.getElementById('quest-list');
       list.innerHTML = quests.map(q => `<li class="quest-item"><span>${q.completed?'✅':'⬜'} ${q.desc} (${q.progress}/${q.target})</span><span>+${q.reward} XP</span></li>`).join('');
     }
-    function updateQuests(workout) {
-      const firstQuest = quests.find(q=>q.id==='first');
-      if (firstQuest && !firstQuest.completed) { firstQuest.progress=1; firstQuest.completed=true; awardXP(firstQuest.reward); }
-      if (workout.isBoss) { const bossQ = quests.find(q=>q.id==='boss'); if(bossQ&&!bossQ.completed){ bossQ.progress=1; bossQ.completed=true; awardXP(bossQ.reward); } }
+          function updateQuests(workout) {
+      // Helper function (properly scoped inside updateQuests)
+      function completeQuest(q) {
+        if (!q.completed) {
+          q.completed = true;
+          awardXP(q.reward);
+        }
+      }
+
+      // Helper to track unique exercise IDs for variety quests
+      function trackVariety(quest, exercise) {
+        if (!quest.trackedIds) quest.trackedIds = new Set();
+        if (!quest.completed) {
+          quest.trackedIds.add(exercise.id);
+          quest.progress = quest.trackedIds.size;
+          if (quest.progress >= quest.target) {
+            completeQuest(quest);
+          }
+        }
+      }
+
+      // Quest: first workout
+      const firstQuest = quests.find(q => q.id === 'first');
+      if (firstQuest && !firstQuest.completed && workoutHistory.length >= 1) {
+        firstQuest.progress = 1;
+        completeQuest(firstQuest);
+      }
+
+      // Quest: boss defeated (current workout)
+      const bossQuest = quests.find(q => q.id === 'boss');
+      if (bossQuest && !bossQuest.completed && workout && workout.isBoss) {
+        bossQuest.progress = 1;
+        completeQuest(bossQuest);
+      }
+
+      // Quest: boss hunter (count total bosses in history)
+      const bossHunter = quests.find(q => q.id === 'boss-hunter');
+      if (bossHunter && !bossHunter.completed) {
+        const bossCount = workoutHistory.filter(e => e.isBoss).length;
+        bossHunter.progress = bossCount;
+        if (bossCount >= bossHunter.target) {
+          completeQuest(bossHunter);
+        }
+      }
+
+      // Quest: reach level 5
+      const levelQuest = quests.find(q => q.id === 'level5');
+      if (levelQuest && !levelQuest.completed) {
+        levelQuest.progress = userLevel;
+        if (userLevel >= 5) {
+          completeQuest(levelQuest);
+        }
+      }
+
+      // Quest: custom workout
+      const customQuest = quests.find(q => q.id === 'custom');
+      if (customQuest && !customQuest.completed) {
+        const hasCustom = workoutHistory.some(entry => entry.isCustom === true);
+        customQuest.progress = hasCustom ? 1 : 0;
+        if (hasCustom) {
+          completeQuest(customQuest);
+        }
+      }
+
+      // Quest: yoga session
+      const yogaQuest = quests.find(q => q.id === 'yoga-session');
+      if (yogaQuest && !yogaQuest.completed) {
+        const hasYoga = workoutHistory.some(entry => entry.type === 'yoga');
+        yogaQuest.progress = hasYoga ? 1 : 0;
+        if (hasYoga) {
+          completeQuest(yogaQuest);
+        }
+      }
+
+      // Quest: Pilates master (3 Pilates exercises in a single workout)
+      const pilatesQuest = quests.find(q => q.id === 'pilates-master');
+      if (pilatesQuest && !pilatesQuest.completed && workout) {
+        const allEx = [...(workout.circuitA||[]), ...(workout.circuitB||[]), ...(workout.circuitC||[])];
+        const pilatesCount = allEx.filter(ex => ex.tags && ex.tags.includes('pilates')).length;
+        if (pilatesCount >= 3) {
+          pilatesQuest.progress = 1;
+          completeQuest(pilatesQuest);
+        }
+      }
+
+      // Process variety quests if a workout was just completed
+      if (workout) {
+        const allEx = [...(workout.circuitA||[]), ...(workout.circuitB||[]), ...(workout.circuitC||[])];
+        
+        // Push-up variety
+        const pushupQuest = quests.find(q => q.id === 'pushup-variety');
+        allEx.filter(ex => ex.baseName === 'Pushup').forEach(ex => trackVariety(pushupQuest, ex));
+        
+        // Squat/Lunge variety
+        const squatQuest = quests.find(q => q.id === 'squat-variety');
+        allEx.filter(ex => ex.baseName && ['Squat','Lunge','Pistol Squat','Split Squat'].includes(ex.baseName))
+              .forEach(ex => trackVariety(squatQuest, ex));
+        
+        // Core variety
+        const coreQuest = quests.find(q => q.id === 'core-gauntlet');
+        allEx.filter(ex => ex.primaryMuscle === 'core' || (ex.muscleGroups && ex.muscleGroups.includes('core')))
+              .forEach(ex => trackVariety(coreQuest, ex));
+        
+        // Dumbbell variety
+        const dbQuest = quests.find(q => q.id === 'dumbbell-dynasty');
+        allEx.filter(ex => ex.equipment && ex.equipment.includes('dumbbells'))
+              .forEach(ex => trackVariety(dbQuest, ex));
+        
+        // Band variety
+        const bandQuest = quests.find(q => q.id === 'band-brotherhood');
+        allEx.filter(ex => ex.equipment && ex.equipment.includes('resistance bands'))
+              .forEach(ex => trackVariety(bandQuest, ex));
+        
+        // Ball variety
+        const ballQuest = quests.find(q => q.id === 'baller');
+        allEx.filter(ex => ex.equipment && ex.equipment.includes('exercise ball'))
+              .forEach(ex => trackVariety(ballQuest, ex));
+      }
+
+      // Quest: pull-up pro
+      const pullupQuest = quests.find(q => q.id === 'pull-up-pro');
+      if (pullupQuest && !pullupQuest.completed) {
+        const hasPullup = weightLogs.some(log => {
+          const ex = exerciseDB.find(e => e.id === log.exerciseId);
+          return ex && ex.equipment && ex.equipment.includes('pull-up bar');
+        });
+        pullupQuest.progress = hasPullup ? 1 : 0;
+        if (hasPullup) {
+          completeQuest(pullupQuest);
+        }
+      }
+
+      // Quest: streak-3 and streak-7
+      const streak3 = quests.find(q => q.id === 'streak-3');
+      if (streak3 && !streak3.completed) {
+        streak3.progress = workoutStreak.count;
+        if (workoutStreak.count >= 3) {
+          completeQuest(streak3);
+        }
+      }
+      const streak7 = quests.find(q => q.id === 'streak-7');
+      if (streak7 && !streak7.completed) {
+        streak7.progress = workoutStreak.count;
+        if (workoutStreak.count >= 7) {
+          completeQuest(streak7);
+        }
+      }
+
+      // Quest: volume-king (total completed sets)
+      const volumeQuest = quests.find(q => q.id === 'volume-king');
+      if (volumeQuest && !volumeQuest.completed) {
+        const totalSets = workoutHistory.reduce((sum, entry) => sum + (entry.setsCompleted || 0), 0);
+        volumeQuest.progress = totalSets;
+        if (totalSets >= volumeQuest.target) {
+          completeQuest(volumeQuest);
+        }
+      }
+
+      // Quest: collector (number of unique exercises ever logged)
+      const collectorQuest = quests.find(q => q.id === 'collector');
+      if (collectorQuest && !collectorQuest.completed) {
+        const uniqueExIds = new Set(weightLogs.map(l => l.exerciseId));
+        collectorQuest.progress = uniqueExIds.size;
+        if (uniqueExIds.size >= collectorQuest.target) {
+          completeQuest(collectorQuest);
+        }
+      }
+
+      // Save quest state
+      saveAll();
       renderQuests();
     }
-
     // ---------- EVENT LISTENERS (CORRECTED) ----------
     document.addEventListener('DOMContentLoaded', () => {
       loadAll();
@@ -1850,11 +2091,24 @@ window.toggleDbGroup = function(groupId) {
         const circuitA = customSelectedExercises.slice(0,5);
         const circuitB = customSelectedExercises.slice(5,10);
         const circuitC = customSelectedExercises.slice(10,12);
-        currentWorkout = { circuitA, circuitB, circuitC, isBoss: false, setsStatus: {} };
-        [...circuitA, ...circuitB, ...circuitC].forEach(ex => { currentWorkout.setsStatus[ex.id] = { completedSets:0, weight:ex.equipment.includes('dumbbells')?'25':'', reps:ex.defaultReps }; });
+        currentWorkout = { 
+          circuitA, circuitB, circuitC, 
+          isBoss: false, 
+          isCustom: true,
+          setsStatus: {},
+          setsPerCircuit: { A: 3, B: 2, C: 1 }
+        };
+        [...circuitA, ...circuitB, ...circuitC].forEach(ex => { 
+          currentWorkout.setsStatus[ex.id] = { 
+            completedSets:0, 
+            weight:ex.equipment.includes('dumbbells')?'25':'', 
+            reps:ex.defaultReps 
+          }; 
+        });
         renderWorkout(currentWorkout);
         document.getElementById('builder-panel').style.display = 'none';
       });
+      
       viewDbBtn.addEventListener('click', () => {
       dbGroupsExpanded = true;
       renderDatabaseViewer();
