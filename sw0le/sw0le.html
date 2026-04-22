@@ -180,16 +180,37 @@
         <div class="focus-intensity-bar">
           <span style="font-size:0.7rem;color:#7aaacc;text-transform:uppercase;letter-spacing:1px;">Focus:</span>
           <div class="seg-ctrl" id="focus-ctrl">
-            <input type="radio" name="focus" id="f-balanced" value="balanced" checked><label for="f-balanced">Balanced</label>
-            <input type="radio" name="focus" id="f-strength" value="strength"><label for="f-strength">Strength</label>
-            <input type="radio" name="focus" id="f-athletic" value="athletic"><label for="f-athletic">Athletic</label>
-            <input type="radio" name="focus" id="f-pump" value="pump"><label for="f-pump">Pump</label>
+            <span class="tooltip">
+              <input type="radio" name="focus" id="f-balanced" value="balanced" checked><label for="f-balanced">Balanced</label>
+              <span class="tooltiptext">Equal chance for all exercises</span>
+            </span>
+            <span class="tooltip">
+              <input type="radio" name="focus" id="f-strength" value="strength"><label for="f-strength">Strength</label>
+              <span class="tooltiptext">Prefers squat, push, pull compounds</span>
+            </span>
+            <span class="tooltip">
+              <input type="radio" name="focus" id="f-athletic" value="athletic"><label for="f-athletic">Athletic</label>
+              <span class="tooltiptext">Prefers explosive/plyometric moves</span>
+            </span>
+            <span class="tooltip">
+              <input type="radio" name="focus" id="f-pump" value="pump"><label for="f-pump">Pump</label>
+              <span class="tooltiptext">Prefers moderate exercises for high reps</span>
+            </span>
           </div>
           <span style="font-size:0.7rem;color:#7aaacc;text-transform:uppercase;letter-spacing:1px;margin-left:8px;">Intensity:</span>
           <div class="seg-ctrl" id="intensity-ctrl">
-            <input type="radio" name="intensity" id="i-low" value="low"><label for="i-low">Low</label>
-            <input type="radio" name="intensity" id="i-med" value="medium" checked><label for="i-med">Med</label>
-            <input type="radio" name="intensity" id="i-high" value="high"><label for="i-high">High</label>
+            <span class="tooltip">
+              <input type="radio" name="intensity" id="i-low" value="low"><label for="i-low">Low</label>
+              <span class="tooltiptext">-25% reps, prefers easier variations</span>
+            </span>
+            <span class="tooltip">
+              <input type="radio" name="intensity" id="i-med" value="medium" checked><label for="i-med">Med</label>
+              <span class="tooltiptext">Standard reps, no bias</span>
+            </span>
+            <span class="tooltip">
+              <input type="radio" name="intensity" id="i-high" value="high"><label for="i-high">High</label>
+              <span class="tooltiptext">+30% reps, prefers harder variations</span>
+            </span>
           </div>
         </div>
         <div style="font-size:0.7rem;color:#7aaacc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Quick Filters:</div>
