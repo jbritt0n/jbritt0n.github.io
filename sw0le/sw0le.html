@@ -898,152 +898,150 @@ const exerciseDB = [
         renderQuests();
       }
 
-// ---------- EVENT LISTENERS ----------
-document.addEventListener('DOMContentLoaded', () => {
-  loadAll();
-
-  // Buttons
-  const randomizeBtn = document.getElementById('randomize-btn');
-  const bossBtn = document.getElementById('boss-btn');
-  const builderModeBtn = document.getElementById('builder-mode-btn');
-  const closeBuilderBtn = document.getElementById('close-builder');
-  const buildCustomBtn = document.getElementById('build-custom-workout');
-  const exportBtn = document.getElementById('export-btn');
-  const mdExportBtn = document.getElementById('md-export-btn');
-  const importBtn = document.getElementById('import-btn');
-  const resetBtn = document.getElementById('reset-progress-btn');
-  const importFileInput = document.getElementById('import-file-input');
-  const tabBtns = document.querySelectorAll('.tab-btn');
-
-  // Randomize
-  randomizeBtn.addEventListener('click', () => {
-    currentWorkout = generateWorkout(false);
-    renderWorkout(currentWorkout);
-  });
-
-  // Boss
-  bossBtn.addEventListener('click', () => {
-    currentWorkout = generateWorkout(true);
-    renderWorkout(currentWorkout);
-  });
-
-  // Builder mode
-  builderModeBtn.addEventListener('click', () => {
-    document.getElementById('builder-panel').style.display = 'block';
-    customSelectedExercises = [];
-    renderBuilder();
-  });
-
-  closeBuilderBtn.addEventListener('click', () => {
-    document.getElementById('builder-panel').style.display = 'none';
-  });
-
-  buildCustomBtn.addEventListener('click', () => {
-    if (customSelectedExercises.length === 0) {
-      alert('Select at least one exercise!');
-      return;
-    }
-    const circuitA = customSelectedExercises.slice(0, 5);
-    const circuitB = customSelectedExercises.slice(5, 10);
-    const circuitC = customSelectedExercises.slice(10, 12);
-    currentWorkout = { circuitA, circuitB, circuitC, isBoss: false, setsStatus: {} };
-    [...circuitA, ...circuitB, ...circuitC].forEach(ex => {
-      currentWorkout.setsStatus[ex.id] = {
-        completedSets: 0,
-        weight: ex.equipment.includes('dumbbells') ? '25' : '',
-        reps: ex.defaultReps
-      };
-    });
-    renderWorkout(currentWorkout);
-    document.getElementById('builder-panel').style.display = 'none';
-  });
-
-  // Tabs
-  tabBtns.forEach(btn => btn.addEventListener('click', () => {
-    tabBtns.forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab + '-panel').classList.add('active');
-    if (btn.dataset.tab === 'metrics') updateMetrics();
-  }));
-
-  // Export JSON
-  exportBtn.addEventListener('click', () => {
-    const exportData = {
-      level: userLevel,
-      xp: currentXP,
-      history: workoutHistory,
-      weightLogs: weightLogs,
-      quests: quests
-    };
-    const json = JSON.stringify(exportData, null, 2);
-    navigator.clipboard?.writeText(json).then(() => alert('✅ Full progress exported to clipboard!'));
-  });
-
-  // Export Markdown
-  mdExportBtn.addEventListener('click', exportMarkdown);
-
-  // ---------- IMPORT FUNCTIONALITY (CORRECT PLACEMENT) ----------
-  importBtn.addEventListener('click', () => {
-    importFileInput.click();
-  });
-
-  importFileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const imported = JSON.parse(e.target.result);
-
-        if (imported.level === undefined || imported.xp === undefined || !imported.history || !imported.weightLogs) {
-          alert('❌ Invalid SW0LE export file.');
+    // ---------- EVENT LISTENERS ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAll();
+    
+      // Element references
+      const randomizeBtn = document.getElementById('randomize-btn');
+      const bossBtn = document.getElementById('boss-btn');
+      const builderModeBtn = document.getElementById('builder-mode-btn');
+      const closeBuilderBtn = document.getElementById('close-builder');
+      const buildCustomBtn = document.getElementById('build-custom-workout');
+      const exportBtn = document.getElementById('export-btn');
+      const mdExportBtn = document.getElementById('md-export-btn');
+      const importBtn = document.getElementById('import-btn');
+      const resetBtn = document.getElementById('reset-progress-btn');
+      const importFileInput = document.getElementById('import-file-input');
+      const tabBtns = document.querySelectorAll('.tab-btn');
+    
+      // Randomize workout
+      randomizeBtn.addEventListener('click', () => {
+        currentWorkout = generateWorkout(false);
+        renderWorkout(currentWorkout);
+      });
+    
+      // Boss battle
+      bossBtn.addEventListener('click', () => {
+        currentWorkout = generateWorkout(true);
+        renderWorkout(currentWorkout);
+      });
+    
+      // Builder mode open
+      builderModeBtn.addEventListener('click', () => {
+        document.getElementById('builder-panel').style.display = 'block';
+        customSelectedExercises = [];
+        renderBuilder();
+      });
+    
+      // Builder mode close
+      closeBuilderBtn.addEventListener('click', () => {
+        document.getElementById('builder-panel').style.display = 'none';
+      });
+    
+      // Build custom workout
+      buildCustomBtn.addEventListener('click', () => {
+        if (customSelectedExercises.length === 0) {
+          alert('Select at least one exercise!');
           return;
         }
-
-        if (confirm('⚠️ Import will REPLACE all current progress. Continue?')) {
-          userLevel = imported.level;
-          currentXP = imported.xp;
-          workoutHistory = imported.history || [];
-          weightLogs = imported.weightLogs || [];
-          quests = imported.quests || quests;
-
-          saveAll();
-          updateLevelDisplay();
-          renderHistory();
-          renderQuests();
-          if (document.getElementById('metrics-panel').classList.contains('active')) {
-            updateMetrics();
-          }
-          alert('✅ Progress imported successfully!');
-        }
-      } catch (err) {
-        alert('❌ Error parsing file: ' + err.message);
-      }
-      importFileInput.value = ''; // allow re-import
-    };
-    reader.readAsText(file);
-  });
-
-  // Reset progress
-  resetBtn.addEventListener('click', () => {
-    if (confirm('Reset all progress?')) {
-      userLevel = 1;
-      currentXP = 0;
-      workoutHistory = [];
-      weightLogs = [];
-      quests.forEach(q => {
-        q.completed = false;
-        q.progress = (q.id === 'level5' ? 1 : 0);
+        const circuitA = customSelectedExercises.slice(0, 5);
+        const circuitB = customSelectedExercises.slice(5, 10);
+        const circuitC = customSelectedExercises.slice(10, 12);
+        currentWorkout = { circuitA, circuitB, circuitC, isBoss: false, setsStatus: {} };
+        [...circuitA, ...circuitB, ...circuitC].forEach(ex => {
+          currentWorkout.setsStatus[ex.id] = {
+            completedSets: 0,
+            weight: ex.equipment.includes('dumbbells') ? '25' : '',
+            reps: ex.defaultReps
+          };
+        });
+        renderWorkout(currentWorkout);
+        document.getElementById('builder-panel').style.display = 'none';
       });
-      saveAll();
-      location.reload();
-    }
-  });
-
-  // Initial empty state (optional)
-});
+    
+      // Tab switching
+      tabBtns.forEach(btn => btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab + '-panel').classList.add('active');
+        if (btn.dataset.tab === 'metrics') updateMetrics();
+      }));
+    
+      // Export JSON (full progress)
+      exportBtn.addEventListener('click', () => {
+        const exportData = {
+          level: userLevel,
+          xp: currentXP,
+          history: workoutHistory,
+          weightLogs: weightLogs,
+          quests: quests
+        };
+        const json = JSON.stringify(exportData, null, 2);
+        navigator.clipboard?.writeText(json).then(() => alert('✅ Full progress exported to clipboard!'));
+      });
+    
+      // Export Markdown (Obsidian journal)
+      mdExportBtn.addEventListener('click', exportMarkdown);
+    
+      // Import progress
+      importBtn.addEventListener('click', () => {
+        importFileInput.click();
+      });
+    
+      importFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.level === undefined || imported.xp === undefined || !imported.history || !imported.weightLogs) {
+              alert('❌ Invalid SW0LE export file.');
+              return;
+            }
+            if (confirm('⚠️ Import will REPLACE all current progress. Continue?')) {
+              userLevel = imported.level;
+              currentXP = imported.xp;
+              workoutHistory = imported.history || [];
+              weightLogs = imported.weightLogs || [];
+              quests = imported.quests || quests;
+    
+              saveAll();
+              updateLevelDisplay();
+              renderHistory();
+              renderQuests();
+              if (document.getElementById('metrics-panel').classList.contains('active')) {
+                updateMetrics();
+              }
+              alert('✅ Progress imported successfully!');
+            }
+          } catch (err) {
+            alert('❌ Error parsing file: ' + err.message);
+          }
+          importFileInput.value = ''; // Allow re-importing the same file
+        };
+        reader.readAsText(file);
+      });
+    
+      // Reset all progress
+      resetBtn.addEventListener('click', () => {
+        if (confirm('Reset all progress? This cannot be undone.')) {
+          userLevel = 1;
+          currentXP = 0;
+          workoutHistory = [];
+          weightLogs = [];
+          quests.forEach(q => {
+            q.completed = false;
+            q.progress = (q.id === 'level5' ? 1 : 0);
+          });
+          saveAll();
+          location.reload();
+        }
+      });
+    });
   </script>
 </body>
 </html>
