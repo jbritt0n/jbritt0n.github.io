@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>VOID FRONTIER · FLEET EDITION v2</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -13,22 +13,36 @@
   --safe:#2ecc71;--alien:#8e44ad;--metal:#7f8c8d;
   --gold:#f1c40f;--cyan:#00e5ff;
   --border:rgba(0,229,255,0.22);--panel:#0d1117;
+  --font-pixel: 'Courier New', 'Lucida Console', 'Lucida Sans Typewriter', monospace;
+  --font-terminal: 'Courier New', 'Lucida Console', 'Lucida Sans Typewriter', monospace;
 }
-body{background:var(--void);color:var(--star);font-family:'VT323',monospace;font-size:18px;overflow:hidden;height:100vh;width:100vw;user-select:none}
+
+body{background:var(--void);color:var(--star);font-family:'Courier New','Lucida Console',monospace;font-size:16px;overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-font-smoothing:none;font-smooth:never;text-rendering:optimizeSpeed}
+/* === RETRO FONT SYSTEM (self-contained, no external deps) === */
+/* Using system monospace fonts with retro styling */
+.retro-heading {
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+}
+
 #game{width:100vw;height:100vh;position:relative}
 .screen{position:absolute;inset:0;display:none;flex-direction:column}
 .screen.active{display:flex}
 #title-screen{align-items:center;justify-content:center}
 #sf-canvas{position:absolute;inset:0;z-index:0}
 .title-wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px}
-.logo{font-family:'Press Start 2P',monospace;font-size:clamp(28px,5vw,52px);color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4);letter-spacing:6px;animation:logoPulse 3s ease-in-out infinite}
-.logo-sub{font-family:'VT323',monospace;font-size:20px;color:var(--metal);letter-spacing:10px;margin-top:8px;text-align:center}
+.logo{font-family:'Courier New',monospace;font-weight:900;font-size:clamp(22px,4vw,42px);letter-spacing:4px;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4);letter-spacing:6px;animation:logoPulse 3s ease-in-out infinite}
+.logo-sub{font-family:'Courier New','Lucida Console',monospace;font-size:20px;color:var(--metal);letter-spacing:10px;margin-top:8px;text-align:center}
 @keyframes logoPulse{0%,100%{text-shadow:0 0 20px rgba(0,229,255,.9),0 0 60px rgba(0,229,255,.4)}50%{text-shadow:0 0 40px rgba(0,229,255,1),0 0 100px rgba(0,229,255,.6)}}
 .seed-box{background:var(--panel);border:1px solid var(--border);padding:28px 32px;display:flex;flex-direction:column;gap:14px;min-width:380px}
-.seed-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);letter-spacing:2px}
+.seed-label{font-family:'Courier New','Lucida Console',monospace;font-size:9px;color:var(--cyan);letter-spacing:2px}
 .seed-row{display:flex;gap:10px}
-input,select{background:var(--void);border:1px solid var(--cyan);color:var(--star);font-family:'VT323',monospace;font-size:18px;padding:8px 12px;outline:none;width:100%}
-.btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:9px;padding:10px 15px;cursor:pointer;transition:all .15s;letter-spacing:1px;white-space:nowrap}
+input,select{background:var(--void);border:1px solid var(--cyan);color:var(--star);font-family:'Courier New','Lucida Console',monospace;font-size:18px;padding:8px 12px;outline:none;width:100%}
+.btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:'Courier New','Lucida Console',monospace;font-size:9px;padding:10px 15px;cursor:pointer;transition:all .15s;letter-spacing:1px;white-space:nowrap}
 .btn:hover{background:var(--cyan);color:var(--void)}
 .btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 .btn-gold{border-color:var(--gold);color:var(--gold)}.btn-gold:hover{background:var(--gold);color:var(--void)}
@@ -40,7 +54,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .btn-full{width:100%}
 #cc-screen{padding:16px 24px;gap:12px;overflow:hidden}
 .cc-header{text-align:center;flex-shrink:0}
-.cc-step-label{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--cyan)}
+.cc-step-label{font-family:'Courier New','Lucida Console',monospace;font-size:12px;color:var(--cyan)}
 .cc-step-desc{font-size:16px;color:var(--metal)}
 .cc-progress{display:flex;gap:6px;justify-content:center;margin-top:8px}
 .cc-pip{width:40px;height:4px;background:rgba(255,255,255,.1)}.cc-pip.done{background:var(--cyan)}.cc-pip.active{background:var(--gold)}
@@ -49,27 +63,27 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .opt-card{background:var(--panel);border:1px solid var(--border);padding:12px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;position:relative}
 .opt-card:hover{border-color:var(--cyan);background:rgba(0,229,255,.04)}
 .opt-card.selected{border-color:var(--gold);background:rgba(241,196,15,.07)}
-.opt-card .oc-emoji{font-size:22px}.opt-card .oc-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star)}
+.opt-card .oc-emoji{font-size:22px}.opt-card .oc-name{font-family:'Courier New','Lucida Console',monospace;font-size:8px;color:var(--star)}
 .opt-card .oc-desc{font-size:13px;color:var(--metal)}.opt-card .oc-bonus{font-size:13px;color:var(--safe)}
 .opt-card .oc-check{position:absolute;top:6px;right:8px;color:var(--gold);font-size:16px;display:none}
 .opt-card.selected .oc-check{display:block}
 .cc-nav{display:flex;justify-content:center;gap:14px;flex-shrink:0;margin-top:8px}
 .name-step{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:28px}
 .name-group{display:flex;flex-direction:column;gap:8px;width:340px}
-.name-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--metal)}
+.name-label{font-family:'Courier New','Lucida Console',monospace;font-size:8px;color:var(--metal)}
 .dossier{background:var(--panel);border:1px solid var(--border);padding:20px;width:340px}
-.dossier-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);margin-bottom:10px}
+.dossier-title{font-family:'Courier New','Lucida Console',monospace;font-size:8px;color:var(--cyan);margin-bottom:10px}
 .dossier-row{font-size:16px;color:var(--metal);line-height:2}.dossier-row span{color:var(--star)}
 .hud{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:14px;flex-shrink:0;height:44px;overflow:hidden}
-.hud-ship{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);white-space:nowrap}
+.hud-ship{font-family:'Courier New','Lucida Console',monospace;font-size:9px;color:var(--cyan);white-space:nowrap}
 .stat{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .stat-lbl{font-size:12px;color:var(--metal);white-space:nowrap}
 .bar-track{width:60px;height:7px;background:rgba(255,255,255,.08);flex-shrink:0}.bar-fill{height:100%}
 .stat-val{font-size:14px;color:var(--star);white-space:nowrap;min-width:22px}
-.hud-creds{margin-left:auto;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);white-space:nowrap}
+.hud-creds{margin-left:auto;font-family:'Courier New','Lucida Console',monospace;font-size:9px;color:var(--gold);white-space:nowrap}
 .main-area{flex:1;display:flex;overflow:hidden}
 .lp{width:210px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.panel-hdr{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);display:flex;justify-content:space-between;align-items:center}
+.panel-hdr{font-family:'Courier New','Lucida Console',monospace;font-size:8px;color:var(--cyan);padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);display:flex;justify-content:space-between;align-items:center}
 .lp-body{padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .lp-actions{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
 .rp{width:186px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
@@ -85,13 +99,13 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 #ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
 #ev-overlay.open{display:flex}
 .ev-card{background:var(--panel);border:1px solid var(--cyan);padding:24px 28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto}
-.ev-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold);margin-bottom:10px}
+.ev-title{font-family:'Courier New','Lucida Console',monospace;font-size:11px;color:var(--gold);margin-bottom:10px}
 .ev-body{font-size:17px;color:var(--star);line-height:1.6;margin:8px 0 12px}
 .ev-choices{display:flex;flex-direction:column;gap:8px}
-.choice-btn{background:transparent;border:1px solid var(--border);color:var(--star);font-family:'VT323',monospace;font-size:17px;padding:10px 14px;cursor:pointer;text-align:left;transition:all .1s}
+.choice-btn{background:transparent;border:1px solid var(--border);color:var(--star);font-family:'Courier New','Lucida Console',monospace;font-size:17px;padding:10px 14px;cursor:pointer;text-align:left;transition:all .1s}
 .choice-btn:hover{border-color:var(--cyan);background:rgba(0,229,255,.08)}
 .log-bar{background:var(--panel);border-top:1px solid var(--border);padding:6px 14px;height:72px;overflow:hidden;flex-shrink:0}
-.log-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--cyan);margin-bottom:4px}
+.log-hdr{font-family:'Courier New','Lucida Console',monospace;font-size:7px;color:var(--cyan);margin-bottom:4px}
 .log-line{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
 .rep-row{display:flex;justify-content:space-between;padding:4px 10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)}
 .crew-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -100,29 +114,29 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .cap-info{padding:8px;font-size:13px;color:var(--metal)}
 .tag{display:inline-block;padding:2px 5px;font-size:11px;border:1px solid;margin:2px 2px 0 0}
 .st-header{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:18px;height:48px;flex-shrink:0}
-.st-name{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan)}
+.st-name{font-family:'Courier New','Lucida Console',monospace;font-size:10px;color:var(--cyan)}
 .st-meta{font-size:15px;color:var(--metal);display:flex;gap:14px;flex:1}
 .st-body{flex:1;display:flex;overflow:hidden}
 .st-nav{width:190px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
 .st-node{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;display:flex;align-items:center;gap:8px}
 .st-node:hover{background:rgba(0,229,255,.06)}.st-node.active{background:rgba(0,229,255,.09);border-left:3px solid var(--cyan)}
-.st-node-emoji{font-size:20px}.st-node-name{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--star)}
+.st-node-emoji{font-size:20px}.st-node-name{font-family:'Courier New','Lucida Console',monospace;font-size:8px;color:var(--star)}
 .st-content{flex:1;padding:16px;overflow-y:auto}
-.st-content-hdr{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--cyan);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.st-content-hdr{font-family:'Courier New','Lucida Console',monospace;font-size:10px;color:var(--cyan);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px}
 .st-footer{background:var(--panel);border-top:1px solid var(--border);padding:8px 18px;display:flex;justify-content:space-between;align-items:center;height:44px;flex-shrink:0}
 .trade-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
 .mod-card{background:var(--panel);border:1px solid var(--border);padding:12px;margin-bottom:8px}
 .maint-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:15px}
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:7px;margin-bottom:5px;font-size:13px}
-.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}
+.quest-hdr{font-family:'Courier New','Lucida Console',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}
 #combat-screen{flex-direction:column}
 .cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:16px;height:44px;flex-shrink:0}
-.cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard)}
+.cbat-title{font-family:'Courier New','Lucida Console',monospace;font-size:9px;color:var(--hazard)}
 .cbat-body{flex:1;display:flex;overflow:hidden}
 .cbat-ship{width:240px;background:var(--panel);border-right:1px solid var(--border);padding:12px;overflow-y:auto;flex-shrink:0}
 .cbat-ship.enemy-panel{border-right:none;border-left:1px solid var(--border)}
 .cbat-center{flex:1;display:flex;flex-direction:column;background:var(--void);overflow:hidden}
-.cbat-ship-name{font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:8px}
+.cbat-ship-name{font-family:'Courier New','Lucida Console',monospace;font-size:9px;margin-bottom:8px}
 .cbat-bar-row{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:5px}
 .cbat-bar-lbl{width:42px;color:var(--metal);font-size:12px}.cbat-bar-track{flex:1;height:8px;background:rgba(255,255,255,.07)}.cbat-bar-fill{height:100%;transition:width 0.3s}
 .sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
@@ -144,7 +158,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 #drama-overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);display:none;align-items:center;justify-content:center;z-index:100}
 #drama-overlay.open{display:flex}
 .drama-card{background:var(--panel);border:1px solid var(--alien);padding:24px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;animation:slideIn 0.2s ease}
-.drama-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--alien);margin-bottom:10px}
+.drama-title{font-family:'Courier New','Lucida Console',monospace;font-size:10px;color:var(--alien);margin-bottom:10px}
 #xeno-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:90}
 #xeno-overlay.open{display:flex}
 .xeno-card{background:var(--panel);border:1px solid var(--alien);padding:24px;max-width:500px;width:90%;animation:slideIn 0.2s ease}
@@ -153,7 +167,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 #gameover-overlay{position:fixed;inset:0;background:rgba(0,0,0,.93);display:none;align-items:center;justify-content:center;z-index:200}
 #gameover-overlay.open{display:flex}
 .go-card{background:var(--panel);border:1px solid var(--hazard);padding:36px;text-align:center;max-width:380px}
-.go-title{font-family:'Press Start 2P',monospace;font-size:16px;color:var(--hazard);margin-bottom:16px}
+.go-title{font-family:'Courier New','Lucida Console',monospace;font-size:16px;color:var(--hazard);margin-bottom:16px}
 .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:1000}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--void)}::-webkit-scrollbar-thumb{background:var(--nebula)}
 </style>
@@ -236,7 +250,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
   <div class="st-header">
     <div class="st-name" id="st-name"></div>
     <div class="st-meta" id="st-meta"></div>
-    <div id="st-credits" style="color:var(--gold);font-family:'Press Start 2P';font-size:9px"></div>
+    <div id="st-credits" style="color:var(--gold);font-family:'Courier New';font-size:9px"></div>
   </div>
   <div class="st-body">
     <div class="st-nav" id="st-nav"></div>
@@ -291,7 +305,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 
 <div id="ground-combat-screen" class="screen" style="padding:16px;overflow-y:auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0">
-    <div style="font-family:'Press Start 2P';font-size:10px;color:var(--hazard)">⚔ GROUND COMBAT</div>
+    <div style="font-family:'Courier New';font-size:10px;color:var(--hazard)">⚔ GROUND COMBAT</div>
     <div id="gc-round-display" style="color:var(--metal);font-size:14px">Round 1</div>
   </div>
   <div style="display:flex;gap:16px;flex:1">
@@ -311,7 +325,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 
 <div id="xeno-overlay">
   <div class="xeno-card">
-    <div id="xeno-title" style="font-family:'Press Start 2P';font-size:9px;color:var(--alien);margin-bottom:10px">👽 ALIEN CONTACT</div>
+    <div id="xeno-title" style="font-family:'Courier New';font-size:9px;color:var(--alien);margin-bottom:10px">👽 ALIEN CONTACT</div>
     <div id="xeno-body" style="font-size:15px;color:var(--metal);line-height:1.6;margin-bottom:10px"></div>
     <div class="xeno-alien-text" id="xeno-lang"></div>
     <div id="xeno-translation" style="font-size:13px;color:var(--star);font-style:italic;margin-top:4px;min-height:18px"></div>
@@ -858,7 +872,7 @@ function renderCC(){
   }
   if(s===4){
     const starters=SHIP_TEMPLATES.filter(t=>t.tier===0);
-    body.innerHTML=`<div class="name-step" style="gap:16px"><div style="font-family:'Press Start 2P';font-size:9px;color:var(--cyan)">SELECT STARTER SHIP</div><div class="opt-grid cols-3">${starters.map(tmpl=>{const rs=rollShip(tmpl);return`<div class="opt-card" onclick="selectShip('${tmpl.id}')"><div class="oc-emoji">🚀</div><div class="oc-name">${tmpl.namePool[0]}</div><div class="oc-desc">H:${rs.hull} S:${rs.shields} C:${rs.cargo} F:${rs.fuelUse}/jump</div><div class="oc-bonus" style="font-size:11px">${tmpl.passive}</div></div>`;}).join('')}</div></div>`;
+    body.innerHTML=`<div class="name-step" style="gap:16px"><div style="font-family:'Courier New';font-size:9px;color:var(--cyan)">SELECT STARTER SHIP</div><div class="opt-grid cols-3">${starters.map(tmpl=>{const rs=rollShip(tmpl);return`<div class="opt-card" onclick="selectShip('${tmpl.id}')"><div class="oc-emoji">🚀</div><div class="oc-name">${tmpl.namePool[0]}</div><div class="oc-desc">H:${rs.hull} S:${rs.shields} C:${rs.cargo} F:${rs.fuelUse}/jump</div><div class="oc-bonus" style="font-size:11px">${tmpl.passive}</div></div>`;}).join('')}</div></div>`;
     nav.innerHTML=`<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`;return;
   }
   const data=s===0?ORIGINS:s===1?CLASSES:JOBS;const sel=s===0?G.captain.origin:s===1?G.captain.cls:G.captain.job;
@@ -1153,7 +1167,7 @@ function assignCrewToStation(crewId,stId){
 }
 function renderCombatStations(){
   const el=document.getElementById('cbat-stations');if(!el)return;
-  el.innerHTML=`<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:5px">CREW STATIONS</div>`+Object.entries(CREW_STATIONS).map(([sid,st])=>{const cId=G.crewStations[sid];const c=cId?G.crew.find(x=>x.id===cId):null;const bonus=getStationBonus(sid);return`<div class="station-slot"><span>${st.emoji}${st.name.split(' ')[0]}</span><span style="color:${c?'var(--safe)':'var(--metal)'}">${c?c.name+`+${bonus}`:'—'}</span></div>`;}).join('');
+  el.innerHTML=`<div style="font-family:'Courier New';font-size:7px;color:var(--cyan);margin-bottom:5px">CREW STATIONS</div>`+Object.entries(CREW_STATIONS).map(([sid,st])=>{const cId=G.crewStations[sid];const c=cId?G.crew.find(x=>x.id===cId):null;const bonus=getStationBonus(sid);return`<div class="station-slot"><span>${st.emoji}${st.name.split(' ')[0]}</span><span style="color:${c?'var(--safe)':'var(--metal)'}">${c?c.name+`+${bonus}`:'—'}</span></div>`;}).join('');
 }
 
 // ===== ENEMY GENERATION =====
@@ -1361,16 +1375,16 @@ function checkGroundCombatEnd(){
 function closeGroundCombat(){groundCombatState=null;showScreen('galaxy-screen');updateHUD();updateRP();updateLP();}
 function renderGroundCombat(){
   const gc=groundCombatState;if(!gc)return;
-  document.getElementById('gc-party').innerHTML=gc.party.map(u=>{const cls=CLASSES.find(c=>c.id===u.classId);const ia=gc.acting===u.id;const alive=u.hp>0;return`<div class="gc-unit-card ${ia?'acting':''}" style="background:${alive?'rgba(0,229,255,0.06)':'rgba(0,0,0,0.4)'};border-color:${ia?'var(--gold)':alive?'var(--cyan)':'rgba(255,255,255,0.12)'};opacity:${alive?1:0.4};width:130px;cursor:default"><div class="unit-sprite">${u.emoji||'👤'}</div><div style="font-family:'Press Start 2P';font-size:7px;color:${ia?'var(--gold)':'var(--cyan)'};text-align:center">${u.name}</div><div style="text-align:center;font-size:11px;color:var(--metal)">${cls?.name||u.role}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:${alive?'var(--safe)':'var(--hazard)'}"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}<div style="font-size:10px;color:var(--metal);text-align:center">AP:${u.ap||0}</div>${ia?'<div style="color:var(--gold);font-size:9px;text-align:center">▶ READY</div>':''}</div>`;}).join('');
-  document.getElementById('gc-enemies').innerHTML=gc.enemies.map(u=>{const alive=u.hp>0;const sel=gc.selectedEnemy===u.id;return`<div class="gc-unit-card" onclick="selectGroundEnemy('${u.id}')" style="background:${alive?'rgba(196,30,58,0.08)':'rgba(0,0,0,0.4)'};border-color:${sel&&alive?'var(--gold)':alive?'var(--hazard)':'rgba(255,255,255,0.1)'};opacity:${alive?1:0.4};width:120px;cursor:${alive?'pointer':'default'}"><div class="unit-sprite" style="color:${u.color||'#888'}">${u.icon||u.emoji||'👾'}</div><div style="font-family:'Press Start 2P';font-size:7px;color:var(--hazard);text-align:center">${u.name}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:var(--hazard)"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}</div>`;}).join('');
+  document.getElementById('gc-party').innerHTML=gc.party.map(u=>{const cls=CLASSES.find(c=>c.id===u.classId);const ia=gc.acting===u.id;const alive=u.hp>0;return`<div class="gc-unit-card ${ia?'acting':''}" style="background:${alive?'rgba(0,229,255,0.06)':'rgba(0,0,0,0.4)'};border-color:${ia?'var(--gold)':alive?'var(--cyan)':'rgba(255,255,255,0.12)'};opacity:${alive?1:0.4};width:130px;cursor:default"><div class="unit-sprite">${u.emoji||'👤'}</div><div style="font-family:'Courier New';font-size:7px;color:${ia?'var(--gold)':'var(--cyan)'};text-align:center">${u.name}</div><div style="text-align:center;font-size:11px;color:var(--metal)">${cls?.name||u.role}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:${alive?'var(--safe)':'var(--hazard)'}"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}<div style="font-size:10px;color:var(--metal);text-align:center">AP:${u.ap||0}</div>${ia?'<div style="color:var(--gold);font-size:9px;text-align:center">▶ READY</div>':''}</div>`;}).join('');
+  document.getElementById('gc-enemies').innerHTML=gc.enemies.map(u=>{const alive=u.hp>0;const sel=gc.selectedEnemy===u.id;return`<div class="gc-unit-card" onclick="selectGroundEnemy('${u.id}')" style="background:${alive?'rgba(196,30,58,0.08)':'rgba(0,0,0,0.4)'};border-color:${sel&&alive?'var(--gold)':alive?'var(--hazard)':'rgba(255,255,255,0.1)'};opacity:${alive?1:0.4};width:120px;cursor:${alive?'pointer':'default'}"><div class="unit-sprite" style="color:${u.color||'#888'}">${u.icon||u.emoji||'👾'}</div><div style="font-family:'Courier New';font-size:7px;color:var(--hazard);text-align:center">${u.name}</div><div style="text-align:center;font-size:12px">❤ ${u.hp}/${u.maxHp}</div><div style="height:3px;background:rgba(255,255,255,0.1);margin:4px 0"><div style="height:100%;width:${u.hp/u.maxHp*100}%;background:var(--hazard)"></div></div>${u.status?`<div style="color:var(--warn);font-size:10px;text-align:center">[${u.status}]</div>`:''}</div>`;}).join('');
   document.getElementById('gc-log').innerHTML=gc.log.slice(0,15).map((l,i)=>`<div style="font-size:13px;padding:2px 0;color:${i===0?'var(--star)':'var(--metal)'};">${l}</div>`).join('');
   document.getElementById('gc-log').scrollTop=0;
   const actEl=document.getElementById('gc-actions');
-  if(gc.phase!=='active'){const ec=gc.phase==='victory'?'var(--safe)':gc.phase==='fled'?'var(--warn)':'var(--hazard)';const em=gc.phase==='victory'?'★ VICTORY ★':gc.phase==='fled'?'— ESCAPED —':'✖ DEFEATED ✖';actEl.innerHTML=`<div style="text-align:center;color:${ec};font-family:'Press Start 2P';font-size:10px;padding:8px">${em}</div>`;return;}
+  if(gc.phase!=='active'){const ec=gc.phase==='victory'?'var(--safe)':gc.phase==='fled'?'var(--warn)':'var(--hazard)';const em=gc.phase==='victory'?'★ VICTORY ★':gc.phase==='fled'?'— ESCAPED —':'✖ DEFEATED ✖';actEl.innerHTML=`<div style="text-align:center;color:${ec};font-family:'Courier New';font-size:10px;padding:8px">${em}</div>`;return;}
   const actor=gc.party.find(p=>p.id===gc.acting);
   if(!actor){actEl.innerHTML=`<div style="color:var(--metal)">Waiting for next turn...</div>`;return;}
   const moves=getCrewMoves(actor);const ap=actor.ap||0;
-  actEl.innerHTML=`<div style="color:var(--gold);font-family:'Press Start 2P';font-size:8px;margin-bottom:8px">▶ ${actor.name} — AP:${ap}/${actor.maxAp||4}</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-sm btn-danger" onclick="executeGroundAction('basic_attack')">⚔ ATTACK (1AP)</button>${moves.map(m=>`<button class="btn btn-sm" onclick="executeGroundAction('${m.id}')" ${ap<m.cost?'disabled':''} style="font-size:7px" title="${m.desc}">${m.name}(${m.cost}AP)</button>`).join('')}</div><div style="display:flex;gap:5px"><button class="btn btn-sm btn-warn" onclick="groundFlee()">🏃 FLEE</button></div>${gc.selectedEnemy?`<div style="margin-top:5px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedEnemy)?.name||'?'}</div>`:'<div style="color:var(--hazard);font-size:12px;margin-top:5px">Click an enemy to target</div>'}`;
+  actEl.innerHTML=`<div style="color:var(--gold);font-family:'Courier New';font-size:8px;margin-bottom:8px">▶ ${actor.name} — AP:${ap}/${actor.maxAp||4}</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-sm btn-danger" onclick="executeGroundAction('basic_attack')">⚔ ATTACK (1AP)</button>${moves.map(m=>`<button class="btn btn-sm" onclick="executeGroundAction('${m.id}')" ${ap<m.cost?'disabled':''} style="font-size:7px" title="${m.desc}">${m.name}(${m.cost}AP)</button>`).join('')}</div><div style="display:flex;gap:5px"><button class="btn btn-sm btn-warn" onclick="groundFlee()">🏃 FLEE</button></div>${gc.selectedEnemy?`<div style="margin-top:5px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedEnemy)?.name||'?'}</div>`:'<div style="color:var(--hazard);font-size:12px;margin-top:5px">Click an enemy to target</div>'}`;
 }
 // ===== STATION SYSTEM =====
 function stationPrice(id,sysIdx,buying){
@@ -1415,11 +1429,11 @@ function renderNodeContent(nodeId){
     const rumors=stationRumors(G.curSys);const pool=generateHireableCrew(G.curSys);
     el.innerHTML=`<div class="st-content-hdr">🍺 CANTINA</div>
     <div class="maint-row"><span>Order drinks (+8 morale)</span><button class="btn btn-sm" onclick="stDrink()">50 CR</button></div>
-    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">CREW ASSIGNMENTS (Combat)</div>
+    <div style="margin:10px 0 5px;font-family:'Courier New';font-size:8px;color:var(--cyan)">CREW ASSIGNMENTS (Combat)</div>
     ${G.crew.filter(c=>c.alive).map(c=>{const assigned=Object.entries(G.crewStations).find(([k,v])=>v===c.id)?.[0];return`<div class="trade-row" style="font-size:14px"><span>${c.emoji} ${c.name}</span><select onchange="assignCrewToStation('${c.id}',this.value)" style="font-size:13px;padding:3px"><option value="none">Unassigned</option>${Object.entries(CREW_STATIONS).map(([sid,st])=>`<option value="${sid}" ${assigned===sid?'selected':''}>${st.emoji} ${st.name}</option>`).join('')}</select></div>`;}).join('')}
-    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">HIRE CREW</div>
+    <div style="margin:10px 0 5px;font-family:'Courier New';font-size:8px;color:var(--cyan)">HIRE CREW</div>
     ${pool.map(c=>`<div class="trade-row"><span>${c.emoji} ${c.name} [${c.role}] HP:${c.hp} ATK:${c.atk} SKILL:${c.skill}</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits<c.cost?'disabled':''}>HIRE ${c.cost}CR</button></div>`).join('')}
-    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">RUMORS (150 CR)</div>
+    <div style="margin:10px 0 5px;font-family:'Courier New';font-size:8px;color:var(--cyan)">RUMORS (150 CR)</div>
     ${rumors.map((r,i)=>`<div class="trade-row"><span style="font-size:14px">${r}</span><button class="btn btn-sm" onclick="buyRumor(${i})">BUY</button></div>`).join('')}
     <div style="margin-top:10px"><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>`;
   }else if(nodeId==='market'){
@@ -1433,13 +1447,13 @@ function renderNodeContent(nodeId){
     el.innerHTML=`<div class="st-content-hdr">MAINTENANCE BAY</div>
     <div class="maint-row"><span>Repair Hull (+${G.flagship.maxHull-G.flagship.hull} HP)</span><button class="btn btn-sm" onclick="repairHull()" ${G.flagship.hull>=G.flagship.maxHull?'disabled':''}>REPAIR ${hc}CR</button></div>
     <div class="maint-row"><span>Refuel (+${G.flagship.maxFuel-G.flagship.fuel} fuel)</span><button class="btn btn-sm" onclick="refuel()" ${G.flagship.fuel>=G.flagship.maxFuel?'disabled':''}>REFUEL ${fc}CR</button></div>
-    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">INSTALLED MODULES (${su}/${sm})</div>${instHtml}
-    <div style="margin:10px 0 5px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">AVAILABLE MODULES</div>${modHtml}`;
+    <div style="margin:10px 0 5px;font-family:'Courier New';font-size:8px;color:var(--cyan)">INSTALLED MODULES (${su}/${sm})</div>${instHtml}
+    <div style="margin:10px 0 5px;font-family:'Courier New';font-size:8px;color:var(--cyan)">AVAILABLE MODULES</div>${modHtml}`;
   }else if(nodeId==='guild'){
     const ac=G.activeQuests.filter(qid=>!G.contracts.find(c=>c.id===qid)?.completed).length;
     const cHtml=G.availableContracts.map(c=>{const isA=G.activeQuests.includes(c.id);const full=ac>=MAX_ACTIVE_QUESTS&&!isA;return`<div class="trade-row"><span>${c.title} → ${c.targetSysName} <span style="color:var(--gold)">${c.reward}CR</span></span><button class="btn btn-sm" onclick="acceptContract('${c.id}')" ${isA||full?'disabled':''}>${isA?'ACTIVE':full?'FULL':'ACCEPT'}</button></div>`;}).join('')||'<div style="color:var(--metal)">No contracts available.</div>';
     const aHtml=G.activeQuests.map(qid=>{const q=G.contracts.find(c=>c.id===qid);if(!q||q.completed)return'';return`<div style="color:var(--safe);font-size:13px;padding:3px 0">✅ ${q.title} → ${q.targetSysName}</div>`;}).join('')||'<div style="color:var(--metal);font-size:13px">No active quests</div>';
-    el.innerHTML=`<div class="st-content-hdr">📋 GUILD OFFICE</div><div style="font-size:14px;margin-bottom:8px">Quests: <span style="color:var(--gold)">${ac}/${MAX_ACTIVE_QUESTS}</span></div>${aHtml}<div style="margin:10px 0 6px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan)">AVAILABLE CONTRACTS</div>${cHtml}<div style="margin-top:8px"><button class="btn btn-sm" onclick="refreshContracts()">🔄 Refresh</button></div><div style="margin-top:8px;color:var(--metal);font-size:12px">Travel to target system to complete quests.</div>`;
+    el.innerHTML=`<div class="st-content-hdr">📋 GUILD OFFICE</div><div style="font-size:14px;margin-bottom:8px">Quests: <span style="color:var(--gold)">${ac}/${MAX_ACTIVE_QUESTS}</span></div>${aHtml}<div style="margin:10px 0 6px;font-family:'Courier New';font-size:8px;color:var(--cyan)">AVAILABLE CONTRACTS</div>${cHtml}<div style="margin-top:8px"><button class="btn btn-sm" onclick="refreshContracts()">🔄 Refresh</button></div><div style="margin-top:8px;color:var(--metal);font-size:12px">Travel to target system to complete quests.</div>`;
   }else if(nodeId==='blackmarket'){
     const illegal=GOODS.filter(g=>!g.legal);el.innerHTML=`<div class="st-content-hdr">BLACK MARKET</div><div style="color:var(--warn);font-size:13px;margin-bottom:8px">⚠ Illegal goods. Rep risk.</div>`+illegal.map(g=>{const bp=Math.round(stationPrice(g.id,G.curSys,true)*1.4);return`<div class="trade-row"><span>${g.emoji} ${g.name}</span><button class="btn btn-sm btn-danger" onclick="buyGoodIllegal('${g.id}')">BUY ${bp}CR</button></div>`;}).join('');
   }else if(nodeId==='dataexchange'){
@@ -1450,7 +1464,7 @@ function renderNodeContent(nodeId){
   }else if(nodeId==='gambling'){
     el.innerHTML=`<div class="st-content-hdr">🎲 GAMBLING DEN</div><div style="color:var(--metal);font-size:14px;margin-bottom:12px">House edge: ~10%. Fortune favours the bold.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="gamble(100)" ${G.flagship.credits<100?'disabled':''}>BET 100CR</button><button class="btn btn-sm" onclick="gamble(500)" ${G.flagship.credits<500?'disabled':''}>BET 500CR</button><button class="btn btn-sm btn-gold" onclick="gamble(1000)" ${G.flagship.credits<1000?'disabled':''}>BET 1000CR</button><button class="btn btn-sm btn-danger" onclick="gamble(3000)" ${G.flagship.credits<3000?'disabled':''}>HIGH STAKES 3000CR</button></div><div id="gamble-result" style="margin-top:12px;font-size:16px;min-height:24px"></div>`;
   }else if(nodeId==='armory'){
-    el.innerHTML=`<div class="st-content-hdr">🔫 ARMORY</div><div style="color:var(--metal);font-size:13px;margin-bottom:8px">Weapons boost crew ATK in ground combat.</div><div class="trade-row"><span>🔫 Combat Sidearm (+3 ATK)</span><button class="btn btn-sm" onclick="buyWeapon('sidearm',200)" ${G.flagship.credits<200?'disabled':''}>200CR</button></div><div class="trade-row"><span>⚔ Combat Blade (+5 ATK, melee)</span><button class="btn btn-sm" onclick="buyWeapon('blade',350)" ${G.flagship.credits<350?'disabled':''}>350CR</button></div><div class="trade-row"><span>🎯 Sniper Rifle (+8 ATK, ranged)</span><button class="btn btn-sm" onclick="buyWeapon('sniper',600)" ${G.flagship.credits<600?'disabled':''}>600CR</button></div><div class="trade-row"><span>💥 Plasma Caster (+12 ATK, energy)</span><button class="btn btn-sm btn-warn" onclick="buyWeapon('plasma',1200)" ${G.flagship.credits<1200?'disabled':''}>1200CR</button></div><div style="margin-top:12px;font-family:'Press Start 2P';font-size:7px;color:var(--cyan)">EQUIP TO CREW</div>${G.crew.filter(c=>c.alive).map(c=>`<div class="trade-row" style="font-size:13px"><span>${c.emoji} ${c.name} | Weapon: ${c.equippedWeapon||'None'}</span><button class="btn btn-sm" onclick="equipWeaponToCrew('${c.id}')">EQUIP</button></div>`).join('')}`;
+    el.innerHTML=`<div class="st-content-hdr">🔫 ARMORY</div><div style="color:var(--metal);font-size:13px;margin-bottom:8px">Weapons boost crew ATK in ground combat.</div><div class="trade-row"><span>🔫 Combat Sidearm (+3 ATK)</span><button class="btn btn-sm" onclick="buyWeapon('sidearm',200)" ${G.flagship.credits<200?'disabled':''}>200CR</button></div><div class="trade-row"><span>⚔ Combat Blade (+5 ATK, melee)</span><button class="btn btn-sm" onclick="buyWeapon('blade',350)" ${G.flagship.credits<350?'disabled':''}>350CR</button></div><div class="trade-row"><span>🎯 Sniper Rifle (+8 ATK, ranged)</span><button class="btn btn-sm" onclick="buyWeapon('sniper',600)" ${G.flagship.credits<600?'disabled':''}>600CR</button></div><div class="trade-row"><span>💥 Plasma Caster (+12 ATK, energy)</span><button class="btn btn-sm btn-warn" onclick="buyWeapon('plasma',1200)" ${G.flagship.credits<1200?'disabled':''}>1200CR</button></div><div style="margin-top:12px;font-family:'Courier New';font-size:7px;color:var(--cyan)">EQUIP TO CREW</div>${G.crew.filter(c=>c.alive).map(c=>`<div class="trade-row" style="font-size:13px"><span>${c.emoji} ${c.name} | Weapon: ${c.equippedWeapon||'None'}</span><button class="btn btn-sm" onclick="equipWeaponToCrew('${c.id}')">EQUIP</button></div>`).join('')}`;
   }else if(nodeId==='embassy'){
     el.innerHTML=`<div class="st-content-hdr">🏛️ ${sys.faction.name.toUpperCase()} EMBASSY</div><div style="font-size:15px;color:var(--metal);margin-bottom:12px;line-height:1.6">The Embassy can improve your standing with ${sys.faction.name}.</div><div class="maint-row"><span>Donate for goodwill</span><button class="btn btn-sm" onclick="embassyDonate(500)">DONATE 500CR (+10 Rep)</button></div><div class="maint-row"><span>Current Rep: ${G.rep[sys.faction.id]||0}</span></div><div class="maint-row"><span>Accept diplomatic mission</span><button class="btn btn-sm" onclick="embassyMission()">REQUEST MISSION</button></div><div style="margin-top:10px;color:var(--metal);font-size:13px">Improving rep opens new mission types and dialogue options.</div>`;
   }else{
