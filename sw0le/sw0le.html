@@ -37,6 +37,8 @@
     .circuit-C { border-left-color: #ff5555; }
     .circuit-Y { border-left-color: #aa66ff; }
     .circuit-header { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.3rem; margin-bottom: 18px; color: #b0f0ff; text-transform: uppercase; }
+    .circuit-header .icon-btn {background: #0e3a5a;border: 1px solid #00aaff;color: #b0f0ff;font-weight: bold;padding: 2px 8px; margin: 0 2px;cursor: pointer;box-shadow: 1px 1px 0 #001020;}
+    .circuit-header .icon-btn:active {transform: translate(1px, 1px);box-shadow: none;}
     .exercise-item { background: #102838; padding: 0; border: 2px solid #006699; box-shadow: inset 2px 2px 0 #001824, 3px 3px 0 #001020; margin-bottom: 14px; }
     .exercise-summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; }
     .exercise-name { font-weight: bold; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -904,7 +906,17 @@ const exerciseDB = [
       if (circuitC.length === 0 && !quickFilters.shortWorkout && cardio.length) circuitC.push(weightedPick(cardio));
 
       const repMult = getRepMultiplier();
-      const workout = { circuitA, circuitB, circuitC, isBoss, setsStatus: {} };
+      const workout = { 
+        circuitA, circuitB, circuitC, 
+        isBoss, 
+        setsStatus: {},
+        setsPerCircuit: {
+          A: quickFilters.shortWorkout ? 2 : 3,
+          B: quickFilters.shortWorkout ? 1 : 2,
+          C: isBoss ? 3 : (quickFilters.shortWorkout ? 0 : 1)
+        }
+      };
+      
       [...circuitA, ...circuitB, ...circuitC].forEach(ex => {
         const adjustedReps = ex.isTimed ? ex.defaultReps : Math.round((ex.defaultReps || 10) * repMult);
         workout.setsStatus[ex.id] = {
@@ -1028,7 +1040,7 @@ const exerciseDB = [
                   <input type="number" placeholder="Wt" value="${status.weight}" data-exid="${ex.id}" class="weight-input" ${ex.equipment.includes('bodyweight') && !ex.equipment.includes('dumbbells') ? 'disabled' : ''}>
                   <input type="number" placeholder="Reps" value="${status.reps}" data-exid="${ex.id}" class="reps-input">
                   <button class="set-complete-btn" data-exid="${ex.id}" data-sets="${totalSets}">Set ${status.completedSets+1}/${totalSets}</button>
-                  <span class="set-status">${status.completedSets}/${totalSets} done</span>
+                  <span class="set-status" data-exid="${ex.id}">${status.completedSets}/${totalSets} done</span>
                 </div>
                 <div class="exercise-instructions">📋 ${ex.instructions || 'Perform with controlled form.'}</div>
                 <div class="video-placeholder">🎥 [ YOUTUBE: ${ex.name.replace(/ /g,'+')} ]</div>
@@ -1036,8 +1048,18 @@ const exerciseDB = [
             </li>
           `;
         }).join('');
-        return `<div class="circuit-card ${cls}"><div class="circuit-header"><span>${title}</span><span>${totalSets} SETS</span></div><ul style="list-style:none;">${items}</ul></div>`;
-      };
+                return `<div class="circuit-card ${cls}">
+          <div class="circuit-header">
+            <span>${title}</span>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <button class="icon-btn set-decr" data-circuit="${circuitKey}" style="padding:2px 8px;">−</button>
+              <span id="sets-${circuitKey}">${totalSets}</span>
+              <button class="icon-btn set-incr" data-circuit="${circuitKey}" style="padding:2px 8px;">+</button>
+              SETS
+            </span>
+          </div>
+          <ul style="list-style:none;">${items}</ul>
+        </div>`;
 
       const allExercises = [...workout.circuitA, ...workout.circuitB, ...workout.circuitC];
       container.innerHTML = `
@@ -1120,7 +1142,37 @@ const exerciseDB = [
       });
       document.getElementById('finish-workout-btn')?.addEventListener('click', () => finishWorkout(workout));
       document.getElementById('start-guided-btn')?.addEventListener('click', () => startGuidedWorkout(workout));
-
+            // Set count adjustment
+      document.querySelectorAll('.set-incr, .set-decr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const circuit = btn.dataset.circuit;
+          const delta = btn.classList.contains('set-incr') ? 1 : -1;
+          let newVal = (workout.setsPerCircuit[circuit] || 0) + delta;
+          newVal = Math.max(0, Math.min(5, newVal)); // clamp 0-5 sets
+          workout.setsPerCircuit[circuit] = newVal;
+          
+          // Update display
+          const span = document.getElementById(`sets-${circuit}`);
+          if (span) span.textContent = newVal;
+          
+          // If set count becomes 0, optionally remove circuit from guided sequence later
+          // For now just update UI; re-rendering not strictly needed
+          
+          // Also update the "Set X/Y" button text for exercises in this circuit
+          const circuitExercises = workout[`circuit${circuit}`] || [];
+          circuitExercises.forEach(ex => {
+            const btn = document.querySelector(`.set-complete-btn[data-exid="${ex.id}"]`);
+            if (btn) {
+              const status = workout.setsStatus[ex.id];
+              btn.textContent = `Set ${status.completedSets+1}/${newVal}`;
+              btn.dataset.sets = newVal;
+            }
+            const statusSpan = document.querySelector(`.set-status[data-exid="${ex.id}"]`);
+            // Note: you'll need to add data-exid to status span; do that in step 4
+          });
+        });
+      });
       document.querySelectorAll('.skip-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1312,9 +1364,26 @@ function renderYogaFlow(flow) {
 }
 
     // ---------- GUIDED WORKOUT MODE ----------
-    function startGuidedWorkout(workout) {
-      const allEx = [...workout.circuitA, ...workout.circuitB, ...workout.circuitC];
-      guidedExerciseList = allEx;
+        function startGuidedWorkout(workout) {
+      // Build sequence: each exercise repeated 'setsPerCircuit' times for its circuit
+      const sequence = [];
+      const circuits = ['A', 'B', 'C'];
+      circuits.forEach(circ => {
+        const exercises = workout[`circuit${circ}`] || [];
+        const sets = workout.setsPerCircuit[circ] || 0;
+        for (let i = 0; i < sets; i++) {
+          // For each set, add all exercises in this circuit (with set index)
+          exercises.forEach(ex => {
+            sequence.push({
+              ...ex,
+              currentSet: i + 1,
+              totalSets: sets
+            });
+          });
+        }
+      });
+      
+      guidedExerciseList = sequence;
       guidedCurrentIndex = 0;
       guidedMode = true;
       document.getElementById('guided-overlay').classList.add('active');
@@ -1327,10 +1396,11 @@ function renderYogaFlow(flow) {
         return;
       }
       const ex = guidedExerciseList[guidedCurrentIndex];
+      const setInfo = ex.currentSet ? ` | Set ${ex.currentSet}/${ex.totalSets}` : '';
       const total = guidedExerciseList.length;
       const status = workout.setsStatus[ex.id] || { reps: ex.defaultReps };
       const repDisplay = ex.isTimed ? `${status.reps}s hold` : `${status.reps} reps`;
-
+      document.getElementById('guided-reps').textContent = `${repDisplay}${setInfo}`;
       document.getElementById('guided-step-num').textContent = `Exercise ${guidedCurrentIndex + 1} of ${total}`;
       document.getElementById('guided-progress-fill').style.width = `${(guidedCurrentIndex / total) * 100}%`;
       document.getElementById('guided-ex-name').textContent = ex.name;
