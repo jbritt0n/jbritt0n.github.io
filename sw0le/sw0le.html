@@ -113,9 +113,9 @@
         <button class="btn-secondary" id="boss-btn">👾 BOSS</button>
         <button class="btn-secondary" id="builder-mode-btn">🛠️ BUILD</button>
         <button class="btn-secondary" id="yoga-btn">🧘 YOGA</button>
-        <button class="btn-secondary" id="view-db-btn">📚 DB</button>
+        <button class="btn-secondary" id="view-db-btn">📚 LIBRARY</button>
         <button class="btn-secondary" id="export-btn">📀 EXPORT</button>
-        <button class="btn-secondary" id="md-export-btn">📝 MD</button>
+        <button class="btn-secondary" id="md-export-btn">📝 .MD</button>
         <button class="btn-secondary" id="import-btn">📂 IMPORT</button>
         <button class="btn-secondary" id="reset-progress-btn">⟲ RESET</button>
       </div>
@@ -725,7 +725,31 @@ const exerciseDB = [
       return { poses: sequence, isYoga: true, setsStatus: {} };
     }
     
-
+    // ---------- SIMILAR EXERCISE SKIP HELPER ----------
+    function findSimilarExercise(currentEx) {
+      // Get available exercises from the current filters (equipment, level, muscle groups, Pilates)
+      const pool = getFilteredExercises().filter(ex => {
+        // Exclude the current exercise
+        if (ex.id === currentEx.id) return false;
+        // Exclude yoga and cardio if replacing a strength move (or vice versa? keep same type)
+        if (currentEx.isCardio && !ex.isCardio) return false;
+        if (!currentEx.isCardio && ex.isCardio) return false;
+        // Prefer same primary muscle
+        return ex.primaryMuscle === currentEx.primaryMuscle;
+      });
+    
+      // If no exact match, fallback to any exercise of same type (strength/cardio)
+      if (pool.length === 0) {
+        return getFilteredExercises().find(ex => {
+          if (ex.id === currentEx.id) return false;
+          if (currentEx.isCardio) return ex.isCardio;
+          else return !ex.isCardio;
+        });
+      }
+    
+      // Pick a random one from the filtered pool
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
     
     // ---------- RENDERING WORKOUT ----------
     function renderWorkout(workout) {
@@ -750,6 +774,10 @@ const exerciseDB = [
                     <div class="tooltip">
                       <button class="icon-btn harder-btn" data-exid="${ex.id}" style="padding:6px 8px;">⬆️</button>
                       <span class="tooltiptext">Harder</span>
+                    </div>
+                    <div class="tooltip">
+                      <button class="icon-btn skip-btn" data-exid="${ex.id}" data-circuit="${cls}" data-index="${idx}" style="padding:6px 8px;">🔄</button>
+                      <span class="tooltiptext">Skip / Replace</span>
                     </div>
                     <button class="icon-btn toggle-details" data-exid="${ex.id}">📖</button>
                   </div>
@@ -829,7 +857,42 @@ const exerciseDB = [
         });
       });
       document.getElementById('finish-workout-btn')?.addEventListener('click', () => finishWorkout(workout));
+
+document.querySelectorAll('.skip-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const exId = btn.dataset.exid;
+    const circuitClass = btn.dataset.circuit; // e.g., "circuit-A"
+    const index = parseInt(btn.dataset.index);
+
+    // Determine which circuit array to modify
+    let circuitArray;
+    if (circuitClass === 'circuit-A') circuitArray = workout.circuitA;
+    else if (circuitClass === 'circuit-B') circuitArray = workout.circuitB;
+    else circuitArray = workout.circuitC;
+
+    const currentEx = circuitArray[index];
+    const replacement = findSimilarExercise(currentEx);
+
+    if (replacement) {
+      // Replace in array
+      circuitArray[index] = replacement;
+      // Initialize sets status for the new exercise
+      workout.setsStatus[replacement.id] = {
+        completedSets: 0,
+        weight: replacement.equipment.includes('dumbbells') ? '25' : '',
+        reps: replacement.defaultReps
+      };
+      // Remove old status? Keep it, but won't be used again.
+      renderWorkout(workout);
+    } else {
+      alert('No alternative exercise available with current filters.');
     }
+  });
+});
+
+      
+    } //renderworkout
 
     function finishWorkout(workout) {
       let totalXP = 0;
