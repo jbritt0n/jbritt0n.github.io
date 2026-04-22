@@ -2,379 +2,671 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SWOLE - Smart Workout Randomizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>💪 sw0le · RPG Workout Randomizer (Expanded)</title>
   <style>
-    :root {
-      --bg: #0f1115; --card: #181b21; --accent: #00e676; --accent-hover: #00c853;
-      --text: #e0e3e8; --muted: #8b929c; --border: #2a2d35; --danger: #ff5252;
-      --font: system-ui, -apple-system, sans-serif;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; padding: 20px; min-height: 100vh; }
-    .container { max-width: 850px; margin: 0 auto; }
-    
-    /* Header */
-    header { text-align: center; margin-bottom: 24px; }
-    h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
-    .subtitle { color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
-
-    /* Views */
-    .view { display: none; animation: fadeIn 0.3s ease; }
-    .view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Cards & Grid */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    h2 { font-size: 1.3rem; margin-bottom: 12px; color: #fff; }
-    
-    .eq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-    .eq-btn { background: #23272f; border: 2px solid var(--border); padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
-    .eq-btn:hover { border-color: var(--accent); }
-    .eq-btn.selected { background: rgba(0,230,118,0.15); border-color: var(--accent); color: var(--accent); }
-    
-    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; }
-    select, input { background: #23272f; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; }
-    button { background: var(--accent); color: #000; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-    button:hover { background: var(--accent-hover); }
-    button.secondary { background: #2a2d35; color: var(--text); }
-    button.secondary:hover { background: #353842; }
-
-    /* Workout Display */
-    .circuit { background: #23272f; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid var(--accent); }
-    .circuit h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
-    .exercise { padding: 10px 0; border-bottom: 1px solid #333; }
-    .exercise:last-child { border-bottom: none; }
-    .exercise strong { color: var(--accent); }
-    .meta { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
-
-    /* Progress & History */
-    .stats { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-    .stat { background: #23272f; padding: 12px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center; }
-    .stat .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-    .stat .label { font-size: 0.8rem; color: var(--muted); }
-
-    /* Utilities */
-    .hidden { display: none !important; }
-    .flex { display: flex; }
-    .gap-8 { gap: 8px; }
-    .mt-16 { margin-top: 16px; }
-    .text-center { text-align: center; }
-    .text-muted { color: var(--muted); }
-    
-    /* Mobile */
-    @media (max-width: 600px) {
-      h1 { font-size: 2rem; }
-      .eq-grid { grid-template-columns: 1fr 1fr; }
-      .controls { flex-direction: column; align-items: stretch; }
+    body {
+      background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      padding: 16px 8px 32px;
+      color: #e2e8f0;
+    }
+    .app-container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fbbf24, #f97316);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .level-badge {
+      background: #2d3b4f;
+      padding: 8px 16px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: inset 0 2px 3px #0f172a, 0 4px 6px #0f172a;
+      border: 1px solid #475569;
+    }
+    .level-badge span {
+      font-weight: bold;
+      color: #fcd34d;
+    }
+    .xp-bar-container {
+      width: 120px;
+      height: 12px;
+      background: #0f172a;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px black;
+    }
+    .xp-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #fbbf24, #f97316);
+      border-radius: 20px;
+      box-shadow: 0 0 6px #fbbf24;
+      transition: width 0.3s ease;
+    }
+    .equipment-panel {
+      background: #1e293b;
+      padding: 16px 12px;
+      border-radius: 28px;
+      margin-bottom: 20px;
+      box-shadow: inset 0 1px 3px #0f172a, 0 8px 12px -4px #0f172a;
+      border: 1px solid #334155;
+    }
+    .panel-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #94a3b8;
+      letter-spacing: 0.3px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      padding: 6px 14px;
+      border-radius: 40px;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .checkbox-group label:has(input:checked) {
+      background: #f97316;
+      border-color: #fbbf24;
+      color: #0f172a;
+      font-weight: bold;
+      box-shadow: 0 0 10px #f97316;
+    }
+    .checkbox-group input {
+      accent-color: #f97316;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+    .btn-primary {
+      background: linear-gradient(to bottom, #f97316, #ea580c);
+      border: none;
+      border-bottom: 4px solid #9a3412;
+      color: white;
+      font-weight: bold;
+      font-size: 1.5rem;
+      padding: 16px 24px;
+      border-radius: 60px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #7c2d12, 0 4px 12px black;
+      transition: all 0.07s;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 20px;
+    }
+    .btn-primary:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 #7c2d12, 0 4px 10px black;
+    }
+    .btn-secondary {
+      background: #334155;
+      border: none;
+      border-bottom: 3px solid #1e293b;
+      color: #f1f5f9;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.05s;
+      box-shadow: 0 4px 0 #0f172a;
+    }
+    .btn-secondary:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #0f172a;
+    }
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .circuit-card {
+      background: #1e293b;
+      border-radius: 24px;
+      padding: 18px;
+      margin-bottom: 16px;
+      border-left: 8px solid;
+      box-shadow: 0 6px 0 #0f172a, 0 8px 12px black;
+      border: 1px solid #475569;
+    }
+    .circuit-A { border-left-color: #3b82f6; }
+    .circuit-B { border-left-color: #a855f7; }
+    .circuit-C { border-left-color: #ef4444; }
+    .circuit-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 800;
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      color: #f8fafc;
+    }
+    .exercise-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .exercise-item {
+      background: #0f172a;
+      padding: 12px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #334155;
+    }
+    .exercise-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .exercise-tags {
+      display: flex;
+      gap: 6px;
+      font-size: 0.7rem;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: #2d3b4f;
+      padding: 4px 8px;
+      border-radius: 30px;
+      color: #a5b4cb;
+      text-transform: uppercase;
+    }
+    .rep-count {
+      background: #f97316;
+      color: black;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+    }
+    .empty-message {
+      text-align: center;
+      color: #94a3b8;
+      padding: 30px;
+    }
+    .history-section {
+      margin-top: 24px;
+      background: #1e293b;
+      border-radius: 24px;
+      padding: 16px;
+      border: 1px solid #334155;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .history-log {
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+    .history-entry {
+      background: #0f172a;
+      padding: 10px 14px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      border-left: 4px solid #f97316;
+      font-size: 0.9rem;
+    }
+    .xp-gain {
+      color: #fbbf24;
+      font-weight: bold;
+    }
+    .small-note {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>SWOLE</h1>
-      <div class="subtitle">Smart Home Workout Randomizer</div>
-    </header>
-
-    <!-- SETUP VIEW -->
-    <section id="setup-view" class="view active">
-      <div class="card">
-        <h2>🛠️ Select Equipment</h2>
-        <div class="eq-grid" id="eq-grid"></div>
-        
-        <div class="controls">
-          <label>Difficulty: 
-            <select id="level-select">
-              <option value="1">Level 1 (Beginner)</option>
-              <option value="2" selected>Level 2 (Intermediate)</option>
-              <option value="3">Level 3 (Advanced)</option>
-              <option value="4">Level 4 (Expert)</option>
-            </select>
-          </label>
-          <button id="generate-btn">🎲 Generate Workout</button>
-          <button class="secondary" id="view-history-btn">📊 View History</button>
-        </div>
+<div class="app-container">
+  <div class="header">
+    <h1>SW0LE</h1>
+    <div class="level-badge">
+      <span>LVL <span id="user-level">1</span></span>
+      <div class="xp-bar-container">
+        <div class="xp-bar-fill" id="xp-bar" style="width:0%"></div>
       </div>
-    </section>
-
-    <!-- WORKOUT VIEW -->
-    <section id="workout-view" class="view">
-      <div class="card">
-        <h2>🔥 Today's Workout</h2>
-        <div id="workout-display"></div>
-        <div class="controls mt-16">
-          <button id="complete-btn">✅ Complete & Save</button>
-          <button class="secondary" id="back-btn">🔙 Back to Setup</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- HISTORY VIEW -->
-    <section id="history-view" class="view">
-      <div class="card">
-        <h2>📈 Progress & History</h2>
-        <div class="stats" id="stats-grid">
-          <div class="stat"><div class="num" id="stat-total">0</div><div class="label">Workouts</div></div>
-          <div class="stat"><div class="num" id="stat-xp">0</div><div class="label">XP Earned</div></div>
-          <div class="stat"><div class="num" id="stat-streak">0</div><div class="label">Day Streak</div></div>
-        </div>
-        <div class="controls">
-          <button id="export-btn">📥 Export CSV</button>
-          <button class="secondary" id="back-from-history-btn">🔙 Back</button>
-        </div>
-      </div>
-    </section>
+      <span id="xp-text">0/100</span>
+    </div>
   </div>
 
-  <script>
-    // ================= DATABASE =================
-    const EXERCISES = [
-      { id: "push_up", name: "Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps", "shoulders"], type: "push", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Incline Push-Up", reps: "8-10" }, { lvl: 2, name: "Standard Push-Up", reps: "10-15" }, { lvl: 3, name: "Archer Push-Up", reps: "6-8/side" }, { lvl: 4, name: "One-Arm Push-Up", reps: "4-6/side" }
-      ]},
-      { id: "squat", name: "Bodyweight Squat", eq: ["bodyweight"], muscles: ["quads", "glutes", "core"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Assisted Squat", reps: "12-15" }, { lvl: 2, name: "Standard Squat", reps: "15-20" }, { lvl: 3, name: "Pistol Squat Progression", reps: "8/leg" }, { lvl: 4, name: "Jump Squat", reps: "10-12" }
-      ]},
-      { id: "lunge", name: "Reverse Lunge", eq: ["bodyweight"], muscles: ["quads", "glutes", "calves"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Supported Lunge", reps: "8/leg" }, { lvl: 2, name: "Standard Lunge", reps: "10/leg" }, { lvl: 3, name: "Walking Lunge", reps: "12/leg" }, { lvl: 4, name: "Jumping Lunge", reps: "10/leg" }
-      ]},
-      { id: "glute_bridge", name: "Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings", "core"], type: "hinge", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Standard Bridge", reps: "15" }, { lvl: 2, name: "Single-Leg Bridge", reps: "10/leg" }, { lvl: 3, name: "Bridge w/ March", reps: "20" }, { lvl: 4, name: "Elevated Single-Leg Bridge", reps: "8/leg" }
-      ]},
-      { id: "plank", name: "Forearm Plank", eq: ["bodyweight"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", progressions: [
-        { lvl: 1, name: "Knee Plank", reps: "20-30s" }, { lvl: 2, name: "Standard Plank", reps: "40-60s" }, { lvl: 3, name: "Plank w/ Shoulder Taps", reps: "15/side" }, { lvl: 4, name: "Plank to Push-Up", reps: "8" }
-      ]},
-      { id: "down_up", name: "Down-Up", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
-        { lvl: 1, name: "Slow Down-Up", reps: "10" }, { lvl: 2, name: "Standard Down-Up", reps: "15" }, { lvl: 3, name: "Down-Up + Push", reps: "12" }, { lvl: 4, name: "Down-Up + Jump", reps: "10" }
-      ]},
-      { id: "jump_jack", name: "Jumping Jacks", eq: ["bodyweight"], muscles: ["calves", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
-        { lvl: 1, name: "Step Jacks", reps: "30s" }, { lvl: 2, name: "Standard Jacks", reps: "45s" }, { lvl: 3, name: "High Knee Jacks", reps: "30s" }, { lvl: 4, name: "Seal Jacks", reps: "30s" }
-      ]},
-      { id: "db_press", name: "DB Floor Press", eq: ["dumbbells"], muscles: ["chest", "triceps"], type: "push", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Light DB Press", reps: "12" }, { lvl: 2, name: "Standard Press", reps: "10" }, { lvl: 3, name: "Tempo 3-1-1 Press", reps: "8" }, { lvl: 4, name: "Single-Arm Press", reps: "6/arm" }
-      ]},
-      { id: "db_row", name: "DB Bent-Over Row", eq: ["dumbbells"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Row", reps: "12" }, { lvl: 2, name: "Standard Row", reps: "10" }, { lvl: 3, name: "Heavy Row", reps: "8" }, { lvl: 4, name: "Single-Arm Row", reps: "8/arm" }
-      ]},
-      { id: "db_goblet", name: "DB Goblet Squat", eq: ["dumbbells"], muscles: ["quads", "glutes", "core"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Goblet", reps: "12" }, { lvl: 2, name: "Standard Goblet", reps: "10" }, { lvl: 3, name: "Deep Goblet (Pause 2s)", reps: "8" }, { lvl: 4, name: "Heavy Goblet", reps: "6" }
-      ]},
-      { id: "db_arnold", name: "DB Arnold Press", eq: ["dumbbells"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Seated Light", reps: "12" }, { lvl: 2, name: "Standing Standard", reps: "10" }, { lvl: 3, name: "Heavy Tempo", reps: "8" }, { lvl: 4, name: "Alternating Heavy", reps: "6/side" }
-      ]},
-      { id: "db_curl", name: "DB Bicep Curl", eq: ["dumbbells"], muscles: ["biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Curl", reps: "15" }, { lvl: 2, name: "Standard Curl", reps: "12" }, { lvl: 3, name: "Hammer Curl", reps: "10" }, { lvl: 4, name: "Heavy Concentration", reps: "8" }
-      ]},
-      { id: "db_deadlift", name: "DB Romanian Deadlift", eq: ["dumbbells"], muscles: ["hamstrings", "glutes", "lower_back"], type: "hinge", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Light RDL", reps: "12" }, { lvl: 2, name: "Standard RDL", reps: "10" }, { lvl: 3, name: "Single-Leg RDL", reps: "8/leg" }, { lvl: 4, name: "Heavy Slow RDL", reps: "6" }
-      ]},
-      { id: "pullup", name: "Pull-Up", eq: ["pullup_bar"], muscles: ["back", "biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Dead Hang", reps: "20-30s" }, { lvl: 2, name: "Negative Pull-Up", reps: "5x3s" }, { lvl: 3, name: "Band Assisted Pull-Up", reps: "8" }, { lvl: 4, name: "Strict Pull-Up", reps: "5-8" }
-      ]},
-      { id: "chin_up", name: "Chin-Up", eq: ["pullup_bar"], muscles: ["back", "biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Scapular Pull", reps: "10" }, { lvl: 2, name: "Negative Chin-Up", reps: "4x3s" }, { lvl: 3, name: "Assisted Chin-Up", reps: "6" }, { lvl: 4, name: "Strict Chin-Up", reps: "5-7" }
-      ]},
-      { id: "hanging_knee", name: "Hanging Knee Raise", eq: ["pullup_bar"], muscles: ["core", "hip_flexors"], type: "pull", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Bent-Knee Hold", reps: "15-20s" }, { lvl: 2, name: "Standard Raise", reps: "8" }, { lvl: 3, name: "Straight-Leg Raise", reps: "6" }, { lvl: 4, name: "Toes-to-Bar", reps: "4-6" }
-      ]},
-      { id: "band_row", name: "Band Row", eq: ["resistance_bands"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Band", reps: "15" }, { lvl: 2, name: "Medium Band", reps: "12" }, { lvl: 3, name: "Heavy Slow Tempo", reps: "10" }, { lvl: 4, name: "Single-Arm Band", reps: "8/side" }
-      ]},
-      { id: "band_pullapart", name: "Band Pull-Apart", eq: ["resistance_bands"], muscles: ["shoulders", "upper_back"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Band", reps: "15" }, { lvl: 2, name: "Medium Band", reps: "12" }, { lvl: 3, name: "Heavy Band", reps: "10" }, { lvl: 4, name: "Overhead Pull-Apart", reps: "10" }
-      ]},
-      { id: "band_squat", name: "Band Squat", eq: ["resistance_bands"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Resistance", reps: "15" }, { lvl: 2, name: "Medium Resistance", reps: "12" }, { lvl: 3, name: "Heavy + Pause", reps: "10" }, { lvl: 4, name: "Jump Squat w/ Band", reps: "8" }
-      ]},
-      { id: "band_chest", name: "Band Chest Press", eq: ["resistance_bands"], muscles: ["chest", "triceps"], type: "push", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Light Press", reps: "15" }, { lvl: 2, name: "Standard Press", reps: "12" }, { lvl: 3, name: "Heavy Press", reps: "10" }, { lvl: 4, name: "Alternating Press", reps: "8/side" }
-      ]},
-      { id: "ball_curl", name: "Stability Ball Curl", eq: ["exercise_ball"], muscles: ["hamstrings", "glutes", "core"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Ball March", reps: "20s" }, { lvl: 2, name: "Knee Curl", reps: "10" }, { lvl: 3, name: "Single-Leg Curl", reps: "6/leg" }, { lvl: 4, name: "Hamstring Slide-In", reps: "12" }
-      ]},
-      { id: "ball_pike", name: "Ball Pike", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Knee Pike Hold", reps: "15-20s" }, { lvl: 2, name: "Full Pike", reps: "8" }, { lvl: 3, name: "Pike Roll-Out", reps: "10" }, { lvl: 4, name: "Pike Push-Up", reps: "6" }
-      ]},
-      { id: "wall_squat", name: "Ball Wall Squat", eq: ["exercise_ball"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", progressions: [
-        { lvl: 1, name: "Shallow Squat", reps: "12" }, { lvl: 2, name: "90° Squat Hold", reps: "20s" }, { lvl: 3, name: "Deep Squat", reps: "10" }, { lvl: 4, name: "Single-Leg Wall Squat", reps: "6/leg" }
-      ]},
-      { id: "ball_rollout", name: "Stability Ball Rollout", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "hinge", dir: "horizontal", cat: "strength", progressions: [
-        { lvl: 1, name: "Short Roll", reps: "8" }, { lvl: 2, name: "Full Roll-Out", reps: "10" }, { lvl: 3, name: "Slow Tempo (3s)", reps: "8" }, { lvl: 4, name: "Roll-Out to Pike", reps: "6" }
-      ]},
-      { id: "burpee", name: "Burpee", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
-        { lvl: 1, name: "Step-Back Burpee", reps: "8" }, { lvl: 2, name: "Standard Burpee", reps: "10" }, { lvl: 3, name: "Burpee + Push-Up", reps: "8" }, { lvl: 4, name: "Tuck Jump Burpee", reps: "6" }
-      ]}
+  <!-- Equipment Selector -->
+  <div class="equipment-panel">
+    <div class="panel-title">⚔️ EQUIPMENT YOU OWN</div>
+    <div class="checkbox-group" id="equipment-group">
+      <label><input type="checkbox" value="bodyweight" checked> 🦵 Bodyweight</label>
+      <label><input type="checkbox" value="dumbbells"> 🏋️ Dumbbells (25/5 lb)</label>
+      <label><input type="checkbox" value="pull-up bar"> 🔗 Pull‑up Bar</label>
+      <label><input type="checkbox" value="resistance bands"> 🎗️ Bands</label>
+      <label><input type="checkbox" value="exercise ball"> ⚽ Exercise Ball</label>
+    </div>
+    <div class="small-note" style="margin-top:12px;">✨ Higher level unlocks harder variations</div>
+  </div>
+
+  <!-- Main action -->
+  <button class="btn-primary" id="randomize-btn">🎲 ROLL WORKOUT</button>
+
+  <div class="action-bar">
+    <button class="btn-secondary" id="complete-workout-btn">✅ Complete & Gain XP</button>
+    <button class="btn-secondary" id="export-btn">📋 Export History</button>
+    <button class="btn-secondary" id="reset-progress-btn">🔄 Reset</button>
+  </div>
+
+  <!-- Workout display area -->
+  <div id="workout-container">
+    <div class="empty-message">⬆️ Hit ROLL to generate your epic training session</div>
+  </div>
+
+  <!-- History & Progression -->
+  <div class="history-section">
+    <div class="history-header">
+      <h3 style="color:#f8fafc;">📜 QUEST LOG</h3>
+      <button class="btn-secondary" id="clear-history-btn" style="padding:6px 12px;">Clear</button>
+    </div>
+    <div class="history-log" id="history-log">
+      <div class="empty-message" style="padding:10px;">No workouts completed yet</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // ---------- RPG SYSTEM ----------
+    let userLevel = 1;
+    let currentXP = 0;
+    const XP_PER_LEVEL = 100;
+
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('sw0le_progress');
+        if (saved) {
+          const data = JSON.parse(saved);
+          userLevel = data.level || 1;
+          currentXP = data.xp || 0;
+        }
+      } catch (e) {}
+      updateLevelDisplay();
+    }
+    function saveProgress() {
+      localStorage.setItem('sw0le_progress', JSON.stringify({ level: userLevel, xp: currentXP }));
+    }
+    function updateLevelDisplay() {
+      document.getElementById('user-level').textContent = userLevel;
+      const percent = Math.min((currentXP / XP_PER_LEVEL) * 100, 100);
+      document.getElementById('xp-bar').style.width = percent + '%';
+      document.getElementById('xp-text').textContent = `${currentXP}/${XP_PER_LEVEL}`;
+    }
+    function awardXP(amount) {
+      currentXP += amount;
+      while (currentXP >= XP_PER_LEVEL) {
+        currentXP -= XP_PER_LEVEL;
+        userLevel++;
+        alert(`🎉 LEVEL UP! You are now level ${userLevel}!`);
+      }
+      saveProgress();
+      updateLevelDisplay();
+    }
+
+    // ---------- EXPANDED EXERCISE DATABASE (70+ moves) ----------
+    // Includes all exercises from your training log, plus variations.
+    // progressionLevel: 1=beginner, 2=intermediate, 3=advanced.
+    // equipment tags: "bodyweight", "dumbbells", "pull-up bar", "resistance bands", "exercise ball"
+    const exerciseDB = [
+      // ===== BODYWEIGHT / FOUNDATIONAL =====
+      { id:'squat', name:'Bodyweight Squat', progressionLevel:1, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:15, isCardio:false },
+      { id:'sumo-squat-bw', name:'Sumo Squat (Bodyweight)', progressionLevel:1, muscleGroups:['glutes','inner thighs'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:12 },
+      { id:'goblet-squat', name:'Goblet Squat (Dumbbell)', progressionLevel:2, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['dumbbells'], motion:{direction:'push',plane:'vertical'}, defaultReps:14, note:'25 lb dumbbell' },
+      { id:'sumo-squat-db', name:'Sumo Squat with Dumbbell', progressionLevel:2, muscleGroups:['glutes','inner thighs'], primaryMuscle:'glutes', equipment:['dumbbells'], motion:{direction:'push',plane:'vertical'}, defaultReps:10 },
+      { id:'bulgarian-split', name:'Bulgarian Split Squat (foot on chair)', progressionLevel:2, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['bodyweight','dumbbells'], motion:{direction:'push',plane:'vertical'}, defaultReps:10, unilateralOption:true },
+      { id:'single-leg-squat-wall', name:'Single Leg Squat (against wall)', progressionLevel:3, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:10, unilateral:true },
+      { id:'lateral-lunge', name:'Lateral Lunge', progressionLevel:1, muscleGroups:['glutes','adductors'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'frontal'}, defaultReps:12, unilateral:true },
+      { id:'duck-walk', name:'Duck Walk', progressionLevel:2, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:30, isCardio:true },
+      { id:'donkey-kick', name:'Donkey Kick', progressionLevel:1, muscleGroups:['glutes'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12, unilateral:true },
+      
+      // ===== GLUTE BRIDGES & HAMSTRING =====
+      { id:'glute-bridge', name:'Glute Bridge', progressionLevel:1, muscleGroups:['glutes','hamstrings'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:15, unilateralOption:true },
+      { id:'single-leg-bridge', name:'Single-Leg Glute Bridge', progressionLevel:2, muscleGroups:['glutes','hamstrings'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:10, unilateral:true },
+      { id:'marching-bridge', name:'Marching Glute Bridge', progressionLevel:2, muscleGroups:['glutes','hamstrings','core'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12, unilateral:true },
+      { id:'hamstring-curl-ball', name:'Exercise Ball Hamstring Curl', progressionLevel:2, muscleGroups:['hamstrings','glutes'], primaryMuscle:'hamstrings', equipment:['exercise ball'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:12 },
+      
+      // ===== PUSH-UPS (CHEST/SHOULDERS/TRICEPS) =====
+      { id:'pushup', name:'Push-up', progressionLevel:1, muscleGroups:['chest','triceps','shoulders'], primaryMuscle:'chest', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12 },
+      { id:'wide-pushup', name:'Wide Grip Push-up', progressionLevel:2, muscleGroups:['chest'], primaryMuscle:'chest', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:15 },
+      { id:'diamond-pushup', name:'Diamond Push-up (Triceps)', progressionLevel:2, muscleGroups:['triceps','chest'], primaryMuscle:'triceps', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:10 },
+      { id:'decline-pushup', name:'Decline Push-up (feet on stairs)', progressionLevel:2, muscleGroups:['upper chest','shoulders'], primaryMuscle:'chest', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12 },
+      { id:'incline-pushup', name:'Incline Push-up', progressionLevel:1, muscleGroups:['lower chest'], primaryMuscle:'chest', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12 },
+      { id:'plyo-pushup', name:'Plyometric Push-up', progressionLevel:3, muscleGroups:['chest','triceps'], primaryMuscle:'chest', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:10, explosive:true },
+      { id:'pike-pushup', name:'Pike Push-up (Shoulders)', progressionLevel:2, muscleGroups:['shoulders','triceps'], primaryMuscle:'shoulders', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:12 },
+      { id:'tricep-pushup', name:'Tricep Push-up', progressionLevel:2, muscleGroups:['triceps'], primaryMuscle:'triceps', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12 },
+      { id:'roman-shoulder-pushup', name:'Roman Shoulder Push-up', progressionLevel:3, muscleGroups:['shoulders','chest'], primaryMuscle:'shoulders', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:10, unilateral:true },
+      
+      // ===== PULL (BACK/BICEPS) =====
+      { id:'bent-row-db', name:'Bent Over Dumbbell Row', progressionLevel:2, muscleGroups:['lats','rhomboids','biceps'], primaryMuscle:'lats', equipment:['dumbbells'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:10, unilateral:true, note:'25 lb' },
+      { id:'gorilla-row', name:'Gorilla Row (DB)', progressionLevel:2, muscleGroups:['lats','traps'], primaryMuscle:'lats', equipment:['dumbbells'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:8, unilateral:true },
+      { id:'banded-y-row', name:'Standing Banded Y-Row', progressionLevel:2, muscleGroups:['upper back','rear delts'], primaryMuscle:'back', equipment:['resistance bands'], motion:{direction:'pull',plane:'vertical'}, defaultReps:12, note:'bands in door' },
+      { id:'pullup', name:'Pull-up', progressionLevel:3, muscleGroups:['lats','biceps'], primaryMuscle:'lats', equipment:['pull-up bar'], motion:{direction:'pull',plane:'vertical'}, defaultReps:8 },
+      { id:'band-row', name:'Banded Row', progressionLevel:1, muscleGroups:['back','biceps'], primaryMuscle:'back', equipment:['resistance bands'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:15 },
+      { id:'rear-delt-fly', name:'Bent Over Rear Delt Fly', progressionLevel:2, muscleGroups:['rear delts','upper back'], primaryMuscle:'shoulders', equipment:['dumbbells'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:12, note:'5 lb' },
+      
+      // ===== SHOULDERS / PRESSES =====
+      { id:'arnold-press', name:'Arnold Press', progressionLevel:2, muscleGroups:['shoulders','triceps'], primaryMuscle:'shoulders', equipment:['dumbbells'], motion:{direction:'push',plane:'vertical'}, defaultReps:10, note:'25 lb' },
+      { id:'bicep-curl-press', name:'Bicep Curl to Shoulder Press', progressionLevel:2, muscleGroups:['biceps','shoulders'], primaryMuscle:'shoulders', equipment:['dumbbells'], motion:{direction:'push',plane:'vertical'}, defaultReps:10 },
+      { id:'chest-fly', name:'Dumbbell Chest Fly', progressionLevel:2, muscleGroups:['chest'], primaryMuscle:'chest', equipment:['dumbbells'], motion:{direction:'push',plane:'horizontal'}, defaultReps:10, unilateral:true },
+      { id:'dumbbell-pullover', name:'Dumbbell Pullover (floor)', progressionLevel:2, muscleGroups:['lats','chest'], primaryMuscle:'lats', equipment:['dumbbells'], motion:{direction:'pull',plane:'horizontal'}, defaultReps:12 },
+      
+      // ===== ARMS =====
+      { id:'bicep-curl', name:'Dumbbell Bicep Curl', progressionLevel:1, muscleGroups:['biceps'], primaryMuscle:'biceps', equipment:['dumbbells'], motion:{direction:'pull',plane:'vertical'}, defaultReps:10 },
+      { id:'chair-dips', name:'Chair Dips', progressionLevel:2, muscleGroups:['triceps'], primaryMuscle:'triceps', equipment:['bodyweight'], motion:{direction:'push',plane:'vertical'}, defaultReps:12 },
+      
+      // ===== CORE & PLANK VARIATIONS =====
+      { id:'plank', name:'Plank', progressionLevel:1, muscleGroups:['core'], primaryMuscle:'core', equipment:['bodyweight'], motion:{direction:'static',plane:'horizontal'}, defaultReps:45, isTimed:true },
+      { id:'plank-feet-ball', name:'Plank with Feet on Exercise Ball', progressionLevel:3, muscleGroups:['core','shoulders'], primaryMuscle:'core', equipment:['exercise ball'], motion:{direction:'static',plane:'horizontal'}, defaultReps:40, isTimed:true },
+      { id:'plank-arms-ball', name:'Plank with Arms on Exercise Ball', progressionLevel:2, muscleGroups:['core'], primaryMuscle:'core', equipment:['exercise ball'], motion:{direction:'static',plane:'horizontal'}, defaultReps:40, isTimed:true },
+      { id:'forearm-to-pushup', name:'Forearm Plank to Push-up Plank', progressionLevel:2, muscleGroups:['core','chest'], primaryMuscle:'core', equipment:['bodyweight'], motion:{direction:'push',plane:'horizontal'}, defaultReps:12, isCardio:true },
+      { id:'side-plank-hip-abd', name:'Side Plank Hip Abduction', progressionLevel:2, muscleGroups:['glute med','obliques'], primaryMuscle:'glutes', equipment:['bodyweight'], motion:{direction:'push',plane:'frontal'}, defaultReps:10, unilateral:true },
+      { id:'side-plank-dips', name:'Side Plank Dips', progressionLevel:2, muscleGroups:['obliques'], primaryMuscle:'core', equipment:['bodyweight'], motion:{direction:'push',plane:'frontal'}, defaultReps:40, isTimed:true },
+      { id:'deadbug', name:'Dead Bug', progressionLevel:1, muscleGroups:['core'], primaryMuscle:'core', equipment:['bodyweight'], motion:{direction:'static',plane:'horizontal'}, defaultReps:12 },
+      { id:'russian-twist', name:'Russian Twist (DB)', progressionLevel:2, muscleGroups:['obliques'], primaryMuscle:'core', equipment:['dumbbells'], motion:{direction:'rotational'}, defaultReps:20 },
+      { id:'bicycle-crunch', name:'Bicycle Crunches', progressionLevel:1, muscleGroups:['abs','obliques'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:30, isTimed:true },
+      { id:'flutter-kick', name:'Flutter Kicks', progressionLevel:1, muscleGroups:['lower abs'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:40, isTimed:true },
+      { id:'flat-leg-raise', name:'Flat Leg Raises', progressionLevel:1, muscleGroups:['lower abs'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:12 },
+      { id:'v-up', name:'V‑ups', progressionLevel:2, muscleGroups:['abs'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:12 },
+      { id:'jackknife-situp', name:'Jackknife Sit‑up', progressionLevel:2, muscleGroups:['abs'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:10 },
+      { id:'corkscrew', name:'Corkscrew Abs', progressionLevel:2, muscleGroups:['obliques','abs'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:30, isTimed:true },
+      
+      // ===== CALF RAISES =====
+      { id:'single-calf-raise', name:'Single Leg Calf Raise', progressionLevel:1, muscleGroups:['calves'], primaryMuscle:'calves', equipment:['bodyweight'], defaultReps:12, unilateral:true },
+      { id:'bent-knee-calf-raise', name:'Bent Knee Single Calf Raise', progressionLevel:2, muscleGroups:['soleus'], primaryMuscle:'calves', equipment:['bodyweight'], defaultReps:12, unilateral:true },
+      
+      // ===== CARDIO / FINISHERS =====
+      { id:'jumping-jack', name:'Jumping Jacks', progressionLevel:1, muscleGroups:['cardio'], equipment:['bodyweight'], defaultReps:45, isCardio:true },
+      { id:'down-ups', name:'Down‑Ups', progressionLevel:2, muscleGroups:['full body'], equipment:['bodyweight'], defaultReps:30, isCardio:true },
+      { id:'mountain-climber', name:'Mountain Climbers', progressionLevel:1, muscleGroups:['cardio','core'], equipment:['bodyweight'], defaultReps:40, isCardio:true, isTimed:true },
+      { id:'high-knees', name:'High Knees', progressionLevel:1, muscleGroups:['cardio'], equipment:['bodyweight'], defaultReps:40, isCardio:true },
+      { id:'squat-jump', name:'Squat Jumps', progressionLevel:2, muscleGroups:['quads','glutes'], primaryMuscle:'quads', equipment:['bodyweight'], defaultReps:12, explosive:true, isCardio:true },
+      { id:'army-crawl', name:'Army Crawl', progressionLevel:2, muscleGroups:['full body'], equipment:['bodyweight'], defaultReps:30, isCardio:true },
+      { id:'90-90-hops', name:'90-90 Alternating Leg Hops', progressionLevel:2, muscleGroups:['cardio','agility'], equipment:['bodyweight'], defaultReps:45, isCardio:true, isTimed:true },
+      
+      // ===== ADDITIONAL VARIATIONS (DEADBUGS, ETC) =====
+      { id:'deadbug-reach', name:'Dead Bug with Reach', progressionLevel:2, muscleGroups:['core'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:10 },
+      { id:'single-leg-deadbug', name:'Single Leg Dead Bug', progressionLevel:2, muscleGroups:['core'], primaryMuscle:'core', equipment:['bodyweight'], defaultReps:12 },
     ];
 
-    // ================= STATE =================
-    const state = {
-      selectedEq: [],
-      level: 2,
-      currentWorkout: null,
-      history: JSON.parse(localStorage.getItem("swole_history") || "[]"),
-      xp: parseInt(localStorage.getItem("swole_xp") || "0"),
-      streak: 0
-    };
-
-    // ================= UTILS =================
-    const shuffle = arr => arr.sort(() => Math.random() - 0.5);
-    const getPrimary = ex => ex.muscles[0];
-    const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
-
-    // ================= CORE LOGIC =================
-    function generateWorkout() {
-      if (state.selectedEq.length === 0) return alert("⚠️ Select at least one equipment type.");
-      
-      const filtered = EXERCISES.filter(e => e.eq.some(eq => state.selectedEq.includes(eq)));
-      const strength = filtered.filter(e => e.cat === "strength");
-      const finishers = filtered.filter(e => e.cat === "finisher");
-
-      if (strength.length < 6) return alert(`⚠️ Only ${strength.length} strength exercises available for your selection. Add more equipment or exercises to the DB.`);
-      if (finishers.length === 0) return alert("⚠️ No finisher exercises match your equipment.");
-
-      // Circuit A: 3-5 random
-      let a = shuffle([...strength]).slice(0, Math.floor(Math.random() * 3) + 3);
-      let usedA = new Set(a.map(getPrimary));
-
-      // Circuit B: 3-5, prioritize unused muscles
-      let candidatesB = shuffle(strength.filter(e => !usedA.has(getPrimary(e))));
-      let b = candidatesB.slice(0, Math.min(candidatesB.length, Math.floor(Math.random() * 3) + 3));
-      if (b.length < 3) b = shuffle(strength).slice(0, 3); // fallback
-
-      // Circuit C: 1-2 finishers
-      let c = shuffle(finishers).slice(0, clamp(finishers.length, 1, 2));
-
-      // Map to current level
-      const mapProg = ex => {
-        const idx = Math.min(state.level - 1, ex.progressions.length - 1);
-        return { ...ex, prog: ex.progressions[idx] };
-      };
-
-      const sets = Math.floor(Math.random() * 2) + 2; // 2 or 3
-
-      return {
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        sets,
-        a: a.map(mapProg),
-        b: b.map(mapProg),
-        c: c.map(mapProg)
-      };
+    // ---------- HELPER: FILTER BY EQUIPMENT & LEVEL ----------
+    function getAvailableExercises(equipmentList) {
+      return exerciseDB.filter(ex => {
+        const eqOk = ex.equipment.every(req => equipmentList.includes(req));
+        const levelOk = ex.progressionLevel <= userLevel;
+        return eqOk && levelOk;
+      });
     }
+
+    // ---------- SMART RANDOMIZER (BALANCED CIRCUITS) ----------
+    function generateWorkout(equipmentList) {
+      const available = getAvailableExercises(equipmentList);
+      if (available.length === 0) return { circuitA:[], circuitB:[], circuitC:[] };
+
+      const strengthPool = available.filter(ex => !ex.isCardio);
+      const cardioPool = available.filter(ex => ex.isCardio);
+      const usedIds = new Set();
+      
+      function pickRandom(pool, filterFn = null) {
+        let candidates = filterFn ? pool.filter(filterFn) : pool;
+        candidates = candidates.filter(ex => !usedIds.has(ex.id));
+        if (candidates.length === 0) {
+          candidates = pool.filter(ex => !usedIds.has(ex.id));
+          if (candidates.length === 0) return null;
+        }
+        const selected = candidates[Math.floor(Math.random() * candidates.length)];
+        usedIds.add(selected.id);
+        return selected;
+      }
+
+      // Circuit A (3-5 exercises)
+      const circuitA = [];
+      const aCount = 3 + Math.floor(Math.random() * 3);
+      
+      const lowerPush = pickRandom(strengthPool, ex => ex.motion?.direction === 'push' && ex.primaryMuscle?.match(/quads|glutes/));
+      if (lowerPush) circuitA.push(lowerPush);
+      const upperPush = pickRandom(strengthPool, ex => ex.motion?.direction === 'push' && ex.primaryMuscle?.match(/chest|shoulders|triceps/));
+      if (upperPush) circuitA.push(upperPush);
+      const upperPull = pickRandom(strengthPool, ex => ex.motion?.direction === 'pull' && ex.primaryMuscle?.match(/back|lats|biceps/));
+      if (upperPull) circuitA.push(upperPull);
+      
+      while (circuitA.length < aCount) {
+        const next = pickRandom(strengthPool);
+        if (next) circuitA.push(next);
+        else break;
+      }
+
+      // Circuit B (3-5) - different primary muscles
+      const circuitB = [];
+      const bCount = 3 + Math.floor(Math.random() * 3);
+      const usedPrimary = new Set(circuitA.map(ex => ex.primaryMuscle).filter(Boolean));
+      for (let i=0; i<bCount; i++) {
+        const candidate = pickRandom(strengthPool, ex => !usedPrimary.has(ex.primaryMuscle));
+        if (candidate) {
+          circuitB.push(candidate);
+          if (candidate.primaryMuscle) usedPrimary.add(candidate.primaryMuscle);
+        } else {
+          const fallback = pickRandom(strengthPool);
+          if (fallback) circuitB.push(fallback);
+        }
+      }
+
+      // Circuit C: Finisher (1-2 cardio moves)
+      const circuitC = [];
+      const cCount = 1 + Math.floor(Math.random() * 2);
+      for (let i=0; i<cCount; i++) {
+        const cardio = pickRandom(cardioPool);
+        if (cardio) circuitC.push(cardio);
+      }
+      if (circuitC.length === 0) {
+        const emergency = pickRandom(strengthPool, ex => ex.equipment.includes('bodyweight'));
+        if (emergency) circuitC.push({...emergency, name: emergency.name + ' (fast)', isCardio:true });
+      }
+
+      return { circuitA, circuitB, circuitC };
+    }
+
+    // ---------- UI RENDERING ----------
+    let currentWorkout = null;
 
     function renderWorkout(workout) {
-      state.currentWorkout = workout;
-      const container = document.getElementById("workout-display");
-      const renderCircuit = (label, exercises) => `
-        <div class="circuit">
-          <h3>${label}</h3>
-          ${exercises.map(ex => `
-            <div class="exercise">
-              <strong>${ex.prog.name}</strong> <span class="meta">(${ex.type} | ${ex.eq.join(", ")})</span><br>
-              <div class="meta">🎯 ${ex.muscles.join(", ")}</div>
-              <div class="meta">🔄 ${workout.sets} × ${ex.prog.reps}</div>
+      const container = document.getElementById('workout-container');
+      if (!workout || (workout.circuitA.length===0 && workout.circuitB.length===0)) {
+        container.innerHTML = '<div class="empty-message">⚠️ No exercises match your equipment/level. Try enabling more gear.</div>';
+        return;
+      }
+
+      const renderCircuit = (circuit, title, circuitClass, sets=3) => {
+        if (!circuit.length) return '';
+        const items = circuit.map(ex => {
+          const repDisplay = ex.isTimed ? `${ex.defaultReps}s` : `${ex.defaultReps} reps`;
+          const tags = [];
+          if (ex.motion) tags.push(`${ex.motion.direction} ${ex.motion.plane}`);
+          else tags.push(ex.muscleGroups?.[0] || '');
+          if (ex.isCardio) tags.push('💓cardio');
+          if (ex.note) tags.push(ex.note);
+          return `<li class="exercise-item">
+            <div class="exercise-name">🏋️ ${ex.name} 
+              <span class="exercise-tags">${tags.map(t => `<span class="tag">${t}</span>`).join('')}</span>
             </div>
-          `).join("")}
+            <div class="rep-count">${repDisplay}</div>
+          </li>`;
+        }).join('');
+        
+        return `<div class="circuit-card ${circuitClass}">
+          <div class="circuit-header"><span>${title}</span><span>${sets} sets</span></div>
+          <ul class="exercise-list">${items}</ul>
         </div>`;
+      };
 
-      container.innerHTML = `
-        ${renderCircuit("Circuit A", workout.a)}
-        ${renderCircuit("Circuit B", workout.b)}
-        ${renderCircuit("Circuit C (Finisher)", workout.c)}
-        <div class="meta mt-16">📅 ${workout.date} | 🏋️ Sets: ${workout.sets}</div>
+      const html = `
+        ${renderCircuit(workout.circuitA, '⚡ CIRCUIT A', 'circuit-A', 3)}
+        ${renderCircuit(workout.circuitB, '🔥 CIRCUIT B', 'circuit-B', 2)}
+        ${renderCircuit(workout.circuitC, '💀 FINISHER', 'circuit-C', 1)}
       `;
-      switchView("workout-view");
+      container.innerHTML = html || '<div class="empty-message">Roll again!</div>';
     }
 
-    function saveAndComplete() {
-      if (!state.currentWorkout) return;
-      
-      // XP Calculation (base + per exercise + bonus for finisher)
-      const xp = 50 + (state.currentWorkout.a.length * 15) + (state.currentWorkout.b.length * 15) + 30;
-      state.xp += xp;
-      state.history.push(state.currentWorkout);
-      
-      localStorage.setItem("swole_history", JSON.stringify(state.history));
-      localStorage.setItem("swole_xp", state.xp.toString());
-      
-      // Simple streak logic
-      const today = new Date().toLocaleDateString();
-      const last = state.history[state.history.length - 2]?.date;
-      if (last !== today) state.streak = last ? (new Date() - new Date(last) <= 86400000 * 2 ? state.streak + 1 : 1) : 1;
-      localStorage.setItem("swole_streak", state.streak.toString());
-
-      alert(`✅ Workout Complete! +${xp} XP`);
-      switchView("setup-view");
+    // ---------- HISTORY & TRACKING ----------
+    let workoutHistory = [];
+    function loadHistory() {
+      try {
+        const saved = localStorage.getItem('sw0le_history');
+        if (saved) workoutHistory = JSON.parse(saved);
+      } catch(e) {}
+      renderHistory();
+    }
+    function saveHistory() {
+      localStorage.setItem('sw0le_history', JSON.stringify(workoutHistory));
+    }
+    function addWorkoutToHistory(workout, xpEarned) {
+      const entry = {
+        date: new Date().toLocaleString(),
+        exercises: [...workout.circuitA, ...workout.circuitB, ...workout.circuitC].map(e => e.name),
+        xp: xpEarned,
+        level: userLevel
+      };
+      workoutHistory.unshift(entry);
+      if (workoutHistory.length > 20) workoutHistory.pop();
+      saveHistory();
+      renderHistory();
+    }
+    function renderHistory() {
+      const logDiv = document.getElementById('history-log');
+      if (workoutHistory.length === 0) {
+        logDiv.innerHTML = '<div class="empty-message">No quests completed yet</div>';
+        return;
+      }
+      logDiv.innerHTML = workoutHistory.map(entry => `
+        <div class="history-entry">
+          <div><strong>${entry.date}</strong><br>${entry.exercises.slice(0,3).join(', ')}${entry.exercises.length>3?'…':''}</div>
+          <div class="xp-gain">+${entry.xp} XP (Lv.${entry.level})</div>
+        </div>
+      `).join('');
     }
 
-    function exportCSV() {
-      if (state.history.length === 0) return alert("📭 No workouts to export yet.");
-      
-      const rows = [["Date", "Circuit", "Exercise", "Progression", "Sets", "Reps", "Equipment", "Muscles", "XP"]];
-      state.history.forEach(w => {
-        const xpPer = Math.round((50 + (w.a.length*15) + (w.b.length*15) + 30) / (w.a.length + w.b.length + w.c.length));
-        const push = (circ, ex) => rows.push([w.date, circ, ex.name, ex.prog.name, w.sets, ex.prog.reps, ex.eq.join(";"), ex.muscles.join(";"), xpPer]);
-        w.a.forEach(ex => push("A", ex));
-        w.b.forEach(ex => push("B", ex));
-        w.c.forEach(ex => push("C", ex));
+    // ---------- EVENT LISTENERS ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProgress();
+      loadHistory();
+
+      const randomizeBtn = document.getElementById('randomize-btn');
+      const completeBtn = document.getElementById('complete-workout-btn');
+      const exportBtn = document.getElementById('export-btn');
+      const resetBtn = document.getElementById('reset-progress-btn');
+      const clearHistoryBtn = document.getElementById('clear-history-btn');
+      const equipmentCheckboxes = document.querySelectorAll('#equipment-group input');
+
+      function getSelectedEquipment() {
+        return Array.from(equipmentCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+      }
+
+      randomizeBtn.addEventListener('click', () => {
+        const equip = getSelectedEquipment();
+        if (equip.length === 0) {
+          alert('Select at least one equipment type!');
+          return;
+        }
+        currentWorkout = generateWorkout(equip);
+        renderWorkout(currentWorkout);
       });
 
-      const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `SWOLE_History_${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function switchView(id) {
-      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      if (id === "history-view") renderStats();
-    }
-
-    function renderStats() {
-      document.getElementById("stat-total").textContent = state.history.length;
-      document.getElementById("stat-xp").textContent = state.xp;
-      document.getElementById("stat-streak").textContent = state.streak || 0;
-    }
-
-    // ================= INIT =================
-    function init() {
-      // Equipment Grid
-      const grid = document.getElementById("eq-grid");
-      const eqOptions = ["bodyweight", "dumbbells", "pullup_bar", "exercise_ball", "resistance_bands"];
-      eqOptions.forEach(eq => {
-        const btn = document.createElement("div");
-        btn.className = "eq-btn";
-        btn.innerHTML = eq.replace("_", " ");
-        btn.onclick = () => {
-          btn.classList.toggle("selected");
-          state.selectedEq = btn.classList.contains("selected") 
-            ? [...state.selectedEq, eq] 
-            : state.selectedEq.filter(e => e !== eq);
-        };
-        grid.appendChild(btn);
+      completeBtn.addEventListener('click', () => {
+        if (!currentWorkout || (currentWorkout.circuitA.length===0 && currentWorkout.circuitB.length===0)) {
+          alert('Generate a workout first!');
+          return;
+        }
+        const totalEx = currentWorkout.circuitA.length + currentWorkout.circuitB.length + currentWorkout.circuitC.length;
+        const xpEarned = (currentWorkout.circuitA.length * 8) + (currentWorkout.circuitB.length * 8) + (currentWorkout.circuitC.length * 5);
+        awardXP(xpEarned);
+        addWorkoutToHistory(currentWorkout, xpEarned);
+        alert(`💪 Workout complete! +${xpEarned} XP`);
       });
 
-      // Level Selector
-      document.getElementById("level-select").onchange = (e) => state.level = parseInt(e.target.value);
+      exportBtn.addEventListener('click', () => {
+        if (workoutHistory.length === 0) {
+          alert('No history to export.');
+          return;
+        }
+        const text = workoutHistory.map(e => `${e.date} | Lv.${e.level} | +${e.xp} XP | ${e.exercises.join('; ')}`).join('\n');
+        navigator.clipboard?.writeText(text).then(() => alert('📋 History copied to clipboard!'));
+      });
 
-      // Buttons
-      document.getElementById("generate-btn").onclick = () => renderWorkout(generateWorkout());
-      document.getElementById("complete-btn").onclick = saveAndComplete;
-      document.getElementById("back-btn").onclick = () => switchView("setup-view");
-      document.getElementById("view-history-btn").onclick = () => switchView("history-view");
-      document.getElementById("back-from-history-btn").onclick = () => switchView("setup-view");
-      document.getElementById("export-btn").onclick = exportCSV;
+      resetBtn.addEventListener('click', () => {
+        if (confirm('Reset level and XP to 1?')) {
+          userLevel = 1;
+          currentXP = 0;
+          saveProgress();
+          updateLevelDisplay();
+        }
+      });
 
-      // Load streak
-      state.streak = parseInt(localStorage.getItem("swole_streak") || "0");
-    }
+      clearHistoryBtn.addEventListener('click', () => {
+        if (confirm('Clear all workout history?')) {
+          workoutHistory = [];
+          saveHistory();
+          renderHistory();
+        }
+      });
 
-    init();
-  </script>
+      // Initial workout on load (bodyweight default)
+      setTimeout(() => {
+        currentWorkout = generateWorkout(['bodyweight']);
+        renderWorkout(currentWorkout);
+      }, 50);
+    });
+  })();
+</script>
 </body>
 </html>
