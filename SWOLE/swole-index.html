@@ -41,16 +41,25 @@
     button.secondary { background: #2a2d35; color: var(--text); }
     button.secondary:hover { background: #353842; }
 
-    .circuit { background: #1e232c; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid var(--accent); position: relative; }
+    .circuit { background: #1e232c; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid var(--accent); }
     .circuit h3 { font-size: 1.1rem; margin-bottom: 12px; color: #fff; display: flex; justify-content: space-between; }
     .exercise { padding: 12px 0; border-bottom: 1px solid #333; }
     .exercise:last-child { border-bottom: none; }
-    .ex-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .ex-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ex-header strong { color: var(--accent); font-size: 1rem; }
-    .ex-meta { font-size: 0.8rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-    .video-placeholder { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; margin-top: 10px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.85rem; text-align: center; padding: 8px; position: relative; overflow: hidden; border: 1px dashed #444; }
-    .video-placeholder iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
-    .quote-box { background: rgba(255,255,255,0.05); border-left: 3px solid var(--accent); padding: 12px; margin: 16px 0; font-style: italic; color: var(--muted); font-size: 0.9rem; border-radius: 6px; }
+    .ex-meta { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+    
+    .upgrade-btn { background: transparent; color: #ff9800; border: 1px solid #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+    .upgrade-btn:hover { background: #ff9800; color: #000; }
+
+    .collapsible-header { display: flex; align-items: center; gap: 6px; margin-top: 8px; cursor: pointer; color: var(--accent); font-size: 0.85rem; font-weight: 600; background: none; border: none; padding: 0; }
+    .collapsible-header:hover { opacity: 0.8; }
+    .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .collapsible-content.open { max-height: 600px; }
+    .content-inner { padding: 12px; background: #111; border-radius: 8px; margin-top: 8px; border: 1px dashed #333; }
+    .form-cue { font-size: 0.85rem; color: #ccc; margin-bottom: 10px; line-height: 1.5; }
+    .video-placeholder { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.8rem; text-align: center; padding: 10px; position: relative; overflow: hidden; }
+    .video-placeholder iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
     .achievement-toast { position: fixed; bottom: 20px; right: 20px; background: var(--card); border: 1px solid var(--gold); border-radius: 10px; padding: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); transform: translateX(200%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200; max-width: 300px; }
     .achievement-toast.show { transform: translateX(0); }
@@ -68,11 +77,13 @@
     .mt-16 { margin-top: 16px; }
     .mb-12 { margin-bottom: 12px; }
     .text-muted { color: var(--muted); font-size: 0.85rem; }
-    
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); padding: 10px 16px; border-radius: 8px; border: 1px solid var(--accent); opacity: 0; transition: 0.3s; z-index: 250; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     @media (max-width: 600px) {
       .topbar { flex-direction: column; text-align: center; }
       .stats { justify-content: center; width: 100%; }
-      .ex-header { flex-direction: column; }
+      .ex-header { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -112,7 +123,7 @@
   <section id="workout-view" class="view">
     <div class="card">
       <h2>🔥 Today's Protocol</h2>
-      <div class="quote-box" id="motivation-quote">"Push yourself, because no one else is going to do it for you."</div>
+      <div class="quote-box" id="motivation-quote" style="background:rgba(255,255,255,0.05); border-left:3px solid var(--accent); padding:12px; margin-bottom:16px; border-radius:6px; font-style:italic; color:var(--muted);">"Push yourself, because no one else is going to do it for you."</div>
       <div id="workout-display"></div>
       <div class="controls mt-16">
         <button id="complete-btn">✅ Log Completion (+XP)</button>
@@ -139,153 +150,234 @@
     <div class="ach-head">🏅 Achievement Unlocked!</div>
     <div id="ach-text"></div>
   </div>
+  <div class="toast" id="upgrade-toast">✅ Exercise Upgraded</div>
 
   <script>
     // ================= EXPANDED EXERCISE DATABASE =================
-    // Progressions are scaled for 5lb/25lb limits via tempo, unilateral work, instability, and volume.
     const EXERCISES = [
-      // PUSH-UPS & VARIATIONS
-      { id: "push_incline", name: "Incline Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "High Incline", reps: "12" }, { lvl: 2, name: "Standard Incline", reps: "10" }, { lvl: 3, name: "Low Incline", reps: "8" }, { lvl: 4, name: "Tempo 3-1-1 Incline", reps: "8" }
-      ]},
-      { id: "push_standard", name: "Standard Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Knee Push-Up", reps: "10" }, { lvl: 2, name: "Standard Push-Up", reps: "12" }, { lvl: 3, name: "Slow Tempo Push-Up", reps: "8" }, { lvl: 4, name: "Plyometric Push-Up", reps: "8" }
-      ]},
-      { id: "push_wide", name: "Wide Grip Push-Up", eq: ["bodyweight"], muscles: ["chest", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "High Wide Push-Up", reps: "10" }, { lvl: 2, name: "Standard Wide", reps: "12" }, { lvl: 3, name: "Wide + Pause at Bottom", reps: "8" }, { lvl: 4, name: "Wide Push-Up on Ball", reps: "10" }
-      ]},
-      { id: "push_diamond", name: "Diamond Push-Up", eq: ["bodyweight"], muscles: ["triceps", "chest"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Narrow Knee Push-Up", reps: "8" }, { lvl: 2, name: "Standard Diamond", reps: "10" }, { lvl: 3, name: "Diamond w/ Shoulder Taps", reps: "8" }, { lvl: 4, name: "One-Arm Diamond", reps: "4/side" }
-      ]},
-      { id: "push_decline", name: "Decline Push-Up", eq: ["bodyweight"], muscles: ["upper_chest", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Low Decline", reps: "10" }, { lvl: 2, name: "Medium Decline", reps: "12" }, { lvl: 3, name: "High Decline (Stairs)", reps: "10" }, { lvl: 4, name: "Decline w/ Feet on Ball", reps: "8" }
-      ]},
-      { id: "push_triceps", name: "Triceps Push-Up", eq: ["bodyweight"], muscles: ["triceps"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Close Grip Knee", reps: "8" }, { lvl: 2, name: "Standard Close Grip", reps: "12" }, { lvl: 3, name: "Slow Eccentric", reps: "6" }, { lvl: 4, name: "Diamond + Shoulder Taps", reps: "8" }
-      ]},
-      { id: "push_roman", name: "Roman/Pike Shoulder Push-Up", eq: ["bodyweight"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "High Pike Hold", reps: "10s" }, { lvl: 2, name: "Shallow Pike Push", reps: "8" }, { lvl: 3, name: "Full Pike Push", reps: "10" }, { lvl: 4, name: "Elevated Pike Push", reps: "8" }
-      ]},
+      // PUSH-UPS
+      { id: "push_incline", name: "Incline Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Place hands on elevated surface (bench/stairs). Keep body straight, lower chest to hands, push back up. Avoid flaring elbows.",
+        progressions: [
+          { lvl: 1, name: "High Incline", reps: "12" }, { lvl: 2, name: "Medium Incline", reps: "10" }, { lvl: 3, name: "Low Incline", reps: "8" }, { lvl: 4, name: "Tempo 3-1-1 Incline", reps: "8" }
+        ]},
+      { id: "push_standard", name: "Standard Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Start in high plank. Hands shoulder-width, elbows at 45°. Lower chest to floor, keep core tight, push through palms. No sagging hips.",
+        progressions: [
+          { lvl: 1, name: "Knee Push-Up", reps: "10" }, { lvl: 2, name: "Standard Push-Up", reps: "12" }, { lvl: 3, name: "Slow Eccentric (3s down)", reps: "8" }, { lvl: 4, name: "Plyometric Push-Up", reps: "8" }
+        ]},
+      { id: "push_wide", name: "Wide Grip Push-Up", eq: ["bodyweight"], muscles: ["chest", "front_delt"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Hands wider than shoulders. Focus on stretching chest at bottom. Keep elbows pointing back, not out.",
+        progressions: [
+          { lvl: 1, name: "Elevated Wide", reps: "10" }, { lvl: 2, name: "Floor Wide", reps: "12" }, { lvl: 3, name: "Wide + 2s Pause", reps: "8" }, { lvl: 4, name: "Wide on Stability Ball", reps: "10" }
+        ]},
+      { id: "push_diamond", name: "Diamond Push-Up", eq: ["bodyweight"], muscles: ["triceps", "chest"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Hands close together forming diamond. Keep elbows tucked close to ribs. Lower slowly, push up focusing on triceps squeeze.",
+        progressions: [
+          { lvl: 1, name: "Knee Diamond", reps: "8" }, { lvl: 2, name: "Standard Diamond", reps: "10" }, { lvl: 3, name: "Diamond + Shoulder Taps", reps: "8" }, { lvl: 4, name: "One-Arm Assisted", reps: "4/side" }
+        ]},
+      { id: "push_decline", name: "Decline Push-Up", eq: ["bodyweight"], muscles: ["upper_chest", "shoulders"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Feet elevated on bench/stairs. Hands on floor. Keep neck neutral, lower chest toward floor. Targets upper chest heavily.",
+        progressions: [
+          { lvl: 1, name: "Low Decline", reps: "10" }, { lvl: 2, name: "Mid Decline", reps: "12" }, { lvl: 3, name: "High Decline", reps: "10" }, { lvl: 4, name: "Feet on Ball Decline", reps: "8" }
+        ]},
+      { id: "push_triceps", name: "Triceps Push-Up", eq: ["bodyweight"], muscles: ["triceps"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Hands close, fingers pointing slightly inward. Elbows travel straight back. Keep shoulders down, squeeze triceps at top.",
+        progressions: [
+          { lvl: 1, name: "Close Knee Push-Up", reps: "8" }, { lvl: 2, name: "Floor Close Push-Up", reps: "12" }, { lvl: 3, name: "Slow Lower Fast Up", reps: "6" }, { lvl: 4, name: "Close Grip + Iso Hold", reps: "8" }
+        ]},
+      { id: "push_roman", name: "Roman/Pike Push-Up", eq: ["bodyweight"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Hips high, body inverted V. Lower head toward floor between hands, keep legs straight. Press back up focusing on delts.",
+        progressions: [
+          { lvl: 1, name: "High Pike Hold", reps: "10s" }, { lvl: 2, name: "Bent-Knee Pike Push", reps: "8" }, { lvl: 3, name: "Full Straight Pike", reps: "10" }, { lvl: 4, name: "Elevated Feet Pike", reps: "8" }
+        ]},
 
-      // SQUATS & LEG PUSH
-      { id: "sq_standard", name: "Bodyweight Squat", eq: ["bodyweight"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Chair Squat", reps: "12" }, { lvl: 2, name: "Standard Squat", reps: "15" }, { lvl: 3, name: "Pause Squat (2s)", reps: "10" }, { lvl: 4, name: "Jump Squat", reps: "10" }
-      ]},
-      { id: "sq_sumo", name: "Sumo Squat", eq: ["bodyweight", "dumbbells"], muscles: ["adductors", "glutes", "quads"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "BW Sumo", reps: "12" }, { lvl: 2, name: "Sumo w/ 5lb DB", reps: "10" }, { lvl: 3, name: "Sumo w/ 25lb DB", reps: "10" }, { lvl: 4, name: "25lb DB + Pulse", reps: "8" }
-      ]},
-      { id: "sq_goblet", name: "Goblet Squat", eq: ["dumbbells"], muscles: ["quads", "core", "glutes"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Goblet", reps: "12" }, { lvl: 2, name: "25lb Goblet", reps: "10" }, { lvl: 3, name: "25lb + 2s Bottom Pause", reps: "8" }, { lvl: 4, name: "25lb + Slow Eccentric", reps: "6" }
-      ]},
-      { id: "sq_bulgarian", name: "Bulgarian Split Squat", eq: ["bodyweight"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Supported Split", reps: "8/leg" }, { lvl: 2, name: "Standard Split (Chair)", reps: "10/leg" }, { lvl: 3, name: "Slow Split w/ 5lb", reps: "8/leg" }, { lvl: 4, name: "Full 25lb Split", reps: "6/leg" }
-      ]},
-      { id: "sq_wall_single", name: "Single Leg Squat (Wall)", eq: ["bodyweight"], muscles: ["quads", "glutes", "balance"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Assisted Wall Squat", reps: "8/leg" }, { lvl: 2, name: "Light Wall Assist", reps: "10/leg" }, { lvl: 3, name: "Full Wall Single Leg", reps: "8/leg" }, { lvl: 4, name: "No Wall Single Leg", reps: "5/leg" }
-      ]},
-      { id: "sq_lateral", name: "Lateral Lunge", eq: ["bodyweight"], muscles: ["glutes", "adductors", "quads"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Shallow Lunge", reps: "8/side" }, { lvl: 2, name: "Standard Lateral", reps: "10/side" }, { lvl: 3, name: "Lateral w/ 5lb", reps: "12/side" }, { lvl: 4, name: "Lateral to Squat", reps: "10/side" }
-      ]},
+      // SQUATS & LEGS
+      { id: "sq_standard", name: "Bodyweight Squat", eq: ["bodyweight"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Feet shoulder-width, toes slightly out. Sit back like in a chair, knees track over toes. Keep chest up, drive through heels.",
+        progressions: [
+          { lvl: 1, name: "Chair Tap Squat", reps: "12" }, { lvl: 2, name: "Parallel Squat", reps: "15" }, { lvl: 3, name: "Deep Pause Squat", reps: "10" }, { lvl: 4, name: "Jump Squat", reps: "10" }
+        ]},
+      { id: "sq_sumo", name: "Sumo Squat", eq: ["bodyweight", "dumbbells"], muscles: ["adductors", "glutes", "quads"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Wide stance, toes pointed out. Hold DB between legs or at chest. Keep knees pushing outward. Drive up through inner thighs.",
+        progressions: [
+          { lvl: 1, name: "BW Sumo", reps: "12" }, { lvl: 2, name: "Sumo w/ 5lb DB", reps: "10" }, { lvl: 3, name: "Sumo w/ 25lb DB", reps: "10" }, { lvl: 4, name: "25lb Sumo + Pulse", reps: "8" }
+        ]},
+      { id: "sq_goblet", name: "Goblet Squat", eq: ["dumbbells"], muscles: ["quads", "core", "glutes"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Hold DB vertically against chest. Elbows tucked. Squat deep, keep torso upright. Use elbows to push knees out at bottom.",
+        progressions: [
+          { lvl: 1, name: "5lb Goblet", reps: "12" }, { lvl: 2, name: "25lb Goblet", reps: "10" }, { lvl: 3, name: "25lb + 2s Pause", reps: "8" }, { lvl: 4, name: "25lb + Slow 3s Lower", reps: "6" }
+        ]},
+      { id: "sq_bulgarian", name: "Bulgarian Split Squat", eq: ["bodyweight"], muscles: ["quads", "glutes", "balance"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Back foot on bench/chair. Front knee stays behind toes. Lower until back knee nearly touches floor. Drive up through front heel.",
+        progressions: [
+          { lvl: 1, name: "Supported Split", reps: "8/leg" }, { lvl: 2, name: "Standard Split (Chair)", reps: "10/leg" }, { lvl: 3, name: "Slow w/ 5lb DB", reps: "8/leg" }, { lvl: 4, name: "Full 25lb Split", reps: "6/leg" }
+        ]},
+      { id: "sq_wall_single", name: "Single Leg Squat (Wall)", eq: ["bodyweight"], muscles: ["quads", "glutes", "balance"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Stand near wall for balance. Shift weight to one leg. Lower slowly until thigh parallel. Push through midfoot. Keep knee aligned.",
+        progressions: [
+          { lvl: 1, name: "Assisted Wall Squat", reps: "8/leg" }, { lvl: 2, name: "Light Wall Assist", reps: "10/leg" }, { lvl: 3, name: "Full Wall Single Leg", reps: "8/leg" }, { lvl: 4, name: "Freestanding Pistol Progression", reps: "5/leg" }
+        ]},
+      { id: "sq_lateral", name: "Lateral Lunge", eq: ["bodyweight"], muscles: ["glutes", "adductors", "quads"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Step wide to side. Push hips back, bend one knee, keep other leg straight. Toe pointed forward. Push off bent leg to return.",
+        progressions: [
+          { lvl: 1, name: "Shallow Step", reps: "8/side" }, { lvl: 2, name: "Full Lateral Lunge", reps: "10/side" }, { lvl: 3, name: "Lateral w/ 5lb DB", reps: "12/side" }, { lvl: 4, name: "Lateral to Crossover Step", reps: "10/side" }
+        ]},
 
       // GLUTE BRIDGES & HINGES
-      { id: "gb_standard", name: "Standard Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Short Range Bridge", reps: "12" }, { lvl: 2, name: "Full Bridge", reps: "15" }, { lvl: 3, name: "Bridge + Top Squeeze (2s)", reps: "12" }, { lvl: 4, name: "Bridge w/ March", reps: "10/leg" }
-      ]},
-      { id: "gb_single", name: "Single Leg Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings", "core"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Bent Leg Single Bridge", reps: "8/leg" }, { lvl: 2, name: "Straight Leg Single", reps: "10/leg" }, { lvl: 3, name: "Single + Pause", reps: "8/leg" }, { lvl: 4, name: "Elevated Single Leg Bridge", reps: "6/leg" }
-      ]},
-      { id: "gb_donkey", name: "Donkey Kicks", eq: ["bodyweight"], muscles: ["glutes", "hip_flexors"], type: "push", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Small Range Kicks", reps: "10/leg" }, { lvl: 2, name: "Standard Donkey", reps: "12/leg" }, { lvl: 3, name: "Pulse at Top", reps: "15/leg" }, { lvl: 4, name: "Weighted Ankle Donkey", reps: "10/leg" }
-      ]},
-      { id: "gb_duck", name: "Duck Walk", eq: ["bodyweight"], muscles: ["quads", "glutes", "hips"], type: "compound", dir: "multi", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Duck Steps", reps: "10 steps" }, { lvl: 2, name: "Standard Walk", reps: "15 steps" }, { lvl: 3, name: "Wide Stance Walk", reps: "20 steps" }, { lvl: 4, name: "Duck Walk + Hold", reps: "10s" }
-      ]},
-      { id: "gb_rdl", name: "Romanian Deadlift (Light DB)", eq: ["dumbbells"], muscles: ["hamstrings", "glutes", "lower_back"], type: "hinge", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb DB RDL", reps: "12" }, { lvl: 2, name: "25lb DB RDL", reps: "10" }, { lvl: 3, name: "Single-Leg 25lb RDL", reps: "8/leg" }, { lvl: 4, name: "Slow Eccentric 25lb", reps: "6" }
-      ]},
-      { id: "gb_kettle", name: "Exercise Ball Hamstring Curl", eq: ["exercise_ball"], muscles: ["hamstrings", "glutes"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Ball March", reps: "20s" }, { lvl: 2, name: "Knee Curl", reps: "12" }, { lvl: 3, name: "Single-Leg Curl", reps: "8/leg" }, { lvl: 4, name: "Slide-In + Hold", reps: "10" }
-      ]},
+      { id: "gb_standard", name: "Standard Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Lie on back, knees bent. Press through heels, squeeze glutes to lift hips. Keep ribs down. Hold top for 1-2s.",
+        progressions: [
+          { lvl: 1, name: "Short Range Bridge", reps: "12" }, { lvl: 2, name: "Full Bridge + Squeeze", reps: "15" }, { lvl: 3, name: "Bridge w/ March", reps: "12/leg" }, { lvl: 4, name: "Bridge + Top Iso Hold", reps: "8" }
+        ]},
+      { id: "gb_single", name: "Single Leg Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings", "core"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "One leg bent, other extended. Drive through heel of working leg. Keep hips level, don't rotate. Squeeze glute at top.",
+        progressions: [
+          { lvl: 1, name: "Bent Leg Single", reps: "8/leg" }, { lvl: 2, name: "Straight Leg Single", reps: "10/leg" }, { lvl: 3, name: "Single + 2s Pause", reps: "8/leg" }, { lvl: 4, name: "Elevated Shoulders Single", reps: "6/leg" }
+        ]},
+      { id: "gb_donkey", name: "Donkey Kicks", eq: ["bodyweight"], muscles: ["glutes"], type: "push", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "On hands/knees. Keep knee bent 90°, lift leg straight back toward ceiling. Squeeze glute at top. Avoid arching lower back.",
+        progressions: [
+          { lvl: 1, name: "Small Range Kicks", reps: "10/leg" }, { lvl: 2, name: "Standard Donkey", reps: "12/leg" }, { lvl: 3, name: "Pulse at Top", reps: "15/leg" }, { lvl: 4, name: "Weighted Ankle Donkey", reps: "10/leg" }
+        ]},
+      { id: "gb_duck", name: "Duck Walk", eq: ["bodyweight"], muscles: ["quads", "glutes", "hips"], type: "compound", dir: "multi", cat: "strength", videoId: "", 
+        instructions: "Stay in deep squat position. Take small steps forward/backward. Keep chest up, knees tracking over toes. Short strides.",
+        progressions: [
+          { lvl: 1, name: "Slow Duck Steps", reps: "10 steps" }, { lvl: 2, name: "Standard Walk", reps: "15 steps" }, { lvl: 3, name: "Wide Stance Walk", reps: "20 steps" }, { lvl: 4, name: "Duck Walk + Hold", reps: "10s" }
+        ]},
+      { id: "gb_rdl", name: "Romanian Deadlift (DB)", eq: ["dumbbells"], muscles: ["hamstrings", "glutes", "lower_back"], type: "hinge", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Hold DBs. Hinge at hips, push butt back. Keep back flat, knees slightly bent. Lower DBs along legs until hamstring stretch. Squeeze glutes to stand.",
+        progressions: [
+          { lvl: 1, name: "5lb DB RDL", reps: "12" }, { lvl: 2, name: "25lb DB RDL", reps: "10" }, { lvl: 3, name: "Single-Leg 25lb RDL", reps: "8/leg" }, { lvl: 4, name: "Slow Eccentric 3s", reps: "6" }
+        ]},
+      { id: "gb_ball_curl", name: "Exercise Ball Hamstring Curl", eq: ["exercise_ball"], muscles: ["hamstrings", "glutes"], type: "hinge", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Lie on back, heels on ball. Lift hips into bridge. Roll ball in by bending knees, squeeze glutes at top. Control return.",
+        progressions: [
+          { lvl: 1, name: "Ball March", reps: "20s" }, { lvl: 2, name: "Two-Leg Curl", reps: "12" }, { lvl: 3, name: "Single-Leg Curl", reps: "8/leg" }, { lvl: 4, name: "Curl + Iso Hold", reps: "10" }
+        ]},
 
       // PULL & ROWS
-      { id: "row_bent", name: "Bent Over DB Row", eq: ["dumbbells"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Row", reps: "12/side" }, { lvl: 2, name: "25lb Row", reps: "10/side" }, { lvl: 3, name: "25lb + 2s Top Squeeze", reps: "8/side" }, { lvl: 4, name: "Heavy Tempo (3-0-1)", reps: "6/side" }
-      ]},
-      { id: "row_gorilla", name: "Gorilla Rows", eq: ["dumbbells"], muscles: ["back", "biceps", "core"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Alternating", reps: "10/side" }, { lvl: 2, name: "25lb Alternating", reps: "8/side" }, { lvl: 3, name: "25lb + Wide Stance", reps: "8/side" }, { lvl: 4, name: "25lb + Slow Lower", reps: "6/side" }
-      ]},
-      { id: "row_band_y", name: "Standing Banded Y-Raise", eq: ["resistance_bands"], muscles: ["upper_back", "shoulders"], type: "pull", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Light Band Y", reps: "12" }, { lvl: 2, name: "Medium Band Y", reps: "10" }, { lvl: 3, name: "Heavy Band Y", reps: "8" }, { lvl: 4, name: "Y + Iso Hold 2s", reps: "8" }
-      ]},
-      { id: "pull_pullup", name: "Pull-Up/Bar Progression", eq: ["pullup_bar"], muscles: ["back", "biceps"], type: "pull", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Dead Hang", reps: "20-30s" }, { lvl: 2, name: "Negatives", reps: "3x3s" }, { lvl: 3, name: "Band Assisted", reps: "6-8" }, { lvl: 4, name: "Strict Pull-Up", reps: "4-6" }
-      ]},
+      { id: "row_bent", name: "Bent Over DB Row", eq: ["dumbbells"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Hinge at hips, back flat. Pull DBs to lower ribs, squeeze shoulder blades together. Don't shrug shoulders. Lower with control.",
+        progressions: [
+          { lvl: 1, name: "5lb Row", reps: "12/side" }, { lvl: 2, name: "25lb Row", reps: "10/side" }, { lvl: 3, name: "25lb + 2s Top Squeeze", reps: "8/side" }, { lvl: 4, name: "Heavy Tempo 3-1-1", reps: "6/side" }
+        ]},
+      { id: "row_gorilla", name: "Gorilla Rows", eq: ["dumbbells"], muscles: ["back", "biceps", "core"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Bend over, place both DBs on floor. Row one while bracing core, keeping other planted. Alternate sides. Hips stay square.",
+        progressions: [
+          { lvl: 1, name: "5lb Alternating", reps: "10/side" }, { lvl: 2, name: "25lb Alternating", reps: "8/side" }, { lvl: 3, name: "25lb + Wide Stance", reps: "8/side" }, { lvl: 4, name: "25lb + Slow Lower", reps: "6/side" }
+        ]},
+      { id: "row_band_y", name: "Standing Banded Y-Raise", eq: ["resistance_bands"], muscles: ["upper_back", "shoulders"], type: "pull", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Anchor band low. Lean back slightly. Pull arms into Y shape overhead. Squeeze lower traps. Keep elbows straight.",
+        progressions: [
+          { lvl: 1, name: "Light Band Y", reps: "12" }, { lvl: 2, name: "Medium Band Y", reps: "10" }, { lvl: 3, name: "Heavy Band Y", reps: "8" }, { lvl: 4, name: "Y + 2s Iso Hold", reps: "8" }
+        ]},
 
       // SHOULDERS & ARMS
-      { id: "sh_arnold", name: "Arnold Press", eq: ["dumbbells"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Seated Press", reps: "12" }, { lvl: 2, name: "25lb Press", reps: "10" }, { lvl: 3, name: "25lb + Slow Lower", reps: "8" }, { lvl: 4, name: "Alternating Heavy", reps: "6/side" }
-      ]},
-      { id: "arm_curl", name: "Bicep Curl", eq: ["dumbbells"], muscles: ["biceps"], type: "pull", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Curl", reps: "15" }, { lvl: 2, name: "25lb Curl", reps: "10/side" }, { lvl: 3, name: "Hammer Curl 25lb", reps: "10" }, { lvl: 4, name: "25lb Curl to Press", reps: "10" }
-      ]},
-      { id: "arm_curl_press", name: "Bicep Curl to Shoulder Press", eq: ["dumbbells"], muscles: ["biceps", "shoulders"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Combo", reps: "12" }, { lvl: 2, name: "25lb Combo", reps: "10/side" }, { lvl: 3, name: "Slow Lower Combo", reps: "8" }, { lvl: 4, name: "Alternating Combo", reps: "6/side" }
-      ]},
-      { id: "sh_fly_rear", name: "Bent Over Rear Delt Fly", eq: ["dumbbells"], muscles: ["upper_back", "shoulders"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Light Fly", reps: "12/side" }, { lvl: 2, name: "5lb + Squeeze", reps: "15" }, { lvl: 3, name: "15lb Band/DB Mix", reps: "10" }, { lvl: 4, name: "Single-Arm Rear Delt", reps: "8/side" }
-      ]},
-      { id: "sh_pullover", name: "DB Pullover (Floor)", eq: ["dumbbells"], muscles: ["chest", "lats", "triceps"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "5lb Floor Pullover", reps: "12" }, { lvl: 2, name: "25lb Pullover", reps: "10" }, { lvl: 3, name: "25lb + Stretch Hold", reps: "8" }, { lvl: 4, name: "Slow Eccentric Pullover", reps: "6" }
-      ]},
-      { id: "arm_dips", name: "Chair Dips", eq: ["bodyweight"], muscles: ["triceps", "chest"], type: "push", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Bent Knee Dips", reps: "10" }, { lvl: 2, name: "Straight Leg Dips", reps: "12" }, { lvl: 3, name: "Slow Eccentric", reps: "8" }, { lvl: 4, name: "Weighted Backpack Dips", reps: "8" }
-      ]},
+      { id: "sh_arnold", name: "Arnold Press", eq: ["dumbbells"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Start with palms facing chest, elbows bent. Press up while rotating palms forward. Fully extend, reverse motion slowly.",
+        progressions: [
+          { lvl: 1, name: "5lb Seated Press", reps: "12" }, { lvl: 2, name: "25lb Press", reps: "10" }, { lvl: 3, name: "25lb + Slow Lower", reps: "8" }, { lvl: 4, name: "Alternating Heavy", reps: "6/side" }
+        ]},
+      { id: "arm_curl", name: "Bicep Curl", eq: ["dumbbells"], muscles: ["biceps"], type: "pull", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Stand tall, elbows pinned to sides. Curl DBs up, squeeze biceps at top. Control descent. Avoid swinging torso.",
+        progressions: [
+          { lvl: 1, name: "5lb Curl", reps: "15" }, { lvl: 2, name: "25lb Curl", reps: "10" }, { lvl: 3, name: "Hammer Curl 25lb", reps: "10" }, { lvl: 4, name: "Curl + 2s Squeeze", reps: "8" }
+        ]},
+      { id: "arm_curl_press", name: "Bicep Curl to Shoulder Press", eq: ["dumbbells"], muscles: ["biceps", "shoulders"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Curl DBs to shoulders. Rotate palms forward, press overhead. Control down to curls, repeat. Keep core braced.",
+        progressions: [
+          { lvl: 1, name: "5lb Combo", reps: "12" }, { lvl: 2, name: "25lb Combo", reps: "10" }, { lvl: 3, name: "Slow Lower Combo", reps: "8" }, { lvl: 4, name: "Alternating Combo", reps: "6/side" }
+        ]},
+      { id: "sh_fly_rear", name: "Bent Over Rear Delt Fly", eq: ["dumbbells"], muscles: ["upper_back", "rear_delt"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Hinge forward, slight knee bend. Raise arms out to sides, squeeze shoulder blades. Lead with elbows, not hands. Keep back flat.",
+        progressions: [
+          { lvl: 1, name: "5lb Light Fly", reps: "12/side" }, { lvl: 2, name: "5lb + Squeeze", reps: "15" }, { lvl: 3, name: "15lb Heavy", reps: "10" }, { lvl: 4, name: "Single-Arm Rear Delt", reps: "8/side" }
+        ]},
+      { id: "sh_pullover", name: "DB Pullover (Floor)", eq: ["dumbbells"], muscles: ["chest", "lats", "triceps"], type: "pull", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Lie on back, knees bent. Hold one DB with both hands over chest. Lower behind head slowly, stretch lats/chest. Return to start.",
+        progressions: [
+          { lvl: 1, name: "5lb Floor Pullover", reps: "12" }, { lvl: 2, name: "25lb Pullover", reps: "10" }, { lvl: 3, name: "25lb + Stretch Hold", reps: "8" }, { lvl: 4, name: "Slow Eccentric 3s", reps: "6" }
+        ]},
+      { id: "arm_dips", name: "Chair Dips", eq: ["bodyweight"], muscles: ["triceps", "chest"], type: "push", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Hands on chair edge, fingers forward. Slide hips off, lower by bending elbows to 90°. Push up through triceps. Keep shoulders down.",
+        progressions: [
+          { lvl: 1, name: "Bent Knee Dips", reps: "10" }, { lvl: 2, name: "Straight Leg Dips", reps: "12" }, { lvl: 3, name: "Slow Eccentric 3s", reps: "8" }, { lvl: 4, name: "Weighted Backpack Dips", reps: "8" }
+        ]},
 
       // CORE & STABILITY
-      { id: "core_deadbug", name: "Deadbug", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "isometric", dir: "static", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Knee Tuck Only", reps: "8/side" }, { lvl: 2, name: "Standard Deadbug", reps: "10/side" }, { lvl: 3, name: "Deadbug w/ Reach", reps: "8/side" }, { lvl: 4, name: "Deadbug w/ Band", reps: "6/side" }
-      ]},
-      { id: "core_plank", name: "Forearm Plank", eq: ["bodyweight"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Knee Plank", reps: "20-30s" }, { lvl: 2, name: "Standard Plank", reps: "40s" }, { lvl: 3, name: "Plank w/ Taps", reps: "10/side" }, { lvl: 4, name: "Plank to Push-Up", reps: "8" }
-      ]},
-      { id: "core_ball_plank", name: "Plank on Exercise Ball", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Knees on Ball", reps: "20s" }, { lvl: 2, name: "Feet on Ball Plank", reps: "30s" }, { lvl: 3, name: "Arms on Ball Plank", reps: "30s" }, { lvl: 4, name: "Ball Stir Plank", reps: "10/side" }
-      ]},
-      { id: "core_side", name: "Side Plank", eq: ["bodyweight"], muscles: ["obliques", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Knee Side Plank", reps: "15s/side" }, { lvl: 2, name: "Standard Side", reps: "25s/side" }, { lvl: 3, name: "Side + Hip Dips", reps: "10/side" }, { lvl: 4, name: "Side + Hip Abduction", reps: "8/side" }
-      ]},
-      { id: "core_crunch", name: "Crunch Variations", eq: ["bodyweight"], muscles: ["core"], type: "pull", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Bent Knee Crunch", reps: "12" }, { lvl: 2, name: "Jackknife Sit-Up", reps: "10" }, { lvl: 3, name: "V-Up", reps: "8" }, { lvl: 4, name: "Russian Twist w/ 25lb", reps: "12/side" }
-      ]},
-      { id: "core_bike", name: "Bicycle Crunches", eq: ["bodyweight"], muscles: ["core", "obliques"], type: "compound", dir: "multi", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Tempo", reps: "20s" }, { lvl: 2, name: "Standard Pace", reps: "30s" }, { lvl: 3, name: "Cross-Body Reach", reps: "30s" }, { lvl: 4, name: "Weighted Plate/DB", reps: "20s" }
-      ]},
-      { id: "core_flutter", name: "Flutter Kicks", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "compound", dir: "horizontal", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Bent Knee Flutter", reps: "20s" }, { lvl: 2, name: "Straight Leg Flutter", reps: "30s" }, { lvl: 3, name: "Flutter + Pulse", reps: "25s" }, { lvl: 4, name: "Scissor Kicks", reps: "30s" }
-      ]},
-      { id: "core_leg_raise", name: "Leg Raises", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "pull", dir: "vertical", cat: "strength", videoId: "", progressions: [
-        { lvl: 1, name: "Bent Knee Raise", reps: "10" }, { lvl: 2, name: "Flat Leg Raise", reps: "12" }, { lvl: 3, name: "Straight Leg Hold", reps: "10s" }, { lvl: 4, name: "Corkscrew Legs", reps: "20s" }
-      ]},
-      { id: "core_9090", name: "90/90 Leg Hops", eq: ["bodyweight"], muscles: ["core", "hips", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Switch", reps: "20s" }, { lvl: 2, name: "Standard Hop", reps: "30s" }, { lvl: 3, name: "Fast Pace", reps: "45s" }, { lvl: 4, name: "Hold + Pulse", reps: "30s" }
-      ]},
+      { id: "core_deadbug", name: "Deadbug", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "isometric", dir: "static", cat: "strength", videoId: "", 
+        instructions: "Lie on back, arms up, knees at 90°. Press lower back into floor. Extend opposite arm/leg slowly. Return. Keep pelvis still.",
+        progressions: [
+          { lvl: 1, name: "Knee Tuck Only", reps: "8/side" }, { lvl: 2, name: "Standard Deadbug", reps: "10/side" }, { lvl: 3, name: "Deadbug w/ Reach", reps: "8/side" }, { lvl: 4, name: "Deadbug w/ Light DB", reps: "6/side" }
+        ]},
+      { id: "core_plank", name: "Forearm Plank", eq: ["bodyweight"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", 
+        instructions: "Elbows under shoulders, body straight line. Squeeze glutes, brace abs like punching. Don't let hips sag or pike up.",
+        progressions: [
+          { lvl: 1, name: "Knee Plank", reps: "20-30s" }, { lvl: 2, name: "Standard Plank", reps: "40s" }, { lvl: 3, name: "Plank w/ Shoulder Taps", reps: "10/side" }, { lvl: 4, name: "Plank to Push-Up", reps: "8" }
+        ]},
+      { id: "core_ball_plank", name: "Plank on Exercise Ball", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", 
+        instructions: "Forearms on ball, toes on floor. Roll ball slightly forward/backward to maintain balance. Keep core locked, hips square.",
+        progressions: [
+          { lvl: 1, name: "Knees on Ball", reps: "20s" }, { lvl: 2, name: "Feet on Ball Plank", reps: "30s" }, { lvl: 3, name: "Arms on Ball Plank", reps: "30s" }, { lvl: 4, name: "Ball Stir Plank", reps: "10/side" }
+        ]},
+      { id: "core_side", name: "Side Plank", eq: ["bodyweight"], muscles: ["obliques", "shoulders"], type: "isometric", dir: "static", cat: "strength", videoId: "", 
+        instructions: "Stack feet, elbow under shoulder. Lift hips until body straight line. Push floor away, keep ribs down. Hold steady.",
+        progressions: [
+          { lvl: 1, name: "Knee Side Plank", reps: "15s/side" }, { lvl: 2, name: "Standard Side", reps: "25s/side" }, { lvl: 3, name: "Side + Hip Dips", reps: "10/side" }, { lvl: 4, name: "Side + Hip Abduction", reps: "8/side" }
+        ]},
+      { id: "core_crunch", name: "Crunch Variations", eq: ["bodyweight"], muscles: ["core"], type: "pull", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Lower back pressed to floor. Curl shoulder blades up, exhale hard. Don't pull neck. Control descent.",
+        progressions: [
+          { lvl: 1, name: "Bent Knee Crunch", reps: "12" }, { lvl: 2, name: "Jackknife Sit-Up", reps: "10" }, { lvl: 3, name: "V-Up", reps: "8" }, { lvl: 4, name: "Russian Twist w/ 25lb", reps: "12/side" }
+        ]},
+      { id: "core_bike", name: "Bicycle Crunches", eq: ["bodyweight"], muscles: ["core", "obliques"], type: "compound", dir: "multi", cat: "strength", videoId: "", 
+        instructions: "Opposite elbow to opposite knee. Keep lower back flat. Rotate from ribs, not arms. Slow, controlled tempo.",
+        progressions: [
+          { lvl: 1, name: "Slow Tempo", reps: "20s" }, { lvl: 2, name: "Standard Pace", reps: "30s" }, { lvl: 3, name: "Cross-Body Reach", reps: "30s" }, { lvl: 4, name: "Weighted Twist", reps: "20s" }
+        ]},
+      { id: "core_flutter", name: "Flutter Kicks", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "compound", dir: "horizontal", cat: "strength", videoId: "", 
+        instructions: "Lie flat, hands under hips. Lift legs slightly, alternate small kicks. Keep lower back pressed down. Breathe steadily.",
+        progressions: [
+          { lvl: 1, name: "Bent Knee Flutter", reps: "20s" }, { lvl: 2, name: "Straight Leg Flutter", reps: "30s" }, { lvl: 3, name: "Flutter + Pulse", reps: "25s" }, { lvl: 4, name: "Scissor Kicks", reps: "30s" }
+        ]},
+      { id: "core_leg_raise", name: "Leg Raises", eq: ["bodyweight"], muscles: ["core", "hip_flexors"], type: "pull", dir: "vertical", cat: "strength", videoId: "", 
+        instructions: "Lie flat, arms at sides. Lift legs together until 90°. Lower slowly without touching floor. Keep lower back glued to mat.",
+        progressions: [
+          { lvl: 1, name: "Bent Knee Raise", reps: "10" }, { lvl: 2, name: "Flat Leg Raise", reps: "12" }, { lvl: 3, name: "Straight Leg Hold", reps: "10s" }, { lvl: 4, name: "Corkscrew Legs", reps: "20s" }
+        ]},
+      { id: "core_9090", name: "90/90 Leg Hops", eq: ["bodyweight"], muscles: ["core", "hips", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", 
+        instructions: "Sit on knees, shins flat. Hop hips left/right quickly. Keep torso stable, land softly. Engage core to prevent rocking.",
+        progressions: [
+          { lvl: 1, name: "Slow Switch", reps: "20s" }, { lvl: 2, name: "Standard Hop", reps: "30s" }, { lvl: 3, name: "Fast Pace", reps: "45s" }, { lvl: 4, name: "Hold + Pulse", reps: "30s" }
+        ]},
 
       // FINISHERS & CARDIO
-      { id: "fin_burpee", name: "Burpee Variations", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Step-Back Burpee", reps: "6" }, { lvl: 2, name: "Standard Burpee", reps: "8" }, { lvl: 3, name: "Burpee + Push-Up", reps: "8" }, { lvl: 4, name: "Tuck Jump Burpee", reps: "6" }
-      ]},
-      { id: "fin_mountain", name: "Mountain Climbers", eq: ["bodyweight"], muscles: ["core", "shoulders", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Climbers", reps: "30s" }, { lvl: 2, name: "Standard Pace", reps: "40s" }, { lvl: 3, name: "Cross-Body Climbers", reps: "30s" }, { lvl: 4, name: "Spider Climbers", reps: "30s" }
-      ]},
-      { id: "fin_army", name: "Army Crawl", eq: ["bodyweight"], muscles: ["core", "shoulders", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Crawl", reps: "15 steps" }, { lvl: 2, name: "Medium Pace", reps: "20 steps" }, { lvl: 3, name: "Fast Crawl", reps: "30s" }, { lvl: 4, name: "Lateral Army Crawl", reps: "20s" }
-      ]},
-      { id: "fin_squatjump", name: "Squat Jumps", eq: ["bodyweight"], muscles: ["quads", "glutes", "cardio"], type: "push", dir: "vertical", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Half Squat Hop", reps: "10" }, { lvl: 2, name: "Full Squat Jump", reps: "12" }, { lvl: 3, name: "Hold at Bottom Jump", reps: "10" }, { lvl: 4, name: "Continuous Jump", reps: "20s" }
-      ]},
-      { id: "fin_star", name: "Star Jump / Down-Up", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", progressions: [
-        { lvl: 1, name: "Slow Down-Up", reps: "8" }, { lvl: 2, name: "Standard Down-Up", reps: "12" }, { lvl: 3, name: "Star Jump", reps: "10" }, { lvl: 4, name: "180° Star Turn", reps: "8" }
-      ]}
+      { id: "fin_burpee", name: "Burpee Variations", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", 
+        instructions: "Drop to hands, kick feet back, push-up, jump feet to hands, explode up. Keep chest up on push, soft landing.",
+        progressions: [
+          { lvl: 1, name: "Step-Back Burpee", reps: "6" }, { lvl: 2, name: "Standard Burpee", reps: "8" }, { lvl: 3, name: "Burpee + Push-Up", reps: "8" }, { lvl: 4, name: "Tuck Jump Burpee", reps: "6" }
+        ]},
+      { id: "fin_mountain", name: "Mountain Climbers", eq: ["bodyweight"], muscles: ["core", "shoulders", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", 
+        instructions: "High plank position. Drive knees toward chest quickly. Keep hips level, don't pike. Breathe in rhythm.",
+        progressions: [
+          { lvl: 1, name: "Slow Climbers", reps: "30s" }, { lvl: 2, name: "Standard Pace", reps: "40s" }, { lvl: 3, name: "Cross-Body Climbers", reps: "30s" }, { lvl: 4, name: "Spider Climbers", reps: "30s" }
+        ]},
+      { id: "fin_army", name: "Army Crawl", eq: ["bodyweight"], muscles: ["core", "shoulders", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", 
+        instructions: "Forearms on ground, pull body forward with elbows while pushing with toes. Keep hips low, core engaged. Move steadily.",
+        progressions: [
+          { lvl: 1, name: "Slow Crawl", reps: "15 steps" }, { lvl: 2, name: "Medium Pace", reps: "20 steps" }, { lvl: 3, name: "Fast Crawl", reps: "30s" }, { lvl: 4, name: "Lateral Army Crawl", reps: "20s" }
+        ]},
+      { id: "fin_squatjump", name: "Squat Jumps", eq: ["bodyweight"], muscles: ["quads", "glutes", "cardio"], type: "push", dir: "vertical", cat: "finisher", videoId: "", 
+        instructions: "Squat down, load legs. Explode up, land softly with bent knees. Keep chest up, arms drive forward.",
+        progressions: [
+          { lvl: 1, name: "Half Squat Hop", reps: "10" }, { lvl: 2, name: "Full Squat Jump", reps: "12" }, { lvl: 3, name: "Hold + Jump", reps: "10" }, { lvl: 4, name: "Continuous Jump", reps: "20s" }
+        ]},
+      { id: "fin_star", name: "Star Jump / Down-Up", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", videoId: "", 
+        instructions: "Drop hands to floor, jump feet back, jump feet in, explode up spreading arms/legs wide. Land softly.",
+        progressions: [
+          { lvl: 1, name: "Slow Down-Up", reps: "8" }, { lvl: 2, name: "Standard Down-Up", reps: "12" }, { lvl: 3, name: "Star Jump", reps: "10" }, { lvl: 4, name: "180° Star Turn", reps: "8" }
+        ]}
     ];
 
     // ================= GAMIFICATION & STATE =================
@@ -328,6 +420,7 @@
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
     const getLevel = xp => LEVEL_THRESHOLDS.filter(t => xp >= t).length;
     const xpForNext = xp => LEVEL_THRESHOLDS[getLevel(xp)] || 99999;
+    const showToast = (msg) => { const t = document.getElementById('upgrade-toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2000); };
 
     // ================= CORE LOGIC =================
     function generateWorkout() {
@@ -337,8 +430,8 @@
       const strength = filtered.filter(e => e.cat === "strength");
       const finishers = filtered.filter(e => e.cat === "finisher");
 
-      if (strength.length < 6) return alert("⚠️ Not enough strength exercises. Add equipment or more DB entries.");
-      if (finishers.length === 0) return alert("⚠️ No finishers available. Add bodyweight finishers.");
+      if (strength.length < 6) return alert("⚠️ Need more strength exercises for your gear.");
+      if (finishers.length === 0) return alert("⚠️ No finishers available.");
 
       let a = shuffle([...strength]).slice(0, Math.floor(Math.random() * 3) + 3);
       let usedA = new Set(a.map(getPrimary));
@@ -348,42 +441,85 @@
 
       let c = shuffle(finishers).slice(0, clamp(finishers.length, 1, 2));
 
-      const mapProg = ex => {
+      const mapProg = (ex) => {
         const idx = Math.min(state.level - 1, ex.progressions.length - 1);
-        return { ...ex, prog: ex.progressions[idx] };
+        return { ...ex, progIndex: idx, prog: ex.progressions[idx] };
       };
       const sets = Math.floor(Math.random() * 2) + 2;
 
-      return { id: Date.now(), date: new Date().toLocaleDateString(), sets, a: a.map(mapProg), b: b.map(mapProg), c: c.map(mapProg) };
+      state.currentWorkout = { id: Date.now(), date: new Date().toLocaleDateString(), sets, a: a.map(mapProg), b: b.map(mapProg), c: c.map(mapProg) };
+      return state.currentWorkout;
     }
 
-    function renderWorkout(workout) {
-      state.currentWorkout = workout;
+    function renderWorkout() {
+      const w = state.currentWorkout;
+      if (!w) return;
       const container = document.getElementById("workout-display");
       document.getElementById("motivation-quote").textContent = `"${QUOTES[Math.floor(Math.random() * QUOTES.length)]}"`;
 
-      const renderCircuit = (label, exercises) => `
+      const renderCircuit = (key, exercises) => `
         <div class="circuit">
-          <h3>${label} <span class="text-muted" style="font-weight:400; font-size:0.85rem">${workout.sets} sets</span></h3>
-          ${exercises.map(ex => {
-            const videoHTML = ex.videoId 
-              ? `<div class="video-placeholder"><iframe src="https://www.youtube.com/embed/${ex.videoId}?rel=0&modestbranding=1" allowfullscreen></iframe></div>`
-              : `<div class="video-placeholder">📺 Add YouTube ID in DB:<br><code>videoId: "YOUR_ID_HERE"</code></div>`;
-            return `
-            <div class="exercise">
+          <h3>${key === 'a' ? 'Circuit A' : key === 'b' ? 'Circuit B' : 'Circuit C (Finisher)'} <span style="font-weight:400; font-size:0.85rem; color:#8b949e">${w.sets} sets</span></h3>
+          ${exercises.map((ex, idx) => `
+            <div class="exercise" data-key="${key}" data-idx="${idx}">
               <div class="ex-header">
-                <div><strong>${ex.prog.name}</strong> <span class="ex-meta">(${ex.type} | ${ex.eq.join(", ")})</span>
-                <div class="ex-meta">🎯 ${ex.muscles.join(", ")}</div>
-                <div class="ex-meta">🔄 ${workout.sets} × ${ex.prog.reps}</div></div>
+                <div>
+                  <strong>${ex.prog.name}</strong> <span class="ex-meta">(${ex.type} | ${ex.eq.join(", ")})</span>
+                  <div class="ex-meta">🎯 ${ex.muscles.join(", ")}</div>
+                  <div class="ex-meta">🔄 ${w.sets} × ${ex.prog.reps}</div>
+                </div>
+                <button class="upgrade-btn" onclick="upgradeExercise('${key}', ${idx})">🔥 Upgrade</button>
               </div>
-              ${videoHTML}
-            </div>`;
-          }).join("")}
+              <button class="collapsible-header" onclick="toggleCollapsible('coll-${key}-${idx}')">📺 Show Form Instructions & Video</button>
+              <div class="collapsible-content" id="coll-${key}-${idx}">
+                <div class="content-inner">
+                  <div class="form-cue">${ex.instructions || "Focus on controlled movement and full range of motion."}</div>
+                  ${ex.videoId 
+                    ? `<div class="video-placeholder"><iframe src="https://www.youtube.com/embed/${ex.videoId}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div>` 
+                    : `<div class="video-placeholder">📝 Add YouTube ID in DB:<br><code>videoId: "YOUR_ID_HERE"</code></div>`}
+                </div>
+              </div>
+            </div>`).join("")}
         </div>`;
 
-      container.innerHTML = renderCircuit("Circuit A", workout.a) + renderCircuit("Circuit B", workout.b) + renderCircuit("Circuit C (Finisher)", workout.c);
+      container.innerHTML = renderCircuit('a', w.a) + renderCircuit('b', w.b) + renderCircuit('c', w.c);
       switchView("workout-view");
     }
+
+    window.toggleCollapsible = (id) => {
+      const el = document.getElementById(id);
+      if (el.classList.contains('open')) el.classList.remove('open');
+      else el.classList.add('open');
+    };
+
+    window.upgradeExercise = (key, idx) => {
+      let ex = state.currentWorkout[key][idx];
+      
+      // 1. Advance progression if possible
+      if (ex.progIndex < ex.progressions.length - 1) {
+        ex.progIndex++;
+        ex.prog = ex.progressions[ex.progIndex];
+        showToast(`⬆️ Progression advanced to: ${ex.prog.name}`);
+      } else {
+        // 2. Swap to harder variation of same movement type & muscles
+        const matches = EXERCISES.filter(e => 
+          e.cat === ex.cat &&
+          e.type === ex.type &&
+          e.muscles.includes(ex.muscles[0]) &&
+          e.id !== ex.id &&
+          !state.currentWorkout.a.concat(state.currentWorkout.b, state.currentWorkout.c).some(w => w.id === e.id)
+        );
+        if (matches.length > 0) {
+          const newEx = matches[Math.floor(Math.random() * matches.length)];
+          const newIdx = Math.min(state.level - 1, newEx.progressions.length - 1);
+          state.currentWorkout[key][idx] = { ...newEx, progIndex: newIdx, prog: newEx.progressions[newIdx] };
+          showToast(`🔄 Swapped to harder variation: ${newEx.name}`);
+        } else {
+          showToast("⚠️ Already at peak variation for this slot.");
+        }
+      }
+      renderWorkout();
+    };
 
     function saveAndComplete() {
       if (!state.currentWorkout) return;
@@ -409,8 +545,7 @@
       checkAchievements();
       updateTopBar();
       fireConfetti();
-      
-      alert(`✅ Workout Logged! +${xpEarned} XP`);
+      showToast(`✅ Logged! +${xpEarned} XP`);
       switchView("setup-view");
     }
 
@@ -526,7 +661,7 @@
       });
 
       document.getElementById("level-select").onchange = (e) => state.level = parseInt(e.target.value);
-      document.getElementById("generate-btn").onclick = () => renderWorkout(generateWorkout());
+      document.getElementById("generate-btn").onclick = () => renderWorkout();
       document.getElementById("complete-btn").onclick = saveAndComplete;
       document.getElementById("back-btn").onclick = () => switchView("setup-view");
       document.getElementById("view-history-btn").onclick = () => switchView("history-view");
