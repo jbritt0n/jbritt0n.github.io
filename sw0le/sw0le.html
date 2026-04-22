@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SWOLE - Smart Workout Randomizer</title>
+  <style>
+    :root {
+      --bg: #0f1115; --card: #181b21; --accent: #00e676; --accent-hover: #00c853;
+      --text: #e0e3e8; --muted: #8b929c; --border: #2a2d35; --danger: #ff5252;
+      --font: system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; padding: 20px; min-height: 100vh; }
+    .container { max-width: 850px; margin: 0 auto; }
+    
+    /* Header */
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
+
+    /* Views */
+    .view { display: none; animation: fadeIn 0.3s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards & Grid */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    h2 { font-size: 1.3rem; margin-bottom: 12px; color: #fff; }
+    
+    .eq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .eq-btn { background: #23272f; border: 2px solid var(--border); padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .eq-btn:hover { border-color: var(--accent); }
+    .eq-btn.selected { background: rgba(0,230,118,0.15); border-color: var(--accent); color: var(--accent); }
+    
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; }
+    select, input { background: #23272f; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; }
+    button { background: var(--accent); color: #000; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+    button:hover { background: var(--accent-hover); }
+    button.secondary { background: #2a2d35; color: var(--text); }
+    button.secondary:hover { background: #353842; }
+
+    /* Workout Display */
+    .circuit { background: #23272f; border-radius: 10px; padding: 16px; margin-bottom: 16px; border-left: 4px solid var(--accent); }
+    .circuit h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
+    .exercise { padding: 10px 0; border-bottom: 1px solid #333; }
+    .exercise:last-child { border-bottom: none; }
+    .exercise strong { color: var(--accent); }
+    .meta { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+    /* Progress & History */
+    .stats { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .stat { background: #23272f; padding: 12px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center; }
+    .stat .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .stat .label { font-size: 0.8rem; color: var(--muted); }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .gap-8 { gap: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--muted); }
+    
+    /* Mobile */
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      .eq-grid { grid-template-columns: 1fr 1fr; }
+      .controls { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SWOLE</h1>
+      <div class="subtitle">Smart Home Workout Randomizer</div>
+    </header>
+
+    <!-- SETUP VIEW -->
+    <section id="setup-view" class="view active">
+      <div class="card">
+        <h2>🛠️ Select Equipment</h2>
+        <div class="eq-grid" id="eq-grid"></div>
+        
+        <div class="controls">
+          <label>Difficulty: 
+            <select id="level-select">
+              <option value="1">Level 1 (Beginner)</option>
+              <option value="2" selected>Level 2 (Intermediate)</option>
+              <option value="3">Level 3 (Advanced)</option>
+              <option value="4">Level 4 (Expert)</option>
+            </select>
+          </label>
+          <button id="generate-btn">🎲 Generate Workout</button>
+          <button class="secondary" id="view-history-btn">📊 View History</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKOUT VIEW -->
+    <section id="workout-view" class="view">
+      <div class="card">
+        <h2>🔥 Today's Workout</h2>
+        <div id="workout-display"></div>
+        <div class="controls mt-16">
+          <button id="complete-btn">✅ Complete & Save</button>
+          <button class="secondary" id="back-btn">🔙 Back to Setup</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY VIEW -->
+    <section id="history-view" class="view">
+      <div class="card">
+        <h2>📈 Progress & History</h2>
+        <div class="stats" id="stats-grid">
+          <div class="stat"><div class="num" id="stat-total">0</div><div class="label">Workouts</div></div>
+          <div class="stat"><div class="num" id="stat-xp">0</div><div class="label">XP Earned</div></div>
+          <div class="stat"><div class="num" id="stat-streak">0</div><div class="label">Day Streak</div></div>
+        </div>
+        <div class="controls">
+          <button id="export-btn">📥 Export CSV</button>
+          <button class="secondary" id="back-from-history-btn">🔙 Back</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ================= DATABASE =================
+    const EXERCISES = [
+      { id: "push_up", name: "Push-Up", eq: ["bodyweight"], muscles: ["chest", "triceps", "shoulders"], type: "push", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Incline Push-Up", reps: "8-10" }, { lvl: 2, name: "Standard Push-Up", reps: "10-15" }, { lvl: 3, name: "Archer Push-Up", reps: "6-8/side" }, { lvl: 4, name: "One-Arm Push-Up", reps: "4-6/side" }
+      ]},
+      { id: "squat", name: "Bodyweight Squat", eq: ["bodyweight"], muscles: ["quads", "glutes", "core"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Assisted Squat", reps: "12-15" }, { lvl: 2, name: "Standard Squat", reps: "15-20" }, { lvl: 3, name: "Pistol Squat Progression", reps: "8/leg" }, { lvl: 4, name: "Jump Squat", reps: "10-12" }
+      ]},
+      { id: "lunge", name: "Reverse Lunge", eq: ["bodyweight"], muscles: ["quads", "glutes", "calves"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Supported Lunge", reps: "8/leg" }, { lvl: 2, name: "Standard Lunge", reps: "10/leg" }, { lvl: 3, name: "Walking Lunge", reps: "12/leg" }, { lvl: 4, name: "Jumping Lunge", reps: "10/leg" }
+      ]},
+      { id: "glute_bridge", name: "Glute Bridge", eq: ["bodyweight"], muscles: ["glutes", "hamstrings", "core"], type: "hinge", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Standard Bridge", reps: "15" }, { lvl: 2, name: "Single-Leg Bridge", reps: "10/leg" }, { lvl: 3, name: "Bridge w/ March", reps: "20" }, { lvl: 4, name: "Elevated Single-Leg Bridge", reps: "8/leg" }
+      ]},
+      { id: "plank", name: "Forearm Plank", eq: ["bodyweight"], muscles: ["core", "shoulders"], type: "isometric", dir: "static", cat: "strength", progressions: [
+        { lvl: 1, name: "Knee Plank", reps: "20-30s" }, { lvl: 2, name: "Standard Plank", reps: "40-60s" }, { lvl: 3, name: "Plank w/ Shoulder Taps", reps: "15/side" }, { lvl: 4, name: "Plank to Push-Up", reps: "8" }
+      ]},
+      { id: "down_up", name: "Down-Up", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
+        { lvl: 1, name: "Slow Down-Up", reps: "10" }, { lvl: 2, name: "Standard Down-Up", reps: "15" }, { lvl: 3, name: "Down-Up + Push", reps: "12" }, { lvl: 4, name: "Down-Up + Jump", reps: "10" }
+      ]},
+      { id: "jump_jack", name: "Jumping Jacks", eq: ["bodyweight"], muscles: ["calves", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
+        { lvl: 1, name: "Step Jacks", reps: "30s" }, { lvl: 2, name: "Standard Jacks", reps: "45s" }, { lvl: 3, name: "High Knee Jacks", reps: "30s" }, { lvl: 4, name: "Seal Jacks", reps: "30s" }
+      ]},
+      { id: "db_press", name: "DB Floor Press", eq: ["dumbbells"], muscles: ["chest", "triceps"], type: "push", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Light DB Press", reps: "12" }, { lvl: 2, name: "Standard Press", reps: "10" }, { lvl: 3, name: "Tempo 3-1-1 Press", reps: "8" }, { lvl: 4, name: "Single-Arm Press", reps: "6/arm" }
+      ]},
+      { id: "db_row", name: "DB Bent-Over Row", eq: ["dumbbells"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Row", reps: "12" }, { lvl: 2, name: "Standard Row", reps: "10" }, { lvl: 3, name: "Heavy Row", reps: "8" }, { lvl: 4, name: "Single-Arm Row", reps: "8/arm" }
+      ]},
+      { id: "db_goblet", name: "DB Goblet Squat", eq: ["dumbbells"], muscles: ["quads", "glutes", "core"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Goblet", reps: "12" }, { lvl: 2, name: "Standard Goblet", reps: "10" }, { lvl: 3, name: "Deep Goblet (Pause 2s)", reps: "8" }, { lvl: 4, name: "Heavy Goblet", reps: "6" }
+      ]},
+      { id: "db_arnold", name: "DB Arnold Press", eq: ["dumbbells"], muscles: ["shoulders", "triceps"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Seated Light", reps: "12" }, { lvl: 2, name: "Standing Standard", reps: "10" }, { lvl: 3, name: "Heavy Tempo", reps: "8" }, { lvl: 4, name: "Alternating Heavy", reps: "6/side" }
+      ]},
+      { id: "db_curl", name: "DB Bicep Curl", eq: ["dumbbells"], muscles: ["biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Curl", reps: "15" }, { lvl: 2, name: "Standard Curl", reps: "12" }, { lvl: 3, name: "Hammer Curl", reps: "10" }, { lvl: 4, name: "Heavy Concentration", reps: "8" }
+      ]},
+      { id: "db_deadlift", name: "DB Romanian Deadlift", eq: ["dumbbells"], muscles: ["hamstrings", "glutes", "lower_back"], type: "hinge", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Light RDL", reps: "12" }, { lvl: 2, name: "Standard RDL", reps: "10" }, { lvl: 3, name: "Single-Leg RDL", reps: "8/leg" }, { lvl: 4, name: "Heavy Slow RDL", reps: "6" }
+      ]},
+      { id: "pullup", name: "Pull-Up", eq: ["pullup_bar"], muscles: ["back", "biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Dead Hang", reps: "20-30s" }, { lvl: 2, name: "Negative Pull-Up", reps: "5x3s" }, { lvl: 3, name: "Band Assisted Pull-Up", reps: "8" }, { lvl: 4, name: "Strict Pull-Up", reps: "5-8" }
+      ]},
+      { id: "chin_up", name: "Chin-Up", eq: ["pullup_bar"], muscles: ["back", "biceps"], type: "pull", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Scapular Pull", reps: "10" }, { lvl: 2, name: "Negative Chin-Up", reps: "4x3s" }, { lvl: 3, name: "Assisted Chin-Up", reps: "6" }, { lvl: 4, name: "Strict Chin-Up", reps: "5-7" }
+      ]},
+      { id: "hanging_knee", name: "Hanging Knee Raise", eq: ["pullup_bar"], muscles: ["core", "hip_flexors"], type: "pull", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Bent-Knee Hold", reps: "15-20s" }, { lvl: 2, name: "Standard Raise", reps: "8" }, { lvl: 3, name: "Straight-Leg Raise", reps: "6" }, { lvl: 4, name: "Toes-to-Bar", reps: "4-6" }
+      ]},
+      { id: "band_row", name: "Band Row", eq: ["resistance_bands"], muscles: ["back", "biceps"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Band", reps: "15" }, { lvl: 2, name: "Medium Band", reps: "12" }, { lvl: 3, name: "Heavy Slow Tempo", reps: "10" }, { lvl: 4, name: "Single-Arm Band", reps: "8/side" }
+      ]},
+      { id: "band_pullapart", name: "Band Pull-Apart", eq: ["resistance_bands"], muscles: ["shoulders", "upper_back"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Band", reps: "15" }, { lvl: 2, name: "Medium Band", reps: "12" }, { lvl: 3, name: "Heavy Band", reps: "10" }, { lvl: 4, name: "Overhead Pull-Apart", reps: "10" }
+      ]},
+      { id: "band_squat", name: "Band Squat", eq: ["resistance_bands"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Resistance", reps: "15" }, { lvl: 2, name: "Medium Resistance", reps: "12" }, { lvl: 3, name: "Heavy + Pause", reps: "10" }, { lvl: 4, name: "Jump Squat w/ Band", reps: "8" }
+      ]},
+      { id: "band_chest", name: "Band Chest Press", eq: ["resistance_bands"], muscles: ["chest", "triceps"], type: "push", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Light Press", reps: "15" }, { lvl: 2, name: "Standard Press", reps: "12" }, { lvl: 3, name: "Heavy Press", reps: "10" }, { lvl: 4, name: "Alternating Press", reps: "8/side" }
+      ]},
+      { id: "ball_curl", name: "Stability Ball Curl", eq: ["exercise_ball"], muscles: ["hamstrings", "glutes", "core"], type: "pull", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Ball March", reps: "20s" }, { lvl: 2, name: "Knee Curl", reps: "10" }, { lvl: 3, name: "Single-Leg Curl", reps: "6/leg" }, { lvl: 4, name: "Hamstring Slide-In", reps: "12" }
+      ]},
+      { id: "ball_pike", name: "Ball Pike", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Knee Pike Hold", reps: "15-20s" }, { lvl: 2, name: "Full Pike", reps: "8" }, { lvl: 3, name: "Pike Roll-Out", reps: "10" }, { lvl: 4, name: "Pike Push-Up", reps: "6" }
+      ]},
+      { id: "wall_squat", name: "Ball Wall Squat", eq: ["exercise_ball"], muscles: ["quads", "glutes"], type: "push", dir: "vertical", cat: "strength", progressions: [
+        { lvl: 1, name: "Shallow Squat", reps: "12" }, { lvl: 2, name: "90° Squat Hold", reps: "20s" }, { lvl: 3, name: "Deep Squat", reps: "10" }, { lvl: 4, name: "Single-Leg Wall Squat", reps: "6/leg" }
+      ]},
+      { id: "ball_rollout", name: "Stability Ball Rollout", eq: ["exercise_ball"], muscles: ["core", "shoulders"], type: "hinge", dir: "horizontal", cat: "strength", progressions: [
+        { lvl: 1, name: "Short Roll", reps: "8" }, { lvl: 2, name: "Full Roll-Out", reps: "10" }, { lvl: 3, name: "Slow Tempo (3s)", reps: "8" }, { lvl: 4, name: "Roll-Out to Pike", reps: "6" }
+      ]},
+      { id: "burpee", name: "Burpee", eq: ["bodyweight"], muscles: ["full_body", "cardio"], type: "compound", dir: "multi", cat: "finisher", progressions: [
+        { lvl: 1, name: "Step-Back Burpee", reps: "8" }, { lvl: 2, name: "Standard Burpee", reps: "10" }, { lvl: 3, name: "Burpee + Push-Up", reps: "8" }, { lvl: 4, name: "Tuck Jump Burpee", reps: "6" }
+      ]}
+    ];
+
+    // ================= STATE =================
+    const state = {
+      selectedEq: [],
+      level: 2,
+      currentWorkout: null,
+      history: JSON.parse(localStorage.getItem("swole_history") || "[]"),
+      xp: parseInt(localStorage.getItem("swole_xp") || "0"),
+      streak: 0
+    };
+
+    // ================= UTILS =================
+    const shuffle = arr => arr.sort(() => Math.random() - 0.5);
+    const getPrimary = ex => ex.muscles[0];
+    const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+    // ================= CORE LOGIC =================
+    function generateWorkout() {
+      if (state.selectedEq.length === 0) return alert("⚠️ Select at least one equipment type.");
+      
+      const filtered = EXERCISES.filter(e => e.eq.some(eq => state.selectedEq.includes(eq)));
+      const strength = filtered.filter(e => e.cat === "strength");
+      const finishers = filtered.filter(e => e.cat === "finisher");
+
+      if (strength.length < 6) return alert(`⚠️ Only ${strength.length} strength exercises available for your selection. Add more equipment or exercises to the DB.`);
+      if (finishers.length === 0) return alert("⚠️ No finisher exercises match your equipment.");
+
+      // Circuit A: 3-5 random
+      let a = shuffle([...strength]).slice(0, Math.floor(Math.random() * 3) + 3);
+      let usedA = new Set(a.map(getPrimary));
+
+      // Circuit B: 3-5, prioritize unused muscles
+      let candidatesB = shuffle(strength.filter(e => !usedA.has(getPrimary(e))));
+      let b = candidatesB.slice(0, Math.min(candidatesB.length, Math.floor(Math.random() * 3) + 3));
+      if (b.length < 3) b = shuffle(strength).slice(0, 3); // fallback
+
+      // Circuit C: 1-2 finishers
+      let c = shuffle(finishers).slice(0, clamp(finishers.length, 1, 2));
+
+      // Map to current level
+      const mapProg = ex => {
+        const idx = Math.min(state.level - 1, ex.progressions.length - 1);
+        return { ...ex, prog: ex.progressions[idx] };
+      };
+
+      const sets = Math.floor(Math.random() * 2) + 2; // 2 or 3
+
+      return {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        sets,
+        a: a.map(mapProg),
+        b: b.map(mapProg),
+        c: c.map(mapProg)
+      };
+    }
+
+    function renderWorkout(workout) {
+      state.currentWorkout = workout;
+      const container = document.getElementById("workout-display");
+      const renderCircuit = (label, exercises) => `
+        <div class="circuit">
+          <h3>${label}</h3>
+          ${exercises.map(ex => `
+            <div class="exercise">
+              <strong>${ex.prog.name}</strong> <span class="meta">(${ex.type} | ${ex.eq.join(", ")})</span><br>
+              <div class="meta">🎯 ${ex.muscles.join(", ")}</div>
+              <div class="meta">🔄 ${workout.sets} × ${ex.prog.reps}</div>
+            </div>
+          `).join("")}
+        </div>`;
+
+      container.innerHTML = `
+        ${renderCircuit("Circuit A", workout.a)}
+        ${renderCircuit("Circuit B", workout.b)}
+        ${renderCircuit("Circuit C (Finisher)", workout.c)}
+        <div class="meta mt-16">📅 ${workout.date} | 🏋️ Sets: ${workout.sets}</div>
+      `;
+      switchView("workout-view");
+    }
+
+    function saveAndComplete() {
+      if (!state.currentWorkout) return;
+      
+      // XP Calculation (base + per exercise + bonus for finisher)
+      const xp = 50 + (state.currentWorkout.a.length * 15) + (state.currentWorkout.b.length * 15) + 30;
+      state.xp += xp;
+      state.history.push(state.currentWorkout);
+      
+      localStorage.setItem("swole_history", JSON.stringify(state.history));
+      localStorage.setItem("swole_xp", state.xp.toString());
+      
+      // Simple streak logic
+      const today = new Date().toLocaleDateString();
+      const last = state.history[state.history.length - 2]?.date;
+      if (last !== today) state.streak = last ? (new Date() - new Date(last) <= 86400000 * 2 ? state.streak + 1 : 1) : 1;
+      localStorage.setItem("swole_streak", state.streak.toString());
+
+      alert(`✅ Workout Complete! +${xp} XP`);
+      switchView("setup-view");
+    }
+
+    function exportCSV() {
+      if (state.history.length === 0) return alert("📭 No workouts to export yet.");
+      
+      const rows = [["Date", "Circuit", "Exercise", "Progression", "Sets", "Reps", "Equipment", "Muscles", "XP"]];
+      state.history.forEach(w => {
+        const xpPer = Math.round((50 + (w.a.length*15) + (w.b.length*15) + 30) / (w.a.length + w.b.length + w.c.length));
+        const push = (circ, ex) => rows.push([w.date, circ, ex.name, ex.prog.name, w.sets, ex.prog.reps, ex.eq.join(";"), ex.muscles.join(";"), xpPer]);
+        w.a.forEach(ex => push("A", ex));
+        w.b.forEach(ex => push("B", ex));
+        w.c.forEach(ex => push("C", ex));
+      });
+
+      const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `SWOLE_History_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function switchView(id) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      if (id === "history-view") renderStats();
+    }
+
+    function renderStats() {
+      document.getElementById("stat-total").textContent = state.history.length;
+      document.getElementById("stat-xp").textContent = state.xp;
+      document.getElementById("stat-streak").textContent = state.streak || 0;
+    }
+
+    // ================= INIT =================
+    function init() {
+      // Equipment Grid
+      const grid = document.getElementById("eq-grid");
+      const eqOptions = ["bodyweight", "dumbbells", "pullup_bar", "exercise_ball", "resistance_bands"];
+      eqOptions.forEach(eq => {
+        const btn = document.createElement("div");
+        btn.className = "eq-btn";
+        btn.innerHTML = eq.replace("_", " ");
+        btn.onclick = () => {
+          btn.classList.toggle("selected");
+          state.selectedEq = btn.classList.contains("selected") 
+            ? [...state.selectedEq, eq] 
+            : state.selectedEq.filter(e => e !== eq);
+        };
+        grid.appendChild(btn);
+      });
+
+      // Level Selector
+      document.getElementById("level-select").onchange = (e) => state.level = parseInt(e.target.value);
+
+      // Buttons
+      document.getElementById("generate-btn").onclick = () => renderWorkout(generateWorkout());
+      document.getElementById("complete-btn").onclick = saveAndComplete;
+      document.getElementById("back-btn").onclick = () => switchView("setup-view");
+      document.getElementById("view-history-btn").onclick = () => switchView("history-view");
+      document.getElementById("back-from-history-btn").onclick = () => switchView("setup-view");
+      document.getElementById("export-btn").onclick = exportCSV;
+
+      // Load streak
+      state.streak = parseInt(localStorage.getItem("swole_streak") || "0");
+    }
+
+    init();
+  </script>
+</body>
+</html>
