@@ -11294,726 +11294,527 @@ function drawYandinsky(p, t) {
 
 
 
-// ── GREEN GARDENS OF DISCONTENT v2 ────────────────────────────────────────────
-// Faithful animated reconstruction of the painting.
+// ── GREEN GARDENS OF DISCONTENT v3 ────────────────────────────────────────────
+// Full faithful reconstruction. Every element mapped from the painting.
 //
-// Precise element inventory (back → front):
-//   §0  Neutral ground + warm-left / cool-right overlay
-//   §1  Pale green diagonal pentagon (architectural silhouette, left)
-//   §2  Diagonal pencil slash across the green polygon
-//   §3  Curved pencil accent in left zone
-//   §4  Large white-gray impasto rectangle (heavy plaster texture)
-//   §5  Light gray upper parallelogram (slight slant on left edge)
-//   §6  Medium cool-gray rectangle (overlapping §4, counter-slides)
-//   §7  Thin light-gray strip (between gray cluster and black line)
-//   §8  Rust/ochre band (breathing width, vertical float)
-//   §9  Small isolated dark rectangle (right side, crosshatch zone)
-//   §10 Black lower-left rectangle (static ground plane)
-//   §11 All construction / pencil lines (many — each breathes independently)
-//   §12 Black vertical bar (oscillates X — the spine)
-//   §13 Small black rects at bar base + grass zone
-//   §14 Long horizontal black line (both endpoints breathe independently)
+// Draw order (back → front):
+//   §0  Background: S.bg base + warm-left/cool-right overlays + S.palette wash
+//   §Ga Grass dark background
+//   §1  Pale green diagonal pentagon (genuine slanted left edge)
+//   §2  Diagonal pencil slash across polygon
+//   §3  Curved pencil accent (left zone)
+//   §4  Large white-gray impasto block — pre-baked STUCCO texture
+//   §5  Light gray upper parallelogram — slanted left edge
+//   §6  Medium cool-gray rectangle — counter-slides §4
+//   §Ta "Scotch tape" strip — glossy gradient, turned/peeled left corner
+//   §7  Thin pale strip (above tape, slanted left edge)
+//   §8  Rust/ochre band — pre-baked STUCCO texture, breathing width
+//   §9  Small dark rectangle (right crosshatch zone)
+//   §10 Black lower-left rectangle (STATIC)
+//   §12 Black vertical bar — oscillates X
+//   §13 Two small black rects (STATIC)
+//   §14 Long horizontal black line — asymmetric endpoint breathing
+//   §11 ALL CONSTRUCTION LINES on top of everything:
+//        9 major lines (3 full verticals + 2 wide horizontals + 4 mid horizontals)
+//        7×9 dense scaffolding grid (right zone: "squares in squares")
 //   §15 Small red accent dot
-//   §16 Tiny pencil accent dot (static stray mark)
-//   §17 Red circle — compound two-frequency bob (focal tension)
-//   §18 Black circle — slow wide elliptical orbit (gravity/weight)
-//   §G  Grass band + character fill
+//   §16 Tiny pencil dot (static)
+//   §17 Red circle — compound two-frequency bob
+//   §18 Black circle — wide elliptical orbit
+//   §Gb Grass characters — S.chars + S.fontStack, green→gold wave
 //
-// S properties consumed:
+// Global S controls consumed:
 //   ggSpeed, ggDrift, ggLineOsc, ggCircleDrift, ggGrassSpd,
-//   ggGrassDens, ggGrassSzMult, ggTexture, ggShowGrid
+//   ggGrassDens, ggGrassSzMult, ggTexture, ggShowGrid,
+//   S.bg, S.palette, S.accent, S.wave, S.entropy, S.density,
+//   S.noiseScale, S.speed, S.maxSize, S.fontStack, S.chars
 // ─────────────────────────────────────────────────────────────────────────────
  
-let _gg2S = null;
+let _ggS = null;
  
 // ══════════════════════════════════════════════════════════════════════════════
-// INIT — geometry from the painting's exact proportions
+// STUCCO BAKER — pre-renders granular plaster noise to an offscreen canvas
+// ══════════════════════════════════════════════════════════════════════════════
+function _ggBakeStucco(p, pw, ph, baseFill, darkMark, lightMark, sx, sy) {
+  pw = Math.max(4, Math.ceil(pw));
+  ph = Math.max(4, Math.ceil(ph));
+  let oc = document.createElement('canvas');
+  oc.width = pw; oc.height = ph;
+  let ox = oc.getContext('2d');
+  ox.fillStyle = baseFill;
+  ox.fillRect(0, 0, pw, ph);
+  // Coarse aggregate blobs
+  for (let i = 0; i < 140; i++) {
+    let cx = p.noise(sx, i*0.36)*pw, cy = p.noise(sy, i*0.36)*ph;
+    let r1 = 2 + p.noise(sx+10, i*0.36)*14;
+    let r2 = r1*(0.45 + p.noise(sx+20, i*0.36)*0.8);
+    let an = p.noise(sx+30, i*0.36)*Math.PI;
+    let n  = p.noise(sx+40, i*0.36);
+    ox.globalAlpha = 0.030 + n*0.080;
+    ox.fillStyle = n > 0.53 ? lightMark : darkMark;
+    ox.beginPath(); ox.ellipse(cx, cy, r1, r2, an, 0, Math.PI*2); ox.fill();
+  }
+  // Fine grain (2.8 px grid)
+  for (let x = 0; x < pw; x += 2.8) {
+    for (let y = 0; y < ph; y += 2.8) {
+      let n = p.noise(x*0.042+sx, y*0.042+sy);
+      if (n > 0.565) {
+        let sz = 0.7 + (n-0.565)*4.2;
+        ox.globalAlpha = (n-0.565)*0.38;
+        ox.fillStyle = n > 0.74 ? lightMark : darkMark;
+        ox.fillRect(x-sz*0.5, y-sz*0.5, sz, sz);
+      }
+    }
+  }
+  // Fine speckle
+  for (let i = 0; i < 300; i++) {
+    let x = p.noise(sx+200, i*0.19)*pw, y = p.noise(sy+200, i*0.19)*ph;
+    ox.globalAlpha = 0.04 + p.noise(sx+300, i*0.19)*0.08;
+    ox.fillStyle = darkMark;
+    ox.fillRect(x, y, 1, 1);
+  }
+  ox.globalAlpha = 1;
+  return oc;
+}
+ 
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
 // ══════════════════════════════════════════════════════════════════════════════
 function initGreenGardens(p) {
   let W = p.width, H = p.height;
  
-  // Drift config: independent phase + speed per element, amplitude in px
   function dCfg(seed, dxF, dyF) {
-    return {
-      phase: p.random(Math.PI * 2) + seed,
-      speed: 0.36 + p.random(0.46),
-      dx: W * dxF,
-      dy: H * dyF
-    };
+    return { phase: p.random(Math.PI*2)+seed, speed: 0.36+p.random(0.46), dx: W*dxF, dy: H*dyF };
   }
-  // Line oscillation config
   function lCfg(seed, spd) {
-    return { phase: p.random(Math.PI * 2) + seed, speed: spd ?? (0.24 + p.random(0.48)) };
+    return { phase: p.random(Math.PI*2)+seed, speed: spd!=null ? spd : (0.22+p.random(0.44)) };
   }
  
-  // ── §1. Pale green diagonal pentagon ────────────────────────────────────────
-  // Left edge is a genuine diagonal (NOT vertical) — the shape reads as a
-  // stylised building silhouette. Vertices in normalised [0,1] coords.
-  // Winding: bottom-left → top-center → top-right → step-right-down →
-  //          step-in → step-down → back to bottom-left
-  const polyPts = [
-    {x:0.016, y:0.558},  // 0: bottom-left (the diagonal starts here)
-    {x:0.116, y:0.114},  // 1: top-left  (diagonal endpoint — key slanted edge)
-    {x:0.374, y:0.114},  // 2: top-right
-    {x:0.374, y:0.308},  // 3: first step down
-    {x:0.204, y:0.308},  // 4: step in (the "ledge")
-    {x:0.204, y:0.558},  // 5: bottom of inner column
-  ];
-  // Centroid for rotation pivot
-  let pcx = polyPts.reduce((s, v) => s + v.x, 0) / polyPts.length;
-  let pcy = polyPts.reduce((s, v) => s + v.y, 0) / polyPts.length;
+  // Pre-bake stucco textures
+  let wbW = Math.ceil(W*0.390), wbH = Math.ceil(H*0.272);
+  let stuccoWhite = _ggBakeStucco(p, wbW, wbH, '#bec5cc', 'rgba(80,88,96,1)', 'rgba(220,226,232,1)', 1.0, 2.0);
+  let rbW = Math.ceil(W*0.440), rbH = Math.ceil(H*0.090);
+  let stuccoRust  = _ggBakeStucco(p, rbW, rbH, '#a87244', 'rgba(56,30,10,1)', 'rgba(196,148,90,1)', 3.0, 4.0);
  
-  // ── §11. Construction lines — full catalog from the painting ────────────────
-  //
-  //  LINE FORMAT: { x0,y0, x1,y1, lw, lc, oscMin, oscMax }
-  //   oscMin / oscMax: fraction of full length the line breathes between.
-  //   Midpoint is FIXED; both endpoints contract/extend symmetrically.
-  //   Each line has its own lc (phase+speed) so they never all breathe together.
- 
-  const cLines = [
-    // ── Three full-height vertical lines (run from canvas top to grass) ──────
-    //   These are the dominant verticals visible through the right two-thirds.
-    { x0:0.615, y0:0.000, x1:0.615, y1:0.832, lw:0.42, lc:lCfg(0.0, 0.28), oscMin:0.82, oscMax:1.00 },
-    { x0:0.670, y0:0.000, x1:0.670, y1:0.826, lw:0.36, lc:lCfg(0.9, 0.33), oscMin:0.78, oscMax:1.00 },
-    { x0:0.727, y0:0.000, x1:0.727, y1:0.820, lw:0.32, lc:lCfg(1.8, 0.37), oscMin:0.80, oscMax:1.00 },
- 
-    // ── Two long horizontals above/through the rust band ──────────────────────
-    { x0:0.342, y0:0.298, x1:0.965, y1:0.298, lw:0.48, lc:lCfg(2.7, 0.26), oscMin:0.85, oscMax:1.00 },
-    { x0:0.342, y0:0.375, x1:0.965, y1:0.375, lw:0.40, lc:lCfg(3.6, 0.31), oscMin:0.80, oscMax:1.00 },
- 
-    // ── Horizontals spanning right of the vertical bar ─────────────────────────
-    { x0:0.498, y0:0.430, x1:0.965, y1:0.430, lw:0.36, lc:lCfg(4.5, 0.35), oscMin:0.76, oscMax:1.00 },
-    { x0:0.498, y0:0.474, x1:0.965, y1:0.474, lw:0.32, lc:lCfg(5.4, 0.28), oscMin:0.74, oscMax:1.00 },
-    { x0:0.498, y0:0.594, x1:0.965, y1:0.594, lw:0.28, lc:lCfg(6.3, 0.40), oscMin:0.78, oscMax:1.00 },
-    { x0:0.498, y0:0.638, x1:0.965, y1:0.638, lw:0.26, lc:lCfg(7.2, 0.32), oscMin:0.72, oscMax:1.00 },
-    { x0:0.498, y0:0.662, x1:0.965, y1:0.662, lw:0.22, lc:lCfg(8.1, 0.44), oscMin:0.70, oscMax:1.00 },
- 
-    // ── Right-quadrant crosshatch verticals (shorter — create the grid) ────────
-    { x0:0.800, y0:0.430, x1:0.800, y1:0.730, lw:0.28, lc:lCfg(9.0, 0.50), oscMin:0.68, oscMax:1.00 },
-    { x0:0.840, y0:0.430, x1:0.840, y1:0.730, lw:0.26, lc:lCfg(9.9, 0.55), oscMin:0.66, oscMax:1.00 },
-    { x0:0.878, y0:0.444, x1:0.878, y1:0.730, lw:0.24, lc:lCfg(10.8,0.48), oscMin:0.64, oscMax:1.00 },
-    { x0:0.916, y0:0.460, x1:0.916, y1:0.730, lw:0.22, lc:lCfg(11.7,0.52), oscMin:0.62, oscMax:1.00 },
-    { x0:0.954, y0:0.464, x1:0.954, y1:0.730, lw:0.20, lc:lCfg(12.6,0.46), oscMin:0.60, oscMax:1.00 },
- 
-    // ── Shorter horizontals inside the crosshatch zone ─────────────────────────
-    { x0:0.764, y0:0.538, x1:0.965, y1:0.538, lw:0.22, lc:lCfg(13.5,0.58), oscMin:0.65, oscMax:1.00 },
-    { x0:0.764, y0:0.578, x1:0.965, y1:0.578, lw:0.20, lc:lCfg(14.4,0.52), oscMin:0.62, oscMax:1.00 },
+  // 9 major structural lines
+  const majorLines = [
+    { x0:0.612, y0:0.000, x1:0.612, y1:0.832, lw:0.48, lc:lCfg(0.0,0.25), oscMin:0.82, oscMax:1.00 },
+    { x0:0.664, y0:0.000, x1:0.664, y1:0.828, lw:0.42, lc:lCfg(0.9,0.30), oscMin:0.79, oscMax:1.00 },
+    { x0:0.726, y0:0.000, x1:0.726, y1:0.822, lw:0.36, lc:lCfg(1.8,0.34), oscMin:0.76, oscMax:1.00 },
+    { x0:0.334, y0:0.296, x1:0.972, y1:0.296, lw:0.52, lc:lCfg(2.7,0.23), oscMin:0.88, oscMax:1.00 },
+    { x0:0.334, y0:0.374, x1:0.972, y1:0.374, lw:0.46, lc:lCfg(3.6,0.27), oscMin:0.85, oscMax:1.00 },
+    { x0:0.496, y0:0.434, x1:0.777, y1:0.434, lw:0.40, lc:lCfg(4.5,0.31), oscMin:0.78, oscMax:1.00 },
+    { x0:0.496, y0:0.468, x1:0.777, y1:0.468, lw:0.35, lc:lCfg(5.4,0.28), oscMin:0.76, oscMax:1.00 },
+    { x0:0.496, y0:0.596, x1:0.777, y1:0.596, lw:0.31, lc:lCfg(6.3,0.37), oscMin:0.74, oscMax:1.00 },
+    { x0:0.496, y0:0.638, x1:0.777, y1:0.638, lw:0.27, lc:lCfg(7.2,0.29), oscMin:0.72, oscMax:1.00 },
   ];
  
-  _gg2S = {
-    W, H,
+  // Dense 7×9 scaffolding grid (right zone x:0.777-0.960, y:0.434-0.730)
+  const GXS=0.777, GXE=0.960, GXN=7, GYS=0.434, GYE=0.730, GYN=9;
+  let gridLines = [];
+  for (let i=0; i<GXN; i++) {
+    let x = GXS + (i/(GXN-1))*(GXE-GXS);
+    gridLines.push({ x0:x, y0:GYS, x1:x, y1:GYE, lw:0.32-i*0.018, lc:lCfg(i*1.7+30), oscMin:0.87, oscMax:1.00 });
+  }
+  for (let i=0; i<GYN; i++) {
+    let y = GYS + (i/(GYN-1))*(GYE-GYS);
+    gridLines.push({ x0:GXS, y0:y, x1:GXE, y1:y, lw:0.28-i*0.012, lc:lCfg(i*2.0+45), oscMin:0.85, oscMax:1.00 });
+  }
  
-    // §1 Pale green diagonal polygon
+  _ggS = {
+    W, H, stuccoWhite, stuccoRust, wbW, wbH, rbW, rbH,
+ 
     polygon: {
-      pts: polyPts, pcx, pcy,
-      rotAmt: 0.006,
-      d: dCfg(0.0, 0.006, 0.004)
-    },
- 
-    // §4 Large white-gray impasto block (the heavy left mass)
-    rectWhiteGray: {
-      // Slightly irregular quad — bottom-right corner is nudged down 0.5%H
       pts: [
-        {x:0.124, y:0.462}, {x:0.510, y:0.462},
-        {x:0.510, y:0.728}, {x:0.124, y:0.728}
+        {x:0.014,y:0.558},{x:0.118,y:0.112},{x:0.374,y:0.112},
+        {x:0.374,y:0.308},{x:0.204,y:0.308},{x:0.204,y:0.558}
       ],
-      col: '#bec4ca',
-      d: dCfg(1.1, 0.013, 0.003)   // primarily horizontal
+      pcx:(0.014+0.118+0.374+0.374+0.204+0.204)/6,
+      pcy:(0.558+0.112+0.112+0.308+0.308+0.558)/6,
+      rotAmt:0.005, d:dCfg(0.0,0.006,0.004)
     },
- 
-    // §5 Light gray upper parallelogram (bottom-left corner is slid left ~1.5%)
+    rectWhite: {
+      pts:[{x:0.124,y:0.462},{x:0.512,y:0.462},{x:0.512,y:0.730},{x:0.124,y:0.730}],
+      col:'#bec5cc', d:dCfg(1.1,0.013,0.003)
+    },
     rectUpperGray: {
-      pts: [
-        {x:0.355, y:0.362}, {x:0.510, y:0.362},
-        {x:0.510, y:0.465}, {x:0.338, y:0.465}   // left edge slants outward
-      ],
-      col: '#a8b0ba',
-      d: dCfg(2.2, 0.006, 0.007)
+      pts:[{x:0.356,y:0.362},{x:0.512,y:0.362},{x:0.512,y:0.466},{x:0.336,y:0.466}],
+      col:'#a9b3bd', d:dCfg(2.2,0.006,0.007)
     },
- 
-    // §6 Medium cool-gray rectangle (the largest overlapping block, center)
     rectMedGray: {
-      pts: [
-        {x:0.357, y:0.375}, {x:0.520, y:0.375},
-        {x:0.520, y:0.728}, {x:0.357, y:0.728}
-      ],
-      col: '#8e959e',
-      d: dCfg(3.3, 0.008, 0.009)   // counter-diagonal to §4
+      pts:[{x:0.356,y:0.376},{x:0.522,y:0.376},{x:0.522,y:0.730},{x:0.356,y:0.730}],
+      col:'#8f979f', d:dCfg(3.3,0.009,0.008)
     },
- 
-    // §7 Thin light-gray strip (between gray cluster and long black line)
-    // This is the pale horizontal band visible just above the black line
+    tapeStrip: {
+      pts:[{x:0.124,y:0.636},{x:0.514,y:0.636},{x:0.514,y:0.651},{x:0.140,y:0.651}],
+      turnPts:[{x:0.124,y:0.636},{x:0.152,y:0.636},{x:0.140,y:0.651}],
+      d:dCfg(4.9,0.004,0.003)
+    },
     rectThinStrip: {
-      pts: [
-        {x:0.357, y:0.648}, {x:0.515, y:0.648},
-        {x:0.515, y:0.672}, {x:0.340, y:0.672}  // left edge slightly slanted
-      ],
-      col: '#c8cdd2',
-      d: dCfg(4.4, 0.004, 0.005)
+      pts:[{x:0.355,y:0.648},{x:0.520,y:0.648},{x:0.520,y:0.666},{x:0.338,y:0.666}],
+      col:'#cdd3d9', d:dCfg(5.2,0.003,0.004)
     },
- 
-    // §8 Rust/ochre band
     rustBand: {
-      x:0.530, y:0.288, wBase:0.435, h:0.086,
-      col: '#a87244',
-      d: { phase: p.random(Math.PI * 2) + 2.8, speed:0.24, dwAmt:W*0.028, dy:H*0.005 }
+      x:0.530, y:0.286, wBase:0.438, h:0.088, col:'#a87244',
+      d:{ phase:p.random(Math.PI*2)+2.8, speed:0.22, dwAmt:W*0.026, dy:H*0.004 }
     },
- 
-    // §9 Small isolated dark rectangle (right quadrant, very slight drift)
-    rectDark: {
-      x:0.764, y:0.458, w:0.058, h:0.083,
-      col: '#22282e',
-      d: dCfg(5.5, 0.003, 0.004)
-    },
- 
-    // §10 Black lower-left rectangle (ground plane — static)
-    rectGndLeft: { x:0.124, y:0.730, w:0.223, h:0.098 },
- 
-    // §12 Black vertical bar (oscillates X)
-    vertBar: {
-      x:0.493, y0:0.188, y1:0.840, w:0.040,
-      oscPhase: p.random(Math.PI * 2) + 0.5,
-      oscSpeed: 0.42,
-      oscAmt: W * 0.008
-    },
- 
-    // §13 Small black rects
-    rectBarBase:  { x:0.493, y:0.784, w:0.057, h:0.056 },  // at bar base (above grass)
-    rectGrassBot: { x:0.598, y:0.840, w:0.038, h:0.082 },  // in grass zone
- 
-    // §14 Long horizontal black line — endpoints breathe independently
+    rectDark: { x:0.764,y:0.458,w:0.058,h:0.083, col:'#22282e', d:dCfg(5.6,0.003,0.004) },
+    rectGndLeft: { x:0.124,y:0.730,w:0.222,h:0.098 },
+    vertBar: { x:0.492,y0:0.188,y1:0.840,w:0.040, oscPhase:p.random(Math.PI*2)+0.5, oscSpeed:0.42, oscAmt:W*0.008 },
+    rectBarBase:  { x:0.492,y:0.784,w:0.058,h:0.056 },
+    rectGrassBot: { x:0.598,y:0.840,w:0.038,h:0.082 },
     horzLine: {
-      y:0.730,
-      x0Base:0.000, x1Base:0.965,
-      lw:1.8,
-      d0: { phase:p.random(Math.PI*2)+1.7, speed:0.36, oscAmt:W*0.046 },
-      d1: { phase:p.random(Math.PI*2)+3.2, speed:0.50, oscAmt:W*0.018 }
+      y:0.730, x0Base:0.000, x1Base:0.966, lw:1.9,
+      d0:{ phase:p.random(Math.PI*2)+1.8, speed:0.35, oscAmt:W*0.044 },
+      d1:{ phase:p.random(Math.PI*2)+3.2, speed:0.51, oscAmt:W*0.016 }
     },
- 
-    // §11 catalog (stored at top of _gg2S for draw-order reasons)
-    cLines,
- 
-    // §15 Small red accent dot
-    dotRed: { cx:0.505, cy:0.578, r:0.008, d:dCfg(1.4, 0.003, 0.004) },
- 
-    // §16 Tiny pencil accent dot (static)
-    accentDot: { cx:0.597, cy:0.066, r:0.0032 },
- 
-    // §17 Red circle — two superimposed sine oscillators
+    majorLines, gridLines,
+    dotRed: { cx:0.505,cy:0.578,r:0.0082, d:dCfg(1.4,0.003,0.004) },
+    accentDot: { cx:0.597,cy:0.067,r:0.0033 },
     circleRed: {
-      cx:0.614, cy:0.090, r:0.048,
-      d1: dCfg(3.1, 0.006, 0.016),
-      d2: { phase:p.random(Math.PI*2)+5.6, speed:0.88, dy:H*0.008 }
+      cx:0.614,cy:0.090,r:0.050,
+      d1:dCfg(3.1,0.006,0.018),
+      d2:{ phase:p.random(Math.PI*2)+5.6, speed:0.88, dy:H*0.009 }
     },
- 
-    // §18 Black circle — wide elliptical orbit
-    circleBlack: {
-      cx:0.876, cy:0.743, r:0.058,
-      d: dCfg(4.2, 0.022, 0.011)
-    },
- 
-    // §G Grass band geometry
+    circleBlack: { cx:0.876,cy:0.748,r:0.058, d:dCfg(4.2,0.022,0.011) },
     grass: { y:0.828, h:0.172 }
   };
 }
  
- 
 // ══════════════════════════════════════════════════════════════════════════════
-// DRIFT HELPER
+// HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
-function _gg2Drift(d, tick, scale) {
-  let tt = tick * d.speed;
-  return {
-    x: Math.sin(d.phase + tt)        * d.dx * scale,
-    y: Math.cos(d.phase + tt * 1.23) * d.dy * scale
-  };
+function _ggDrift(d, tick, amp) {
+  let tt = tick*d.speed;
+  return { x:Math.sin(d.phase+tt)*d.dx*amp, y:Math.cos(d.phase+tt*1.23)*d.dy*amp };
 }
- 
-// Applies a drift offset to every point in a quad's vertex array
-// Returns a new array of screen-space {x, y} points
-function _gg2ShiftQuad(pts, W, H, off) {
-  return pts.map(pt => ({ x: pt.x * W + off.x, y: pt.y * H + off.y }));
+function _ggQpx(pts, W, H, od) {
+  return pts.map(pt => ({ x:pt.x*W+od.x, y:pt.y*H+od.y }));
 }
- 
-// Stroke a closed polygon from an array of {x,y} points
-function _gg2FillPoly(pts) {
+function _ggFill(pts, col) {
   CTX.beginPath();
-  pts.forEach((pt, i) => i === 0 ? CTX.moveTo(pt.x, pt.y) : CTX.lineTo(pt.x, pt.y));
-  CTX.closePath();
-  CTX.fill();
+  pts.forEach((pt,i) => i===0 ? CTX.moveTo(pt.x,pt.y) : CTX.lineTo(pt.x,pt.y));
+  CTX.closePath(); CTX.fillStyle=col; CTX.fill();
 }
- 
-// Draws layered horizontal impasto marks inside a bounding quad.
-// Randomness is seeded via p.noise to stay stable across frames.
-function _gg2Impasto(p, pts, seed, strokeCol, countPerUnit, minOpacity, maxOpacity, lw0, lw1) {
-  if (!pts || pts.length < 3) return;
-  // Approximate bounding box of the quad
-  let xs = pts.map(v => v.x), ys = pts.map(v => v.y);
-  let bx = Math.min(...xs), bw = Math.max(...xs) - bx;
-  let by = Math.min(...ys), bh = Math.max(...ys) - by;
-  let n  = Math.max(2, Math.floor(bh * countPerUnit));
+function _ggStucco(pts, canvas, cw, ch, alpha) {
+  if (!canvas) return;
   CTX.save();
-  // Clip to the quad so texture doesn't spill
   CTX.beginPath();
-  pts.forEach((pt, i) => i === 0 ? CTX.moveTo(pt.x, pt.y) : CTX.lineTo(pt.x, pt.y));
+  pts.forEach((pt,i) => i===0?CTX.moveTo(pt.x,pt.y):CTX.lineTo(pt.x,pt.y));
   CTX.closePath(); CTX.clip();
-  CTX.lineCap    = 'round';
-  CTX.strokeStyle = strokeCol;
-  for (let i = 0; i < n; i++) {
-    let sy  = by + p.noise(seed, i * 0.42) * bh;
-    let sx0 = bx + p.noise(seed + 100, i * 0.31) * bw * 0.12;
-    let sx1 = bx + bw * (0.22 + p.noise(seed + 200, i * 0.28) * 0.78);
-    CTX.lineWidth   = lw0 + p.noise(seed + 300, i * 0.57) * lw1;
-    CTX.globalAlpha = minOpacity + p.noise(seed + 400, i * 0.44) * (maxOpacity - minOpacity);
-    CTX.beginPath(); CTX.moveTo(sx0, sy); CTX.lineTo(sx1, sy); CTX.stroke();
-  }
-  CTX.globalAlpha = 1;
-  CTX.restore();
+  let xs=pts.map(v=>v.x), ys=pts.map(v=>v.y);
+  CTX.globalAlpha=alpha;
+  CTX.drawImage(canvas, Math.min(...xs), Math.min(...ys), cw, ch);
+  CTX.globalAlpha=1; CTX.restore();
 }
- 
+function _ggImpasto(p, pts, seedX, markCol, n) {
+  CTX.save();
+  CTX.beginPath();
+  pts.forEach((pt,i) => i===0?CTX.moveTo(pt.x,pt.y):CTX.lineTo(pt.x,pt.y));
+  CTX.closePath(); CTX.clip();
+  let xs=pts.map(v=>v.x), ys=pts.map(v=>v.y);
+  let bx=Math.min(...xs), bw=Math.max(...xs)-bx;
+  let by=Math.min(...ys), bh=Math.max(...ys)-by;
+  CTX.lineCap='round'; CTX.strokeStyle=markCol;
+  for (let i=0; i<n; i++) {
+    let sy  = by + p.noise(seedX,     i*0.40)*bh;
+    let sx0 = bx + p.noise(seedX+100, i*0.30)*bw*0.12;
+    let sx1 = bx + bw*(0.16 + p.noise(seedX+200, i*0.34)*0.84);
+    CTX.lineWidth   = 0.4 + p.noise(seedX+300, i*0.58)*0.9;
+    CTX.globalAlpha = 0.035 + p.noise(seedX+400, i*0.44)*0.075;
+    CTX.beginPath(); CTX.moveTo(sx0,sy); CTX.lineTo(sx1,sy); CTX.stroke();
+  }
+  CTX.globalAlpha=1; CTX.restore();
+}
  
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN DRAW
 // ══════════════════════════════════════════════════════════════════════════════
 function drawGreenGardens(p, t) {
-  if (!_gg2S || _gg2S.W !== p.width || _gg2S.H !== p.height) initGreenGardens(p);
+  if (!_ggS || _ggS.W !== p.width || _ggS.H !== p.height) initGreenGardens(p);
+  let G=_ggS, W=G.W, H=G.H;
  
-  let G  = _gg2S;
-  let W  = G.W, H = G.H;
+  let speed     = Math.max(0.01, S.ggSpeed      ?? 1.0);
+  let driftAmp  = S.ggDrift       ?? 1.0;
+  let lineOsc   = S.ggLineOsc     ?? 1.0;
+  let circDrift = S.ggCircleDrift ?? 1.2;
+  let gSpd      = S.ggGrassSpd    ?? 1.0;
+  let gDens     = Math.max(5, Math.round(S.ggGrassDens  ?? 8));
+  let gSzMult   = S.ggGrassSzMult ?? 1.0;
+  let showTex   = S.ggTexture     !== false;
+  let showGrid  = S.ggShowGrid    !== false;
+  let waveAmt   = (S.wave   ?? 50)  * 0.01;
+  let entropy   = S.entropy  ?? 0;
+  let density   = Math.max(0.15, Math.min(1, S.density ?? 0.5));
+  let accentCol = (S.accent && S.accent !== 'none') ? S.accent : '#d41212';
+  let dEff      = driftAmp * (1.0 + waveAmt * 0.30);
+  let tick      = t * speed;
  
-  // ── Read S parameters ──────────────────────────────────────────────────────
-  let speed      = Math.max(0.01, S.ggSpeed       ?? 1.0);
-  let driftScale = S.ggDrift        ?? 1.0;
-  let lineOsc    = S.ggLineOsc      ?? 1.0;
-  let circDrift  = S.ggCircleDrift  ?? 1.2;
-  let gSpd       = S.ggGrassSpd     ?? 1.0;
-  let gDens      = Math.max(5, Math.round(S.ggGrassDens  ?? 8));
-  let gSzMult    = S.ggGrassSzMult  ?? 1.0;
-  let showTex    = S.ggTexture      !== false;
-  let showGrid   = S.ggShowGrid     !== false;
+  function off(d) { return _ggDrift(d, tick, dEff); }
  
-  let tick = t * speed;
- 
- 
-  // ── §0. Background — neutral base + warm-left / cool-right overlays ─────────
+  // §0 Background
   CTX.save();
-  CTX.fillStyle = '#e8e8e4';
+  CTX.fillStyle = S.bg || '#e8e8e4';
   CTX.fillRect(0, 0, W, H);
- 
-  // Warm ivory-yellow wash, concentrated upper-left
-  let warmGr = CTX.createLinearGradient(0, 0, W * 0.58, H * 0.72);
-  warmGr.addColorStop(0,   'rgba(242,228,195,0.24)');
-  warmGr.addColorStop(0.45,'rgba(238,222,180,0.14)');
-  warmGr.addColorStop(1,   'rgba(238,222,180,0.00)');
-  CTX.fillStyle = warmGr; CTX.fillRect(0, 0, W, H);
- 
-  // Cool gray-blue wash, concentrated right side
-  let coolGr = CTX.createLinearGradient(W * 0.36, 0, W, H * 0.82);
-  coolGr.addColorStop(0,   'rgba(195,200,215,0.00)');
-  coolGr.addColorStop(0.5, 'rgba(195,200,215,0.12)');
-  coolGr.addColorStop(1,   'rgba(195,200,215,0.22)');
-  CTX.fillStyle = coolGr; CTX.fillRect(0, 0, W, H);
+  let warmGr = CTX.createLinearGradient(0,0,W*0.56,H*0.70);
+  warmGr.addColorStop(0,'rgba(244,230,196,0.22)'); warmGr.addColorStop(0.44,'rgba(240,224,178,0.12)'); warmGr.addColorStop(1,'rgba(240,224,178,0.00)');
+  CTX.fillStyle=warmGr; CTX.fillRect(0,0,W,H);
+  let coolGr = CTX.createLinearGradient(W*0.36,0,W,H*0.82);
+  coolGr.addColorStop(0,'rgba(196,202,218,0.00)'); coolGr.addColorStop(0.52,'rgba(196,202,218,0.10)'); coolGr.addColorStop(1,'rgba(196,202,218,0.20)');
+  CTX.fillStyle=coolGr; CTX.fillRect(0,0,W,H);
+  if (S.palette && S.palette.length) {
+    S.palette.slice(0,3).forEach((col,i) => {
+      let rv=parseInt(col.slice(1,3),16), gv=parseInt(col.slice(3,5),16), bv=parseInt(col.slice(5,7),16);
+      let bx=W*(0.08+i*0.34), by=H*(0.18+i*0.12), br=W*0.38;
+      let gr=CTX.createRadialGradient(bx,by,0,bx,by,br);
+      gr.addColorStop(0,`rgba(${rv},${gv},${bv},0.05)`); gr.addColorStop(1,`rgba(${rv},${gv},${bv},0.00)`);
+      CTX.fillStyle=gr; CTX.fillRect(0,0,W,H);
+    });
+  }
   CTX.restore();
  
- 
-  // ── §G(a). Grass band — dark background ────────────────────────────────────
-  // Drawn early so everything that overlaps the band (bar, rects) can paint over it.
-  let gy0 = H * G.grass.y;
-  let gH  = H * G.grass.h;
+  // §Ga Grass band background
+  let gy0=H*G.grass.y, gH=H*G.grass.h;
   CTX.save();
-  let gBg = CTX.createLinearGradient(0, gy0, 0, gy0 + gH);
-  gBg.addColorStop(0,   '#1b4910');
-  gBg.addColorStop(0.55,'#1e4e12');
-  gBg.addColorStop(1,   '#153c0c');
-  CTX.fillStyle = gBg; CTX.fillRect(0, gy0, W, gH);
-  CTX.restore();
+  let gBg=CTX.createLinearGradient(0,gy0,0,gy0+gH);
+  gBg.addColorStop(0,'#1c4a10'); gBg.addColorStop(0.55,'#204e13'); gBg.addColorStop(1,'#163d0c');
+  CTX.fillStyle=gBg; CTX.fillRect(0,gy0,W,gH); CTX.restore();
  
- 
-  // ── §1. Pale green diagonal pentagon ────────────────────────────────────────
+  // §1 Pale green diagonal pentagon
   {
-    let od  = _gg2Drift(G.polygon.d, tick, driftScale);
-    let rot = Math.sin(G.polygon.d.phase + tick * G.polygon.d.speed * 0.55)
-              * G.polygon.rotAmt * driftScale;
-    let cx  = W * G.polygon.pcx, cy = H * G.polygon.pcy;
- 
-    CTX.save();
-    CTX.translate(cx + od.x, cy + od.y);
-    CTX.rotate(rot);
+    let od=off(G.polygon.d);
+    let rot=Math.sin(G.polygon.d.phase+tick*G.polygon.d.speed*0.55)*G.polygon.rotAmt*dEff;
+    let cx=W*G.polygon.pcx, cy=H*G.polygon.pcy;
+    CTX.save(); CTX.translate(cx+od.x,cy+od.y); CTX.rotate(rot);
     CTX.beginPath();
-    G.polygon.pts.forEach((pt, i) => {
-      let px = (pt.x - G.polygon.pcx) * W;
-      let py = (pt.y - G.polygon.pcy) * H;
-      i === 0 ? CTX.moveTo(px, py) : CTX.lineTo(px, py);
+    G.polygon.pts.forEach((pt,i) => {
+      let px=(pt.x-G.polygon.pcx)*W, py=(pt.y-G.polygon.pcy)*H;
+      i===0?CTX.moveTo(px,py):CTX.lineTo(px,py);
     });
-    CTX.closePath();
-    CTX.fillStyle = 'rgba(182,212,148,0.26)';
-    CTX.fill();
-    CTX.restore();
+    CTX.closePath(); CTX.fillStyle='rgba(186,218,148,0.26)'; CTX.fill(); CTX.restore();
   }
  
- 
-  // ── §2. Diagonal pencil slash across the green polygon ──────────────────────
-  // In the painting a thin diagonal runs from upper-left through the shape.
+  // §2 Diagonal pencil slash
   if (showGrid) {
-    CTX.save();
-    CTX.strokeStyle = 'rgba(60,55,50,0.28)';
-    CTX.lineWidth   = 0.55;
-    CTX.lineCap     = 'round';
-    // This diagonal slash is STATIC (it's a built-in mark on the canvas),
-    // but it breathes just slightly to feel drawn rather than pasted.
-    let breathe = Math.sin(tick * 0.20 + 1.2) * 0.008 * W * lineOsc;
-    CTX.beginPath();
-    CTX.moveTo(W * 0.010 + breathe, H * 0.365);
-    CTX.lineTo(W * 0.204 - breathe, H * 0.558);
-    CTX.stroke();
-    CTX.restore();
+    let br=Math.sin(tick*0.20+1.3)*0.008*W*lineOsc;
+    CTX.save(); CTX.strokeStyle='rgba(56,52,46,0.24)'; CTX.lineWidth=0.55; CTX.lineCap='round';
+    CTX.beginPath(); CTX.moveTo(W*0.008+br,H*0.358); CTX.lineTo(W*0.206-br,H*0.560); CTX.stroke(); CTX.restore();
   }
  
- 
-  // ── §3. Curved pencil accent (left zone) ────────────────────────────────────
-  // A subtle arc visible inside the green polygon area
+  // §3 Curved pencil accent
   if (showGrid) {
-    CTX.save();
-    CTX.strokeStyle = 'rgba(55,50,45,0.20)';
-    CTX.lineWidth   = 0.50;
-    let curveBreathe = Math.sin(tick * 0.28 + 2.4) * 4 * lineOsc;
-    CTX.beginPath();
-    CTX.moveTo(W * 0.040, H * 0.420);
-    CTX.quadraticCurveTo(
-      W * 0.080 + curveBreathe, H * 0.475,
-      W * 0.120, H * 0.444
-    );
-    CTX.stroke();
+    let cb=Math.sin(tick*0.27+2.4)*3.5*lineOsc;
+    CTX.save(); CTX.strokeStyle='rgba(50,46,40,0.18)'; CTX.lineWidth=0.48; CTX.lineCap='round';
+    CTX.beginPath(); CTX.moveTo(W*0.036,H*0.418); CTX.quadraticCurveTo(W*0.076+cb,H*0.474,W*0.120,H*0.445); CTX.stroke(); CTX.restore();
+  }
+ 
+  // §4 White-gray impasto block (stucco)
+  {
+    let od=off(G.rectWhite.d), pts=_ggQpx(G.rectWhite.pts,W,H,od);
+    CTX.save(); _ggFill(pts,G.rectWhite.col);
+    if (showTex) _ggStucco(pts,G.stuccoWhite,G.wbW,G.wbH,0.88);
     CTX.restore();
   }
  
- 
-  // ── §4. Large white-gray impasto rectangle (slides primarily horizontal) ────
+  // §5 Light gray upper parallelogram
   {
-    let od  = _gg2Drift(G.rectWhiteGray.d, tick, driftScale);
-    let pts = _gg2ShiftQuad(G.rectWhiteGray.pts, W, H, od);
+    let od=off(G.rectUpperGray.d), pts=_ggQpx(G.rectUpperGray.pts,W,H,od);
+    CTX.save(); _ggFill(pts,G.rectUpperGray.col);
+    if (showTex) _ggImpasto(p,pts,2000,'rgba(122,134,146,1)',28);
+    CTX.restore();
+  }
+ 
+  // §6 Medium cool-gray rectangle
+  {
+    let od=off(G.rectMedGray.d), pts=_ggQpx(G.rectMedGray.pts,W,H,od);
+    CTX.save(); _ggFill(pts,G.rectMedGray.col);
+    if (showTex) _ggImpasto(p,pts,3000,'rgba(92,104,116,1)',36);
+    CTX.restore();
+  }
+ 
+  // §Ta Scotch tape strip — glossy, turned left corner
+  {
+    let od=off(G.tapeStrip.d);
+    let pts=_ggQpx(G.tapeStrip.pts,W,H,od);
+    let turn=_ggQpx(G.tapeStrip.turnPts,W,H,od);
     CTX.save();
-    CTX.fillStyle = G.rectWhiteGray.col;
-    _gg2FillPoly(pts);
-    if (showTex) {
-      // Near-white impasto marks: dense horizontal strokes, near-zero alpha,
-      // varying in length and weight. This is the heavy plaster-like texture.
-      _gg2Impasto(p, pts, 1000, 'rgba(200,205,210,1)', 0.18, 0.04, 0.14, 0.5, 1.6);
-      // Occasional heavier drag marks
-      _gg2Impasto(p, pts, 1500, 'rgba(155,162,168,1)', 0.08, 0.06, 0.16, 0.8, 2.2);
+    CTX.globalAlpha=0.60; _ggFill(pts,'#e4eaf0');
+    // Gloss highlight
+    let xs=pts.map(v=>v.x), ys=pts.map(v=>v.y);
+    let bx=Math.min(...xs), bw=Math.max(...xs)-bx, by=Math.min(...ys), bh=Math.max(...ys)-by;
+    CTX.save();
+    CTX.beginPath(); pts.forEach((pt,i)=>i===0?CTX.moveTo(pt.x,pt.y):CTX.lineTo(pt.x,pt.y)); CTX.closePath(); CTX.clip();
+    let glossGr=CTX.createLinearGradient(bx,by,bx,by+bh);
+    glossGr.addColorStop(0,'rgba(255,255,255,0.55)'); glossGr.addColorStop(0.32,'rgba(255,255,255,0.22)');
+    glossGr.addColorStop(0.60,'rgba(255,255,255,0.34)'); glossGr.addColorStop(1,'rgba(255,255,255,0.08)');
+    CTX.globalAlpha=0.55; CTX.fillStyle=glossGr; CTX.fillRect(bx,by,bw,bh);
+    CTX.restore();
+    // Peeled corner
+    CTX.globalAlpha=0.38; _ggFill(turn,'#b8c2ca');
+    // Bottom edge shadow
+    CTX.globalAlpha=0.22; CTX.strokeStyle='rgba(120,130,138,1)'; CTX.lineWidth=0.8; CTX.lineCap='round';
+    CTX.beginPath(); CTX.moveTo(pts[2].x,pts[2].y); CTX.lineTo(pts[3].x,pts[3].y); CTX.stroke();
+    CTX.globalAlpha=1; CTX.restore();
+  }
+ 
+  // §7 Thin pale strip
+  {
+    let od=off(G.rectThinStrip.d), pts=_ggQpx(G.rectThinStrip.pts,W,H,od);
+    CTX.save(); CTX.globalAlpha=0.74; _ggFill(pts,G.rectThinStrip.col); CTX.globalAlpha=1; CTX.restore();
+  }
+ 
+  // §8 Rust band (stucco, breathing width)
+  {
+    let rb=G.rustBand;
+    let oscW=Math.sin(rb.d.phase+tick*rb.d.speed*2.4)*rb.d.dwAmt*lineOsc;
+    let ody=Math.cos(rb.d.phase+tick*rb.d.speed*0.66)*rb.d.dy*dEff;
+    let rbx=W*rb.x, rby=H*rb.y+ody, rbw=W*rb.wBase+oscW, rbh=H*rb.h;
+    CTX.save(); CTX.fillStyle=rb.col; CTX.fillRect(rbx,rby,rbw,rbh);
+    if (showTex && G.stuccoRust) {
+      CTX.save(); CTX.beginPath(); CTX.rect(rbx,rby,rbw,rbh); CTX.clip();
+      CTX.globalAlpha=0.84; CTX.drawImage(G.stuccoRust,rbx,rby,G.rbW,G.rbH); CTX.globalAlpha=1; CTX.restore();
     }
     CTX.restore();
   }
  
- 
-  // ── §5. Light gray upper parallelogram (left edge slants out) ───────────────
+  // §9 Small dark rectangle
   {
-    let od  = _gg2Drift(G.rectUpperGray.d, tick, driftScale);
-    let pts = _gg2ShiftQuad(G.rectUpperGray.pts, W, H, od);
-    CTX.save();
-    CTX.fillStyle = G.rectUpperGray.col;
-    _gg2FillPoly(pts);
-    if (showTex) {
-      _gg2Impasto(p, pts, 2000, 'rgba(130,140,152,1)', 0.14, 0.04, 0.10, 0.4, 1.0);
-    }
-    CTX.restore();
+    let od=off(G.rectDark.d);
+    CTX.fillStyle=G.rectDark.col;
+    CTX.fillRect(W*G.rectDark.x+od.x,H*G.rectDark.y+od.y,W*G.rectDark.w,H*G.rectDark.h);
   }
  
+  // §10 Black lower-left rectangle (STATIC)
+  CTX.fillStyle='#141414';
+  CTX.fillRect(W*G.rectGndLeft.x,H*G.rectGndLeft.y,W*G.rectGndLeft.w,H*G.rectGndLeft.h);
  
-  // ── §6. Medium cool-gray rectangle (counter-slides against §4) ──────────────
+  // §12 Black vertical bar (oscillates X)
   {
-    let od  = _gg2Drift(G.rectMedGray.d, tick, driftScale);
-    let pts = _gg2ShiftQuad(G.rectMedGray.pts, W, H, od);
-    CTX.save();
-    CTX.fillStyle = G.rectMedGray.col;
-    _gg2FillPoly(pts);
-    if (showTex) {
-      // Smoother, more translucent marks — less worked than §4
-      _gg2Impasto(p, pts, 3000, 'rgba(100,110,122,1)', 0.12, 0.03, 0.09, 0.4, 1.2);
-    }
-    CTX.restore();
+    let vb=G.vertBar;
+    let xOsc=Math.sin(vb.oscPhase+tick*vb.oscSpeed)*vb.oscAmt*dEff;
+    CTX.fillStyle='#141414';
+    CTX.fillRect(W*vb.x+xOsc,H*vb.y0,W*vb.w,H*(vb.y1-vb.y0));
   }
  
+  // §13 Small black rects (STATIC)
+  CTX.fillStyle='#141414';
+  CTX.fillRect(W*G.rectBarBase.x,H*G.rectBarBase.y,W*G.rectBarBase.w,H*G.rectBarBase.h);
+  CTX.fillRect(W*G.rectGrassBot.x,H*G.rectGrassBot.y,W*G.rectGrassBot.w,H*G.rectGrassBot.h);
  
-  // ── §7. Thin light-gray strip (slanted left edge, between gray & black line) ─
+  // §14 Long horizontal black line — asymmetric endpoint breathing
   {
-    let od  = _gg2Drift(G.rectThinStrip.d, tick, driftScale);
-    let pts = _gg2ShiftQuad(G.rectThinStrip.pts, W, H, od);
-    CTX.save();
-    CTX.globalAlpha = 0.78;
-    CTX.fillStyle   = G.rectThinStrip.col;
-    _gg2FillPoly(pts);
-    CTX.globalAlpha = 1;
-    CTX.restore();
+    let hl=G.horzLine;
+    let o0=Math.sin(hl.d0.phase+tick*hl.d0.speed*2.6)*hl.d0.oscAmt*lineOsc;
+    let o1=Math.cos(hl.d1.phase+tick*hl.d1.speed*2.6)*hl.d1.oscAmt*lineOsc*0.36;
+    CTX.save(); CTX.strokeStyle='#141414'; CTX.lineWidth=hl.lw; CTX.lineCap='square';
+    CTX.beginPath(); CTX.moveTo(W*hl.x0Base-o0,H*hl.y); CTX.lineTo(W*hl.x1Base+o1,H*hl.y); CTX.stroke(); CTX.restore();
   }
  
+  // §11 ALL construction lines — ON TOP of every block, bar, and ground element
+  if (showGrid) {
+    CTX.save(); CTX.lineCap='butt';
  
-  // ── §8. Rust/ochre band (width breathes, slight vertical float) ──────────────
-  {
-    let rb   = G.rustBand;
-    let oscW = Math.sin(rb.d.phase + tick * rb.d.speed * 2.4) * rb.d.dwAmt * lineOsc;
-    let ody  = Math.cos(rb.d.phase + tick * rb.d.speed * 0.68) * rb.d.dy * driftScale;
-    let rbx  = W * rb.x;
-    let rby  = H * rb.y + ody;
-    let rbw  = W * rb.wBase + oscW;
-    let rbh  = H * rb.h;
- 
-    CTX.save();
-    CTX.fillStyle = rb.col;
-    CTX.fillRect(rbx, rby, rbw, rbh);
-    if (showTex) {
-      // Warm/cool alternating heavy brushstroke marks — the most textured element
-      let n = Math.max(3, Math.floor(rbw * 0.12));
-      CTX.lineCap = 'round';
-      CTX.beginPath(); CTX.rect(rbx, rby, rbw, rbh); CTX.clip();
-      for (let i = 0; i < n; i++) {
-        let sy  = rby + p.noise(4000, i * 0.35) * rbh;
-        let sx0 = rbx + p.noise(4100, i * 0.28) * rbw * 0.06;
-        let sx1 = rbx + rbw * (0.14 + p.noise(4200, i * 0.42) * 0.86);
-        let warm = p.noise(4300, i * 0.36) > 0.50;
-        CTX.strokeStyle = warm ? 'rgba(80,42,12,1)' : 'rgba(162,100,36,1)';
-        CTX.lineWidth   = 0.6 + p.noise(4400, i * 0.61) * 1.6;
-        CTX.globalAlpha = 0.14 + p.noise(4500, i * 0.47) * 0.26;
-        CTX.beginPath(); CTX.moveTo(sx0, sy); CTX.lineTo(sx1, sy); CTX.stroke();
+    function drawCLine(ln, alpha) {
+      let range=ln.oscMax-ln.oscMin;
+      let prog=ln.oscMin+range*(Math.sin(ln.lc.phase+tick*ln.lc.speed*2.6)*0.5+0.5)*lineOsc;
+      prog=Math.max(ln.oscMin,Math.min(ln.oscMax,prog));
+      let mx=(ln.x0+ln.x1)*0.5*W, my=(ln.y0+ln.y1)*0.5*H;
+      let ax0=mx+(ln.x0*W-mx)*prog, ay0=my+(ln.y0*H-my)*prog;
+      let ax1=mx+(ln.x1*W-mx)*prog, ay1=my+(ln.y1*H-my)*prog;
+      if (entropy>0) {
+        let je=entropy*1.2;
+        ax0+=(Math.random()-0.5)*je; ay0+=(Math.random()-0.5)*je;
+        ax1+=(Math.random()-0.5)*je; ay1+=(Math.random()-0.5)*je;
       }
+      CTX.strokeStyle=`rgba(36,36,50,${alpha})`;
+      CTX.lineWidth=ln.lw;
+      CTX.beginPath(); CTX.moveTo(ax0,ay0); CTX.lineTo(ax1,ay1); CTX.stroke();
     }
-    CTX.globalAlpha = 1;
-    CTX.restore();
-  }
  
+    G.majorLines.forEach(ln => drawCLine(ln, 0.28));
  
-  // ── §9. Small isolated dark rectangle (right, crosshatch zone) ──────────────
-  {
-    let d = _gg2Drift(G.rectDark.d, tick, driftScale);
-    CTX.fillStyle = G.rectDark.col;
-    CTX.fillRect(W*G.rectDark.x+d.x, H*G.rectDark.y+d.y, W*G.rectDark.w, H*G.rectDark.h);
-  }
- 
- 
-  // ── §10. Black lower-left ground rectangle (STATIC — part of ground plane) ──
-  CTX.fillStyle = '#141414';
-  CTX.fillRect(W*G.rectGndLeft.x, H*G.rectGndLeft.y, W*G.rectGndLeft.w, H*G.rectGndLeft.h);
- 
- 
-  // ── §11. Construction / pencil lines ─────────────────────────────────────────
-  // OSCILLATION: progress oscillates in [oscMin, oscMax]. Midpoint is FIXED.
-  // Both endpoints retract toward the midpoint and extend back symmetrically.
-  // This is a length oscillation along the line's own axis.
-  if (showGrid) {
-    CTX.save();
-    CTX.strokeStyle = 'rgba(38,38,48,0.28)';
-    CTX.lineCap     = 'butt';
- 
-    G.cLines.forEach(ln => {
-      let range    = ln.oscMax - ln.oscMin;
-      let progress = ln.oscMin + range * (
-        Math.sin(ln.lc.phase + tick * ln.lc.speed * 2.6) * 0.5 + 0.5
-      ) * lineOsc;
-      // Clamp so line never fully vanishes
-      progress = Math.max(ln.oscMin, Math.min(ln.oscMax, progress));
- 
-      // Screen-space midpoint (fixed anchor)
-      let mx  = (ln.x0 + ln.x1) * 0.5 * W;
-      let my  = (ln.y0 + ln.y1) * 0.5 * H;
-      // Both endpoints scale toward/away from midpoint
-      let ax0 = mx + (ln.x0 * W - mx) * progress;
-      let ay0 = my + (ln.y0 * H - my) * progress;
-      let ax1 = mx + (ln.x1 * W - mx) * progress;
-      let ay1 = my + (ln.y1 * H - my) * progress;
- 
-      CTX.lineWidth = ln.lw;
-      CTX.beginPath(); CTX.moveTo(ax0, ay0); CTX.lineTo(ax1, ay1); CTX.stroke();
+    let visibleCnt=Math.max(4, Math.round(G.gridLines.length*density));
+    G.gridLines.slice(0,visibleCnt).forEach(ln => {
+      // Grid lines breathe slightly faster (creates a "chattering" scaffold feel)
+      let range=ln.oscMax-ln.oscMin;
+      let prog=ln.oscMin+range*(Math.sin(ln.lc.phase+tick*ln.lc.speed*3.0)*0.5+0.5)*lineOsc;
+      prog=Math.max(ln.oscMin,Math.min(ln.oscMax,prog));
+      let mx=(ln.x0+ln.x1)*0.5*W, my=(ln.y0+ln.y1)*0.5*H;
+      let ax0=mx+(ln.x0*W-mx)*prog, ay0=my+(ln.y0*H-my)*prog;
+      let ax1=mx+(ln.x1*W-mx)*prog, ay1=my+(ln.y1*H-my)*prog;
+      CTX.strokeStyle='rgba(40,40,54,0.22)'; CTX.lineWidth=ln.lw;
+      CTX.beginPath(); CTX.moveTo(ax0,ay0); CTX.lineTo(ax1,ay1); CTX.stroke();
     });
  
     CTX.restore();
   }
  
- 
-  // ── §12. Black vertical bar (oscillates X — the painting's spine) ────────────
+  // §15 Small red accent dot
   {
-    let vb   = G.vertBar;
-    let xOsc = Math.sin(vb.oscPhase + tick * vb.oscSpeed) * vb.oscAmt * driftScale;
-    let bx   = W * vb.x + xOsc;
-    CTX.fillStyle = '#141414';
-    CTX.fillRect(bx, H * vb.y0, W * vb.w, H * (vb.y1 - vb.y0));
+    let od=_ggDrift(G.dotRed.d,tick,dEff);
+    CTX.fillStyle=accentCol;
+    CTX.beginPath(); CTX.arc(W*G.dotRed.cx+od.x,H*G.dotRed.cy+od.y,W*G.dotRed.r,0,Math.PI*2); CTX.fill();
   }
  
+  // §16 Tiny pencil dot (STATIC)
+  CTX.fillStyle='rgba(50,50,60,0.56)';
+  CTX.beginPath(); CTX.arc(W*G.accentDot.cx,H*G.accentDot.cy,W*G.accentDot.r,0,Math.PI*2); CTX.fill();
  
-  // ── §13. Small black rects (bar base + grass zone) ───────────────────────────
-  CTX.fillStyle = '#141414';
-  // Bar base (straddles grass line)
-  CTX.fillRect(W*G.rectBarBase.x,  H*G.rectBarBase.y,  W*G.rectBarBase.w,  H*G.rectBarBase.h);
-  // In grass zone
-  CTX.fillRect(W*G.rectGrassBot.x, H*G.rectGrassBot.y, W*G.rectGrassBot.w, H*G.rectGrassBot.h);
- 
- 
-  // ── §14. Long horizontal black line — asymmetric breathing endpoints ─────────
-  // Left endpoint swings out further (±4.6% W); right barely moves (±1.8% W).
-  // The asymmetry gives the line a feeling of unresolved tension —
-  // it wants to be anchored on the left but keeps searching on the right.
+  // §17 Red circle — compound two-frequency bob
   {
-    let hl  = G.horzLine;
-    let o0  = Math.sin(hl.d0.phase + tick * hl.d0.speed * 2.6) * hl.d0.oscAmt * lineOsc;
-    let o1  = Math.cos(hl.d1.phase + tick * hl.d1.speed * 2.6) * hl.d1.oscAmt * lineOsc * 0.38;
-    let lx0 = W * hl.x0Base - o0;
-    let lx1 = W * hl.x1Base + o1;
-    let ly  = H * hl.y;
- 
+    let d1=_ggDrift(G.circleRed.d1,tick,circDrift);
+    let d2y=Math.sin(G.circleRed.d2.phase+tick*G.circleRed.d2.speed)*G.circleRed.d2.dy*circDrift;
+    let rcx=W*G.circleRed.cx+d1.x, rcy=H*G.circleRed.cy+d1.y+d2y, rr=W*G.circleRed.r;
     CTX.save();
-    CTX.strokeStyle = '#141414';
-    CTX.lineWidth   = hl.lw;
-    CTX.lineCap     = 'square';
-    CTX.beginPath(); CTX.moveTo(lx0, ly); CTX.lineTo(lx1, ly); CTX.stroke();
+    CTX.fillStyle=accentCol; CTX.beginPath(); CTX.arc(rcx,rcy,rr,0,Math.PI*2); CTX.fill();
+    CTX.strokeStyle='rgba(10,10,10,0.62)'; CTX.lineWidth=0.72; CTX.lineCap='round';
+    CTX.beginPath(); CTX.moveTo(rcx+rr*0.12,rcy-rr*1.95); CTX.lineTo(rcx+rr*0.12,rcy+rr*2.20); CTX.stroke();
     CTX.restore();
   }
  
- 
-  // ── §15. Small red accent dot (drifts slightly — a stray paint flick) ────────
+  // §18 Black circle — wide elliptical orbit
   {
-    let d = _gg2Drift(G.dotRed.d, tick, driftScale);
-    CTX.fillStyle = '#ce1212';
-    CTX.beginPath();
-    CTX.arc(W*G.dotRed.cx+d.x, H*G.dotRed.cy+d.y, W*G.dotRed.r, 0, Math.PI*2);
-    CTX.fill();
+    let od=_ggDrift(G.circleBlack.d,tick,circDrift);
+    CTX.fillStyle='#141414';
+    CTX.beginPath(); CTX.arc(W*G.circleBlack.cx+od.x,H*G.circleBlack.cy+od.y,W*G.circleBlack.r,0,Math.PI*2); CTX.fill();
   }
  
- 
-  // ── §16. Tiny pencil accent dot (STATIC stray mark) ──────────────────────────
-  CTX.fillStyle = 'rgba(52,52,62,0.60)';
-  CTX.beginPath();
-  CTX.arc(W*G.accentDot.cx, H*G.accentDot.cy, W*G.accentDot.r, 0, Math.PI*2);
-  CTX.fill();
- 
- 
-  // ── §17. Red circle — compound two-frequency bob ─────────────────────────────
-  // d1: slow wide territory. d2: faster smaller oscillation layered on top.
-  // Because the two frequencies are incommensurable (speed ratio ≈ 0.88)
-  // the composite motion never exactly repeats — always slightly off.
-  {
-    let d1  = _gg2Drift(G.circleRed.d1, tick, circDrift);
-    let d2y = Math.sin(G.circleRed.d2.phase + tick * G.circleRed.d2.speed)
-              * G.circleRed.d2.dy * circDrift;
-    let rcx = W * G.circleRed.cx + d1.x;
-    let rcy = H * G.circleRed.cy + d1.y + d2y;
-    let rr  = W * G.circleRed.r;
- 
-    CTX.save();
-    CTX.fillStyle = '#d41212';
-    CTX.beginPath(); CTX.arc(rcx, rcy, rr, 0, Math.PI*2); CTX.fill();
- 
-    // The thin centre-line that bisects the circle (attached, drifts with it)
-    CTX.strokeStyle = 'rgba(10,10,10,0.65)';
-    CTX.lineWidth   = 0.7;
-    CTX.lineCap     = 'round';
-    CTX.beginPath();
-    CTX.moveTo(rcx + rr * 0.12, rcy - rr * 1.90);
-    CTX.lineTo(rcx + rr * 0.12, rcy + rr * 2.10);
-    CTX.stroke();
-    CTX.restore();
-  }
- 
- 
-  // ── §18. Black circle — wide slow elliptical orbit (heavy, gravitational) ────
-  {
-    let d = _gg2Drift(G.circleBlack.d, tick, circDrift);
-    CTX.fillStyle = '#141414';
-    CTX.beginPath();
-    CTX.arc(W*G.circleBlack.cx+d.x, H*G.circleBlack.cy+d.y, W*G.circleBlack.r, 0, Math.PI*2);
-    CTX.fill();
-  }
- 
- 
-  // ── §G(b). Grass character fill ───────────────────────────────────────────────
-  _gg2DrawGrass(p, G, W, H, gy0, gH, tick, gSpd, gDens, gSzMult, t);
+  // §Gb Grass characters
+  _ggDrawGrass(p,G,W,H,gy0,gH,tick,gSpd,gDens,gSzMult,entropy);
 }
  
- 
 // ══════════════════════════════════════════════════════════════════════════════
-// GRASS CHARACTER FILL
-// Uses S.chars (the user's chosen character set) and S.fontStack.
-// A two-wave colour system shifts blades between deep forest green, lime,
-// yellow-green, and golden straw as if a breeze rolls light across the field.
-// Characters lean (rotate) in sync with the primary wave direction.
+// GRASS CHARACTER FILL — uses S.chars, S.fontStack, S.maxSize
 // ══════════════════════════════════════════════════════════════════════════════
-function _gg2DrawGrass(p, G, W, H, gy0, gH, tick, gSpd, gDens, gSzMult, t) {
+function _ggDrawGrass(p, G, W, H, gy0, gH, tick, gSpd, gDens, gSzMult, entropy) {
   if (!S.chars || !S.chars.length) return;
- 
-  // Blade size: user's chosen maxSize scaled by ggGrassSzMult
-  let gSize = Math.max(5, Math.round(S.maxSize * 0.55 * gSzMult));
-  let fstr  = gSize + 'px ' + (S.fontStack || 'monospace');
- 
+  let gSize=Math.max(5, Math.round((S.maxSize??12)*0.52*gSzMult));
+  let fstr=gSize+'px '+(S.fontStack||'"Courier New",monospace');
   CTX.save();
-  // Clip to the grass band — characters cannot overflow onto the painting above
-  CTX.beginPath();
-  CTX.rect(0, gy0, W, gH);
-  CTX.clip();
-  CTX.textAlign    = 'center';
-  CTX.textBaseline = 'middle';
-  CTX.font = fstr;
- 
-  let rowH = gDens * 0.84;  // rows slightly tighter than columns
- 
-  for (let gx = gDens * 0.5; gx < W; gx += gDens) {
-    for (let gy = gy0 + gSize * 0.5; gy < gy0 + gH - gSize * 0.3; gy += rowH) {
- 
-      // ── Colour system: two sine waves + per-position noise ─────────────
-      // Primary wave: fast, tight — the visible wind ripple
-      let ph1   = (gx / W) * Math.PI * 5.8 - tick * 1.5 * gSpd;
-      let wave1 = Math.sin(ph1) * 0.5 + 0.5;             // [0, 1]
- 
-      // Secondary wave: slow, broad — an underlying light shift
-      let ph2   = (gx / W) * Math.PI * 2.2 - tick * 0.46 * gSpd + 2.0;
-      let wave2 = Math.sin(ph2) * 0.28 + 0.28;           // [0, 0.56]
- 
-      // Vertical warmth: tips are warmer than roots
-      let yFrac = 1.0 - (gy - gy0) / gH;
- 
-      // Per-position noise: breaks up wave uniformity
-      let nv    = p.noise(gx * 0.030, gy * 0.046) * 0.20;
- 
-      let heat  = Math.max(0, Math.min(1, wave1 * 0.48 + wave2 * 0.20 + nv + yFrac * 0.06));
- 
-      // ── Colour interpolation: 4 stops ──────────────────────────────────
-      let r, g, b;
-      if (heat < 0.28) {
-        let f = heat / 0.28;
-        r = (20  + f * 50)  | 0;   // 20  → 70
-        g = (78  + f * 82)  | 0;   // 78  → 160
-        b = (12  + f * 6)   | 0;   // 12  → 18
-      } else if (heat < 0.60) {
-        let f = (heat - 0.28) / 0.32;
-        r = (70  + f * 118) | 0;   // 70  → 188
-        g = (160 + f * 42)  | 0;   // 160 → 202
-        b = (18  + f * 4)   | 0;   // 18  → 22
-      } else {
-        let f = (heat - 0.60) / 0.40;
-        r = (188 + f * 52)  | 0;   // 188 → 240
-        g = (202 - f * 62)  | 0;   // 202 → 140
-        b = (22  - f * 12)  | 0;   // 22  → 10
-      }
- 
-      // ── Character: positional noise picks from S.chars ─────────────────
-      // Position-based (stable) noise for character choice so blades don't
-      // flicker between shapes — only their colour and lean change.
-      let ci  = Math.floor(p.noise(gx * 0.078, gy * 0.085) * S.chars.length);
-      let ch  = S.chars[ci % S.chars.length];
- 
-      // ── Lean: character tilts with the primary wave ────────────────────
-      let lean    = Math.sin(ph1 + 0.5) * 0.20;   // ≈ ±11.5°
-      let opacity = Math.min(1, 0.55 + nv * 1.8);
- 
-      CTX.save();
-      CTX.translate(gx, gy);
-      CTX.rotate(lean);
-      CTX.globalAlpha = opacity;
-      CTX.fillStyle   = `rgb(${r},${g},${b})`;
-      CTX.fillText(ch, 0, 0);
+  CTX.beginPath(); CTX.rect(0,gy0,W,gH); CTX.clip();
+  CTX.textAlign='center'; CTX.textBaseline='middle'; CTX.font=fstr;
+  let rowH=gDens*0.82;
+  for (let gx=gDens*0.5; gx<W; gx+=gDens) {
+    for (let gy=gy0+gSize*0.5; gy<gy0+gH-gSize*0.25; gy+=rowH) {
+      let ph1=(gx/W)*Math.PI*5.8-tick*1.5*gSpd, wave1=Math.sin(ph1)*0.5+0.5;
+      let ph2=(gx/W)*Math.PI*2.2-tick*0.44*gSpd+2.0, wave2=Math.sin(ph2)*0.28+0.28;
+      let yFrac=1.0-(gy-gy0)/gH;
+      let nv=p.noise(gx*0.030, gy*0.046)*0.20;
+      let heat=Math.max(0,Math.min(1, wave1*0.48+wave2*0.19+nv+yFrac*0.06));
+      if (entropy>0) heat=Math.max(0,Math.min(1,heat+(Math.random()-0.5)*entropy*0.5));
+      let r,g,b;
+      if (heat<0.28){let f=heat/0.28; r=(20+f*50)|0; g=(78+f*82)|0; b=(12+f*6)|0;}
+      else if(heat<0.60){let f=(heat-0.28)/0.32; r=(70+f*118)|0; g=(160+f*42)|0; b=(18+f*4)|0;}
+      else{let f=(heat-0.60)/0.40; r=(188+f*52)|0; g=(202-f*62)|0; b=(22-f*12)|0;}
+      let ci=Math.floor(p.noise(gx*0.078,gy*0.085)*S.chars.length);
+      let ch=S.chars[ci%S.chars.length];
+      let lean=Math.sin(ph1+0.5)*0.20, opa=Math.min(1,0.55+nv*1.8);
+      CTX.save(); CTX.translate(gx,gy); CTX.rotate(lean);
+      CTX.globalAlpha=opa; CTX.fillStyle=`rgb(${r},${g},${b})`; CTX.fillText(ch,0,0);
       CTX.restore();
     }
   }
- 
-  CTX.globalAlpha = 1;
-  CTX.restore();
+  CTX.globalAlpha=1; CTX.restore();
 }
 
   
@@ -13941,24 +13742,24 @@ const PARAM_REGISTRY = {
       hint: 'Adds a rough concrete texture overlay' },
   ],
     greengardens: [
-    { id:'ggSpeed',      label:'Animation speed',    min:1, max:30, step:1, def:10, scale:0.1,
+    { id:'ggSpeed',       label:'Animation speed',    min:1, max:30, step:1, def:10, scale:0.1,
       hint:'Overall tempo — 1.0 matches the contemplative pace of the original painting' },
-    { id:'ggDrift',      label:'Shape drift',        min:0, max:30, step:1, def:10, scale:0.1,
-      hint:'How far rectangles and the green polygon slide from their painted positions' },
-    { id:'ggLineOsc',    label:'Line oscillation',   min:0, max:30, step:1, def:10, scale:0.1,
-      hint:'How far construction lines breathe — each contracts and extends along its own axis' },
-    { id:'ggCircleDrift',label:'Circle drift',       min:0, max:30, step:1, def:12, scale:0.1,
-      hint:'Red circle compound bob amplitude (anxious) and black circle orbital range (heavy)' },
-    { id:'ggGrassSpd',   label:'Grass wave speed',   min:0, max:30, step:1, def:10, scale:0.1,
-      hint:'Speed of the colour temperature wave rolling through the grass' },
-    { id:'ggGrassDens',  label:'Grass density (px)', min:4, max:24, step:1, def:8,  scale:1,
-      hint:'Pixel spacing between grass blades — smaller = denser meadow' },
-    { id:'ggGrassSzMult',label:'Grass size',         min:2, max:30, step:1, def:10, scale:0.1,
-      hint:'Blade font size as a multiple of maxSize — adjust with the Size slider' },
+    { id:'ggDrift',       label:'Shape drift',        min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'How far the blocks and polygon slide — also modulated by S.wave' },
+    { id:'ggLineOsc',     label:'Line oscillation',   min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'How far construction lines breathe — extend and contract along their own axis' },
+    { id:'ggCircleDrift', label:'Circle drift',       min:0, max:30, step:1, def:12, scale:0.1,
+      hint:'Red circle compound bob + black circle orbital range' },
+    { id:'ggGrassSpd',    label:'Grass wave speed',   min:0, max:30, step:1, def:10, scale:0.1,
+      hint:'Speed of the golden colour-temperature wave rolling through the grass' },
+    { id:'ggGrassDens',   label:'Grass density (px)', min:4, max:24, step:1, def:8,  scale:1,
+      hint:'Pixel spacing between grass blades' },
+    { id:'ggGrassSzMult', label:'Grass size',         min:2, max:30, step:1, def:10, scale:0.1,
+      hint:'Blade font size as multiple of S.maxSize — tune with the Size slider' },
     { type:'toggle', id:'ggTexture',  label:'Block texture',      def:true,
-      hint:'Impasto brushstroke marks on the gray blocks and rust band' },
+      hint:'Pre-baked stucco on white block + rust band; light impasto on gray blocks' },
     { type:'toggle', id:'ggShowGrid', label:'Construction lines', def:true,
-      hint:'Show the fine pencil underdrawing — the architectural skeleton of the composition' },
+      hint:'9 major structural lines + 7x9 scaffolding grid (squares in squares)' },
   ],
     newspaper: [
     { id:'npManualSeed', label:'Force Seed', type:'text', def:'',
