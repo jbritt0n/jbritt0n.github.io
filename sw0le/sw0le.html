@@ -34,6 +34,7 @@
     .circuit-A { border-left-color: #00e6ff; }
     .circuit-B { border-left-color: #00ffaa; }
     .circuit-C { border-left-color: #ff5555; }
+    .circuit-Y { border-left-color: #aa66ff; }
     .circuit-header { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.3rem; margin-bottom: 18px; color: #b0f0ff; text-transform: uppercase; }
     .exercise-item { background: #102838; padding: 0; border: 2px solid #006699; box-shadow: inset 2px 2px 0 #001824, 3px 3px 0 #001020; margin-bottom: 14px; }
     .exercise-summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; cursor: pointer; }
@@ -102,6 +103,7 @@
     <div class="action-bar">
       <button class="btn-secondary" id="boss-btn">👾 SUMMON BOSS</button>
       <button class="btn-secondary" id="builder-mode-btn">🛠️ BUILDER MODE</button>
+      <button class="btn-secondary" id="yoga-btn">🧘 YOGA MODE</button>
       <button class="btn-secondary" id="export-btn">📀 EXPORT JSON</button>
       <button class="btn-secondary" id="md-export-btn">📝 MD EXPORT</button>
       <button class="btn-secondary" id="import-btn">📂 IMPORT</button> 
@@ -420,6 +422,23 @@ const exerciseDB = [
   { id: 'superman', name: 'Superman Hold', baseName: 'Superman', progressionLevel: 1, muscleGroups: ['lower back', 'glutes'], primaryMuscle: 'back', equipment: ['bodyweight'], defaultReps: 30, isTimed: true, difficultyWeight: 0.8, instructions: 'Lie face down, lift arms and legs.' },
   { id: 'swimmer', name: 'Swimmer', baseName: 'Superman', progressionLevel: 2, muscleGroups: ['lower back', 'glutes'], primaryMuscle: 'back', equipment: ['bodyweight'], defaultReps: 40, isTimed: true, difficultyWeight: 0.9, instructions: 'Alternate fluttering arms and legs while lifted.' },
   { id: 'iron-cross-hold', name: 'Iron Cross Hold (Band)', baseName: 'Iron Cross', progressionLevel: 2, muscleGroups: ['chest', 'shoulders'], primaryMuscle: 'chest', equipment: ['resistance bands'], motion: { direction: 'static', plane: 'horizontal' }, defaultReps: 20, isTimed: true, difficultyWeight: 1.2, instructions: 'Hold band with arms out straight at shoulder height.' },
+
+  // ===== YOGA POSES =====
+  { id: 'mountain', name: 'Mountain Pose (Tadasana)', baseName: 'Mountain', progressionLevel: 1, muscleGroups: ['full body', 'posture'], primaryMuscle: 'full body', equipment: ['bodyweight'], isYoga: true, holdTime: 30, isTimed: true, difficultyWeight: 0.6, instructions: 'Stand tall, feet together, arms at sides, engage core.' },
+  { id: 'downward-dog', name: 'Downward Dog', baseName: 'Downward Dog', progressionLevel: 1, muscleGroups: ['hamstrings', 'shoulders', 'calves'], primaryMuscle: 'hamstrings', equipment: ['bodyweight'], isYoga: true, holdTime: 45, isTimed: true, difficultyWeight: 0.8, instructions: 'Hips high, hands and feet grounded, pedal out legs.' },
+  { id: 'upward-dog', name: 'Upward Dog', baseName: 'Upward Dog', progressionLevel: 1, muscleGroups: ['chest', 'shoulders', 'core'], primaryMuscle: 'chest', equipment: ['bodyweight'], isYoga: true, holdTime: 30, isTimed: true, difficultyWeight: 0.8, instructions: 'Press chest forward, thighs lifted, shoulders back.' },
+  { id: 'childs-pose', name: 'Child\'s Pose', baseName: 'Childs Pose', progressionLevel: 1, muscleGroups: ['back', 'hips'], primaryMuscle: 'back', equipment: ['bodyweight'], isYoga: true, holdTime: 60, isTimed: true, difficultyWeight: 0.5, instructions: 'Knees wide, forehead to floor, arms extended.' },
+  { id: 'warrior-1', name: 'Warrior I', baseName: 'Warrior', progressionLevel: 1, muscleGroups: ['quads', 'glutes', 'shoulders'], primaryMuscle: 'quads', equipment: ['bodyweight'], isYoga: true, holdTime: 45, isTimed: true, difficultyWeight: 0.9, instructions: 'Front knee bent 90°, back leg straight, arms overhead.' },
+  { id: 'warrior-2', name: 'Warrior II', baseName: 'Warrior', progressionLevel: 1, muscleGroups: ['quads', 'glutes', 'shoulders'], primaryMuscle: 'quads', equipment: ['bodyweight'], isYoga: true, holdTime: 45, isTimed: true, difficultyWeight: 0.9, instructions: 'Arms out wide, gaze over front hand, hips open.' },
+  { id: 'triangle', name: 'Triangle Pose', baseName: 'Triangle', progressionLevel: 2, muscleGroups: ['hamstrings', 'obliques', 'shoulders'], primaryMuscle: 'hamstrings', equipment: ['bodyweight'], isYoga: true, holdTime: 40, isTimed: true, difficultyWeight: 1.0, instructions: 'Reach forward, lower hand to shin, top arm up.' },
+  { id: 'tree', name: 'Tree Pose', baseName: 'Tree', progressionLevel: 2, muscleGroups: ['balance', 'glutes', 'core'], primaryMuscle: 'core', equipment: ['bodyweight'], isYoga: true, holdTime: 30, isTimed: true, difficultyWeight: 1.0, instructions: 'Foot on inner thigh or calf, hands at heart.' },
+  { id: 'cobra', name: 'Cobra Pose', baseName: 'Cobra', progressionLevel: 1, muscleGroups: ['back', 'chest'], primaryMuscle: 'back', equipment: ['bodyweight'], isYoga: true, holdTime: 30, isTimed: true, difficultyWeight: 0.7, instructions: 'Lie face down, press chest up, elbows bent.' },
+  { id: 'bridge-pose', name: 'Bridge Pose', baseName: 'Bridge', progressionLevel: 1, muscleGroups: ['glutes', 'hamstrings', 'core'], primaryMuscle: 'glutes', equipment: ['bodyweight'], isYoga: true, holdTime: 45, isTimed: true, difficultyWeight: 0.8, instructions: 'Lift hips, clasp hands beneath back.' },
+  { id: 'seated-forward-fold', name: 'Seated Forward Fold', baseName: 'Forward Fold', progressionLevel: 1, muscleGroups: ['hamstrings', 'back'], primaryMuscle: 'hamstrings', equipment: ['bodyweight'], isYoga: true, holdTime: 60, isTimed: true, difficultyWeight: 0.7, instructions: 'Sit with legs straight, hinge forward from hips.' },
+  { id: 'cat-cow', name: 'Cat-Cow Flow', baseName: 'Cat-Cow', progressionLevel: 1, muscleGroups: ['spine', 'core'], primaryMuscle: 'core', equipment: ['bodyweight'], isYoga: true, holdTime: 60, isTimed: true, difficultyWeight: 0.6, instructions: 'Alternate arching and rounding spine with breath.' },
+  { id: 'pigeon', name: 'Pigeon Pose', baseName: 'Pigeon', progressionLevel: 2, muscleGroups: ['glutes', 'hips'], primaryMuscle: 'glutes', equipment: ['bodyweight'], isYoga: true, holdTime: 60, isTimed: true, difficultyWeight: 1.1, instructions: 'Front shin parallel to mat, back leg extended, fold forward.' },
+  { id: 'corpse', name: 'Corpse Pose (Savasana)', baseName: 'Corpse', progressionLevel: 1, muscleGroups: ['relaxation'], primaryMuscle: 'full body', equipment: ['bodyweight'], isYoga: true, holdTime: 180, isTimed: true, difficultyWeight: 0.3, instructions: 'Lie flat, arms at sides, palms up, breathe deeply.' },
+ 
 ];
 
 
@@ -508,6 +527,40 @@ const exerciseDB = [
       return workout;
     }
 
+
+// ---------- YOGA ----------
+    function generateYogaFlow() {
+      const yogaPool = exerciseDB.filter(ex => ex.isYoga && ex.progressionLevel <= userLevel);
+      if (yogaPool.length === 0) return { poses: [] };
+    
+      // Build a flowing sequence of 4–6 poses
+      const sequenceLength = 4 + Math.floor(Math.random() * 3);
+      const used = new Set();
+      const sequence = [];
+    
+      // Always start with Mountain or Cat-Cow
+      const starter = yogaPool.find(p => p.id === 'mountain' || p.id === 'cat-cow');
+      if (starter) { sequence.push(starter); used.add(starter.id); }
+    
+      while (sequence.length < sequenceLength) {
+        const remaining = yogaPool.filter(p => !used.has(p.id));
+        if (remaining.length === 0) break;
+        const pose = remaining[Math.floor(Math.random() * remaining.length)];
+        sequence.push(pose);
+        used.add(pose.id);
+      }
+    
+      // Always end with Child's Pose or Corpse
+      const finisher = yogaPool.find(p => p.id === 'childs-pose' || p.id === 'corpse');
+      if (finisher && !used.has(finisher.id)) {
+        sequence.push(finisher);
+      }
+    
+      return { poses: sequence, isYoga: true, setsStatus: {} };
+    }
+    
+
+    
     // ---------- RENDERING WORKOUT ----------
     function renderWorkout(workout) {
       const container = document.getElementById('workout-container');
@@ -648,6 +701,76 @@ const exerciseDB = [
       document.getElementById('workout-container').innerHTML = '<div class="empty-message">[ PRESS ROLL OR BUILD ]</div>';
     }
 
+// ---------- YOGA FLOW ----------
+    
+function renderYogaFlow(flow) {
+  const container = document.getElementById('workout-container');
+  if (!flow || !flow.poses.length) {
+    container.innerHTML = '<div class="empty-message">No yoga poses available at your level.</div>';
+    return;
+  }
+
+  const items = flow.poses.map(pose => {
+    const holdTime = pose.holdTime || 60;
+    return `
+      <li class="exercise-item">
+        <div class="exercise-summary">
+          <span class="exercise-name">🧘 ${pose.name}</span>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="color:#00e6ff;">${holdTime}s hold</span>
+            <div class="exercise-controls">
+              <button class="icon-btn toggle-details" data-exid="${pose.id}">📖</button>
+            </div>
+          </div>
+        </div>
+        <div class="exercise-details" id="details-${pose.id}">
+          <div class="exercise-instructions">📋 ${pose.instructions || 'Breathe deeply and focus on form.'}</div>
+          <div class="video-placeholder">🎥 [ YOUTUBE: ${pose.name.replace(/ /g,'+')} ]</div>
+        </div>
+      </li>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="circuit-card circuit-Y">
+      <div class="circuit-header"><span>🧘 YOGA FLOW</span><span>${flow.poses.length} POSES</span></div>
+      <ul style="list-style:none;">${items}</ul>
+    </div>
+    <button class="btn-secondary" id="finish-yoga-btn">🏁 COMPLETE YOGA (+XP)</button>
+  `;
+
+  document.querySelectorAll('.toggle-details').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const exId = btn.dataset.exid;
+      const details = document.getElementById(`details-${exId}`);
+      details.classList.toggle('show');
+    });
+  });
+
+  document.getElementById('finish-yoga-btn')?.addEventListener('click', () => {
+    // Award XP based on total hold time
+    const totalHoldSec = flow.poses.reduce((sum, p) => sum + (p.holdTime || 60), 0);
+    const xpEarned = Math.round(totalHoldSec / 20); // ~1 XP per 20 seconds of holding
+    awardXP(xpEarned);
+    
+    const entry = {
+      date: new Date().toLocaleString(),
+      exercises: flow.poses.map(p => p.name),
+      xp: xpEarned,
+      type: 'yoga'
+    };
+    workoutHistory.unshift(entry);
+    saveAll();
+    renderHistory();
+    updateQuests({ isYoga: true });
+    alert(`🧘 Yoga complete! +${xpEarned} XP`);
+    currentWorkout = null;
+    document.getElementById('workout-container').innerHTML = '<div class="empty-message">[ PRESS ROLL, YOGA, OR BUILD ]</div>';
+  });
+}
+
+    
     // ---------- BUILDER MODE ----------
     function renderBuilder() {
       const pool = getFilteredExercises();
@@ -822,7 +945,8 @@ const exerciseDB = [
       const resetBtn = document.getElementById('reset-progress-btn');
       const importFileInput = document.getElementById('import-file-input');
       const tabBtns = document.querySelectorAll('.tab-btn');
-
+      const yogaBtn = document.getElementById('yoga-btn');
+      
       randomizeBtn.addEventListener('click', () => {
         currentWorkout = generateWorkout(false);
         renderWorkout(currentWorkout);
@@ -839,6 +963,11 @@ const exerciseDB = [
       closeBuilderBtn.addEventListener('click', () => {
         document.getElementById('builder-panel').style.display = 'none';
       });
+      yogaBtn.addEventListener('click', () => {
+        currentWorkout = generateYogaFlow();
+        renderYogaFlow(currentWorkout);
+      });
+      
       buildCustomBtn.addEventListener('click', () => {
         if (customSelectedExercises.length === 0) { alert('Select at least one exercise!'); return; }
         const circuitA = customSelectedExercises.slice(0,5);
@@ -892,7 +1021,7 @@ const exerciseDB = [
         };
         reader.readAsText(file);
       });
-
+  
       resetBtn.addEventListener('click', () => {
         if (confirm('Reset all progress? This cannot be undone.')) {
           userLevel=1; currentXP=0; workoutHistory=[]; weightLogs=[];
