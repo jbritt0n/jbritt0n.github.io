@@ -987,6 +987,7 @@ const exerciseDB = [
     }
     
     // ---------- RENDERING WORKOUT ----------
+        // ---------- RENDERING WORKOUT ----------
     function renderWorkout(workout) {
       const container = document.getElementById('workout-container');
       if (!workout || (!workout.circuitA.length && !workout.circuitB.length)) {
@@ -994,8 +995,13 @@ const exerciseDB = [
         return;
       }
 
-      const renderCircuit = (circuit, title, cls, totalSets) => {
+      const setsPer = workout.setsPerCircuit || { A: 3, B: 2, C: 1 };
+
+      const renderCircuit = (circuit, title, cls, circuitKey) => {
         if (!circuit.length) return '';
+        const totalSets = setsPer[circuitKey] || 0;
+        if (totalSets === 0) return '';
+        
         const items = circuit.map((ex, idx) => {
           const status = workout.setsStatus[ex.id] || { completedSets:0, weight:'', reps:ex.defaultReps };
           const repDisplay = ex.isTimed ? `${status.reps}s` : `${status.reps} reps`;
@@ -1048,7 +1054,8 @@ const exerciseDB = [
             </li>
           `;
         }).join('');
-                return `<div class="circuit-card ${cls}">
+        
+        return `<div class="circuit-card ${cls}">
           <div class="circuit-header">
             <span>${title}</span>
             <span style="display:flex; align-items:center; gap:8px;">
@@ -1060,12 +1067,13 @@ const exerciseDB = [
           </div>
           <ul style="list-style:none;">${items}</ul>
         </div>`;
+      };
 
       const allExercises = [...workout.circuitA, ...workout.circuitB, ...workout.circuitC];
       container.innerHTML = `
-        ${renderCircuit(workout.circuitA, 'Circuit A', 'circuit-A', 3)}
-        ${renderCircuit(workout.circuitB, 'Circuit B', 'circuit-B', 2)}
-        ${renderCircuit(workout.circuitC, workout.isBoss ? '🔥 Boss Finisher' : 'Finisher', 'circuit-C', 1)}
+        ${renderCircuit(workout.circuitA, 'Circuit A', 'circuit-A', 'A')}
+        ${renderCircuit(workout.circuitB, 'Circuit B', 'circuit-B', 'B')}
+        ${renderCircuit(workout.circuitC, workout.isBoss ? '🔥 Boss Finisher' : 'Finisher', 'circuit-C', 'C')}
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
           <button class="btn-start-workout" id="start-guided-btn">▶ Start Workout</button>
           <button class="btn-secondary" id="finish-workout-btn" style="align-self:center;">🏁 Finish & Award XP</button>
@@ -1092,6 +1100,7 @@ const exerciseDB = [
           details.classList.toggle('show');
         });
       });
+      
       document.querySelectorAll('.set-complete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1106,7 +1115,6 @@ const exerciseDB = [
             status.completedSets++;
             const ex = allExercises.find(e => e.id === exId);
             const loggedReps = parseInt(status.reps) || ex.defaultReps;
-            // Update performance tracking
             if (!exercisePerformance[exId]) exercisePerformance[exId] = { bestReps: 0, lastReps: 0, attempts: 0 };
             exercisePerformance[exId].lastReps = loggedReps;
             exercisePerformance[exId].bestReps = Math.max(exercisePerformance[exId].bestReps, loggedReps);
@@ -1123,6 +1131,7 @@ const exerciseDB = [
           }
         });
       });
+      
       document.querySelectorAll('.harder-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1140,39 +1149,7 @@ const exerciseDB = [
           } else alert('No harder variation available.');
         });
       });
-      document.getElementById('finish-workout-btn')?.addEventListener('click', () => finishWorkout(workout));
-      document.getElementById('start-guided-btn')?.addEventListener('click', () => startGuidedWorkout(workout));
-            // Set count adjustment
-      document.querySelectorAll('.set-incr, .set-decr').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const circuit = btn.dataset.circuit;
-          const delta = btn.classList.contains('set-incr') ? 1 : -1;
-          let newVal = (workout.setsPerCircuit[circuit] || 0) + delta;
-          newVal = Math.max(0, Math.min(5, newVal)); // clamp 0-5 sets
-          workout.setsPerCircuit[circuit] = newVal;
-          
-          // Update display
-          const span = document.getElementById(`sets-${circuit}`);
-          if (span) span.textContent = newVal;
-          
-          // If set count becomes 0, optionally remove circuit from guided sequence later
-          // For now just update UI; re-rendering not strictly needed
-          
-          // Also update the "Set X/Y" button text for exercises in this circuit
-          const circuitExercises = workout[`circuit${circuit}`] || [];
-          circuitExercises.forEach(ex => {
-            const btn = document.querySelector(`.set-complete-btn[data-exid="${ex.id}"]`);
-            if (btn) {
-              const status = workout.setsStatus[ex.id];
-              btn.textContent = `Set ${status.completedSets+1}/${newVal}`;
-              btn.dataset.sets = newVal;
-            }
-            const statusSpan = document.querySelector(`.set-status[data-exid="${ex.id}"]`);
-            // Note: you'll need to add data-exid to status span; do that in step 4
-          });
-        });
-      });
+
       document.querySelectorAll('.skip-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1198,6 +1175,39 @@ const exerciseDB = [
           }
         });
       });
+
+      // Set count adjustment buttons
+      document.querySelectorAll('.set-incr, .set-decr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const circuit = btn.dataset.circuit;
+          const delta = btn.classList.contains('set-incr') ? 1 : -1;
+          let newVal = (workout.setsPerCircuit[circuit] || 0) + delta;
+          newVal = Math.max(0, Math.min(5, newVal));
+          workout.setsPerCircuit[circuit] = newVal;
+          
+          const span = document.getElementById(`sets-${circuit}`);
+          if (span) span.textContent = newVal;
+          
+          const circuitExercises = workout[`circuit${circuit}`] || [];
+          circuitExercises.forEach(ex => {
+            const btn = document.querySelector(`.set-complete-btn[data-exid="${ex.id}"]`);
+            if (btn) {
+              const status = workout.setsStatus[ex.id];
+              btn.textContent = `Set ${status.completedSets+1}/${newVal}`;
+              btn.dataset.sets = newVal;
+            }
+            const statusSpan = document.querySelector(`.set-status[data-exid="${ex.id}"]`);
+            if (statusSpan) {
+              const status = workout.setsStatus[ex.id];
+              statusSpan.textContent = `${status.completedSets}/${newVal} done`;
+            }
+          });
+        });
+      });
+
+      document.getElementById('finish-workout-btn')?.addEventListener('click', () => finishWorkout(workout));
+      document.getElementById('start-guided-btn')?.addEventListener('click', () => startGuidedWorkout(workout));
     } //renderworkout
 
     function finishWorkout(workout) {
@@ -1364,15 +1374,13 @@ function renderYogaFlow(flow) {
 }
 
     // ---------- GUIDED WORKOUT MODE ----------
-        function startGuidedWorkout(workout) {
-      // Build sequence: each exercise repeated 'setsPerCircuit' times for its circuit
+         function startGuidedWorkout(workout) {
       const sequence = [];
       const circuits = ['A', 'B', 'C'];
       circuits.forEach(circ => {
         const exercises = workout[`circuit${circ}`] || [];
         const sets = workout.setsPerCircuit[circ] || 0;
         for (let i = 0; i < sets; i++) {
-          // For each set, add all exercises in this circuit (with set index)
           exercises.forEach(ex => {
             sequence.push({
               ...ex,
@@ -1404,7 +1412,7 @@ function renderYogaFlow(flow) {
       document.getElementById('guided-step-num').textContent = `Exercise ${guidedCurrentIndex + 1} of ${total}`;
       document.getElementById('guided-progress-fill').style.width = `${(guidedCurrentIndex / total) * 100}%`;
       document.getElementById('guided-ex-name').textContent = ex.name;
-      document.getElementById('guided-reps').textContent = repDisplay;
+      document.getElementById('guided-reps').textContent = `${repDisplay}${setInfo}`;
       document.getElementById('guided-instructions').textContent = ex.instructions || 'Perform with controlled form.';
       document.getElementById('guided-phase-label').textContent = getPattern(ex) !== 'other' ? getPattern(ex).toUpperCase() : '';
       const timerEl = document.getElementById('guided-timer');
@@ -1907,7 +1915,7 @@ window.toggleDbGroup = function(groupId) {
         document.getElementById('completion-screen').classList.remove('active');
       });
     });
-  })();
+  })(); 
 </script>
 </body>
 </html>
