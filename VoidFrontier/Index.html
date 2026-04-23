@@ -140,26 +140,11 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
 
 /* CREW PORTRAITS */
-.crew-portrait {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  object-fit: cover;
-  border: 1px solid var(--border);
-  background: var(--panel);
-}
+.crew-portrait {width: 40px;height: 40px;border-radius: 4px;object-fit: cover;border: 1px solid var(--border);background: var(--panel);}
+.crew-card-with-portrait {display: flex;align-items: center;gap: 10px;}
+.crew-info-with-portrait {flex: 1;}
 
-.crew-card-with-portrait {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.crew-info-with-portrait {
-  flex: 1;
-}
-
-  
+/* SHIP COMBAT */  
 #combat-screen{flex-direction:column}
 .cbat-hdr{background:var(--panel);border-bottom:1px solid var(--hazard);padding:8px 18px;display:flex;align-items:center;gap:20px;height:44px}
 .cbat-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--hazard)}
@@ -226,6 +211,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
         <option value="hard">HARD – Scarcity & danger</option>
       </select>
       <button class="btn btn-gold btn-full" onclick="beginGame()">▶ BEGIN MISSION</button>
+      <button class="btn btn-sm btn-full" onclick="loadLatestSave()" style="margin-top:6px">📂 LOAD LATEST SAVE</button>
     </div>
     <div class="title-hint">Explore, fight, trade. Crew can die. Fleet expands.</div>
   </div>
@@ -240,21 +226,6 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
   </div>
   <div id="cc-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 10px"></div>
   <div class="cc-nav" id="cc-nav"></div>
-</div>
-
-<!-- XENO OVERLAY (V2) -->
-<div id="xeno-overlay">
-  <div class="xeno-card">
-    <div id="xeno-title" style="font-family:'Press Start 2P';font-size:9px;color:var(--alien);margin-bottom:10px">👽 ALIEN CONTACT</div>
-    <div id="xeno-body" style="font-size:15px;color:var(--metal);line-height:1.6;margin-bottom:10px"></div>
-    <div class="xeno-alien-text" id="xeno-lang"></div>
-    <div id="xeno-translation" style="font-size:13px;color:var(--star);font-style:italic;margin-top:4px;min-height:18px"></div>
-    <div id="xeno-choices" style="margin-top:14px;display:flex;flex-direction:column;gap:7px"></div>
-    <div id="xeno-translate-bar" style="margin-top:10px;background:rgba(142,68,173,.15);border:1px solid var(--alien);padding:8px;display:none">
-      <div style="font-size:11px;color:var(--alien);margin-bottom:4px">TRANSLATOR PROGRESS</div>
-      <div style="height:5px;background:rgba(255,255,255,.1)"><div id="xeno-translate-fill" style="height:100%;background:var(--alien);width:0%;transition:width 0.5s"></div></div>
-    </div>
-  </div>
 </div>
   
 <!-- GALAXY -->
@@ -3917,23 +3888,70 @@ function jumpNewGalaxy() {
 }
 function undock(){addLog('Undocked.');showScreen('galaxy-screen');updateHUD();updateLP();updateRP();}
 
-function addCombatLog(msg,type='system'){G.combat.log.unshift({msg,type});document.getElementById('cbat-log').innerHTML=G.combat.log.map(e=>`<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');}
-function renderCombat(){
-  const c=G.combat,s=G.ship,e=c.enemy;
-  document.getElementById('cbat-player-name').textContent=s.name;document.getElementById('cbat-enemy-name').textContent=e.type;
-  document.getElementById('cbat-player-bars').innerHTML=`<div class="cbat-bar-row"><span>HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.hull/s.maxHull*100}%;background:#2ecc71"></div></div><span>${s.hull}</span></div><div class="cbat-bar-row"><span>SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.shields/s.maxShields*100}%;background:#00e5ff"></div></div><span>${s.shields}</span></div>`;
-  document.getElementById('cbat-enemy-bars').innerHTML=`<div class="cbat-bar-row"><span>HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.hull/e.maxHull*100}%;background:#c41e3a"></div></div><span>${e.hull}</span></div><div class="cbat-bar-row"><span>SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.shield/e.maxShield*100}%;background:#8e44ad"></div></div><span>${e.shield}</span></div>`;
-  document.getElementById('cbat-player-sys').innerHTML=Object.entries(c.playerSys).map(([k,v])=>`<div class="sys-cell"><div>${k}</div><div>${v.hp}</div></div>`).join('');
-  document.getElementById('cbat-enemy-sys').innerHTML=Object.entries(e.systems).map(([k,v])=>`<div class="sys-cell targetable ${combatTarget===k?'targeted':''}" onclick="setTarget('${k}')"><div>${k}</div><div>${v.hp}</div></div>`).join('');
-  document.getElementById('cbat-target-lbl').textContent=combatTarget?e.systems[combatTarget].name:'None';
+
+
+
+// ========== SPRITE MAPPING HELPER ==========
+// Sprite mapping system (add your sprite URLs here later)
+const UNIT_SPRITES = {
+  // Player roles
+  'gunner': 'assets/sprites/gunner.png',
+  'medic': 'assets/sprites/medic.png',
+  'engineer': 'assets/sprites/engineer.png',
+  'scout': 'assets/sprites/scout.png',
+  
+  // Enemy types
+  'pirate_raider': 'assets/sprites/pirate.png',
+  'syndicate_merc': 'assets/sprites/merc.png',
+  'alien_warrior': 'assets/sprites/alien.png',
+  // ... add more
+};
+
+// Apply sprite to unit card (call in renderUnitCard)
+function applyUnitSprite(cardEl, unit) {
+  const spriteKey = unit.spriteId || unit.id || unit.role?.toLowerCase();
+  const spriteUrl = UNIT_SPRITES[spriteKey];
+  
+  if (spriteUrl) {
+    const spriteDiv = cardEl.querySelector('.unit-sprite');
+    if (spriteDiv) {
+      spriteDiv.style.backgroundImage = `url(${spriteUrl})`;
+      spriteDiv.textContent = ''; // Hide emoji
+    }
+  }
 }
-function setTarget(id){if(G.combat.enemy.systems[id].hp<=0)return;combatTarget=id;renderCombat();}
+
+// ========== COMBAT SYSTEMS (SHIP & GROUND) ==========
+
+// ---------- SHIP COMBAT ----------
+function addCombatLog(msg, type = 'system') {
+  G.combat.log.unshift({ msg, type });
+  document.getElementById('cbat-log').innerHTML = G.combat.log.map(e => `<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');
+}
+
+function renderCombat() {
+  const c = G.combat, s = G.ship, e = c.enemy;
+  document.getElementById('cbat-player-name').textContent = s.name;
+  document.getElementById('cbat-enemy-name').textContent = e.type;
+  document.getElementById('cbat-player-bars').innerHTML = `<div class="cbat-bar-row"><span>HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.hull / s.maxHull * 100}%;background:#2ecc71"></div></div><span>${s.hull}</span></div><div class="cbat-bar-row"><span>SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${s.shields / s.maxShields * 100}%;background:#00e5ff"></div></div><span>${s.shields}</span></div>`;
+  document.getElementById('cbat-enemy-bars').innerHTML = `<div class="cbat-bar-row"><span>HULL</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.hull / e.maxHull * 100}%;background:#c41e3a"></div></div><span>${e.hull}</span></div><div class="cbat-bar-row"><span>SHLD</span><div class="cbat-bar-track"><div class="cbat-bar-fill" style="width:${e.shield / e.maxShield * 100}%;background:#8e44ad"></div></div><span>${e.shield}</span></div>`;
+  document.getElementById('cbat-player-sys').innerHTML = Object.entries(c.playerSys).map(([k, v]) => `<div class="sys-cell"><div>${k}</div><div>${v.hp}</div></div>`).join('');
+  document.getElementById('cbat-enemy-sys').innerHTML = Object.entries(e.systems).map(([k, v]) => `<div class="sys-cell targetable ${combatTarget === k ? 'targeted' : ''}" onclick="setTarget('${k}')"><div>${k}</div><div>${v.hp}</div></div>`).join('');
+  document.getElementById('cbat-target-lbl').textContent = combatTarget ? e.systems[combatTarget].name : 'None';
+}
+
+function setTarget(id) {
+  if (G.combat.enemy.systems[id].hp <= 0) return;
+  combatTarget = id;
+  renderCombat();
+}
+
 function combatAction(action) {
   const c = G.combat, s = G.flagship, e = c.enemy;
   if (!c || c.won) return;
   const wb = getStationBonus('weapons'), sb = getStationBonus('shields'), eb = getStationBonus('engines');
   const accMod = c.hazardAccMod || 0;
-  
+
   if (action === 'fire') {
     if (!combatTarget) { addCombatLog('Select a target system first!'); return; }
     if (c.playerSys.weapons.hp <= 0) { addCombatLog('Weapons offline!'); return; }
@@ -3970,10 +3988,12 @@ function combatAction(action) {
       return;
     } else addCombatLog('Flee failed!', 'player');
   }
-    // Hazard check
+
+  // Hazard check
   if (!c.hazardCooldown && G.rng.next() < 0.13) triggerCombatHazard();
   else if (c.hazardCooldown > 0) c.hazardCooldown--;
-    // Enemy turn (original logic, but with station bonuses)
+
+  // Enemy turn
   if (e.systems.weapons.hp > 0) {
     const evade = c.evasionActive ? 0.35 + eb * 0.02 : 0.7;
     if (G.rng.next() < evade) {
@@ -3994,426 +4014,61 @@ function combatAction(action) {
       }
     } else addCombatLog('Enemy missed!', 'enemy');
   } else addCombatLog('Enemy weapons offline — cannot fire.', 'system');
-  
+
   c.evasionActive = false;
   c.round++;
   if (s.hull <= 0) { triggerGameOver(); return; }
   if (e.hull <= 0) { c.won = true; addCombatLog('VICTORY!', 'player'); setTimeout(() => exitCombat(true), 800); return; }
   renderCombat();
 }
-function boardEnemy(){if(!G.combat||G.combat.enemy.systems.shields.hp>0){addCombatLog('Shields must be down to board.');return;}startGroundCombat(G.combat.enemy);}
-let groundCombatState=null;
 
-
-// ========== SPRITE MAPPING HELPER ==========
-// Sprite mapping system (add your sprite URLs here later)
-const UNIT_SPRITES = {
-  // Player roles
-  'gunner': 'assets/sprites/gunner.png',
-  'medic': 'assets/sprites/medic.png',
-  'engineer': 'assets/sprites/engineer.png',
-  'scout': 'assets/sprites/scout.png',
-  
-  // Enemy types
-  'pirate_raider': 'assets/sprites/pirate.png',
-  'syndicate_merc': 'assets/sprites/merc.png',
-  'alien_warrior': 'assets/sprites/alien.png',
-  // ... add more
-};
-
-// Apply sprite to unit card (call in renderUnitCard)
-function applyUnitSprite(cardEl, unit) {
-  const spriteKey = unit.spriteId || unit.id || unit.role?.toLowerCase();
-  const spriteUrl = UNIT_SPRITES[spriteKey];
-  
-  if (spriteUrl) {
-    const spriteDiv = cardEl.querySelector('.unit-sprite');
-    if (spriteDiv) {
-      spriteDiv.style.backgroundImage = `url(${spriteUrl})`;
-      spriteDiv.textContent = ''; // Hide emoji
-    }
+function boardEnemy() {
+  if (!G.combat || G.combat.enemy.systems.shields.hp > 0) {
+    addCombatLog('Shields must be down to board.');
+    return;
   }
+  startGroundCombat(G.combat.enemy);
 }
 
-  
-// ========== GROUND COMBAT: RENDERER (Sprite-Ready) ==========
-
-function renderGroundCombat() {
-  const gc = groundCombatState;
-  if (!gc) return;
-  
-  // Party Panel
-  const partyEl = document.getElementById('gc-party');
-  if (partyEl) {
-    partyEl.innerHTML = gc.party.map(unit => renderUnitCard(unit, false, gc)).join('');
+function exitCombat(won) {
+  if (won) {
+    const e = G.combat.enemy;
+    const cr = Math.floor(e.loot.cr[0] + G.rng.next() * (e.loot.cr[1] - e.loot.cr[0]));
+    G.flagship.credits += cr;
+    G.flagship.scrap = (G.flagship.scrap || 0) + (e.loot.scrap || 2);
+    addLog(`Salvaged ${cr}cr and ${e.loot.scrap} scrap.`);
   }
-  
-  // Enemy Panel
-  const enemiesEl = document.getElementById('gc-enemies');
-  if (enemiesEl) {
-    enemiesEl.innerHTML = gc.enemies.map(unit => renderUnitCard(unit, true, gc)).join('');
-  }
-  
-  // Combat Log
-  const logEl = document.getElementById('gc-log');
-  if (logEl) {
-    logEl.innerHTML = gc.log.map((msg, i) => 
-      `<div style="color:${i===0?'var(--star)':'var(--metal)'};font-size:13px;line-height:1.5">${msg}</div>`
-    ).join('');
-    logEl.scrollTop = 0; // Auto-scroll to top
-  }
-  
-  // Action Panel
-  const actionsEl = document.getElementById('gc-actions');
-  if (actionsEl) {
-    const actor = gc.party.find(p => p.id === gc.actingUnit);
-    
-    if (gc.phase !== 'active') {
-      // End state
-      const endMsg = gc.phase === 'victory' ? '★ VICTORY ★' : 
-                    gc.phase === 'fled' ? '— ESCAPED —' : '✖ DEFEATED ✖';
-      const endColor = gc.phase === 'victory' ? 'var(--safe)' : 
-                      gc.phase === 'fled' ? 'var(--warn)' : 'var(--hazard)';
-      actionsEl.innerHTML = `<div style="text-align:center;color:${endColor};font-family:'Press Start 2P';font-size:10px;padding:10px">${endMsg}</div>`;
-      return;
-        }
-    
-    if (actor) {
-      // Player turn: show action buttons
-      actionsEl.innerHTML = `
-        <div style="margin-bottom:8px">
-          <span style="color:var(--gold);font-family:'Press Start 2P';font-size:9px">
-            ▶ ${actor.name} IS READY
-          </span>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-danger" onclick="groundAction('attack')">⚔ ATTACK</button>
-          <button class="btn btn-sm btn-warn" onclick="groundAction('special')">✨ ${actor.perk || 'SPECIAL'}</button>
-          <button class="btn btn-sm btn-safe" onclick="groundAction('heal')">💊 HEAL</button>
-          <button class="btn btn-sm" onclick="groundAction('flee')">🏃 FLEE</button>
-        </div>
-        ${gc.selectedTarget ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedTarget)?.name || 'None'}</div>` : ''}
-      `;
-    } else {
-      // Waiting for ATB
-      actionsEl.innerHTML = `<div style="color:var(--metal);font-size:13px">Waiting for turn...</div>`;
-    }
-  }
-  
-  // Update canvas/sprite layer if implemented
-  updateCombatSprites(gc);
+  G.combat = null;
+  showScreen('galaxy-screen');
+  updateHUD();
+  updateLP();
 }
 
-// Select target for attack/special
-function selectGroundTarget(id) {
-  if (!groundCombatState || !groundCombatState.actingUnit) return;
-  const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
-  if (!actor) return;
-  
-  groundCombatState.selectedTarget = id;
-  renderGroundCombat();
+function triggerGameOver() {
+  document.getElementById('go-stats').textContent = `Jumps: ${G.jumps} | Credits: ${G.flagship.credits}`;
+  document.getElementById('gameover-overlay').classList.add('open');
 }
 
-// Handle player action button clicks
-function groundAction(moveId, effectJson) {
-    const st = groundCombatState;
-    if (!st || st.phase !== 'active' || !st.acting) return;
-    
-    const actor = st.party.find(p => p.id === st.acting);
-    if (!actor) return;
-    
-    // Get available moves and find the selected one
-    const moves = getCrewMoves(actor);
-    const move = moves.find(m => m.id === moveId);
-    
-    // Handle built-in actions (heal/flee)
-    if (moveId === 'heal') {
-        if ((actor.ap || 4) < 2) { addLog('Not enough AP!'); return; }
-        const low = st.party.filter(p => p.alive && p.hp > 0 && p.hp < p.maxHp).sort((a,b) => a.hp - b.hp)[0] || actor;
-        const heal = Math.floor(15 + (actor.skill || 5) * 1.5);
-        low.hp = Math.min(low.maxHp, low.hp + heal);
-        st.log.unshift(`${actor.name} heals ${low.name} for ${heal} HP!`);
-        actor.ap = (actor.ap || 4) - 2;
-        st.acting = null;
-        renderGroundCombat();
-        setTimeout(() => enemyTurn(), 400);
-        return;
-    }
-    
-    if (moveId === 'flee') {
-        if ((actor.ap || 4) < 1) { addLog('Not enough AP!'); return; }
-        const partySpeed = st.party.reduce((s, p) => s + (p.spd || 5), 0) / st.party.length;
-        const enemySpeed = st.enemies.reduce((s, e) => s + (e.spd || 5), 0) / st.enemies.length;
-        const fleeChance = 0.4 + (partySpeed - enemySpeed) * 0.03;
-        
-        if (Math.random() < fleeChance) {
-            st.log.unshift('Tactical retreat successful!');
-            st.phase = 'fled';
-            renderGroundCombat();
-            setTimeout(() => closeGroundCombat(), 800);
-        } else {
-            st.log.unshift('Failed to escape!');
-            actor.ap = (actor.ap || 4) - 1;
-            st.acting = null;
-            renderGroundCombat();
-            setTimeout(() => enemyTurn(), 400);
-        }
-        return;
-    }
-    
-    // Handle class moves
-    if (!move) { addLog('Unknown action!'); return; }
-    if ((actor.ap || 4) < move.cost) { addLog('Not enough AP!'); return; }
-    
-    // Parse effect if provided
-    let effect = {};
-    if (effectJson) {
-        try { effect = JSON.parse(effectJson.replace(/&quot;/g, '"')); } catch(e) {}
-    }
-    
-    // Execute move effect
-    if (effect.dmgMult && st.selectedEnemy) {
-        const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0) || st.enemies.find(e => e.hp > 0);
-        if (target) {
-            const baseDmg = (actor.atk || 8) + Math.floor(Math.random() * 5);
-            const dmg = Math.floor(baseDmg * (effect.dmgMult || 1));
-            target.hp = Math.max(0, target.hp - dmg);
-            st.log.unshift(`${actor.name} uses ${move.name} for ${dmg} damage!`);
-            
-            // Handle secondary effects
-            if (effect.stunChance && Math.random() < effect.stunChance) {
-                target.status = 'stunned';
-                st.log.unshift(`${target.name} is stunned!`);
-            }
-            if (effect.aoe) {
-                st.enemies.forEach(e => {
-                    if (e.id !== target.id && e.hp > 0) {
-                        const aoeDmg = Math.floor(dmg * 0.5);
-                        e.hp = Math.max(0, e.hp - aoeDmg);
-                    }
-                });
-                st.log.unshift('AOE damage applied!');
-            }
-        }
-    }
-    
-    if (effect.pierceArmor && st.selectedEnemy) {
-        const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0);
-        if (target) {
-            const dmg = Math.floor((actor.atk || 8) * 1.5);
-            target.hp = Math.max(0, target.hp - dmg);
-            st.log.unshift(`${actor.name} pierces armor for ${dmg} damage!`);
-        }
-    }
-    
-    if (effect.summonTurret) {
-        // Simple turret summon: add a temporary ally
-        const turret = {
-            id: 'turret_' + Date.now(),
-            name: 'Deployed Turret',
-            hp: 30, maxHp: 30,
-            atk: 10, spd: 3,
-            isTurret: true,
-            duration: 3
-        };
-        st.party.push(turret);
-        st.log.unshift(`${actor.name} deploys a combat turret!`);
-    }
-    
-    if (effect.hot && st.selectedEnemy === null) {
-        // Heal-over-time on self or ally
-        const target = st.party.find(p => p.id === actor.id) || actor;
-        target.hp = Math.min(target.maxHp, target.hp + (effect.hot || 10));
-        target.hotEffect = { amount: effect.hot, turns: effect.duration || 3 };
-        st.log.unshift(`${actor.name} applies healing over time!`);
-    }
-    
-    // Spend AP and end turn
-    actor.ap = (actor.ap || 4) - move.cost;
-    st.acting = null;
-    
-    // Trim log
-    if (st.log.length > 12) st.log = st.log.slice(0, 12);
-    
-    // Check win/lose conditions
-    if (st.enemies.every(e => e.hp <= 0)) {
-        st.phase = 'victory';
-        st.log.unshift('★ ENEMIES DEFEATED ★');
-        // Award loot
-        const totalLoot = st.enemies.reduce((loot, e) => {
-            if (e.loot) {
-                loot.cr += Math.floor((e.loot.cr?.[0] || 0) + Math.random() * ((e.loot.cr?.[1] || 0) - (e.loot.cr?.[0] || 0)));
-                loot.scrap += e.loot.scrap || 0;
-            }
-            return loot;
-        }, { cr: 0, scrap: 0 });
-        G.flagship.credits += totalLoot.cr;
-        G.flagship.scrap = (G.flagship.scrap || 0) + totalLoot.scrap;
-        addLog(`Victory! +${totalLoot.cr}cr, +${totalLoot.scrap} scrap`);
-        renderGroundCombat();
-        setTimeout(() => closeGroundCombat(), 1200);
-        return;
-    }
-    
-    if (st.party.every(p => !p.alive || p.hp <= 0)) {
-        st.phase = 'defeat';
-        st.log.unshift('✖ PARTY DEFEATED ✖');
-        renderGroundCombat();
-        setTimeout(() => closeGroundCombat(), 1200);
-        return;
-    }
-    
-    // Render and trigger enemy turn
-    renderGroundCombat();
-    setTimeout(() => enemyTurn(), 400);
-}
+// ---------- GROUND COMBAT ----------
+let groundCombatState = null;
 
-// Helper: Enemy turn logic
-function enemyTurn() {
-    const st = groundCombatState;
-    if (!st || st.phase !== 'active') return;
-    
-    // Find alive enemies and have them attack
-    const aliveEnemies = st.enemies.filter(e => e.hp > 0);
-    if (aliveEnemies.length === 0) return;
-    
-    const aliveParty = st.party.filter(p => p.alive && p.hp > 0 && !p.isTurret);
-    if (aliveParty.length === 0) return;
-    
-    aliveEnemies.forEach(enemy => {
-        if (enemy.status === 'stunned') {
-            enemy.status = null; // Clear stun after one turn
-            return;
-        }
-        
-        const target = aliveParty[Math.floor(Math.random() * aliveParty.length)];
-        const dmg = Math.floor((enemy.atk || 10) * (0.85 + Math.random() * 0.3));
-        target.hp = Math.max(0, target.hp - dmg);
-        st.log.unshift(`${enemy.name} attacks ${target.name} for ${dmg} damage!`);
-        
-        // Handle enemy abilities
-        if (enemy.abilities?.includes('poison') && Math.random() < 0.3) {
-            target.status = 'poisoned';
-            st.log.unshift(`${target.name} is poisoned!`);
-        }
-    });
-    
-    // Apply poison damage
-    st.party.forEach(p => {
-        if (p.status === 'poisoned' && p.hp > 0) {
-            p.hp = Math.max(0, p.hp - 3);
-            if (p.hp <= 0) st.log.unshift(`${p.name} succumbs to poison!`);
-        }
-    });
-    
-    // Check end conditions again
-    if (st.enemies.every(e => e.hp <= 0)) {
-        st.phase = 'victory';
-        st.log.unshift('★ ENEMIES DEFEATED ★');
-        renderGroundCombat();
-        setTimeout(() => closeGroundCombat(), 1200);
-        return;
-    }
-    if (st.party.every(p => !p.alive || p.hp <= 0)) {
-        st.phase = 'defeat';
-        st.log.unshift('✖ PARTY DEFEATED ✖');
-        renderGroundCombat();
-        setTimeout(() => closeGroundCombat(), 1200);
-        return;
-    }
-    
-    renderGroundCombat();
-}
-
-
-
-// ========== GROUND COMBAT: RENDERER (Sprite-Ready) ==========
-
-function renderGroundCombat() {
-  const gc = groundCombatState;
-  if (!gc) return;
-  
-  // Party Panel
-  const partyEl = document.getElementById('gc-party');
-  if (partyEl) {
-    partyEl.innerHTML = gc.party.map(unit => renderUnitCard(unit, false, gc)).join('');
-  }
-  
-  // Enemy Panel
-  const enemiesEl = document.getElementById('gc-enemies');
-  if (enemiesEl) {
-    enemiesEl.innerHTML = gc.enemies.map(unit => renderUnitCard(unit, true, gc)).join('');
-  }
-  
-  // Combat Log
-  const logEl = document.getElementById('gc-log');
-  if (logEl) {
-    logEl.innerHTML = gc.log.map((msg, i) => 
-      `<div style="color:${i===0?'var(--star)':'var(--metal)'};font-size:13px;line-height:1.5">${msg}</div>`
-    ).join('');
-    logEl.scrollTop = 0; // Auto-scroll to top
-  }
-  
-  // Action Panel
-  const actionsEl = document.getElementById('gc-actions');
-  if (actionsEl) {
-    const actor = gc.party.find(p => p.id === gc.actingUnit);
-    
-    if (gc.phase !== 'active') {
-      // End state
-      const endMsg = gc.phase === 'victory' ? '★ VICTORY ★' : 
-                    gc.phase === 'fled' ? '— ESCAPED —' : '✖ DEFEATED ✖';
-      const endColor = gc.phase === 'victory' ? 'var(--safe)' : 
-                      gc.phase === 'fled' ? 'var(--warn)' : 'var(--hazard)';
-      actionsEl.innerHTML = `<div style="text-align:center;color:${endColor};font-family:'Press Start 2P';font-size:10px;padding:10px">${endMsg}</div>`;
-      return;
-        }
-    
-    if (actor) {
-      // Player turn: show action buttons
-      actionsEl.innerHTML = `
-        <div style="margin-bottom:8px">
-          <span style="color:var(--gold);font-family:'Press Start 2P';font-size:9px">
-            ▶ ${actor.name} IS READY
-          </span>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-danger" onclick="groundAction('attack')">⚔ ATTACK</button>
-          <button class="btn btn-sm btn-warn" onclick="groundAction('special')">✨ ${actor.perk || 'SPECIAL'}</button>
-          <button class="btn btn-sm btn-safe" onclick="groundAction('heal')">💊 HEAL</button>
-          <button class="btn btn-sm" onclick="groundAction('flee')">🏃 FLEE</button>
-        </div>
-        ${gc.selectedTarget ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e=>e.id===gc.selectedTarget)?.name || 'None'}</div>` : ''}
-      `;
-    } else {
-      // Waiting for ATB
-      actionsEl.innerHTML = `<div style="color:var(--metal);font-size:13px">Waiting for turn...</div>`;
-    }
-  }
-  
-  // Update canvas/sprite layer if implemented
-  updateCombatSprites(gc);
-}
-
-// Render individual unit card (sprite-ready)
+// Render a single unit card (sprite‑ready)
 function renderUnitCard(unit, isEnemy, gc) {
   const alive = unit.hp > 0;
   const atb = Math.min(100, unit.atb || 0);
   const isFlashing = gc.flashId === unit.id;
   const isSelected = gc.selectedTarget === unit.id && !isEnemy && gc.actingUnit;
   const isActing = gc.actingUnit === unit.id;
-  
-  // Color scheme
-  const borderColor = alive 
+
+  const borderColor = alive
     ? (isSelected ? 'var(--gold)' : isEnemy ? 'var(--hazard)' : 'var(--cyan)')
     : 'var(--border)';
-  const bgColor = isFlashing 
+  const bgColor = isFlashing
     ? (isEnemy ? 'rgba(196,30,58,0.25)' : 'rgba(0,229,255,0.15)')
     : (isEnemy ? 'rgba(196,30,58,0.08)' : 'rgba(0,229,255,0.05)');
-  
-  // SPRITE HOOK: Add data attributes for sprite system
+
   return `
-    <div class="gc-unit-card ${isActing?'acting':''}" 
+    <div class="gc-unit-card ${isActing ? 'acting' : ''}" 
          data-unit-id="${unit.id}"
          data-is-enemy="${isEnemy}"
          data-sprite="${unit.spriteId || unit.id}"
@@ -4429,49 +4084,280 @@ function renderUnitCard(unit, isEnemy, gc) {
          "
          ${isSelected && alive ? `onclick="selectGroundTarget('${unit.id}')"` : ''}
     >
-      <!-- SPRITE CONTAINER (for future expansion) -->
       <div class="unit-sprite" style="width:40px;height:40px;margin:0 auto 6px;background:var(--panel);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:24px">
         ${unit.emoji || (isEnemy ? '👾' : '👤')}
       </div>
-      
-      <!-- Name & HP -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="color:${isEnemy?'var(--hazard)':'var(--cyan)'};font-family:'Press Start 2P';font-size:8px">
+        <span style="color:${isEnemy ? 'var(--hazard)' : 'var(--cyan)'};font-family:'Press Start 2P';font-size:8px">
           ${unit.icon || '◈'} ${unit.name || unit.role}
         </span>
         <span style="color:var(--metal);font-size:11px">${unit.hp}/${unit.maxHp}</span>
       </div>
-      
-      <!-- HP Bar -->
       <div style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:4px">
-        <div style="height:100%;width:${(unit.hp/unit.maxHp)*100}%;background:${isEnemy?'var(--hazard)':'var(--safe)'};transition:width 0.15s"></div>
+        <div style="height:100%;width:${(unit.hp / unit.maxHp) * 100}%;background:${isEnemy ? 'var(--hazard)' : 'var(--safe)'};transition:width 0.15s"></div>
       </div>
-      
-      <!-- ATB Bar -->
       <div style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;height:3px;background:rgba(0,0,0,0.3);border-radius:1px;overflow:hidden">
           <div style="height:100%;width:${atb}%;background:var(--gold);transition:width 0.05s"></div>
         </div>
         <span style="color:var(--gold);font-size:9px;font-family:'VT323'">${Math.floor(atb)}%</span>
       </div>
-      
-      <!-- Status Effects -->
       ${unit.status ? `<div style="margin-top:4px;color:var(--warn);font-size:10px">[${unit.status.toUpperCase()}]</div>` : ''}
     </div>
   `;
 }
 
-// Select target for attack/special
+// Main ground combat renderer
+function renderGroundCombat() {
+  const gc = groundCombatState;
+  if (!gc) return;
+
+  const partyEl = document.getElementById('gc-party');
+  if (partyEl) partyEl.innerHTML = gc.party.map(unit => renderUnitCard(unit, false, gc)).join('');
+
+  const enemiesEl = document.getElementById('gc-enemies');
+  if (enemiesEl) enemiesEl.innerHTML = gc.enemies.map(unit => renderUnitCard(unit, true, gc)).join('');
+
+  const logEl = document.getElementById('gc-log');
+  if (logEl) {
+    logEl.innerHTML = gc.log.map((msg, i) =>
+      `<div style="color:${i === 0 ? 'var(--star)' : 'var(--metal)'};font-size:13px;line-height:1.5">${msg}</div>`
+    ).join('');
+    logEl.scrollTop = 0;
+  }
+
+  const actionsEl = document.getElementById('gc-actions');
+  if (actionsEl) {
+    const actor = gc.party.find(p => p.id === gc.actingUnit);
+
+    if (gc.phase !== 'active') {
+      const endMsg = gc.phase === 'victory' ? '★ VICTORY ★' :
+        gc.phase === 'fled' ? '— ESCAPED —' : '✖ DEFEATED ✖';
+      const endColor = gc.phase === 'victory' ? 'var(--safe)' :
+        gc.phase === 'fled' ? 'var(--warn)' : 'var(--hazard)';
+      actionsEl.innerHTML = `<div style="text-align:center;color:${endColor};font-family:'Press Start 2P';font-size:10px;padding:10px">${endMsg}</div>`;
+      return;
+    }
+
+    if (actor) {
+      actionsEl.innerHTML = `
+        <div style="margin-bottom:8px">
+          <span style="color:var(--gold);font-family:'Press Start 2P';font-size:9px">
+            ▶ ${actor.name} IS READY
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-danger" onclick="groundAction('attack')">⚔ ATTACK</button>
+          <button class="btn btn-sm btn-warn" onclick="groundAction('special')">✨ ${actor.perk || 'SPECIAL'}</button>
+          <button class="btn btn-sm btn-safe" onclick="groundAction('heal')">💊 HEAL</button>
+          <button class="btn btn-sm" onclick="groundAction('flee')">🏃 FLEE</button>
+        </div>
+        ${gc.selectedTarget ? `<div style="margin-top:6px;font-size:12px;color:var(--cyan)">Target: ${gc.enemies.find(e => e.id === gc.selectedTarget)?.name || 'None'}</div>` : ''}
+      `;
+    } else {
+      actionsEl.innerHTML = `<div style="color:var(--metal);font-size:13px">Waiting for turn...</div>`;
+    }
+  }
+
+  updateCombatSprites(gc);
+}
+
 function selectGroundTarget(id) {
   if (!groundCombatState || !groundCombatState.actingUnit) return;
   const actor = groundCombatState.party.find(p => p.id === groundCombatState.actingUnit);
   if (!actor) return;
-  
   groundCombatState.selectedTarget = id;
   renderGroundCombat();
 }
 
-// Close ground combat and return to galaxy
+function groundAction(moveId, effectJson) {
+  const st = groundCombatState;
+  if (!st || st.phase !== 'active' || !st.acting) return;
+
+  const actor = st.party.find(p => p.id === st.acting);
+  if (!actor) return;
+
+  const moves = getCrewMoves(actor);
+  const move = moves.find(m => m.id === moveId);
+
+  if (moveId === 'heal') {
+    if ((actor.ap || 4) < 2) { addLog('Not enough AP!'); return; }
+    const low = st.party.filter(p => p.alive && p.hp > 0 && p.hp < p.maxHp).sort((a, b) => a.hp - b.hp)[0] || actor;
+    const heal = Math.floor(15 + (actor.skill || 5) * 1.5);
+    low.hp = Math.min(low.maxHp, low.hp + heal);
+    st.log.unshift(`${actor.name} heals ${low.name} for ${heal} HP!`);
+    actor.ap = (actor.ap || 4) - 2;
+    st.acting = null;
+    renderGroundCombat();
+    setTimeout(() => enemyTurn(), 400);
+    return;
+  }
+
+  if (moveId === 'flee') {
+    if ((actor.ap || 4) < 1) { addLog('Not enough AP!'); return; }
+    const partySpeed = st.party.reduce((s, p) => s + (p.spd || 5), 0) / st.party.length;
+    const enemySpeed = st.enemies.reduce((s, e) => s + (e.spd || 5), 0) / st.enemies.length;
+    const fleeChance = 0.4 + (partySpeed - enemySpeed) * 0.03;
+    if (Math.random() < fleeChance) {
+      st.log.unshift('Tactical retreat successful!');
+      st.phase = 'fled';
+      renderGroundCombat();
+      setTimeout(() => closeGroundCombat(), 800);
+    } else {
+      st.log.unshift('Failed to escape!');
+      actor.ap = (actor.ap || 4) - 1;
+      st.acting = null;
+      renderGroundCombat();
+      setTimeout(() => enemyTurn(), 400);
+    }
+    return;
+  }
+
+  if (!move) { addLog('Unknown action!'); return; }
+  if ((actor.ap || 4) < move.cost) { addLog('Not enough AP!'); return; }
+
+  let effect = {};
+  if (effectJson) {
+    try { effect = JSON.parse(effectJson.replace(/&quot;/g, '"')); } catch (e) { }
+  }
+
+  if (effect.dmgMult && st.selectedEnemy) {
+    const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0) || st.enemies.find(e => e.hp > 0);
+    if (target) {
+      const baseDmg = (actor.atk || 8) + Math.floor(Math.random() * 5);
+      const dmg = Math.floor(baseDmg * (effect.dmgMult || 1));
+      target.hp = Math.max(0, target.hp - dmg);
+      st.log.unshift(`${actor.name} uses ${move.name} for ${dmg} damage!`);
+      if (effect.stunChance && Math.random() < effect.stunChance) {
+        target.status = 'stunned';
+        st.log.unshift(`${target.name} is stunned!`);
+      }
+      if (effect.aoe) {
+        st.enemies.forEach(e => {
+          if (e.id !== target.id && e.hp > 0) {
+            const aoeDmg = Math.floor(dmg * 0.5);
+            e.hp = Math.max(0, e.hp - aoeDmg);
+          }
+        });
+        st.log.unshift('AOE damage applied!');
+      }
+    }
+  }
+
+  if (effect.pierceArmor && st.selectedEnemy) {
+    const target = st.enemies.find(e => e.id === st.selectedEnemy && e.hp > 0);
+    if (target) {
+      const dmg = Math.floor((actor.atk || 8) * 1.5);
+      target.hp = Math.max(0, target.hp - dmg);
+      st.log.unshift(`${actor.name} pierces armor for ${dmg} damage!`);
+    }
+  }
+
+  if (effect.summonTurret) {
+    const turret = {
+      id: 'turret_' + Date.now(),
+      name: 'Deployed Turret',
+      hp: 30, maxHp: 30,
+      atk: 10, spd: 3,
+      isTurret: true,
+      duration: 3
+    };
+    st.party.push(turret);
+    st.log.unshift(`${actor.name} deploys a combat turret!`);
+  }
+
+  if (effect.hot && st.selectedEnemy === null) {
+    const target = st.party.find(p => p.id === actor.id) || actor;
+    target.hp = Math.min(target.maxHp, target.hp + (effect.hot || 10));
+    target.hotEffect = { amount: effect.hot, turns: effect.duration || 3 };
+    st.log.unshift(`${actor.name} applies healing over time!`);
+  }
+
+  actor.ap = (actor.ap || 4) - move.cost;
+  st.acting = null;
+
+  if (st.log.length > 12) st.log = st.log.slice(0, 12);
+
+  if (st.enemies.every(e => e.hp <= 0)) {
+    st.phase = 'victory';
+    st.log.unshift('★ ENEMIES DEFEATED ★');
+    const totalLoot = st.enemies.reduce((loot, e) => {
+      if (e.loot) {
+        loot.cr += Math.floor((e.loot.cr?.[0] || 0) + Math.random() * ((e.loot.cr?.[1] || 0) - (e.loot.cr?.[0] || 0)));
+        loot.scrap += e.loot.scrap || 0;
+      }
+      return loot;
+    }, { cr: 0, scrap: 0 });
+    G.flagship.credits += totalLoot.cr;
+    G.flagship.scrap = (G.flagship.scrap || 0) + totalLoot.scrap;
+    addLog(`Victory! +${totalLoot.cr}cr, +${totalLoot.scrap} scrap`);
+    renderGroundCombat();
+    setTimeout(() => closeGroundCombat(), 1200);
+    return;
+  }
+
+  if (st.party.every(p => !p.alive || p.hp <= 0)) {
+    st.phase = 'defeat';
+    st.log.unshift('✖ PARTY DEFEATED ✖');
+    renderGroundCombat();
+    setTimeout(() => closeGroundCombat(), 1200);
+    return;
+  }
+
+  renderGroundCombat();
+  setTimeout(() => enemyTurn(), 400);
+}
+
+function enemyTurn() {
+  const st = groundCombatState;
+  if (!st || st.phase !== 'active') return;
+
+  const aliveEnemies = st.enemies.filter(e => e.hp > 0);
+  if (aliveEnemies.length === 0) return;
+
+  const aliveParty = st.party.filter(p => p.alive && p.hp > 0 && !p.isTurret);
+  if (aliveParty.length === 0) return;
+
+  aliveEnemies.forEach(enemy => {
+    if (enemy.status === 'stunned') {
+      enemy.status = null;
+      return;
+    }
+    const target = aliveParty[Math.floor(Math.random() * aliveParty.length)];
+    const dmg = Math.floor((enemy.atk || 10) * (0.85 + Math.random() * 0.3));
+    target.hp = Math.max(0, target.hp - dmg);
+    st.log.unshift(`${enemy.name} attacks ${target.name} for ${dmg} damage!`);
+    if (enemy.abilities?.includes('poison') && Math.random() < 0.3) {
+      target.status = 'poisoned';
+      st.log.unshift(`${target.name} is poisoned!`);
+    }
+  });
+
+  st.party.forEach(p => {
+    if (p.status === 'poisoned' && p.hp > 0) {
+      p.hp = Math.max(0, p.hp - 3);
+      if (p.hp <= 0) st.log.unshift(`${p.name} succumbs to poison!`);
+    }
+  });
+
+  if (st.enemies.every(e => e.hp <= 0)) {
+    st.phase = 'victory';
+    st.log.unshift('★ ENEMIES DEFEATED ★');
+    renderGroundCombat();
+    setTimeout(() => closeGroundCombat(), 1200);
+    return;
+  }
+  if (st.party.every(p => !p.alive || p.hp <= 0)) {
+    st.phase = 'defeat';
+    st.log.unshift('✖ PARTY DEFEATED ✖');
+    renderGroundCombat();
+    setTimeout(() => closeGroundCombat(), 1200);
+    return;
+  }
+
+  renderGroundCombat();
+}
+
 function closeGroundCombat() {
   groundCombatState = null;
   showScreen('galaxy-screen');
@@ -4480,38 +4366,30 @@ function closeGroundCombat() {
   updateLP();
 }
 
-// Sprite system hook (for future expansion)
 function updateCombatSprites(gc) {
-  // Placeholder: Add sprite animation logic here later
-  // Example: document.querySelectorAll('.unit-sprite').forEach(el => { ... });
-}
-// Inject combat styles only once
-if (!window._combatStylesInjected) {
-    const combatStyles = document.createElement('style');
-    combatStyles.textContent = `
-        @keyframes flash {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.4); }
-        }
-        .gc-unit-card.acting {
-            box-shadow: 0 0 0 2px var(--gold);
-        }
-        .unit-sprite {
-            background-size: cover;
-            background-position: center;
-        }
-    `;
-    document.head.appendChild(combatStyles);
-    window._combatStylesInjected = true; // Prevent duplicate injection
+  // Placeholder for sprite animations
 }
 
-  
-function closeGroundCombat(){ showScreen('galaxy-screen'); updateHUD(); updateRP(); }
-function exitCombat(won){
-  if(won){const e=G.combat.enemy;const cr=Math.floor(e.loot.cr[0]+G.rng.next()*(e.loot.cr[1]-e.loot.cr[0]));G.flagship.credits+=cr;G.flagship.scrap=(G.flagship.scrap||0)+(e.loot.scrap||2);addLog(`Salvaged ${cr}cr and ${e.loot.scrap} scrap.`);}
-  G.combat=null;showScreen('galaxy-screen');updateHUD();updateLP();
-}
-function triggerGameOver(){document.getElementById('go-stats').textContent=`Jumps: ${G.jumps} | Credits: ${G.flagship.credits}`;document.getElementById('gameover-overlay').classList.add('open');}
+// Inject combat CSS once
+if (!window._combatStylesInjected) {
+  const combatStyles = document.createElement('style');
+  combatStyles.textContent = `
+    @keyframes flash {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.4); }
+    }
+    .gc-unit-card.acting {
+      box-shadow: 0 0 0 2px var(--gold);
+    }
+    .unit-sprite {
+      background-size: cover;
+      background-position: center;
+    }
+  `;
+  document.head.appendChild(combatStyles);
+  window._combatStylesInjected = true;
+}  
+
 
 // ========== SAVE / LOAD SYSTEM ==========
 const SAVE_VERSION = '1.0';
@@ -4530,7 +4408,6 @@ function saveGame(slot) {
     localStorage.setItem(`vf_save_${slot}`, JSON.stringify(saveData));
     addLog(`💾 Saved to slot ${slot}`);
 }
-
 function loadGame(slot) {
     const data = localStorage.getItem(`vf_save_${slot}`);
     if (!data) { addLog('❌ No save in slot ' + slot); return false; }
@@ -4557,7 +4434,6 @@ function loadGame(slot) {
         return false;
     }
 }
-// ========== SAVE/LOAD ==========
 function openSaveModal() {
     const container = document.getElementById('save-slots');
     container.innerHTML = '';
@@ -4585,7 +4461,31 @@ function openSaveModal() {
 function closeSaveModal() {
     document.getElementById('save-load-modal').style.display = 'none';
 }
-
+function loadLatestSave() {
+  // Try to find the most recent save slot (1..MAX_SLOTS)
+  let latestSlot = null;
+  let latestTime = 0;
+  for (let i = 1; i <= MAX_SLOTS; i++) {
+    const data = localStorage.getItem(`vf_save_${i}`);
+    if (data) {
+      try {
+        const save = JSON.parse(data);
+        if (save.timestamp > latestTime) {
+          latestTime = save.timestamp;
+          latestSlot = i;
+        }
+      } catch (e) {}
+    }
+  }
+  if (latestSlot) {
+    if (loadGame(latestSlot)) {
+      closeSaveModal(); // in case modal was open
+      showScreen('galaxy-screen');
+    }
+  } else {
+    alert('No save files found.');
+  }
+}
     
 // ========== INIT ==========
 window.addEventListener('load',()=>{
