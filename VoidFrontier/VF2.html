@@ -609,6 +609,7 @@ function showTierModal(crewId, baseName, options) {
 function closeTierModal() { document.getElementById('tier-modal')?.remove(); G.gamePaused = false; }
 function confirmTier2(crewId, tier2Id) { if(applyTier2Specialization(crewId, tier2Id)) { closeTierModal(); updateRP(); } }
 
+  
 // ---------- STAR TYPES (9 total) ----------
 const STAR_TYPES = [
   { type: 'Yellow Dwarf', color: '#FFE566', glow: 'rgba(255,229,102,0.4)', habitableBonus: 0 },
@@ -750,22 +751,97 @@ function calculateShipPrice(stats, tier, rarity) {
   return Math.max(800, Math.floor(base * tierMult * rarityMult));
 }
 
+// ========== SHIP GENERATION ==========
 function rollShipFromTemplate(template, sysIdx) {
   const rng = new RNG(hashStr(G.seed) + sysIdx * 891 + template.id.charCodeAt(0) + 42);
   const roll = (min, max) => Math.floor(rng.next() * (max - min + 1)) + min;
+  
   const hull = roll(...template.statRanges.hull);
   const shields = roll(...template.statRanges.shields);
   const cargo = roll(...template.statRanges.cargo);
   const fuelUse = +(roll(template.statRanges.fuelUse[0]*10, template.statRanges.fuelUse[1]*10)/10).toFixed(1);
   const crewMax = roll(...template.statRanges.crewMax);
   const moduleSlots = roll(...template.statRanges.moduleSlots);
+  
   const name = rng.pick(template.namePool);
-  const cost = calculateShipPrice({ hull, shields, cargoMax: cargo, fuelUse, moduleSlots }, template.tier, template.rarity);
-  return { id: `ship_${Date.now()}_${Math.floor(rng.next()*9999)}`, templateId: template.id, name, type: template.class, class: template.class,
-    hull, maxHull: hull, shields, maxShields: shields, cargoMax: cargo, fuel: 50, maxFuel: 100, fuelUse, crewMax, moduleSlots,
-    modules: [], scrap: 0, credits: 0, morale: 75, cost, baseCost: cost, passive: template.passive };
+  const cost = calculateShipPrice(
+    { hull, shields, cargoMax: cargo, fuelUse, moduleSlots },
+    template.tier,
+    template.rarity
+  );
+
+  return {
+    id: `ship_${Date.now()}_${Math.floor(rng.next()*9999)}`,
+    templateId: template.id,
+    name,
+    type: template.class,
+    class: template.class,
+    hull,
+    maxHull: hull,
+    shields,
+    maxShields: shields,
+    cargoMax: cargo,
+    fuel: 50,
+    maxFuel: 100,
+    fuelUse,
+    crewMax,
+    moduleSlots,
+    modules: [],
+    scrap: 0,
+    credits: 0,
+    morale: 75,
+    cost,
+    baseCost: cost,
+    passive: template.passive
+  };
 }
 
+function selectShip(id) {
+  const tmpl = SHIP_TEMPLATES.find(h => h.id === id);
+  if (!tmpl) {
+    console.error('Ship template not found:', id);
+    return;
+  }
+  
+  // Roll stats for the selected starter ship
+  const rolledShip = rollShipFromTemplate(tmpl, 0);
+  const oldShip = G.fleet[0];
+  
+  // Preserve the ship name and captain name from earlier steps
+  const captainName = document.getElementById('cap-name')?.value.trim() || 'Captain';
+  const shipName = document.getElementById('ship-name-in')?.value.trim() || rolledShip.name;
+  
+  // Replace flagship with the new ship
+  G.fleet[0] = {
+    id: 'ship0',
+    name: shipName.toUpperCase(),
+    type: rolledShip.type,
+    class: rolledShip.class,
+    hull: rolledShip.hull,
+    maxHull: rolledShip.maxHull,
+    shields: rolledShip.shields,
+    maxShields: rolledShip.maxShields,
+    fuel: oldShip.fuel,
+    maxFuel: oldShip.maxFuel,
+    cargoMax: rolledShip.cargoMax,
+    modules: oldShip.modules,
+    scrap: 0,
+    fuelUse: rolledShip.fuelUse,
+    credits: oldShip.credits, // keep remaining credits after possible purchase? For starter, no cost deducted.
+    morale: 75,
+    moduleSlots: rolledShip.moduleSlots,
+    baseCost: rolledShip.cost,
+    passive: rolledShip.passive
+  };
+  
+  // Set captain name from input if not already set
+  G.captain.name = captainName;
+  
+  addLog(`Acquired ${rolledShip.name}.`);
+  launchGame(); // This transitions to the galaxy screen
+}
+
+  
 // ---------- ENEMY SHIPS ----------
 const ENEMY_TEMPLATES = [
   { id: 'pirate_raider', faction: 'syndicate', tier: 1, emoji: '💀', color: '#e67e22', baseStats: { hull: [45, 65], shield: [10, 25], weapons: [25, 40], engines: [15, 30] }, desc: 'Scavenged hull, aggressive tactics.', loot: { cr: [200, 500], scrap: [2, 5], contrabandChance: 0.3 }, abilities: ['board_attempt', 'evasive_burst'], aggression: 0.8 },
@@ -797,6 +873,97 @@ const CREW_POOL = [
 
 const CREW_PORTRAITS = { 'Zoya Kas': 'assets/portraits/engineer_01.png', 'REX-7': 'assets/portraits/android_security.png', 'default': 'assets/portraits/crew_default.png' };
 
+// ========== SPECIAL CREW (Quest-Locked) ==========
+const SPECIAL_CREW = [
+  {
+    id: 'legendary_pilot',
+    name: 'Aria "Starfall" Voss',
+    role: 'Pilot',
+    emoji: '🌟',
+    species: 'Human',
+    hp: 45, maxHp: 45, atk: 10, spd: 9, skill: 10,
+    loyalty: 80,
+    bio: 'Legendary ace pilot. Only joins those who prove their worth.',
+    classId: 'marksman',
+    requirements: {
+      reputation: { guild: 30 },
+      completedQuests: ['delivery_legendary'],
+      minJumps: 15
+    },
+    cost: 2000
+  },
+  {
+    id: 'android_hacker',
+    name: 'NEXUS-9',
+    role: 'Hacker',
+    emoji: '💻',
+    species: 'Android',
+    hp: 38, maxHp: 38, atk: 8, spd: 7, skill: 12,
+    loyalty: 60,
+    bio: 'Rogue AI seeking purpose. Requires trust.',
+    classId: 'technician',
+    requirements: {
+      reputation: { megacorp: -20 },
+      completedQuests: ['hack_megacorp'],
+      minJumps: 10
+    },
+    cost: 1500
+  },
+  {
+    id: 'void_medic',
+    name: 'Lyra Void-Whisper',
+    role: 'Medic',
+    emoji: '🌌',
+    species: 'Void-Touched',
+    hp: 35, maxHp: 35, atk: 5, spd: 6, skill: 11,
+    loyalty: 70,
+    bio: 'Mystic healer touched by the void. Seeks worthy captain.',
+    classId: 'medic',
+    requirements: {
+      reputation: { independent: 25 },
+      crewSpecies: ['Void-Touched'],
+      minJumps: 20
+    },
+    cost: 1800
+  }
+];
+
+G.completedRecruitmentQuests = G.completedRecruitmentQuests || [];
+
+function checkRecruitmentQuests() {
+  const available = [];
+  SPECIAL_CREW.forEach(crew => {
+    if (G.completedRecruitmentQuests.includes(crew.id)) return;
+    const req = crew.requirements;
+    let canRecruit = true;
+    if (req.reputation) {
+      Object.entries(req.reputation).forEach(([fac, minRep]) => {
+        if ((G.rep[fac] || 0) < minRep) canRecruit = false;
+      });
+    }
+    if (req.completedQuests) {
+      req.completedQuests.forEach(qId => {
+        if (!G.completedRecruitmentQuests.includes(qId)) canRecruit = false;
+      });
+    }
+    if (req.minJumps && G.jumps < req.minJumps) canRecruit = false;
+    if (req.crewSpecies) {
+      const hasSpecies = G.crew.some(c => c.alive && c.species === req.crewSpecies[0]);
+      if (!hasSpecies) canRecruit = false;
+    }
+    if (canRecruit) available.push(crew);
+  });
+  return available;
+}
+
+function addSpecialCrewToPool(crew) {
+  if (!window._specialHirePool) window._specialHirePool = [];
+  if (!window._specialHirePool.find(c => c.id === crew.id)) {
+    window._specialHirePool.push({ ...crew, cost: crew.cost, isSpecial: true });
+  }
+}
+
+  
 // ---------- NEW SYSTEMS FROM V2 ----------
 const CREW_STATIONS = {
   weapons: { name: 'Weapons Officer', emoji: '🎯', desc: 'Boosts weapon damage' },
@@ -942,11 +1109,22 @@ function renderCC() {
     body.innerHTML = `<div class="name-step"><h3>SELECT YOUR STARTER SHIP</h3><div class="opt-grid cols-3">${starters.map(tmpl => { const rs = rollShipFromTemplate(tmpl, 0); return `<div class="opt-card" onclick="selectShip('${tmpl.id}')"><div class="oc-emoji">🚀</div><div class="oc-name">${rs.name}</div><div class="oc-desc">Hull:${rs.hull} Shields:${rs.shields} Cargo:${rs.cargoMax}</div><div class="oc-bonus">${tmpl.passive}</div></div>`; }).join('')}</div></div>`;
     nav.innerHTML = `<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>`; return;
   }
-  const data = s===0 ? ORIGINS : s===1 ? CLASSES : JOBS;
-  const sel = s===0 ? G.captain.origin : s===1 ? G.captain.cls : G.captain.job;
-  body.innerHTML = `<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it => `<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc||it.effect||''}</div><div class="oc-bonus">◈ ${it.bonus||it.passive||''}</div></div>`).join('')}</div>`;
-  nav.innerHTML = `${s>0?'<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>':''}<button class="btn btn-gold" ${sel?'':'disabled'} onclick="ccNext()">▶ CONTINUE</button>`;
-}
+const data = s===0 ? ORIGINS : s===1 ? CLASSES : JOBS;
+const sel = s===0 ? G.captain.origin : s===1 ? G.captain.cls : G.captain.job;
+body.innerHTML = `<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it => {
+  // Fix: extract proper description text for classes
+  let descText = it.desc || it.effect || '';
+  if (s === 1 && it.passive && typeof it.passive === 'object') {
+    descText = it.passive.desc || '';
+  }
+  return `<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')">
+    <div class="oc-check">✦</div>
+    <div class="oc-emoji">${it.emoji}</div>
+    <div class="oc-name">${it.name}</div>
+    <div class="oc-desc">${descText}</div>
+    <div class="oc-bonus">◈ ${it.bonus||it.passive||''}</div>
+  </div>`;
+}).join('')}</div>`;
 function ccSelect(id) {
   if (G.ccStep === 0) { G.captain.origin = id; const o = ORIGINS.find(x => x.id === id); if (o && G.fleet[0]) G.fleet[0].credits = o.credits || 1000; }
   else if (G.ccStep === 1) G.captain.cls = id;
@@ -1232,15 +1410,73 @@ function generateEnemy(sysIdx=G.curSys) {
   const lc=tmpl.loot.cr||[100,300];
   return { id:tmpl.id+'_'+Date.now(), type:tmpl.desc.split('.')[0], emoji:tmpl.emoji, color:tmpl.color, faction:tmpl.faction, tier:tmpl.tier, hull, maxHull:hull, shield, maxShield:shield, special:tmpl.special||null, desc:tmpl.desc, aggression:tmpl.aggression||0.5, loot:{cr:[Math.floor(lc[0]*sc), Math.floor(lc[1]*sc)], scrap:tmpl.loot.scrap||[1,3]}, systems:{weapons:{name:'Primary Array',hp:weapons,maxHp:weapons},shields:{name:'Shield Grid',hp:shield,maxHp:shield},engines:{name:'Thrusters',hp:engines,maxHp:engines}} };
 }
-function generateGroundEnemy() {
-  const power=getPlayerPower(), fac=G.galaxy.systems[G.curSys].faction.id;
-  const cands=GROUND_ENEMY_TEMPLATES.filter(t=>t.faction===fac); const tmpl=(cands.length?cands:GROUND_ENEMY_TEMPLATES)[Math.floor(G.rng.next()*(cands.length||GROUND_ENEMY_TEMPLATES.length))];
-  const r=new RNG(hashStr(G.seed)+G.jumps*419+tmpl.id.charCodeAt(0)); const ri=(a,b)=>Math.floor(r.next()*(b-a+1))+a; const sc=1+power*0.7;
-  const hp=Math.floor(ri(...tmpl.baseStats.hp)*sc), atk=Math.floor(ri(...tmpl.baseStats.atk)*sc), spd=ri(...tmpl.baseStats.spd);
-  const lc=tmpl.loot?.cr||[20,60];
-  return { id:tmpl.id+'_'+Date.now(), name:tmpl.desc.split('.')[0], icon:tmpl.icon, color:tmpl.color||'#888', emoji:tmpl.icon, faction:tmpl.faction, tier:tmpl.tier, hp, maxHp:hp, atk, spd, loot:{cr:[Math.floor(lc[0]*sc), Math.floor(lc[1]*sc)]}, special:tmpl.special||null, status:null, tookTurn:false };
+function generateEnemy(sysIdx = G.curSys) {
+  const playerPower = getPlayerPower();
+  const faction = getEncounterFaction(sysIdx);
+  const template = selectEnemyTemplate(faction, playerPower);
+  const rng = new RNG(hashStr(G.seed) + G.jumps * 317 + template.id.charCodeAt(0));
+  const scale = (min, max) => Math.floor(rng.next() * (max - min + 1)) + min;
+  const tierScale = 1 + playerPower * 0.8;
+  const hull = Math.floor(scale(...template.baseStats.hull) * tierScale);
+  const shield = Math.floor(scale(...template.baseStats.shield) * tierScale);
+  const weapons = Math.floor(scale(...template.baseStats.weapons) * tierScale);
+  const engines = Math.floor(scale(...template.baseStats.engines) * tierScale);
+  return {
+    id: template.id + '_' + Date.now(),
+    type: template.desc.split('.')[0],
+    emoji: template.emoji, color: template.color,
+    faction: template.faction, tier: template.tier,
+    hull, maxHull: hull, shield, maxShield: shield,
+    special: template.special || null,
+    desc: template.desc,
+    loot: {
+      cr: template.loot.cr ? [Math.floor(template.loot.cr[0]*tierScale), Math.floor(template.loot.cr[1]*tierScale)] : [100,300],
+      scrap: template.loot.scrap || [1,3]
+    },
+    systems: {
+      weapons: { name: 'Primary Array', hp: weapons, maxHp: weapons },
+      shields: { name: 'Shield Grid', hp: shield, maxHp: shield },
+      engines: { name: 'Thrusters', hp: engines, maxHp: engines }
+    },
+    aggression: template.aggression || 0.5
+  };
+}
+function getEncounterFaction(sysIdx) {
+  const sys = G.galaxy.systems[sysIdx];
+  const dominant = sys.faction.id;
+  const weights = {};
+  FACTIONS.forEach(f => {
+    weights[f.id] = f.id === dominant ? 50 : 10;
+    const rep = G.rep[f.id] || 0;
+    if (rep < -20) weights[f.id] += 30;
+    else if (rep > 30) weights[f.id] -= 20;
+    if (G.jumps > 20 && f.id !== dominant) weights[f.id] += Math.min(20, G.jumps - 20);
+  });
+  const total = Object.values(weights).reduce((a,b)=>a+b,0);
+  let rand = G.rng.next() * total, cum = 0;
+  for (const [fac, w] of Object.entries(weights)) {
+    cum += w;
+    if (rand <= cum) return fac;
+  }
+  return dominant;
 }
 
+function selectEnemyTemplate(faction, playerPower) {
+  const candidates = ENEMY_TEMPLATES.filter(t => t.faction === faction);
+  if (!candidates.length) return ENEMY_TEMPLATES[0];
+  // weight by tier appropriateness (simplified - use full version from Index)
+  const weighted = candidates.map(t => {
+    let weight = 1;
+    if (playerPower < 0.3) weight = t.encounterWeight?.early || 20;
+    else if (playerPower < 0.7) weight = t.encounterWeight?.mid || 40;
+    else weight = t.encounterWeight?.late || 30;
+    return { t, weight };
+  });
+  const total = weighted.reduce((s,w)=>s+w.weight,0);
+  let rand = G.rng.next() * total, cum = 0;
+  for (const w of weighted) { cum += w.weight; if (rand <= cum) return w.t; }
+  return weighted[0].t;
+}
 // ========== SHIP COMBAT ==========
 function startCombat(enemy=null) {
   const e=enemy||generateEnemy(G.curSys);
@@ -1309,7 +1545,12 @@ function boardEnemy() { if(!G.combat||G.combat.enemy.systems.shields.hp>0) { add
 function exitCombat(won) {
   if(won&&G.combat) { const e=G.combat.enemy, lc=e.loot.cr; const cr=Math.floor(lc[0]+G.rng.next()*(lc[1]-lc[0])); const sc=Math.floor((e.loot.scrap?.[0]||1)+G.rng.next()*((e.loot.scrap?.[1]||3)-(e.loot.scrap?.[0]||1))); G.flagship.credits+=cr; G.flagship.scrap=(G.flagship.scrap||0)+sc; addLog(`Salvaged ${cr}cr and ${sc} scrap.`); }
   G.combat=null; showScreen('galaxy-screen'); updateHUD(); updateLP(); updateRP();
+  G.crew.filter(c => c.alive).forEach(c => {
+  c.xp = (c.xp || 0) + 20;
+  checkCrewLevelUp(c);
+});
 }
+  
 
 // ========== GROUND COMBAT ==========
 function startGroundCombat(ctx={}) {
@@ -1345,6 +1586,14 @@ function checkGroundCombatEnd() {
   const st=groundCombatState; if(!st||st.phase!=='active') return;
   if(st.enemies.every(e=>e.hp<=0)) { st.phase='victory'; const cr=st.enemies.reduce((s,e)=>s+Math.floor((e.loot?.cr?.[0]||10)+Math.random()*((e.loot?.cr?.[1]||40)-(e.loot?.cr?.[0]||10))),0); G.flagship.credits+=cr; st.party.forEach(p=>{ const c=G.crew.find(x=>x.id===p.id); if(c) c.hp=Math.max(1,p.hp); }); st.log.unshift(`★ VICTORY ★ +${cr} CR`); renderGroundCombat(); setTimeout(closeGroundCombat,1400); }
   else if(st.party.every(p=>p.hp<=0)) { st.phase='defeat'; G.crew.filter(c=>c.alive).forEach(c=>c.hp=1); G.flagship.hull=Math.max(1,G.flagship.hull-Math.floor(G.flagship.maxHull*0.2)); st.log.unshift('✖ DEFEAT — Barely escaped!'); renderGroundCombat(); setTimeout(closeGroundCombat,1400); }
+  st.party.forEach(p => {
+  const c = G.crew.find(x => x.id === p.id);
+  if (c) {
+    c.hp = Math.max(1, p.hp);
+    c.xp = (c.xp || 0) + 15;
+    checkCrewLevelUp(c);
+  }
+});
 }
 function closeGroundCombat() { groundCombatState=null; showScreen('galaxy-screen'); updateHUD(); updateRP(); updateLP(); }
 function renderGroundCombat() {
@@ -1358,6 +1607,63 @@ function renderGroundCombat() {
   const moves=getCrewMoves(actor); actEl.innerHTML=`<div>${actor.name} AP:${actor.ap}</div><button class="btn btn-sm btn-danger" onclick="executeGroundAction('basic_attack')">ATTACK (1AP)</button>${moves.map(m=>`<button class="btn btn-sm" onclick="executeGroundAction('${m.id}')" ${actor.ap<m.cost?'disabled':''}>${m.name}(${m.cost}AP)</button>`).join('')}<button class="btn btn-sm btn-warn" onclick="groundFlee()">FLEE</button>`;
 }
 
+// ========== CREW PROGRESSION ==========
+function checkCrewLevelUp(c) {
+  if (!c || !c.alive) return;
+  const xpNeeded = (c.level || 1) * 80;
+  if ((c.xp || 0) >= xpNeeded) {
+    c.level = (c.level || 1) + 1;
+    c.maxHp += 4;
+    c.hp = Math.min(c.maxHp, c.hp + 4);
+    c.atk += 1;
+    addLog(`${c.name} reached Level ${c.level}! HP +4, ATK +1.`);
+    c.xp = (c.xp || 0) - xpNeeded;
+    checkCrewProgression(); // Check for tier 2 advancement
+  }
+}
+
+function checkCrewProgression() {
+  G.crew.filter(c => c.alive).forEach(crew => {
+    if (crew.level >= 5 && crew.classTier === 1 && !crew.advancedClass) {
+      const eligible = checkTier2Eligibility(crew);
+      if (eligible) {
+        showTierModal(crew.id, eligible.baseClass.name, eligible.options);
+      }
+    }
+  });
+}
+//Talk to Crew in Cantina
+function talkToRandomCrew() {
+  const alive = G.crew.filter(c => c.alive);
+  if (!alive.length) { addLog('No crew to talk to.'); return; }
+  const c = alive[Math.floor(G.rng.next() * alive.length)];
+  addLog(`${c.name}: "${c.bio}"`);
+  G.flagship.morale = Math.min(100, (G.flagship.morale || 75) + 2);
+  updateHUD();
+}
+//Hire special Crew
+function hireSpecialCrew(id) {
+  const c = window._specialHirePool?.find(x => x.id === id);
+  if (!c || G.flagship.credits < c.cost) return;
+  G.flagship.credits -= c.cost;
+  const newCrew = { 
+    ...c, 
+    id: 'c' + Math.random().toString(36).slice(2), 
+    alive: true, 
+    hp: c.maxHp, 
+    xp: 0, 
+    level: 1, 
+    classTier: 1, 
+    advancedClass: null, 
+    ap: 4, 
+    maxAp: 4 
+  };
+  G.crew.push(newCrew);
+  G.completedRecruitmentQuests.push(c.id);
+  window._specialHirePool = window._specialHirePool.filter(x => x.id !== id);
+  addLog(`${c.name} joins your crew!`);
+  updateHUD(); updateRP(); renderNodeContent('cantina');
+}  
 // ========== STATION SYSTEM ==========
 function stationPrice(goodId,sysIdx,buying) { const g=GOODS.find(x=>x.id===goodId); if(!g) return 0; const srng=new RNG(hashStr(G.seed)+sysIdx*137+goodId.charCodeAt(0)*17); const variance=0.85+srng.next()*0.30; const wealthMod=0.6+G.galaxy.systems[sysIdx].wealth*0.18; let price=Math.round(g.basePrice*wealthMod*variance); if(buying) price=Math.round(price*1.18); else price=Math.round(price*(G.flagship.tradeSellMult||1.0)); return Math.max(1,price); }
 function stationGoods(sysIdx) { const srng=new RNG(hashStr(G.seed)+sysIdx*251); return GOODS.filter(g=>g.legal).sort(()=>srng.next()-.5).slice(0,5); }
@@ -1377,17 +1683,61 @@ function dockStation() {
   document.getElementById('st-nav').innerHTML=mods.map(n=>`<div class="st-node ${n.id===stActiveNode?'active':''}" onclick="stSelectNode('${n.id}')"><div class="st-node-emoji">${n.emoji}</div><div class="st-node-name">${n.name}</div></div>`).join('');
   renderNodeContent(stActiveNode); showScreen('station-screen'); addLog(`Docked at ${sys.name}.`);
   if(!G.availableContracts||!G.availableContracts.length) G.availableContracts=genContracts();
+  const specials = checkRecruitmentQuests();
+  specials.forEach(crew => addSpecialCrewToPool(crew)); 
 }
 function stSelectNode(id) { stActiveNode=id; document.querySelectorAll('.st-node').forEach(n=>n.classList.toggle('active',n.onclick?.toString().includes(`'${id}'`))); renderNodeContent(id); }
 function renderNodeContent(nodeId) {
   const el=document.getElementById('st-content'), sys=G.galaxy.systems[G.curSys];
-  if(nodeId==='cantina') {
-    const rumors=stationRumors(G.curSys), pool=generateHireableCrew(G.curSys);
-    el.innerHTML=`<div class="st-content-hdr">🍺 CANTINA</div><div><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>
-    <div style="margin:10px 0 5px">CREW STATIONS</div>${G.crew.filter(c=>c.alive).map(c=>{ const assigned=Object.entries(G.crewStations).find(([k,v])=>v===c.id)?.[0]; return`<div class="trade-row"><span>${c.emoji} ${c.name}</span><select onchange="assignCrewToStation('${c.id}',this.value)"><option value="none">Unassigned</option>${Object.entries(CREW_STATIONS).map(([sid,st])=>`<option value="${sid}" ${assigned===sid?'selected':''}>${st.emoji} ${st.name}</option>`).join('')}</select></div>`; }).join('')}
-    <div style="margin:10px 0 5px">HIRE CREW</div>${pool.map(c=>`<div class="trade-row"><span>${c.emoji} ${c.name} (${c.role}) HP:${c.hp} ATK:${c.atk}</span><button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits<c.cost?'disabled':''}>HIRE ${c.cost}CR</button></div>`).join('')}
-    <div style="margin:10px 0 5px">RUMORS (150cr)</div>${rumors.map((r,i)=>`<div class="trade-row"><span>${r}</span><button class="btn btn-sm" onclick="buyRumor(${i})">BUY</button></div>`).join('')}
-    <div class="maint-row"><span>Drinks (+8 morale)</span><button class="btn btn-sm" onclick="stDrink()">50cr</button></div>`;
+} else if (nodeId === 'cantina') {
+  const rumors = stationRumors(G.curSys);
+  const pool = generateHireableCrew(G.curSys);
+  // Check for special recruits
+  const specials = checkRecruitmentQuests();
+  specials.forEach(crew => addSpecialCrewToPool(crew));
+  // Build normal hire HTML
+  let hireHtml = pool.map(c => `
+    <div class="trade-row">
+      <span>${c.emoji} ${c.name} - ${c.role} 💰${c.cost} (HP:${c.hp} ATK:${c.atk})</span>
+      <button class="btn btn-sm" onclick="hireCrew('${c.id}')" ${G.flagship.credits < c.cost ? 'disabled' : ''}>HIRE</button>
+    </div>
+  `).join('');
+  let specialHtml = '';
+  if (window._specialHirePool && window._specialHirePool.length) {
+    specialHtml = `<div style="margin:14px 0 6px;font-family:'Press Start 2P';font-size:8px;color:var(--gold);">🌟 LEGENDARY RECRUITS</div>` +
+      window._specialHirePool.map(c => `
+        <div class="trade-row" style="border-color:var(--gold);">
+          <span>${c.emoji} ${c.name} (${c.role})<br><span style="font-size:12px;color:var(--metal);">${c.bio}</span></span>
+          <button class="btn btn-sm btn-gold" onclick="hireSpecialCrew('${c.id}')" ${G.flagship.credits < c.cost ? 'disabled' : ''}>HIRE ${c.cost}CR</button>
+        </div>
+      `).join('');
+  }
+  const stationHtml = G.crew.filter(c => c.alive).map(c => {
+    const assigned = Object.entries(G.crewStations).find(([k,v]) => v === c.id)?.[0];
+    return `
+      <div class="trade-row" style="font-size:14px">
+        <span>${c.emoji} ${c.name}</span>
+        <select onchange="assignCrewToStation('${c.id}', this.value)" style="font-size:13px;padding:3px">
+          <option value="none">Unassigned</option>
+          ${Object.entries(CREW_STATIONS).map(([sid,st]) => 
+            `<option value="${sid}" ${assigned === sid ? 'selected' : ''}>${st.emoji} ${st.name}</option>`
+          ).join('')}
+        </select>
+      </div>
+    `;
+  }).join('');
+  cont.innerHTML = `
+    <div class="st-content-hdr">🍺 CANTINA</div><div style="margin-bottom:12px;"><button class="btn btn-sm" onclick="talkBartender()">🗣 Talk to Bartender</button></div>
+    <div style="margin:8px 0 4px;font-family:'Press Start 2P';font-size:7px;color:var(--cyan);">CREW STATIONS</div>
+    ${stationHtml || '<div style="color:var(--metal);font-size:13px;padding:4px">No crew available</div>'}
+    <div style="margin:14px 0 6px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan);">HIRE CREW</div>
+    ${hireHtml || '<div style="color:var(--metal);font-size:13px;">No recruits available</div>'}
+    ${specialHtml}
+    <div style="margin:14px 0 6px;font-family:'Press Start 2P';font-size:8px;color:var(--cyan);">RUMORS (150 CR)</div>
+    ${rumors.map((r, i) => `<div class="trade-row"><span style="font-size:14px;">${r}</span><button class="btn btn-sm" onclick="buyRumor(${i})">BUY</button></div>`).join('')}    
+    <div class="maint-row" style="margin-top:10px;"><span>Order drinks (+8 morale)</span><button class="btn btn-sm" onclick="stDrink()">50 CR</button></div><div style="margin-top:8px;">
+      <button class="btn btn-sm" onclick="talkToRandomCrew()">💬 Talk to Crew</button>
+    </div> `;
   } else if(nodeId==='market') {
     const goods=stationGoods(G.curSys); el.innerHTML=`<div class="st-content-hdr">MARKET</div>`+goods.map(g=>{ const bp=stationPrice(g.id,G.curSys,true); return`<div class="trade-row"><span>${g.emoji} ${g.name} ${bp}cr</span><button class="btn btn-sm" onclick="buyGood('${g.id}')">BUY</button></div>`; }).join('');
   } else if(nodeId==='maintenance') {
