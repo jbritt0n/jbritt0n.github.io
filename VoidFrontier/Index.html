@@ -139,10 +139,19 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 /* QUEST */
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
 
-/* CREW PORTRAITS */
-.crew-portrait {width: 40px;height: 40px;border-radius: 4px;object-fit: cover;border: 1px solid var(--border);background: var(--panel);}
-.crew-card-with-portrait {display: flex;align-items: center;gap: 10px;}
-.crew-info-with-portrait {flex: 1;}
+/* CREW */
+.crew-card-with-portrait {display: flex;align-items: flex-start;gap: 8px;padding: 8px 10px;border-bottom: 1px solid rgba(255,255,255,0.05);}
+.crew-portrait {width: 40px;height: 40px;border-radius: 4px;object-fit: cover;border: 1px solid var(--border);background: var(--panel);flex-shrink: 0;}
+.crew-info-with-portrait {flex: 1;min-width: 0;}
+.crew-name {display: flex;justify-content: space-between;align-items: center;font-weight: bold;font-size: 13px;}
+.crew-role {font-size: 11px;color: var(--metal);}
+.crew-xp-bar {background: rgba(255,255,255,0.1);border-radius: 2px;height: 4px;margin: 4px 0;overflow: hidden;}
+.crew-xp-fill {background: var(--gold);height: 100%;transition: width 0.2s;}
+.crew-skills {display: flex;gap: 4px;flex-wrap: wrap;margin: 4px 0;}
+.crew-skill {font-size: 10px;color: var(--cyan);}
+.crew-station-select {background: var(--void);border: 1px solid var(--border);color: var(--star);font-size: 10px;padding: 2px 4px;width: 100%;border-radius: 2px;margin-top: 4px;}
+.crew-tier-badge {color: var(--gold);font-size: 10px;margin-left: 4px;}
+.crew-ability-preview {font-size: 10px;color: var(--cyan);margin-top: 4px;font-style: italic;}
 
 /* SHIP COMBAT */  
 #combat-screen{flex-direction:column}
@@ -310,8 +319,9 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
   <div class="cbat-hdr"><div class="cbat-title">⚔ SHIP COMBAT</div><div style="flex:1"></div><div id="cbat-phase-hdr">YOUR TURN</div></div>
   <div id="cbat-hazard-bar"></div>
   <div class="cbat-body">
-    <div class="cbat-ship"><div class="cbat-ship-name" id="cbat-player-name"></div><div id="cbat-player-bars"></div><div class="sys-grid" id="cbat-player-sys"></div></div>
-    <div id="cbat-stations" class="station-panel"></div>
+    <div class="cbat-ship"><div class="cbat-ship-name" id="cbat-player-name"></div><div id="cbat-player-bars"></div><div class="sys-grid" id="cbat-player-sys"></div>
+        <div id="cbat-stations" class="station-panel"></div>
+    </div>
     <div class="cbat-center"><div class="cbat-log" id="cbat-log"></div><div class="cbat-phase" id="cbat-phase-bar"></div></div>
     <div class="cbat-ship enemy-panel"><div class="cbat-ship-name" id="cbat-enemy-name"></div><div id="cbat-enemy-bars"></div><div class="sys-grid" id="cbat-enemy-sys"></div><div id="cbat-enemy-desc"></div></div>
   </div>
@@ -615,6 +625,74 @@ const TIER2_CLASSES = {
 };
 
 
+// ========== CREW SPECIES DEFINITIONS ==========
+const CREW_SPECIES = [
+  { id: 'human', name: 'Human', emoji: '👤', traits: { adaptability: 1.1, noWeakness: true }, desc: 'Balanced, versatile.' },
+  { id: 'android', name: 'Android', emoji: '🤖', traits: { immunePoison: true, immuneBio: true, weakEMP: true }, desc: 'Immune to toxins, weak to EMP.' },
+  { id: 'silicate', name: 'Silicate', emoji: '🪨', traits: { highHP: 1.2, lowSpeed: 0.9, immuneFire: true }, desc: 'Tough, slow, fire-resistant.' },
+  { id: 'avian', name: 'Avian', emoji: '🦅', traits: { highEvasion: 1.15, lowHP: 0.9, immuneFall: true }, desc: 'Agile, fragile, immune to fall damage.' },
+  { id: 'aquatic', name: 'Aquatic', emoji: '🐙', traits: { waterBonus: true, fireWeakness: true, highMedical: 1.1 }, desc: 'Thrives near water, weak to fire.' },
+  { id: 'insectoid', name: 'Insectoid', emoji: '🐛', traits: { swarmBonus: true, highStunResist: true, lowSocial: 0.8 }, desc: 'Resistant to stun, poor at diplomacy.' },
+  { id: 'fungal', name: 'Fungal', emoji: '🍄', traits: { regenHP: 0.02, spreadSpores: true, weakFire: true }, desc: 'Regenerates HP, spreads spores in combat.' },
+  { id: 'gaseous', name: 'Gaseous', emoji: '💨', traits: { phaseChance: 0.1, immunePhysical: 0.3, weakEnergy: true }, desc: '10% chance to phase through attacks.' },
+  { id: 'crystalline', name: 'Crystalline', emoji: '💎', traits: { reflectDamage: 0.1, highPerception: 1.2, brittle: true }, desc: 'Reflects 10% damage, but fragile.' },
+  { id: 'reptilian', name: 'Reptilian', emoji: '🦎', traits: { ambushBonus: 1.2, coldResist: true, slowHeal: 0.8 }, desc: 'Bonus from ambush, resists cold.' }
+];
+
+// ========== CREW ORIGINS (Simplified vs Captain) ==========
+const CREW_ORIGINS = [
+  { id: 'colony', name: 'Colony Born', emoji: '🏘️', bonus: '+10% morale in friendly systems', effect: { moraleBonusFriendly: 0.1 } },
+  { id: 'spacer', name: 'Deep Spacer', emoji: '🚀', bonus: '+15% fuel efficiency', effect: { fuelEfficiency: 1.15 } },
+  { id: 'outlaw', name: 'Outlaw', emoji: '🏴‍☠️', bonus: '+20% black market prices', effect: { blackMarketBonus: 1.2 } },
+  { id: 'scholar', name: 'Academic', emoji: '📚', bonus: '+25% artifact value', effect: { artifactValueMult: 1.25 } },
+  { id: 'militia', name: 'System Militia', emoji: '🛡️', bonus: '+10% combat damage in home sector', effect: { homeSectorDamage: 1.1 } },
+  { id: 'nomad', name: 'Nomad', emoji: '🌌', bonus: 'Immune to cramped morale penalty', effect: { negateCramped: true } },
+  { id: 'corporate', name: 'Corporate Contract', emoji: '💼', bonus: '+15% trade profits', effect: { tradeProfitMult: 1.15 } },
+  { id: 'refugee', name: 'Refugee', emoji: '🕊️', bonus: '+20% survival chance when hull <20%', effect: { lowHullSurvival: 1.2 } }
+];
+
+// ========== NAME POOL FOR CREW ==========
+const CREW_NAMES = [
+  { name: "Zoya", gender: "F" }, { name: "Kael", gender: "M" }, { name: "Rex", gender: "M" },
+  { name: "Lyra", gender: "F" }, { name: "Dax", gender: "M" }, { name: "Nova", gender: "F" },
+  { name: "Orin", gender: "M" }, { name: "Vex", gender: "M" }, { name: "Jax", gender: "M" },
+  { name: "Mira", gender: "F" }, { name: "Talon", gender: "M" }, { name: "Sia", gender: "F" }
+];
+
+// ========== CREW STATIONS FOR SHIP COMBAT ==========
+const CREW_STATIONS = {
+  weapons: { 
+    name: 'Weapons', emoji: '🎯', 
+    effect: 'damage', 
+    desc: 'Boosts weapon damage by crew skill/2',
+    skill: 'combat' // Which crew skill to use
+  },
+  shields: { 
+    name: 'Shields', emoji: '🛡️', 
+    effect: 'defense', 
+    desc: 'Boosts shield regen by crew skill/2',
+    skill: 'engineering'
+  },
+  engines: { 
+    name: 'Engines', emoji: '⚡', 
+    effect: 'evasion', 
+    desc: 'Boosts evasion chance by crew skill/2',
+    skill: 'pilot'
+  },
+  sensors: { 
+    name: 'Sensors', emoji: '📡', 
+    effect: 'accuracy', 
+    desc: 'Boosts hit chance by crew skill/2',
+    skill: 'perception'
+  },
+  medbay: { 
+    name: 'Med Bay', emoji: '💉', 
+    effect: 'healing', 
+    desc: 'Boosts post-combat healing by crew skill/2',
+    skill: 'medical'
+  }
+};
+  
 // ========== CLASS PROGRESSION SYSTEM ==========
 
 // Get available moves for a crew member (base + tier2 if unlocked)
@@ -1805,17 +1883,6 @@ const CREW_POOL = [
 ];
 
 
-
-
-
-// ========== V2 ADDITIONS: CREW STATIONS ==========
-const CREW_STATIONS = {
-  weapons: { name: 'Weapons Officer', emoji: '🎯', desc: 'Boosts weapon damage' },
-  shields: { name: 'Shield Officer', emoji: '🛡️', desc: 'Speeds shield regen' },
-  engines: { name: 'Helm Officer', emoji: '🚀', desc: 'Improves evasion' },
-  medical: { name: 'Medical Officer', emoji: '💉', desc: 'Crew recover faster' }
-};
-  
 // ========== RECRUITMENT QUESTS ==========
 
 // Special crew that require quests/reputation to recruit
@@ -1946,6 +2013,7 @@ let G = {
   galaxy: null, curSys: 0, selSys: null,
   rep: {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0},
   crew: [],
+  crewStations: {},
   cargo: [], soldExplorationData: [], probedFeatures: {},
   quests: [],
   contracts: [], log: [], ccStep: 0, jumps: 0, dramaTimer: 0,
@@ -2001,7 +2069,79 @@ function renameShip(index) {
     updateRP(); // Refresh the panel
   }
 }
-    
+
+// ========== BATTLE STATIONS ==========
+
+// Calculate bonus from crew skill at a station
+function getStationBonus(stId) {
+  const cId = G.crewStations[stId];
+  if (!cId) return 0;
+  const c = G.crew.find(x => x.id === cId && x.alive && x.hp > 0);
+  if (!c) return 0;
+  
+  const station = CREW_STATIONS[stId];
+  // Support both new skill-based crew AND old single-skill crew
+  const skill = c.skills?.[station.skill] || c.skill || 5;
+  return Math.max(0, Math.floor(skill / 2));
+}
+
+// Assign crew to station (with validation)
+function assignCrewToStation(crewId, stId) {
+  // Remove any existing assignment for this crew member
+  Object.keys(G.crewStations).forEach(k => {
+    if (G.crewStations[k] === crewId) delete G.crewStations[k];
+  });
+  
+  // Assign to new station (if valid and not 'none')
+  if (stId && stId !== 'none' && CREW_STATIONS[stId]) {
+    // Check if station is already occupied
+    if (G.crewStations[stId]) {
+      addLog('Station already occupied!');
+      return;
+    }
+    G.crewStations[stId] = crewId;
+    addLog('Crew assigned to station.');
+  }
+  
+  updateRP(); 
+  if (G.combat) {
+    renderCombat(); // Refresh combat UI if in combat
+    renderCombatStations(); // Re-render station panel
+  }
+}
+
+// Render station UI with dropdown selectors
+function renderCombatStations() {
+  const el = document.getElementById('cbat-stations');
+  if (!el) return;
+  
+  const aliveCrew = G.crew.filter(c => c.alive && c.hp > 0);
+  
+  el.innerHTML = `<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:8px">◈ CREW STATIONS</div>` +
+    Object.entries(CREW_STATIONS).map(([sid, st]) => {
+      const cId = G.crewStations[sid];
+      const c = cId ? G.crew.find(x => x.id === cId) : null;
+      const bonus = getStationBonus(sid);
+      
+      // Build crew options for dropdown
+      const crewOptions = `<option value="none">—</option>` + 
+        aliveCrew.map(crew => 
+          `<option value="${crew.id}" ${c?.id === crew.id ? 'selected' : ''}>${crew.name}</option>`
+        ).join('');
+      
+      return `
+        <div class="station-slot">
+          <span title="${st.desc}">${st.emoji} ${st.name}</span>
+          <select onchange="assignCrewToStation(this.value, '${sid}')" style="width:90px">
+            ${crewOptions}
+          </select>
+          ${bonus > 0 ? `<span style="color:var(--gold);font-size:10px">+${bonus}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+}
+
+  
 // ========== HAZARDS ==========    
 function triggerCombatHazard() {
   const c = G.combat;
@@ -2020,38 +2160,6 @@ function triggerCombatHazard() {
   renderCombat();
 }
     
- // ========== BATTLE STATIONS ==========   
-function getStationBonus(stId) {
-  const cId = G.crewStations[stId];
-  if (!cId) return 0;
-  const c = G.crew.find(x => x.id === cId && x.alive && x.hp > 0);
-  return c ? Math.max(1, Math.floor(c.skill / 2)) : 0;
-}
-
-function assignCrewToStation(crewId, stId) {
-  // Remove any existing assignment for this crew member
-  Object.keys(G.crewStations).forEach(k => {
-    if (G.crewStations[k] === crewId) delete G.crewStations[k];
-  });
-  // Assign to new station (if not 'none')
-  if (stId && stId !== 'none') {
-    G.crewStations[stId] = crewId;
-  }
-  updateRP(); // Refresh the right panel
-  addLog('Crew station assignment updated.');
-}
-
-function renderCombatStations() {
-  const el = document.getElementById('cbat-stations');
-  if (!el) return;
-  el.innerHTML = `<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:5px">CREW STATIONS</div>` +
-    Object.entries(CREW_STATIONS).map(([sid, st]) => {
-      const cId = G.crewStations[sid];
-      const c = cId ? G.crew.find(x => x.id === cId) : null;
-      const bonus = getStationBonus(sid);
-      return `<div class="station-slot"><span>${st.emoji}${st.name.split(' ')[0]}</span><span style="color:${c ? 'var(--safe)' : 'var(--metal)'}">${c ? c.name + ` +${bonus}` : '—'}</span></div>`;
-    }).join('');
-}
 
 // ========== QUESTS ========== 
 function addQuest(q) {
@@ -2163,7 +2271,7 @@ function initState(seed, difficulty='normal') {
             equippedWeapon: null
         };
     });
-    
+  
     G.cargo = []; 
     G.soldExplorationData = []; 
     G.probedFeatures = {};
@@ -2478,16 +2586,250 @@ function applyCharacterBonuses() {
   }
 }
 
-// ========== CREW PROGRESSION ==========
-function checkCrewProgression() {
-  G.crew.forEach(crew => {
-    if (crew.level >= 5 && crew.classTier === 1 && !crew.advancedClass) {
-      const eligible = checkTier2Eligibility(crew);
-      if (eligible) {
-        showTierModal(crew.id, eligible.baseClass.name, eligible.options);
-      }
+
+
+// ========== SKILL-BASED CREW GENERATOR WITH CLASSES/SPECIES/ORIGINS ==========
+function generateHireableCrew(sysIdx) {
+    const rng = new RNG(hashStr(G.seed) + sysIdx * 739 + Date.now());
+    const pool = [];
+    const count = 2 + Math.floor(rng.next() * 2); // 2 or 3 crew available
+    
+    for (let i = 0; i < count; i++) {
+        // 1. Pick random Tier-1 Class
+        const classData = rng.pick(CLASSES);
+        
+        // 2. Pick random Species
+        const speciesData = rng.pick(CREW_SPECIES);
+        
+        // 3. Pick random Origin (70% chance, 30% are "Unknown")
+        const hasOrigin = rng.next() < 0.7;
+        const originData = hasOrigin ? rng.pick(CREW_ORIGINS) : null;
+        
+        // 4. Generate Name
+        const nameData = rng.pick(CREW_NAMES);
+        const surnames = ["Vance", "Kor", "Xen", "Vex", "Sol", "Ray", "Trek", "Void", "Star", "Nova"];
+        const fullName = `${nameData.name} ${rng.pick(surnames)}`;
+        
+        // 5. Roll Base Stats (1-5) + Class Affinity Bonuses
+        const roll = (min, max) => min + Math.floor(rng.next() * (max - min + 1));
+        const affinity = classData.skillAffinity || {};
+        
+        const skills = {
+            pilot: roll(1, 3) + (affinity.pilot || 0),
+            engineer: roll(1, 3) + (affinity.engineer || 0),
+            medical: roll(1, 3) + (affinity.medical || 0),
+            combat: roll(1, 3) + (affinity.combat || 0),
+            social: roll(1, 3) + (affinity.social || affinity.empathy || affinity.leadership || 0),
+            tech: roll(1, 3) + (affinity.tech || affinity.hacking || 0),
+            perception: roll(1, 3) + (affinity.perception || 0),
+            stealth: roll(1, 3) + (affinity.stealth || 0),
+            psionic: roll(1, 3) + (affinity.psionic || 0)
+        };
+        
+        // 6. Calculate Derived Stats
+        const baseHP = 30 + (skills.combat * 4) + (speciesData.traits.highHP ? 10 : 0);
+        const baseATK = 5 + (skills.combat * 2);
+        const baseSPD = 4 + (skills.pilot || skills.stealth ? 2 : 0);
+        const cost = 300 + Object.values(skills).reduce((a, b) => a + b, 0) * 40;
+        
+        pool.push({
+            id: `crew_${sysIdx}_${Date.now()}_${i}`,
+            name: fullName,
+            classId: classData.id,
+            classLabel: classData.name,
+            classEmoji: classData.emoji,
+            classRole: classData.role,
+            tier: 1,
+            tier2Class: null, // Will be set on level 5+
+            speciesId: speciesData.id,
+            speciesLabel: speciesData.name,
+            speciesEmoji: speciesData.emoji,
+            originId: originData?.id || null,
+            originLabel: originData?.name || 'Unknown',
+            originEmoji: originData?.emoji || '❓',
+            level: 1,
+            xp: 0,
+            xpToNext: 100,
+            loyalty: 40 + roll(0, 30),
+            skills: skills,
+            hp: baseHP,
+            maxHp: baseHP,
+            atk: baseATK,
+            spd: baseSPD,
+            cost: cost,
+            alive: true,
+            status: null, // For combat debuffs
+            equippedWeapon: null,
+            // Store class abilities for reference
+            activeAbility: { ...classData.activeAbility },
+            passive: { ...classData.passive },
+            groundMoves: [...classData.groundMoves]
+        });
     }
+    window._tempHirePool = pool;
+    return pool;
+}
+  
+function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);checkCrewProgression();updateHUD();updateRP();renderNodeContent('cantina');}
+
+// ========== CREW LEVELING & TIER 2 PROGRESSION ==========
+function gainCrewXP(crewMember, amount) {
+    if (!crewMember || !crewMember.xp) return;
+    
+    crewMember.xp += amount;
+    
+    // Level up check
+    if (crewMember.xp >= crewMember.xpToNext) {
+        crewMember.level++;
+        crewMember.xp -= crewMember.xpToNext;
+        crewMember.xpToNext = Math.floor(crewMember.xpToNext * 1.5); // Increasing XP curve
+        
+        // Level up bonuses
+        crewMember.maxHp += 3;
+        crewMember.hp = crewMember.maxHp;
+        crewMember.atk += 1;
+        
+        // Random skill increase weighted by class affinity
+        const classData = CLASSES.find(c => c.id === crewMember.classId);
+        const affinity = classData?.skillAffinity || {};
+        const skillKeys = Object.keys(crewMember.skills);
+        
+        // 2 skill points per level, weighted by affinity
+        for (let i = 0; i < 2; i++) {
+            const weights = skillKeys.map(k => 1 + (affinity[k] || 0));
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let j = 0; j < skillKeys.length; j++) {
+                if (random < weights[j]) {
+                    crewMember.skills[skillKeys[j]]++;
+                    break;
+                }
+                random -= weights[j];
+            }
+        }
+        
+        // === TIER 2 PROGRESSION (at Level 5) ===
+        if (crewMember.level === 5 && !crewMember.tier2Class && classData?.tier2Options) {
+            // Auto-assign based on highest skill, or let player choose later
+            const options = classData.tier2Options;
+            const chosenTier2 = options[Math.floor(Math.random() * options.length)]; // For now, random; could be player choice
+            crewMember.tier = 2;
+            crewMember.tier2Class = chosenTier2;
+            
+            // Apply Tier 2 bonuses (example: merge base + specialization)
+            const tier2Data = CLASSES.find(c => c.id === chosenTier2);
+            if (tier2Data) {
+                // Merge passives
+                if (tier2Data.passive?.effect) {
+                    crewMember.passive.effect = { ...crewMember.passive.effect, ...tier2Data.passive.effect };
+                }
+                // Add new ground moves
+                if (tier2Data.groundMoves) {
+                    crewMember.groundMoves = [...crewMember.groundMoves, ...tier2Data.groundMoves.slice(0, 1)];
+                }
+                addLog(`🎉 ${crewMember.name} advanced to ${tier2Data.name}!`);
+            }
+        }
+        
+        addLog(`✨ ${crewMember.name} reached Level ${crewMember.level}!`);
+        updateRP(); // Refresh UI
+    }
+}  
+
+// ========== SHIP STATION AFFINITY CALCULATOR ==========
+function calculateStationAffinities() {
+    const aliveCrew = G.crew.filter(c => c.alive);
+    if (aliveCrew.length === 0) return {
+        helm: 1.0, engineering: 1.0, medical: 1.0, weapons: 1.0, sensors: 1.0
+    };
+    
+    // Sum skills across all crew
+    const totals = aliveCrew.reduce((acc, c) => {
+        acc.pilot += c.skills.pilot || 0;
+        acc.engineer += c.skills.engineer || 0;
+        acc.medical += c.skills.medical || 0;
+        acc.combat += c.skills.combat || 0;
+        acc.tech += c.skills.tech || 0;
+        acc.perception += c.skills.perception || 0;
+        return acc;
+    }, { pilot: 0, engineer: 0, medical: 0, combat: 0, tech: 0, perception: 0 });
+    
+    // Calculate affinity multipliers (example scaling: every 5 skill points = +10% bonus)
+    return {
+        helm: 1.0 + (totals.pilot * 0.02),           // Better evasion, fuel efficiency
+        engineering: 1.0 + (totals.engineer * 0.02),  // Faster repairs, lower cost
+        medical: 1.0 + (totals.medical * 0.02),       // Better healing, disease resistance
+        weapons: 1.0 + (totals.combat * 0.02),        // Higher damage, accuracy
+        sensors: 1.0 + (totals.perception * 0.02) + (totals.tech * 0.01) // Better scan range, hack resistance
+    };
+}
+
+// ========== BATTLE STATIONS ==========
+
+// Calculate bonus from crew skill at a station
+function getStationBonus(stId) {
+  const cId = G.crewStations[stId];
+  if (!cId) return 0;
+  const c = G.crew.find(x => x.id === cId && x.alive && x.hp > 0);
+  if (!c) return 0;
+  
+  const station = CREW_STATIONS[stId];
+  const skill = c.skills?.[station.skill] || c.skill || 5; // Fallback to old 'skill' prop
+  return Math.max(1, Math.floor(skill / 2));
+}
+
+// Assign crew to station (with validation)
+function assignCrewToStation(crewId, stId) {
+  // Remove any existing assignment for this crew member
+  Object.keys(G.crewStations).forEach(k => {
+    if (G.crewStations[k] === crewId) delete G.crewStations[k];
   });
+  
+  // Assign to new station (if valid and not 'none')
+  if (stId && stId !== 'none' && CREW_STATIONS[stId]) {
+    // Check if station is already occupied
+    if (G.crewStations[stId]) {
+      addLog('Station already occupied!');
+      return;
+    }
+    G.crewStations[stId] = crewId;
+    addLog('Crew assigned to station.');
+  }
+  
+  updateRP(); 
+  if (G.combat) renderCombat(); // Refresh combat UI if in combat
+}
+
+// Render station UI with dropdown selectors
+function renderCombatStations() {
+  const el = document.getElementById('cbat-stations');
+  if (!el) return;
+  
+  const aliveCrew = G.crew.filter(c => c.alive && c.hp > 0);
+  
+  el.innerHTML = `<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:8px">◈ CREW STATIONS</div>` +
+    Object.entries(CREW_STATIONS).map(([sid, st]) => {
+      const cId = G.crewStations[sid];
+      const c = cId ? G.crew.find(x => x.id === cId) : null;
+      const bonus = getStationBonus(sid);
+      
+      // Build crew options for dropdown
+      const crewOptions = `<option value="none">—</option>` + 
+        aliveCrew.map(crew => 
+          `<option value="${crew.id}" ${c?.id === crew.id ? 'selected' : ''}>${crew.name}</option>`
+        ).join('');
+      
+      return `
+        <div class="station-slot">
+          <span title="${st.desc}">${st.emoji} ${st.name}</span>
+          <select onchange="assignCrewToStation(this.value, '${sid}')" style="width:90px">
+            ${crewOptions}
+          </select>
+          ${bonus > 0 ? `<span style="color:var(--gold);font-size:10px">+${bonus}</span>` : ''}
+        </div>
+      `;
+    }).join('');
 }
   
   
@@ -2897,7 +3239,10 @@ function interactFeature(feature){
     addLog(logMsg);
     updateHUD(); updateRP(); updateLP();
 }
-  
+
+ // ===============================================================
+ // RIGHT CONTROL PANEL UPDATE RP
+ // ===============================================================  
 function updateRP(){
     // REPUTATION/INFLUENCE
     document.getElementById('rp-rep').innerHTML = FACTIONS.map(f => {
@@ -2915,33 +3260,99 @@ function updateRP(){
     }).join('');
     document.getElementById('rp-cargo').innerHTML = cargoHtml || '<div style="color:var(--metal)">Empty</div>';
     
-    // CREW
-    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
-      const portraitUrl = c.portrait || CREW_PORTRAITS[c.name] || CREW_PORTRAITS['default'] || 'assets/portraits/crew_default.png';
-      const assignedStation = Object.entries(G.crewStations).find(([k, v]) => v === c.id)?.[0];
-      
-      return `
-        <div class="crew-row crew-card-with-portrait">
-          <img src="${portraitUrl}" alt="${c.name}" class="crew-portrait" 
-               onerror="this.src='assets/portraits/crew_default.png'">
-          <div class="crew-info crew-info-with-portrait">
-            <div class="crew-name">
-              ${c.name} Lv.${c.level || 1} ${c.hp}/${c.maxHp}
-              ${assignedStation ? `<span style="color:var(--gold); margin-left:6px;">${CREW_STATIONS[assignedStation].emoji}</span>` : ''}
+    // ========== CREW PANEL (Skill-Based + Classes + Species + Origins + Tier Progression) ==========
+document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
+    // Get class/species/origin data
+    const cls = CLASSES.find(x => x.id === c.classId);
+    const tier2 = c.tier2Class ? CLASSES.find(x => x.id === c.tier2Class) : null;
+    const species = CREW_SPECIES?.find(x => x.id === c.speciesId) || { name: 'Unknown', emoji: '❓', traits: {} };
+    const origin = CREW_ORIGINS?.find(x => x.id === c.originId) || { name: 'Unknown', emoji: '❓' };
+    
+    // Get assigned station
+    const assignedStation = Object.entries(G.crewStations || {}).find(([k, v]) => v === c.id)?.[0];
+    const stationData = assignedStation ? CREW_STATIONS?.[assignedStation] : null;
+    
+    // Calculate XP bar
+    const xpPercent = Math.min(100, Math.floor((c.xp / c.xpToNext) * 100));
+    
+    // Skill bars visualization (show top 3 skills)
+    const skills = c.skills || {};
+    const sortedSkills = Object.entries(skills)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([key, val]) => {
+            const labels = { pilot: '🚀', engineer: '⚙️', medical: '💊', combat: '⚔️', social: '🤝', tech: '💻', perception: '👁️', stealth: '🥷', psionic: '🧠' };
+            return `<span title="${key}" style="color:var(--cyan);font-size:10px">${labels[key] || '•'}${val}</span>`;
+        }).join(' ');
+    
+    // Class display with tier badge
+    const classDisplay = tier2 
+        ? `<span style="color:var(--gold)">${tier2.emoji} ${tier2.name} ★</span>` 
+        : (cls ? `${cls.emoji} ${cls.name}` : c.classLabel || '—');
+    
+    // Portrait with fallback
+    const portraitUrl = c.portrait 
+        || (CREW_PORTRAITS?.[c.name]) 
+        || CREW_PORTRAITS?.['default'] 
+        || 'assets/portraits/crew_default.png';
+    
+    // Station assignment dropdown
+    const stationOptions = CREW_STATIONS 
+        ? Object.entries(CREW_STATIONS).map(([sid, st]) => 
+            `<option value="${sid}" ${assignedStation === sid ? 'selected' : ''}>${st.emoji} ${st.name}</option>`
+          ).join('')
+        : '';
+    
+    return `
+        <div class="crew-row crew-card-with-portrait" style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05)">
+            <!-- Portrait -->
+            <img src="${portraitUrl}" alt="${c.name}" class="crew-portrait" 
+                 onerror="this.src='assets/portraits/crew_default.png'"
+                 style="width:40px;height:40px;border-radius:4px;object-fit:cover;border:1px solid var(--border)">
+            
+            <div class="crew-info crew-info-with-portrait" style="flex:1;min-width:0">
+                <!-- Name + Level + HP -->
+                <div class="crew-name" style="display:flex;justify-content:space-between;align-items:center;font-weight:bold">
+                    <span>${c.name} <small style="color:var(--metal);font-size:11px">Lv.${c.level || 1}</small></span>
+                    <span style="font-size:11px;color:${c.hp < c.maxHp * 0.3 ? 'var(--hazard)' : 'var(--safe)'}">❤️ ${c.hp}/${c.maxHp}</span>
+                </div>
+                
+                <!-- Class + Species + Origin -->
+                <div style="font-size:11px;color:var(--metal);margin:2px 0">
+                    ${classDisplay} • ${species.emoji} ${species.name} ${origin?.id ? `• ${origin.emoji} ${origin.name}` : ''}
+                </div>
+                
+                <!-- XP Bar -->
+                <div style="background:rgba(255,255,255,0.1);border-radius:2px;height:4px;margin:4px 0;overflow:hidden">
+                    <div style="background:var(--gold);height:100%;width:${xpPercent}%;transition:width 0.2s"></div>
+                </div>
+                
+                <!-- Top Skills -->
+                <div style="margin:4px 0; display:flex; gap:4px; flex-wrap:wrap">
+                    ${sortedSkills}
+                </div>
+                
+                <!-- Station Assignment Dropdown -->
+                ${CREW_STATIONS ? `
+                <div style="margin-top:4px">
+                    <select onchange="assignCrewToStation('${c.id}', this.value)" 
+                            style="background:var(--void);border:1px solid var(--border);color:var(--star);font-size:10px;padding:2px 4px;width:100%;border-radius:2px">
+                        <option value="none">— Unassigned —</option>
+                        ${stationOptions}
+                    </select>
+                </div>
+                ` : ''}
+                
+                <!-- Ground Combat Abilities (if Tier 2) -->
+                ${tier2?.groundMoves?.[0] ? `
+                <div style="font-size:10px;color:var(--cyan);margin-top:4px">
+                    ⚡ ${tier2.groundMoves[0].name}: ${tier2.groundMoves[0].desc}
+                </div>
+                ` : ''}
             </div>
-            <div class="crew-role">${c.role} • ${c.species}</div>
-            <div style="margin-top:4px;">
-              <select onchange="assignCrewToStation('${c.id}', this.value)" style="background:var(--void);border:1px solid var(--cyan);color:var(--star);font-size:11px;padding:2px 4px;width:100%;">
-                <option value="none">Unassigned</option>
-                ${Object.entries(CREW_STATIONS).map(([sid, st]) => 
-                  `<option value="${sid}" ${assignedStation === sid ? 'selected' : ''}>${st.emoji} ${st.name}</option>`
-                ).join('')}
-              </select>
-            </div>
-          </div>
         </div>
-      `;
-    }).join('');
+    `;
+}).join('') || '<div style="color:var(--metal);padding:10px;text-align:center">No crew assigned</div>';
       
     
     // CAPTAIN
@@ -2962,7 +3373,7 @@ function updateRP(){
         </div>
       `;
     }).join('');
-    
+  
     // QUESTS PANEL (new)
     const questPanel = document.getElementById('rp-quests');
     if (questPanel) {
@@ -3664,56 +4075,6 @@ function smugglerBribe() {
   updateHUD();
 }
 
-// --- Hireable Crew ---  
-function generateHireableCrew(sysIdx) {
-    // Deterministic seed per system so the same 2 appear until you leave
-    const rng = new RNG(hashStr(G.seed) + sysIdx * 739 + 11);
-    const hiredNames = G.crew.map(c => c.name);
-
-    const FIRST_NAMES = ['Kael','Lyra','Dax','Nova','Orin','Vex','Zane','Yara','Jax','Mira','Rex','Sia','Talon','Vega','Wren','Xen','Zara','Bram','Elara','Finn','Greta','Holt','Iris','Jett','Kira'];
-    const LAST_NAMES = ['Kas','Tong','Varley','Nox','Thorn','Chen','Vex','Rook','Silas','Dune','Frost','Steel','Vance','Cross','Blade','Shade','Ward','Stone','Fox','Moon','Star','Vale','Raine','Ash','Cole'];
-
-    const ROLES = [
-        { id: 'Gunner', emoji: '🔫', hp: [40, 60], atk: [10, 16], spd: [3, 6], skill: [4, 7], baseCost: 350 },
-        { id: 'Technician', emoji: '🔧', hp: [35, 50], atk: [5, 9], spd: [4, 7], skill: [7, 11], baseCost: 300 },
-        { id: 'Medic', emoji: '💉', hp: [30, 45], atk: [4, 8], spd: [4, 7], skill: [8, 12], baseCost: 400 },
-        { id: 'Scout', emoji: '🔍', hp: [30, 45], atk: [7, 11], spd: [7, 11], skill: [6, 10], baseCost: 320 },
-        { id: 'Engineer', emoji: '⚙️', hp: [40, 55], atk: [6, 10], spd: [4, 6], skill: [8, 12], baseCost: 380 },
-        { id: 'Pilot', emoji: '🚀', hp: [35, 50], atk: [5, 9], spd: [8, 12], skill: [7, 11], baseCost: 450 }
-    ];
-
-    const candidates = [];
-    let attempts = 0;
-
-    while (candidates.length < 2 && attempts < 50) {
-        attempts++;
-        const name = `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
-        if (hiredNames.includes(name)) continue;
-
-        const role = rng.pick(ROLES);
-        const hp = rng.int(role.hp[0], role.hp[1]);
-        const atk = rng.int(role.atk[0], role.atk[1]);
-        const spd = rng.int(role.spd[0], role.spd[1]);
-        const skill = rng.int(role.skill[0], role.skill[1]);
-        const avg = (hp + atk + spd + skill) / 4;
-        const cost = Math.floor(role.baseCost + (avg * 15) + (rng.next() * 150));
-
-        candidates.push({
-            id: `hire_${sysIdx}_${attempts}`,
-            name, role: role.id, emoji: role.emoji,
-            hp, maxHp: hp, atk, spd, skill,
-            cost, loyalty: 50 + rng.int(0, 20),
-            alive: true, xp: 0, level: 1, equippedWeapon: null,
-            species: 'Human',
-            bio: `${role.id} with ${skill > 8 ? 'expert' : 'solid'} training.`
-        });
-    }
-
-    window._tempHirePool = candidates;
-    return candidates;
-}
-  
-function hireCrew(id){const c=window._tempHirePool.find(x=>x.id===id);if(!c||G.flagship.credits<c.cost)return;G.flagship.credits-=c.cost;G.crew.push({...c,id:'c'+Math.random().toString(36)});addLog(`Hired ${c.name}.`);checkCrewProgression();updateHUD();updateRP();renderNodeContent('cantina');}
 
 // --- Shipyard Inventory --- 
 function generateShipyardInventory() {
@@ -3951,7 +4312,7 @@ function startCombat(enemy = null) {
   combatTarget = null;
   addCombatLog(`⚔ ${e.type} engages!`);
   renderCombat();
-  renderCombatStations(); // if you have crew stations
+  renderCombatStations(); 
   showScreen('combat-screen');
 }
 function renderCombat() {
@@ -3963,6 +4324,7 @@ function renderCombat() {
   document.getElementById('cbat-player-sys').innerHTML = Object.entries(c.playerSys).map(([k, v]) => `<div class="sys-cell"><div>${k}</div><div>${v.hp}</div></div>`).join('');
   document.getElementById('cbat-enemy-sys').innerHTML = Object.entries(e.systems).map(([k, v]) => `<div class="sys-cell targetable ${combatTarget === k ? 'targeted' : ''}" onclick="setTarget('${k}')"><div>${k}</div><div>${v.hp}</div></div>`).join('');
   document.getElementById('cbat-target-lbl').textContent = combatTarget ? e.systems[combatTarget].name : 'None';
+  renderCombatStations();
 }
 
 function setTarget(id) {
@@ -3974,76 +4336,138 @@ function setTarget(id) {
 function combatAction(action) {
   const c = G.combat, s = G.flagship, e = c.enemy;
   if (!c || c.won) return;
-  const wb = getStationBonus('weapons'), sb = getStationBonus('shields'), eb = getStationBonus('engines');
-  const accMod = c.hazardAccMod || 0;
-
+  
+  // Get ALL station bonuses (including new sensors/medbay)
+  const wb = getStationBonus('weapons');
+  const sb = getStationBonus('shields');
+  const eb = getStationBonus('engines');
+  const sensb = getStationBonus('sensors'); // NEW: accuracy bonus
+  const medb = getStationBonus('medbay'); // NEW: healing bonus
+  
+  const accMod = (c.hazardAccMod || 0) + (sensb * 0.05); // Sensors boost accuracy
+  const healMod = medb * 0.1; // Medbay boosts post-combat healing
+  
   if (action === 'fire') {
     if (!combatTarget) { addCombatLog('Select a target system first!'); return; }
     if (c.playerSys.weapons.hp <= 0) { addCombatLog('Weapons offline!'); return; }
     if (c.hazardWeaponsDisabled) { addCombatLog('Weapons knocked offline this turn!'); c.hazardWeaponsDisabled = false; return; }
+    
+    // Calculate damage with weapon station bonus + module bonus
     const base = 12 + Math.floor(G.rng.next() * 15) + wb;
     const boost = G.flagship.modules.includes('plasma_injector') ? 1.4 : 1.0;
     const dmg = Math.floor(base * boost);
-    const hitChance = 0.9 + accMod;
+    
+    // Calculate hit chance with sensor station bonus
+    const hitChance = Math.min(0.95, 0.9 + accMod); // Cap at 95%
+    
     if (G.rng.next() < hitChance) {
       const tgt = e.systems[combatTarget];
       tgt.hp = Math.max(0, tgt.hp - dmg);
-      addCombatLog(`${s.name} fires on ${tgt.name} — ${dmg} dmg!`, 'player');
+      addCombatLog(`${s.name} fires on ${tgt.name} — ${dmg} dmg${wb>0?` (+${wb} station)`:''}!`, 'player');
       if (tgt.hp <= 0) addCombatLog(`${tgt.name} DESTROYED!`, 'player');
+      
+      // Splash damage to hull/shields
       const splash = Math.floor(dmg * 0.3);
       if (e.shield > 0) e.shield = Math.max(0, e.shield - splash);
       else e.hull = Math.max(0, e.hull - splash);
-    } else addCombatLog('Shot missed!', 'player');
+    } else {
+      addCombatLog(`Shot missed!${sensb>0?` (Sensors: +${sensb} accuracy)`:''}`, 'player');
+    }
     c.hazardAccMod = 0;
+    
   } else if (action === 'boost_shields') {
+    // Shield regen with station bonus
     const regen = 15 + sb;
     s.shields = Math.min(s.maxShields, s.shields + regen);
-    addCombatLog(`Shields boosted +${regen}.`, 'player');
+    addCombatLog(`Shields boosted +${regen}${sb>0?` (+${sb} station)`:''}.`, 'player');
+    
   } else if (action === 'evasive') {
     c.evasionActive = true;
+    c.evasionBonus = eb; // Store for enemy hit calculation
     s.fuel = Math.max(0, s.fuel - 5);
-    addCombatLog(`Evasive maneuvers! Fuel -5.`, 'player');
+    addCombatLog(`Evasive maneuvers! Fuel -5${eb>0?`, +${eb}% evasion (station)`:''}.`, 'player');
+    
   } else if (action === 'flee') {
     if (s.fuel < 15) { addCombatLog('Not enough fuel!'); return; }
+    // Flee chance boosted by engine station bonus
     const fleeChance = 0.5 + (eb * 0.03);
     if (G.rng.next() < fleeChance) {
-      addCombatLog('Emergency FTL! Escaped.', 'player');
+      addCombatLog(`Emergency FTL! Escaped${eb>0?` (+${eb}% engine bonus)`:''}.`, 'player');
       s.fuel -= 15;
       exitCombat(false);
       return;
     } else addCombatLog('Flee failed!', 'player');
+    
+  } else if (action === 'special') {
+    // NEW: Special ability based on crew class at weapons station
+    const weaponsCrewId = G.crewStations['weapons'];
+    if (weaponsCrewId) {
+      const crew = G.crew.find(c => c.id === weaponsCrewId);
+      if (crew?.activeAbility) {
+        // Example: Apply active ability effect
+        if (crew.activeAbility.effect?.dmgMult) {
+          const bonusDmg = Math.floor(10 * crew.activeAbility.effect.dmgMult);
+          e.hull = Math.max(0, e.hull - bonusDmg);
+          addCombatLog(`${crew.name} uses ${crew.activeAbility.name}! +${bonusDmg} bonus dmg!`, 'player');
+        }
+      }
+    }
   }
-
-  // Hazard check
-  if (!c.hazardCooldown && G.rng.next() < 0.13) triggerCombatHazard();
-  else if (c.hazardCooldown > 0) c.hazardCooldown--;
-
-  // Enemy turn
+  
+  // === ENEMY TURN ===
   if (e.systems.weapons.hp > 0) {
-    const evade = c.evasionActive ? 0.35 + eb * 0.02 : 0.7;
-    if (G.rng.next() < evade) {
-      const eDmg = 8 + Math.floor(G.rng.next() * 12);
+    // Calculate enemy hit chance with player evasion bonus
+    const baseHitChance = c.evasionActive ? 0.4 : 0.7;
+    const evasionBonus = c.evasionBonus || 0;
+    const finalHitChance = Math.max(0.1, baseHitChance - (evasionBonus * 0.05));
+    
+    if (G.rng.next() < finalHitChance) {
+      const dmg = 8 + Math.floor(G.rng.next() * 12);
+      // Shield absorbs first, then hull
       if (s.shields > 0) {
-        const sd = Math.min(s.shields, eDmg);
-        s.shields -= sd;
-        const spill = Math.max(0, eDmg - sd);
-        if (spill > 0) s.hull = Math.max(0, s.hull - spill);
-        addCombatLog(`Enemy hits shields -${sd}${spill > 0 ? ' hull -' + spill : ''}!`, 'enemy');
+        const shieldDmg = Math.min(s.shields, dmg);
+        s.shields -= shieldDmg;
+        if (dmg > shieldDmg) s.hull = Math.max(0, s.hull - (dmg - shieldDmg));
       } else {
-        s.hull = Math.max(0, s.hull - eDmg);
-        addCombatLog(`Enemy hits hull -${eDmg}!`, 'enemy');
+        s.hull = Math.max(0, s.hull - dmg);
       }
-      if (G.flagship.modules.includes('ai_assistant') && G.rng.next() < 0.3) {
-        const sys = Object.values(c.playerSys).find(v => v.hp < v.maxHp);
-        if (sys) { sys.hp = Math.min(sys.maxHp, sys.hp + 8); addCombatLog('AI repairs ' + sys.name, 'system'); }
-      }
-    } else addCombatLog('Enemy missed!', 'enemy');
-  } else addCombatLog('Enemy weapons offline — cannot fire.', 'system');
-
+      addCombatLog(`Enemy hits! -${dmg} damage${evasionBonus>0?` (evasion reduced impact)`:''}`, 'enemy');
+    } else {
+      addCombatLog('Enemy missed!', 'enemy');
+    }
+  } else {
+    addCombatLog('Enemy weapons destroyed, cannot fire.', 'system');
+  }
+  
+  // Clear evasion state
   c.evasionActive = false;
-  c.round++;
-  if (s.hull <= 0) { triggerGameOver(); return; }
-  if (e.hull <= 0) { c.won = true; addCombatLog('VICTORY!', 'player'); setTimeout(() => exitCombat(true), 800); return; }
+  c.evasionBonus = 0;
+  
+  // === CHECK WIN/LOSE CONDITIONS ===
+  if (s.hull <= 0) {
+    triggerGameOver();
+    return;
+  }
+  if (e.hull <= 0) {
+    c.won = true;
+    addCombatLog('Victory!', 'player');
+    
+    // Apply post-combat healing with medbay bonus
+    if (medb > 0) {
+      const heal = Math.floor(5 + (medb * 2));
+      G.crew.forEach(crew => {
+        if (crew.alive) {
+          crew.hp = Math.min(crew.maxHp, crew.hp + heal);
+        }
+      });
+      addCombatLog(`Med Bay heals crew +${heal} HP!`, 'player');
+    }
+    
+    exitCombat(true);
+    return;
+  }
+  
+  // Refresh UI
   renderCombat();
 }
 
