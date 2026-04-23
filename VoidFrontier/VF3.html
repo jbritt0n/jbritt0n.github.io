@@ -6,6 +6,7 @@
 <title>VOID FRONTIER · ULTIMATE FLEET</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
+/* ========== FULL STYLES (original + additions) ========== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --void:#0a0c10; --void2:#0d1117; --star:#e8f0ff;
@@ -373,9 +374,108 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 <script>
 'use strict';
 
-// ====================  CONFIGURATION & DATA  ====================
+/* ================================================================
+   SECTION 0 – UTILITIES & RNG
+   ================================================================ */
+class RNG {
+  constructor(seed) { this.s = seed | 0; }
+  next() { this.s = (this.s * 1103515245 + 12345) & 0x7fffffff; return this.s / 0x7fffffff; }
+  int(min, max) { return Math.floor(this.next() * (max - min + 1)) + min; }
+  pick(arr) { return arr[Math.floor(this.next() * arr.length)]; }
+}
+function mkRNG(seed) { return new RNG(hashStr(seed)); }
+function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0; return h; }
+function rndSeedStr() { return ['VOID','NOVA','DEEP','IRON','GHOST'][Math.floor(Math.random()*5)] + '-' + (Math.floor(Math.random()*9000)+1000); }
 
-/* ---- STAR TYPES ---- */
+/* ================================================================
+   SECTION 1 – DATA REPOSITORY (all game data lives here)
+   ================================================================ */
+const ORIGINS = [
+  { id: 'military', name: 'Military Veteran', emoji: '🪖', desc: 'Served in Federation Navy.', bonus: '+15 Max Hull', credits: 500, startingRep: { federation: 15 }, trait: 'Disciplined', effect: { maxHullBonus: 15 } },
+  { id: 'merchant', name: "Merchant's Child", emoji: '💰', desc: 'Raised bartering across systems.', bonus: '+15% Trade Prices', credits: 1500, startingRep: { guild: 20 }, trait: 'Silver Tongue', effect: { tradeSellMult: 1.15 } },
+  { id: 'refugee', name: 'Planetary Refugee', emoji: '🌍', desc: 'Homeworld lost. Resilient.', bonus: 'Halved Disaster Morale Loss', credits: 300, startingRep: { independent: 10 }, trait: 'Survivor', effect: { disasterMoraleLossMult: 0.5 } },
+  { id: 'dropout', name: 'Research Dropout', emoji: '🔬', desc: 'Xenobiologist gone rogue.', bonus: '+25% Artifact Discovery', credits: 700, startingRep: { megacorp: -5 }, trait: 'Curious', effect: { artifactFindChanceBonus: 0.25 } },
+  { id: 'criminal', name: 'Reformed Criminal', emoji: '⛓️', desc: 'Ran with pirates.', bonus: 'Black Market Access', credits: 800, startingRep: { syndicate: 20, federation: -10 }, trait: 'Underworld Contacts', effect: { blackMarketAccess: true } },
+  { id: 'noble', name: 'Fallen Noble', emoji: '👑', desc: 'Disgraced aristocrat.', bonus: 'Heirloom Signet Ring (sell 2k or diplo bonus)', credits: 2000, startingRep: { empire: 10 }, trait: 'Noble Bearing', effect: { startingItem: { id: 'signet_ring', name: 'Signet Ring', value: 2000 }, diplomacyBonus: 2 } },
+  { id: 'voidborn', name: 'Voidborn Monk', emoji: '🌌', desc: 'Monastery ship childhood.', bonus: 'Negates Cramped Penalty', credits: 400, startingRep: { independent: 15 }, trait: 'Meditative', effect: { negateCramped: true } },
+  { id: 'fugitive', name: 'Corporate Fugitive', emoji: '🔫', desc: 'Stole proprietary tech.', bonus: 'Starts with Cloaking Device', credits: 600, startingRep: { megacorp: -20 }, trait: 'Paranoid', effect: { startingModule: 'cloaking_device' } },
+  { id: 'frontier_kid', name: 'Frontier Settler', emoji: '⛏️', desc: 'Mining colony childhood.', bonus: '+15% Scrap Yield', credits: 600, startingRep: { independent: 10 }, trait: 'Resourceful', effect: { scrapYieldMult: 1.15 } },
+  { id: 'noble_exile', name: 'Exiled Noble', emoji: '⚜️', desc: 'Heir to a fallen house.', bonus: '+20% Megacorp Trade', credits: 1200, startingRep: { empire: -5, megacorp: 15 }, trait: 'Political Mind', effect: { megacorpTradeMult: 1.20 } },
+  { id: 'cult_survivor', name: 'Cult Escapee', emoji: '🔥', desc: 'Fled a doomsday cult.', bonus: 'Cult Insight Perk (detect traps/ambushes)', credits: 350, startingRep: { syndicate: -5 }, trait: 'Haunted', effect: { detectAmbushChance: 0.30 } },
+  { id: 'ai_construct', name: 'AI Construct', emoji: '🤖', desc: 'Experimental synthetic.', bonus: 'Immune to Bio-Hazards & Plague', credits: 500, startingRep: { federation: -10, megacorp: 10 }, trait: 'Logical', effect: { immuneBioHazard: true } },
+  { id: 'clone', name: 'Clone Trooper', emoji: '🧬', desc: 'Grown for war, seeking identity.', bonus: '+10% HP, +5% damage', credits: 700, startingRep: { empire: 10 }, trait: 'Identity Crisis', effect: { hpMult: 1.10, damageMult: 1.05 } },
+  { id: 'void_touched', name: 'Void-Touched', emoji: '🌀', desc: 'Exposed to a spatial anomaly.', bonus: 'Occasional premonitions (reveal hidden threats)', credits: 300, startingRep: { independent: 5 }, trait: 'Uncanny', effect: { premonitionChance: 0.15 } },
+  { id: 'diplomat_child', name: "Diplomat's Child", emoji: '🤝', desc: 'Grew up in embassies.', bonus: '+10% Faction Rep Gains', credits: 900, startingRep: { federation: 10, empire: 10 }, trait: 'Charming', effect: { repGainMult: 1.10 } },
+  { id: 'scavenger_brat', name: 'Scavenger Brat', emoji: '🔧', desc: 'Raised in salvage yards.', bonus: 'Identify valuable scrap on scan', credits: 500, startingRep: { independent: 15 }, trait: 'Keen Eye', effect: { scrapScanBonus: true } },
+  { id: 'telepath', name: 'Latent Telepath', emoji: '🧠', desc: 'Minor psionic abilities.', bonus: 'Bonus in social checks vs aliens', credits: 400, startingRep: { empire: -10 }, trait: 'Empathic', effect: { alienSocialBonus: 2 } },
+  { id: 'war_orphan', name: 'War Orphan', emoji: '🕊️', desc: 'Survivor of a border conflict.', bonus: 'Crew combat experience gain +20%', credits: 300, startingRep: { federation: 5, empire: -5 }, trait: 'Hardened', effect: { crewXpGainMult: 1.20 } },
+  { id: 'ship_salesman', name: 'Used Ship Salesman', emoji: '🚗', desc: 'Talked your way out of a hundred bad deals.', bonus: '+500 CR, -20% Repair Costs, +10% Trade Sell', credits: 1200, startingRep: { guild: 15, independent: 10 }, trait: 'Haggler', effect: { repairCostMult: 0.80, tradeSellMult: 1.10, startingItem: { id: 'tech_parts', qty: 3 } } },
+];
+const JOBS = [
+  { id: 'bounty', name: 'Bounty Hunter', emoji: '🎯', effect: 'Track targets galaxy-wide', bonus: 'Target Vectors on map', passiveIncome: 'bounty', jobEffect: { showBountyTargets: true } },
+  { id: 'trader', name: 'Trader', emoji: '💹', effect: 'Know market prices ahead', bonus: 'Trade Routes visible', passiveIncome: 'trade', jobEffect: { showTradeRoutes: true, pricePrediction: true } },
+  { id: 'explorer', name: 'Explorer', emoji: '🔭', effect: 'Reveal hidden anomalies nearby', bonus: 'Adjacent sectors auto-revealed', passiveIncome: 'discovery', jobEffect: { revealAdjacentSectors: true, anomalyDetectionBonus: 0.30 } },
+  { id: 'merc', name: 'Mercenary', emoji: '⚔️', effect: '+1 Boarding Strength', bonus: 'Conflict zones marked', passiveIncome: 'combat', jobEffect: { boardingStrengthBonus: 1, showConflictZones: true } },
+  { id: 'smuggler_job', name: 'Smuggler', emoji: '📦', effect: 'Hidden Cargo Bay module', bonus: 'Black market routes visible', passiveIncome: 'smuggling', jobEffect: { hiddenCargoModule: true, showBlackMarketRoutes: true } },
+  { id: 'diplomat_job', name: 'Ambassador', emoji: '🏛️', effect: 'Faction rep gains doubled', bonus: 'Faction territories shown', passiveIncome: 'diplomacy', jobEffect: { repGainMult: 2.0, showFactionTerritories: true } },
+  { id: 'archaeologist', name: 'Xeno-Archaeologist', emoji: '🏺', effect: 'Ancient ruins highlighted on scan', bonus: 'Artifact sites marked', passiveIncome: 'artifacts', jobEffect: { highlightRuins: true, artifactSiteMarked: true } },
+  { id: 'salvager', name: 'Salvager', emoji: '🔧', effect: '+50% scrap from derelicts', bonus: 'Wreck density on map', passiveIncome: 'salvage', jobEffect: { scrapYieldMult: 1.50, showWreckDensity: true } },
+  { id: 'bodyguard', name: 'Bodyguard', emoji: '🛡️', effect: 'VIP Passenger missions unlock', bonus: 'Safe routes marked', passiveIncome: 'protection', jobEffect: { vipMissions: true, showSafeRoutes: true } },
+  { id: 'researcher', name: 'Field Researcher', emoji: '📊', effect: '+25% credits for scanning lifeforms', bonus: 'Lifeform signatures visible', passiveIncome: 'research', jobEffect: { lifeformScanMult: 1.25, showLifeformSignatures: true } },
+  { id: 'corsair', name: 'Corsair', emoji: '☠️', effect: 'Attack pirates without rep loss', bonus: 'Pirate fleet positions tracked', passiveIncome: 'raiding', jobEffect: { noRepLossVsPirates: true, showPirateFleets: true } },
+  { id: 'preacher', name: 'Void Preacher', emoji: '✨', effect: '30% chance to pacify neutral aliens', bonus: 'Shrine worlds highlighted', passiveIncome: 'pilgrimage', jobEffect: { pacifyChance: 0.30, highlightShrineWorlds: true } },
+  { id: 'courier', name: 'Courier', emoji: '📨', effect: 'Fast delivery missions', bonus: 'Priority lanes visible, +20% speed', passiveIncome: 'courier', jobEffect: { deliverySpeedMult: 1.20, showPriorityLanes: true } },
+  { id: 'miner', name: 'Asteroid Miner', emoji: '⛏️', effect: 'Extract resources from belts', bonus: 'Mineral-rich systems highlighted', passiveIncome: 'mining', jobEffect: { miningYieldMult: 1.30, highlightMineralRich: true } },
+  { id: 'scout', name: 'Recon Scout', emoji: '🔍', effect: 'Stealthy system scanning', bonus: 'Avoid hostile encounters easier', passiveIncome: 'scouting', jobEffect: { hostileEncounterReduction: 0.30, stealthScan: true } },
+  { id: 'fixer', name: 'Fixer', emoji: '🤝', effect: 'Access to hidden job network', bonus: 'Special missions from underworld', passiveIncome: 'fixer', jobEffect: { underworldJobs: true, specialMissionChance: 0.25 } }
+];
+const CLASS_DATA = {
+  vanguard: { name: 'Vanguard', emoji: '🛡️', role: 'Tank', groundMoves: [
+    { id: 'shield_bash', name: 'Shield Bash', cost: 3, target: 'enemy', effect: { dmgMult: 1.2, stunChance: 0.5 } },
+    { id: 'fortify', name: 'Fortify', cost: 2, target: 'self', effect: { defenseBuff: 0.3, duration: 3 } },
+    { id: 'provoke', name: 'Provoke', cost: 4, target: 'all_enemies', effect: { taunt: 2 } }
+  ], tier2Options: ['juggernaut','dreadnought'] },
+  marksman: { name: 'Marksman', emoji: '🎯', role: 'Ranged', groundMoves: [
+    { id: 'aimed_shot', name: 'Aimed Shot', cost: 3, target: 'enemy', effect: { dmgMult: 2.0 } },
+    { id: 'suppressing_fire', name: 'Suppressing Fire', cost: 4, target: 'all_enemies', effect: { aoeDmg: 1.0, accuracyDebuff: 0.2 } },
+    { id: 'headshot', name: 'Headshot', cost: 5, target: 'enemy', effect: { executeThreshold: 0.3, critGuaranteed: true } }
+  ], tier2Options: ['sniper','gunslinger'] },
+  technician: { name: 'Technician', emoji: '🔧', role: 'Support', groundMoves: [
+    { id: 'deploy_turret', name: 'Deploy Turret', cost: 5, target: 'self', effect: { summonTurret: true } },
+    { id: 'overload', name: 'Overload', cost: 3, target: 'enemy', effect: { mechDmgBonus: 1.5, stunChance: 0.4 } },
+    { id: 'repair_drone', name: 'Repair Drone', cost: 4, target: 'ally', effect: { hot: 10, duration: 3 } }
+  ], tier2Options: ['engineer','hacker'] },
+  medic: { name: 'Medic', emoji: '💉', role: 'Healer', groundMoves: [
+    { id: 'healing_wave', name: 'Healing Wave', cost: 5, target: 'all_allies', effect: { aoeHeal: 15 } },
+    { id: 'adrenaline_shot', name: 'Adrenaline Shot', cost: 3, target: 'ally', effect: { dmgBuff: 0.2, spdBuff: 0.2, duration: 3 } },
+    { id: 'cleanse', name: 'Cleanse', cost: 2, target: 'ally', effect: { removeDebuff: true } }
+  ], tier2Options: ['surgeon','field_medic'] },
+  operative: { name: 'Operative', emoji: '🥷', role: 'Control', groundMoves: [
+    { id: 'backstab', name: 'Backstab', cost: 3, target: 'enemy', effect: { dmgMult: 2.5, requiresStealth: true } },
+    { id: 'smoke_bomb', name: 'Smoke Bomb', cost: 2, target: 'all_allies', effect: { stealth: true, duration: 2 } },
+    { id: 'sabotage', name: 'Sabotage', cost: 4, target: 'enemy', effect: { disableAbility: true, duration: 2 } }
+  ], tier2Options: ['saboteur','infiltrator'] },
+  psion: { name: 'Psion', emoji: '🧠', role: 'Caster', groundMoves: [
+    { id: 'telekinetic_push', name: 'Telekinetic Push', cost: 3, target: 'enemy', effect: { dmgMult: 1.2, knockback: true } },
+    { id: 'mind_control', name: 'Mind Control', cost: 5, target: 'enemy', effect: { confuse: 2 } },
+    { id: 'psychic_scream', name: 'Psychic Scream', cost: 4, target: 'all_enemies', effect: { aoeDmg: 1.0, panicChance: 0.3 } }
+  ], tier2Options: ['telepath','kinetic'] }
+};
+const TIER2_DATA = {
+  juggernaut: { name: 'Juggernaut', emoji: '🦾', bonusMoves: [{id:'unstoppable_charge',name:'Unstoppable Charge',cost:5,target:'enemy',effect:{lineDmg:2.0,stun:1}}], passive: {maxHpBonus:20,ccReduction:0.5} },
+  dreadnought: { name: 'Dreadnought', emoji: '⚓', bonusMoves: [{id:'iron_wall',name:'Iron Wall',cost:5,target:'all_allies',effect:{aoeDefenseBuff:0.4,duration:3}}], passive: {defenseMult:1.3,reflectDamage:0.1} },
+  sniper: { name: 'Sniper', emoji: '🔭', bonusMoves: [{id:'perfect_shot',name:'Perfect Shot',cost:6,target:'enemy',effect:{dmgMult:4.0,armorPierce:1.0}}], passive: {critDmgMult:1.5,rangeBonus:2} },
+  gunslinger: { name: 'Gunslinger', emoji: '🤠', bonusMoves: [{id:'bullet_storm',name:'Bullet Storm',cost:5,target:'all_enemies',effect:{aoeHits:3,dmgPerHit:0.8}}], passive: {attackSpeedBonus:0.3} },
+  engineer: { name: 'Engineer', emoji: '⚙️', bonusMoves: [{id:'sentry_gun',name:'Sentry Gun',cost:6,target:'self',effect:{summonSentry:true}}], passive: {constructHealthBonus:0.5,repairEfficiency:1.0} },
+  hacker: { name: 'Hacker', emoji: '💻', bonusMoves: [{id:'system_crash',name:'System Crash',cost:5,target:'all_enemies',effect:{aoeStunMech:2}}], passive: {hackCooldownReduction:0.3,remoteDisableChance:0.3} },
+  surgeon: { name: 'Surgeon', emoji: '🏥', bonusMoves: [{id:'mass_revive',name:'Mass Revive',cost:8,target:'all_allies',effect:{reviveAll:true}}], passive: {healCritChance:0.2,healMult:1.3} },
+  field_medic: { name: 'Field Medic', emoji: '⛑️', bonusMoves: [{id:'combat_stims',name:'Combat Stims',cost:5,target:'all_allies',effect:{aoeDmgBuff:0.25,aoeSpdBuff:0.25}}], passive: {hotEffectiveness:0.5,movementSpeedBonus:0.2} },
+  saboteur: { name: 'Saboteur', emoji: '💣', bonusMoves: [{id:'plant_explosives',name:'Plant Explosives',cost:5,target:'all_enemies',effect:{delayedAoeDmg:3.0}}], passive: {explosiveDmgBonus:0.3} },
+  infiltrator: { name: 'Infiltrator', emoji: '🕶️', bonusMoves: [{id:'assassinate',name:'Assassinate',cost:6,target:'enemy',effect:{executeThreshold:0.25}}], passive: {stealthCritBonus:0.5} },
+  telepath: { name: 'Telepath', emoji: '📡', bonusMoves: [{id:'dominate',name:'Dominate',cost:8,target:'enemy',effect:{permanentCharm:true}}], passive: {mindControlDuration:1,psychicRange:2} },
+  kinetic: { name: 'Kinetic', emoji: '💥', bonusMoves: [{id:'force_crush',name:'Force Crush',cost:6,target:'enemy',effect:{dmgMult:3.5,stun:1}}], passive: {knockbackDmgBonus:0.5,shieldStrength:0.3} }
+};
+
 const STAR_TYPES = [
   { type: 'Yellow Dwarf', color: '#FFE566', glow: 'rgba(255,229,102,0.4)', habitableBonus: 0 },
   { type: 'Red Giant', color: '#FF5533', glow: 'rgba(255,85,51,0.4)', habitableBonus: -1 },
@@ -387,35 +487,21 @@ const STAR_TYPES = [
   { type: 'Black Hole', color: '#32174d', glow: 'rgba(50,23,77,0.8)', dangerous: true },
   { type: 'Brown Dwarf', color: '#8B4513', glow: 'rgba(139,69,19,0.2)', habitableBonus: -1 }
 ];
-
-/* ---- FACTIONS ---- */
 const FACTIONS = [
-  { id: 'federation', name: 'Galactic Federation', short: 'FED', color: '#2ecc71', homeworld: 'Terra Prime', aggression: 'Defensive' },
-  { id: 'empire', name: 'Drakon Empire', short: 'EMP', color: '#c41e3a', homeworld: 'Drakonis', aggression: 'Expansionist' },
-  { id: 'syndicate', name: 'Crimson Syndicate', short: 'SYN', color: '#8e44ad', homeworld: 'Nexus Station', aggression: 'Opportunistic' },
-  { id: 'guild', name: 'Merchant Guild', short: 'GLD', color: '#f1c40f', homeworld: 'Trade Nexus', aggression: 'Passive' },
-  { id: 'independent', name: 'Free Worlds Alliance', short: 'IND', color: '#7f8c8d', homeworld: 'Various', aggression: 'Neutral' },
-  { id: 'megacorp', name: 'Aethelgard Terraforming', short: 'MCO', color: '#00e5ff', homeworld: 'Corporate Spire', aggression: 'Economic' },
-  { id: 'cult', name: 'Cult of the Final Silence', short: 'CULT', color: '#9b59b6', homeworld: 'Shroud', aggression: 'Fanatical' },
-  { id: 'cartel', name: 'Red Hand Cartel', short: 'RHC', color: '#e67e22', homeworld: 'Lawless Belt', aggression: 'Aggressive' },
-  { id: 'nomads', name: 'Stellar Nomads', short: 'NMD', color: '#1abc9c', homeworld: 'Void Fleet', aggression: 'Passive' },
-  { id: 'symbionts', name: 'The Symbionts', short: 'SYM', color: '#3498db', homeworld: 'Nexus of Symbiosis', aggression: 'Defensive' }
+  { id: 'federation', name: 'Galactic Federation', short: 'FED', color: '#2ecc71' },
+  { id: 'empire', name: 'Drakon Empire', short: 'EMP', color: '#c41e3a' },
+  { id: 'syndicate', name: 'Crimson Syndicate', short: 'SYN', color: '#8e44ad' },
+  { id: 'guild', name: 'Merchant Guild', short: 'GLD', color: '#f1c40f' },
+  { id: 'independent', name: 'Free Worlds Alliance', short: 'IND', color: '#7f8c8d' },
+  { id: 'megacorp', name: 'Aethelgard Terraforming', short: 'MCO', color: '#00e5ff' },
+  { id: 'cult', name: 'Cult of the Final Silence', short: 'CULT', color: '#9b59b6' },
+  { id: 'cartel', name: 'Red Hand Cartel', short: 'RHC', color: '#e67e22' },
+  { id: 'nomads', name: 'Stellar Nomads', short: 'NMD', color: '#1abc9c' },
+  { id: 'symbionts', name: 'The Symbionts', short: 'SYM', color: '#3498db' }
 ];
-
-/* ---- SYSTEM PREFIXES & SUFFIXES ---- */
-const SYS_PFXS = ['Vega', 'Alpha', 'Beta', 'Delta', 'Nova', 'Sol', 'Tau', 'Lyra', 'Proxima', 'Kepler', 'Wolf', 'Rigel', 'Antares', 'Deneb', 'Polaris', 'Sirius', 'Arcturus', 'Canopus', 'Aldebaran', 'Procyon', 'Capella', 'Betelgeuse', 'Fomalhaut', 'Pollux', 'Regulus', 'Spica', 'Altair', 'Vindemiatrix', 'Zubenelgenubi', 'Mira'];
-const SYS_SFXS = ['Prime', 'Major', 'Gate', 'Crossing', 'Deep', 'Edge', 'Core', 'Reach', 'Void', 'Haven', 'Expanse', 'Rim', 'Passage', 'Junction', 'Post', 'Watch', 'Station', 'Outpost', 'Colony', 'Nexus'];
-
-/* ---- SYSTEM FEATURES ---- */
-const SYS_FEATURES = [
-  'Gas Giant System', 'Rocky Inner Planets', 'Ancient Ruins', 'Dense Asteroid Belt', 'Habitable World', 'High Radiation Zone',
-  'Mineral Rich Veins', 'Alien Life Detected', 'Trade Hub Station', 'Military Installation', 'Research Outpost', 'Pirate Den',
-  'Derelict Megastructure', 'Nomad Fleet Present', 'Unstable Wormhole', 'Shrine World', 'Terraformed World', 'Ocean Planet',
-  'Volcanic World', 'Ice Giant', 'Ringed Gas Giant', 'Tidally Locked World', 'Rogue Planet', 'Binary Planet System',
-  'Abandoned Colony', 'Xeno-Archaeological Dig', 'Crystal Forest', 'Subterranean Caverns', 'Floating Sky-Islands'
-];
-
-/* ---- GOODS ---- */
+const SYS_PFXS = ['Vega','Alpha','Beta','Delta','Nova','Sol','Tau','Lyra','Proxima','Kepler','Wolf','Rigel','Antares','Deneb','Polaris','Sirius','Arcturus','Canopus','Aldebaran','Procyon','Capella','Betelgeuse','Fomalhaut','Pollux','Regulus','Spica','Altair'];
+const SYS_SFXS = ['Prime','Major','Gate','Crossing','Deep','Edge','Core','Reach','Void','Haven','Expanse','Rim','Passage'];
+const SYS_FEATURES = [ 'Gas Giant System','Rocky Inner Planets','Ancient Ruins','Dense Asteroid Belt','Habitable World','High Radiation Zone','Mineral Rich Veins','Alien Life Detected','Trade Hub Station','Military Installation','Research Outpost','Pirate Den','Derelict Megastructure','Nomad Fleet Present','Unstable Wormhole','Shrine World','Terraformed World','Ocean Planet','Volcanic World','Ice Giant' ];
 const GOODS = [
   { id: 'fuel_cells', name: 'Fuel Cells', emoji: '⚡', basePrice: 55, legal: true, wt: 1, use: { fuel: 10 } },
   { id: 'medicine', name: 'Medicine', emoji: '💊', basePrice: 85, legal: true, wt: 1, use: { heal: 15 } },
@@ -425,194 +511,112 @@ const GOODS = [
   { id: 'alien_fauna', name: 'Alien Fauna', emoji: '👾', basePrice: 380, legal: false, wt: 3 },
   { id: 'void_spice', name: 'Void Spice', emoji: '🌀', basePrice: 520, legal: false, wt: 1 },
   { id: 'corp_data', name: 'Corporate Secrets', emoji: '💾', basePrice: 450, legal: false, wt: 0 },
-  { id: 'artifacts', name: 'Ancient Artifacts', emoji: '🏺', basePrice: 850, legal: true, wt: 1, use: { artifactResearch: true } },
+  { id: 'artifacts', name: 'Ancient Artifacts', emoji: '🏺', basePrice: 850, legal: true, wt: 1 },
   { id: 'water', name: 'Purified Water', emoji: '💧', basePrice: 20, legal: true, wt: 2 },
   { id: 'ore', name: 'Raw Ore', emoji: '🪨', basePrice: 45, legal: true, wt: 3 },
   { id: 'luxury_goods', name: 'Luxury Goods', emoji: '💎', basePrice: 300, legal: true, wt: 1 },
   { id: 'weapon_schematics', name: 'Weapon Schematics', emoji: '📜', basePrice: 600, legal: false, wt: 0 },
   { id: 'slaves', name: 'Slaves', emoji: '⛓️', basePrice: 1200, legal: false, wt: 5 },
   { id: 'cryo_pods', name: 'Cryo Pods', emoji: '❄️', basePrice: 250, legal: true, wt: 4 },
-  { id: 'dark_matter', name: 'Dark Matter', emoji: '🌑', basePrice: 12000, legal: true, wt: 1, use: { galaxyJump: true } }
+  { id: 'dark_matter', name: 'Dark Matter', emoji: '🌑', basePrice: 12000, legal: true, wt: 1 }
 ];
-
-/* ---- MODULES ---- */
 const MODULE_DEFS = [
   { id: 'gambler_reactor', name: "Gambler's Reactor", emoji: '🎲', cost: 3200, rarity: 'uncommon', desc: '+50% Power, 5% chance drain fuel/jump.', effects: { power: 0.5, fuelDrainChance: 0.05 } },
   { id: 'reinforced_frame', name: 'Reinforced Frame', emoji: '🛡️', cost: 3800, rarity: 'common', desc: '+20% Max Hull, -15% Speed.', effects: { maxHullMult: 1.2, speedMult: 0.85 } },
   { id: 'phase_shields', name: 'Phase Shields', emoji: '🌀', cost: 5500, rarity: 'rare', desc: '3s invuln, then 15s vulnerability.', effects: { invulnChance: 0.1 } },
   { id: 'ai_assistant', name: 'AI Combat Assistant', emoji: '🤖', cost: 6000, rarity: 'rare', desc: 'Auto-repair 1 system/turn, random target.', effects: { autoRepair: true } },
-  { id: 'cloaking_device', name: 'Cloaking Device', emoji: '🌫️', cost: 7000, rarity: 'legendary', desc: 'Avoid combat, bypass scans, uses 2 power.', effects: { canAvoidCombat: true } },
+  { id: 'cloaking_device', name: 'Cloaking Device', emoji: '🌫️', cost: 7000, rarity: 'legendary', desc: 'Avoid combat, bypass scans.', effects: { canAvoidCombat: true } },
   { id: 'cargo_expander', name: 'Cargo Expander', emoji: '📦', cost: 2000, rarity: 'common', desc: '+10 Cargo Space.', effects: { cargoBonus: 10 } },
-  { id: 'med_bay_plus', name: 'Advanced Med Bay', emoji: '🏥', cost: 3500, rarity: 'uncommon', desc: 'Heal crew 50% faster, cure diseases.', effects: { healRateMult: 1.5 } },
+  { id: 'med_bay_plus', name: 'Advanced Med Bay', emoji: '🏥', cost: 3500, rarity: 'uncommon', desc: 'Heal crew 50% faster.', effects: { healRateMult: 1.5 } },
   { id: 'long_range_sensors', name: 'Long-Range Sensors', emoji: '📡', cost: 2800, rarity: 'common', desc: 'Reveal systems 3 jumps away.', effects: { revealRange: 3 } },
   { id: 'drone_hangar', name: 'Drone Hangar', emoji: '🛸', cost: 4500, rarity: 'uncommon', desc: 'Deploy 2 combat drones.', effects: { droneCount: 2 } },
-  { id: 'luxury_suite', name: 'Luxury Suite', emoji: '🛋️', cost: 2500, rarity: 'common', desc: '+10 Morale per jump, uses power.', effects: { moralePerJump: 10 } },
+  { id: 'luxury_suite', name: 'Luxury Suite', emoji: '🛋️', cost: 2500, rarity: 'common', desc: '+10 Morale per jump.', effects: { moralePerJump: 10 } },
   { id: 'shield_regen', name: 'Regenerative Shield Grid', emoji: '🔋', cost: 4200, rarity: 'uncommon', desc: '+30% Shield Regen Rate.', effects: { shieldRegenMult: 1.3 } },
   { id: 'targeting_comp', name: 'Quantum Targeting Comp', emoji: '🎯', cost: 5100, rarity: 'rare', desc: '+25% Critical Hit Chance.', effects: { critChanceBonus: 0.25 } },
-  { id: 'void_drive', name: 'Experimental Void Drive', emoji: '⚡', cost: 6500, rarity: 'legendary', desc: '-40% Fuel Cost, occasional FTL glitches.', effects: { fuelUseMult: 0.6, glitchChance: 0.05 } },
+  { id: 'void_drive', name: 'Experimental Void Drive', emoji: '⚡', cost: 6500, rarity: 'legendary', desc: '-40% Fuel Cost.', effects: { fuelUseMult: 0.6, glitchChance: 0.05 } },
   { id: 'salvage_arm', name: 'Magnetic Salvage Arm', emoji: '🧲', cost: 2900, rarity: 'common', desc: '+35% Scrap from combat/wrecks.', effects: { scrapYieldMult: 1.35 } },
   { id: 'hologram_decoy', name: 'Holographic Decoy Emitter', emoji: '👻', cost: 4800, rarity: 'rare', desc: '20% chance to dodge incoming fire.', effects: { dodgeChance: 0.2 } },
   { id: 'neural_link', name: "Captain's Neural Link", emoji: '🧠', cost: 7500, rarity: 'legendary', desc: '+2 to all Skill Checks.', effects: { skillBonus: 2 } },
   { id: 'toxic_scrubber', name: 'Atmospheric Scrubber', emoji: '🌬️', cost: 2200, rarity: 'common', desc: 'Immunity to environmental hazards.', effects: { hazardImmune: true } },
-  { id: 'plasma_injector', name: 'Overcharged Plasma Injector', emoji: '💥', cost: 5800, rarity: 'rare', desc: '+40% Weapon Damage, +10% Hull Stress.', effects: { weaponDmgMult: 1.4, hullStress: 0.1 } },
-  { id: 'quantum_comm', name: 'Quantum Comm Array', emoji: '📶', cost: 8000, rarity: 'mythic', desc: 'Instant FTL charge, no cooldown.', effects: { instantFtl: true } },
-  { id: 'bio_hull', name: 'Bio-Organic Plating', emoji: '🦠', cost: 9000, rarity: 'mythic', desc: 'Heals 1% Hull per jump. Scares crew.', effects: { bioHealPerJump: 0.01, moralePenalty: -5 } }
+  { id: 'plasma_injector', name: 'Overcharged Plasma Injector', emoji: '💥', cost: 5800, rarity: 'rare', desc: '+40% Weapon Damage.', effects: { weaponDmgMult: 1.4, hullStress: 0.1 } },
+  { id: 'quantum_comm', name: 'Quantum Comm Array', emoji: '📶', cost: 8000, rarity: 'mythic', desc: 'Instant FTL charge.', effects: { instantFtl: true } },
+  { id: 'bio_hull', name: 'Bio-Organic Plating', emoji: '🦠', cost: 9000, rarity: 'mythic', desc: 'Heals 1% Hull per jump.', effects: { bioHealPerJump: 0.01 } }
 ];
-
-/* ---- SHIP TEMPLATES ---- */
 const SHIP_TEMPLATES = [
-  // Tier 0: Starters
-  { id: 'scrap_skiff', tier: 0, rarity: 'common', namePool: ['Rustbucket', 'Scrap Hopper', 'Jury-Rigged Skiff'], statRanges: { hull: [40,60], shields: [0,15], cargo: [4,7], fuelUse: [1.3,1.7], crewMax: [1,2], moduleSlots: [1,1] }, passive: 'Barebones Frame: Repairs cost -25%, but all damage taken +10%' },
-  { id: 'rustbucket', tier: 0, rarity: 'common', namePool: ['Iron Mule', 'Freight Wagon', 'Cargo Hopper'], statRanges: { hull: [60,80], shields: [5,20], cargo: [12,18], fuelUse: [1.5,2.0], crewMax: [2,3], moduleSlots: [1,2] }, passive: 'Loose Panels: +5 cargo, but 5% chance per jump to lose 1 random cargo' },
-  { id: 'shuttle', tier: 0, rarity: 'common', namePool: ['Decommissioned Shuttle', 'Navy Dropship', 'Old Transport'], statRanges: { hull: [50,70], shields: [15,30], cargo: [5,8], fuelUse: [0.8,1.2], crewMax: [2,3], moduleSlots: [1,1] }, passive: 'Old Military Frame: +10% evade vs missiles' },
-  { id: 'dads_jalopy', tier: 0, rarity: 'common', namePool: ["Dad's Jalopy", 'Family Heirloom', 'Old Roadster'], statRanges: { hull: [35,55], shields: [0,10], cargo: [5,8], fuelUse: [1.5,2.0], crewMax: [1,2], moduleSlots: [1,1] }, passive: 'Inherited Problems: Repairs cost -50%, but random system malfunctions occur every 3 jumps' },
-  { id: 'burnt_out_hopper', tier: 0, rarity: 'common', namePool: ['Burnt-Out Hopper', 'Scorched Runner', 'Ash Trail'], statRanges: { hull: [30,50], shields: [0,15], cargo: [3,6], fuelUse: [1.8,2.2], crewMax: [1,1], moduleSlots: [1,1] }, passive: 'Barely Holding Together: +20% evade, but 10% chance per combat to suffer internal damage' },
-  { id: 'mining_castoff', tier: 0, rarity: 'common', namePool: ['Mining Castoff', 'Drill Rig', 'Rock Hauler'], statRanges: { hull: [50,70], shields: [0,15], cargo: [10,14], fuelUse: [2.0,2.4], crewMax: [2,3], moduleSlots: [1,1] }, passive: 'Industrial Frame: +25% mining yield, but -15% evasion' },
-  { id: 'courier_wreck', tier: 0, rarity: 'common', namePool: ['Wrecked Courier', 'Overtuned Runner', 'Speed Demon'], statRanges: { hull: [25,45], shields: [5,20], cargo: [2,5], fuelUse: [0.4,0.8], crewMax: [1,2], moduleSlots: [1,1] }, passive: 'Overtuned Engines: -40% fuel use, but engines can fail mid-jump' },
-  { id: 'floating_coffin', tier: 0, rarity: 'uncommon', namePool: ['Floating Coffin', 'Ghost Skiff', 'Cold Trace'], statRanges: { hull: [40,60], shields: [0,10], cargo: [4,7], fuelUse: [1.0,1.4], crewMax: [1,2], moduleSlots: [1,1] }, passive: 'Cold Signature: Enemy detection chance -30%, but crew morale -2 per jump' },
-  // Tier 1+
-  { id: 'scout', tier: 1, rarity: 'common', namePool: ['Star Skipper', 'Void Runner', 'Nebula Dart'], statRanges: { hull: [70,90], shields: [25,35], cargo: [6,10], fuelUse: [0.6,0.8], crewMax: [2,3], moduleSlots: [2,3] }, passive: 'Survey Scanner: +15% chance to reveal hidden nodes' },
-  { id: 'interceptor', tier: 1, rarity: 'common', namePool: ['Light Interceptor', 'Striker', 'Blade Runner'], statRanges: { hull: [80,100], shields: [20,30], cargo: [4,7], fuelUse: [0.5,0.7], crewMax: [1,2], moduleSlots: [2,2] }, passive: 'Afterburn Thrusters: +20% evasion for first 2 turns of combat' },
-  { id: 'freighter', tier: 2, rarity: 'common', namePool: ['Cargo Hauler', 'Bulk Transport', 'Trade Wind'], statRanges: { hull: [110,130], shields: [35,45], cargo: [18,22], fuelUse: [1.0,1.4], crewMax: [4,6], moduleSlots: [3,4] }, passive: 'Bulk Transport: Trade profits +10%' },
-  { id: 'salvager', tier: 2, rarity: 'uncommon', namePool: ['Salvage Barge', 'Wreck Hunter', 'Scrap Collector'], statRanges: { hull: [130,150], shields: [25,35], cargo: [22,28], fuelUse: [1.4,1.8], crewMax: [4,6], moduleSlots: [3,4] }, passive: 'Scrap Harvester: +25% scrap from wrecks' },
-  { id: 'smuggler', tier: 2, rarity: 'uncommon', namePool: ['Smuggler Sloop', 'Shadow Trader', 'Contraband Runner'], statRanges: { hull: [100,120], shields: [45,55], cargo: [10,14], fuelUse: [0.8,1.2], crewMax: [3,5], moduleSlots: [3,4] }, passive: 'Hidden Compartments: 50% chance to avoid contraband scans' },
-  { id: 'corvette', tier: 3, rarity: 'common', namePool: ['Corvette', 'Patrol Vessel', 'Guard Ship'], statRanges: { hull: [140,160], shields: [55,65], cargo: [10,14], fuelUse: [1.3,1.7], crewMax: [5,7], moduleSlots: [4,4] }, passive: 'Balanced Systems: +5% all stats' },
-  { id: 'gunship', tier: 3, rarity: 'uncommon', namePool: ['Assault Gunship', 'War Hammer', 'Broadside'], statRanges: { hull: [160,180], shields: [45,55], cargo: [8,12], fuelUse: [1.5,1.9], crewMax: [5,7], moduleSlots: [4,5] }, passive: 'Heavy Barrage: +15% weapon damage, -10% evasion' },
-  { id: 'raider', tier: 3, rarity: 'uncommon', namePool: ['Pirate Raider', 'Boarding Cutter', 'Hook Ship'], statRanges: { hull: [130,150], shields: [35,45], cargo: [13,17], fuelUse: [1.2,1.6], crewMax: [5,7], moduleSlots: [4,5] }, passive: 'Boarding Hooks: Boarding success +25%' },
+  { id: 'scrap_skiff', tier: 0, rarity: 'common', namePool: ['Rustbucket','Scrap Hopper','Jury-Rigged Skiff'], statRanges: { hull:[40,60],shields:[0,15],cargo:[4,7],fuelUse:[1.3,1.7],crewMax:[1,2],moduleSlots:[1,1] }, passive: 'Barebones Frame: Repairs cost -25%, but all damage taken +10%' },
+  { id: 'rustbucket', tier: 0, rarity: 'common', namePool: ['Iron Mule','Freight Wagon','Cargo Hopper'], statRanges: { hull:[60,80],shields:[5,20],cargo:[12,18],fuelUse:[1.5,2.0],crewMax:[2,3],moduleSlots:[1,2] }, passive: 'Loose Panels: +5 cargo, but 5% chance per jump to lose 1 random cargo' },
+  { id: 'shuttle', tier: 0, rarity: 'common', namePool: ['Decommissioned Shuttle','Navy Dropship','Old Transport'], statRanges: { hull:[50,70],shields:[15,30],cargo:[5,8],fuelUse:[0.8,1.2],crewMax:[2,3],moduleSlots:[1,1] }, passive: 'Old Military Frame: +10% evade vs missiles' },
+  { id: 'dads_jalopy', tier: 0, rarity: 'common', namePool: ["Dad's Jalopy",'Family Heirloom','Old Roadster'], statRanges: { hull:[35,55],shields:[0,10],cargo:[5,8],fuelUse:[1.5,2.0],crewMax:[1,2],moduleSlots:[1,1] }, passive: 'Inherited Problems: Repairs cost -50%, but random system malfunctions occur every 3 jumps' },
+  { id: 'burnt_out_hopper', tier: 0, rarity: 'common', namePool: ['Burnt-Out Hopper','Scorched Runner','Ash Trail'], statRanges: { hull:[30,50],shields:[0,15],cargo:[3,6],fuelUse:[1.8,2.2],crewMax:[1,1],moduleSlots:[1,1] }, passive: 'Barely Holding Together: +20% evade, but 10% chance per combat to suffer internal damage' },
+  { id: 'mining_castoff', tier: 0, rarity: 'common', namePool: ['Mining Castoff','Drill Rig','Rock Hauler'], statRanges: { hull:[50,70],shields:[0,15],cargo:[10,14],fuelUse:[2.0,2.4],crewMax:[2,3],moduleSlots:[1,1] }, passive: 'Industrial Frame: +25% mining yield, but -15% evasion' },
+  { id: 'courier_wreck', tier: 0, rarity: 'common', namePool: ['Wrecked Courier','Overtuned Runner','Speed Demon'], statRanges: { hull:[25,45],shields:[5,20],cargo:[2,5],fuelUse:[0.4,0.8],crewMax:[1,2],moduleSlots:[1,1] }, passive: 'Overtuned Engines: -40% fuel use, but engines can fail mid-jump' },
+  { id: 'floating_coffin', tier: 0, rarity: 'uncommon', namePool: ['Floating Coffin','Ghost Skiff','Cold Trace'], statRanges: { hull:[40,60],shields:[0,10],cargo:[4,7],fuelUse:[1.0,1.4],crewMax:[1,2],moduleSlots:[1,1] }, passive: 'Cold Signature: Enemy detection chance -30%, but crew morale -2 per jump' },
 ];
-
-/* ---- CLASS ABILITY DATA ---- */
-const CLASS_DATA = {
-  vanguard: {
-    name: 'Vanguard', emoji: '🛡️', role: 'Tank',
-    groundMoves: [
-      { id: 'shield_bash', name: 'Shield Bash', cost: 3, target: 'enemy', effect: { dmgMult: 1.2, stunChance: 0.5 } },
-      { id: 'fortify', name: 'Fortify', cost: 2, target: 'self', effect: { defenseBuff: 0.3, duration: 3 } },
-      { id: 'provoke', name: 'Provoke', cost: 4, target: 'all_enemies', effect: { taunt: 2 } }
-    ],
-    tier2Options: ['juggernaut', 'dreadnought']
-  },
-  marksman: {
-    name: 'Marksman', emoji: '🎯', role: 'Ranged',
-    groundMoves: [
-      { id: 'aimed_shot', name: 'Aimed Shot', cost: 3, target: 'enemy', effect: { dmgMult: 2.0 } },
-      { id: 'suppressing_fire', name: 'Suppressing Fire', cost: 4, target: 'all_enemies', effect: { aoeDmg: 1.0, accuracyDebuff: 0.2 } },
-      { id: 'headshot', name: 'Headshot', cost: 5, target: 'enemy', effect: { executeThreshold: 0.3, critGuaranteed: true } }
-    ],
-    tier2Options: ['sniper', 'gunslinger']
-  },
-  technician: {
-    name: 'Technician', emoji: '🔧', role: 'Support',
-    groundMoves: [
-      { id: 'deploy_turret', name: 'Deploy Turret', cost: 5, target: 'self', effect: { summonTurret: true } },
-      { id: 'overload', name: 'Overload', cost: 3, target: 'enemy', effect: { mechDmgBonus: 1.5, stunChance: 0.4 } },
-      { id: 'repair_drone', name: 'Repair Drone', cost: 4, target: 'ally', effect: { hot: 10, duration: 3 } }
-    ],
-    tier2Options: ['engineer', 'hacker']
-  },
-  medic: {
-    name: 'Medic', emoji: '💉', role: 'Healer',
-    groundMoves: [
-      { id: 'healing_wave', name: 'Healing Wave', cost: 5, target: 'all_allies', effect: { aoeHeal: 15 } },
-      { id: 'adrenaline_shot', name: 'Adrenaline Shot', cost: 3, target: 'ally', effect: { dmgBuff: 0.2, spdBuff: 0.2, duration: 3 } },
-      { id: 'cleanse', name: 'Cleanse', cost: 2, target: 'ally', effect: { removeDebuff: true } }
-    ],
-    tier2Options: ['surgeon', 'field_medic']
-  },
-  operative: {
-    name: 'Operative', emoji: '🥷', role: 'Control',
-    groundMoves: [
-      { id: 'backstab', name: 'Backstab', cost: 3, target: 'enemy', effect: { dmgMult: 2.5, requiresStealth: true } },
-      { id: 'smoke_bomb', name: 'Smoke Bomb', cost: 2, target: 'all_allies', effect: { stealth: true, duration: 2 } },
-      { id: 'sabotage', name: 'Sabotage', cost: 4, target: 'enemy', effect: { disableAbility: true, duration: 2 } }
-    ],
-    tier2Options: ['saboteur', 'infiltrator']
-  },
-  psion: {
-    name: 'Psion', emoji: '🧠', role: 'Caster',
-    groundMoves: [
-      { id: 'telekinetic_push', name: 'Telekinetic Push', cost: 3, target: 'enemy', effect: { dmgMult: 1.2, knockback: true } },
-      { id: 'mind_control', name: 'Mind Control', cost: 5, target: 'enemy', effect: { confuse: 2 } },
-      { id: 'psychic_scream', name: 'Psychic Scream', cost: 4, target: 'all_enemies', effect: { aoeDmg: 1.0, panicChance: 0.3 } }
-    ],
-    tier2Options: ['telepath', 'kinetic']
-  }
-};
-
-const TIER2_DATA = {
-  juggernaut: { name: 'Juggernaut', emoji: '🦾', bonusMoves: [{ id: 'unstoppable_charge', name: 'Unstoppable Charge', cost: 5, target: 'enemy', effect: { lineDmg: 2.0, stun: 1 } }], passive: { maxHpBonus: 20, ccReduction: 0.5 } },
-  dreadnought: { name: 'Dreadnought', emoji: '⚓', bonusMoves: [{ id: 'iron_wall', name: 'Iron Wall', cost: 5, target: 'all_allies', effect: { aoeDefenseBuff: 0.4, duration: 3 } }], passive: { defenseMult: 1.3, reflectDamage: 0.1 } },
-  sniper: { name: 'Sniper', emoji: '🔭', bonusMoves: [{ id: 'perfect_shot', name: 'Perfect Shot', cost: 6, target: 'enemy', effect: { dmgMult: 4.0, armorPierce: 1.0 } }], passive: { critDmgMult: 1.5, rangeBonus: 2 } },
-  gunslinger: { name: 'Gunslinger', emoji: '🤠', bonusMoves: [{ id: 'bullet_storm', name: 'Bullet Storm', cost: 5, target: 'all_enemies', effect: { aoeHits: 3, dmgPerHit: 0.8 } }], passive: { attackSpeedBonus: 0.3 } },
-  engineer: { name: 'Engineer', emoji: '⚙️', bonusMoves: [{ id: 'sentry_gun', name: 'Sentry Gun', cost: 6, target: 'self', effect: { summonSentry: true } }], passive: { constructHealthBonus: 0.5, repairEfficiency: 1.0 } },
-  hacker: { name: 'Hacker', emoji: '💻', bonusMoves: [{ id: 'system_crash', name: 'System Crash', cost: 5, target: 'all_enemies', effect: { aoeStunMech: 2 } }], passive: { hackCooldownReduction: 0.3, remoteDisableChance: 0.3 } },
-  surgeon: { name: 'Surgeon', emoji: '🏥', bonusMoves: [{ id: 'mass_revive', name: 'Mass Revive', cost: 8, target: 'all_allies', effect: { reviveAll: true } }], passive: { healCritChance: 0.2, healMult: 1.3 } },
-  field_medic: { name: 'Field Medic', emoji: '⛑️', bonusMoves: [{ id: 'combat_stims', name: 'Combat Stims', cost: 5, target: 'all_allies', effect: { aoeDmgBuff: 0.25, aoeSpdBuff: 0.25 } }], passive: { hotEffectiveness: 0.5, movementSpeedBonus: 0.2 } },
-  saboteur: { name: 'Saboteur', emoji: '💣', bonusMoves: [{ id: 'plant_explosives', name: 'Plant Explosives', cost: 5, target: 'all_enemies', effect: { delayedAoeDmg: 3.0 } }], passive: { explosiveDmgBonus: 0.3 } },
-  infiltrator: { name: 'Infiltrator', emoji: '🕶️', bonusMoves: [{ id: 'assassinate', name: 'Assassinate', cost: 6, target: 'enemy', effect: { executeThreshold: 0.25 } }], passive: { stealthCritBonus: 0.5 } },
-  telepath: { name: 'Telepath', emoji: '📡', bonusMoves: [{ id: 'dominate', name: 'Dominate', cost: 8, target: 'enemy', effect: { permanentCharm: true } }], passive: { mindControlDuration: 1, psychicRange: 2 } },
-  kinetic: { name: 'Kinetic', emoji: '💥', bonusMoves: [{ id: 'force_crush', name: 'Force Crush', cost: 6, target: 'enemy', effect: { dmgMult: 3.5, stun: 1 } }], passive: { knockbackDmgBonus: 0.5, shieldStrength: 0.3 } }
-};
-
-/* ---- CREW TEMPLATES POOL ---- */
 const CREW_TEMPLATES = [
-  { name: 'Zoya Kas', classId: 'vanguard', species: 'Human', portrait: '', bio: 'Ex-military shield specialist.' },
-  { name: 'Jax Varley', classId: 'marksman', species: 'Human', portrait: '', bio: 'Ex-military sniper.' },
-  { name: 'Kael Thorn', classId: 'technician', species: 'Human', portrait: '', bio: 'Hacker with a mysterious past.' },
-  { name: 'Lyra Nox', classId: 'medic', species: 'Human', portrait: '', bio: 'Pacifist doctor.' },
-  { name: 'Orin Vex', classId: 'operative', species: 'Human', portrait: '', bio: 'Quiet observer.' },
-  { name: 'Mira Tong', classId: 'psion', species: 'Human', portrait: '', bio: 'Former cartographer.' },
-  { name: 'Nova Chen', classId: 'marksman', species: 'Human', portrait: '', bio: 'Ace pilot.' },
+  { name: 'Zoya Kas', classId: 'vanguard', species: 'Human', bio: 'Ex-military shield specialist.' },
+  { name: 'Jax Varley', classId: 'marksman', species: 'Human', bio: 'Ex-military sniper.' },
+  { name: 'Kael Thorn', classId: 'technician', species: 'Human', bio: 'Hacker with a mysterious past.' },
+  { name: 'Lyra Nox', classId: 'medic', species: 'Human', bio: 'Pacifist doctor.' },
+  { name: 'Orin Vex', classId: 'operative', species: 'Human', bio: 'Quiet observer.' },
+  { name: 'Mira Tong', classId: 'psion', species: 'Human', bio: 'Former cartographer.' },
+  { name: 'Nova Chen', classId: 'marksman', species: 'Human', bio: 'Ace pilot.' },
 ];
-
-/* ---- ENEMY SHIP TEMPLATES (simplified) ---- */
 const ENEMY_TEMPLATES = [
-  { id: 'pirate_raider', faction: 'syndicate', tier: 1, emoji: '💀', baseStats: { hull: [45,65], shield: [10,25], weapons: [25,40], engines: [15,30] }, desc: 'Scavenged hull.' },
-  { id: 'cartel_enforcer', faction: 'cartel', tier: 3, emoji: '⚠️', baseStats: { hull: [90,120], shield: [35,60], weapons: [50,75], engines: [30,50] }, desc: 'Ruthless mercenary.' },
-  { id: 'nomad_skiff', faction: 'nomads', tier: 1, emoji: '🛸', baseStats: { hull: [40,60], shield: [15,35], weapons: [20,35], engines: [35,60] }, desc: 'Agile nomad.' },
+  { id: 'pirate_raider', faction: 'syndicate', tier:1, emoji:'💀', baseStats:{hull:[45,65],shield:[10,25],weapons:[25,40],engines:[15,30]}, desc:'Scavenged hull.' },
+  { id: 'cartel_enforcer', faction:'cartel', tier:3, emoji:'⚠️', baseStats:{hull:[90,120],shield:[35,60],weapons:[50,75],engines:[30,50]}, desc:'Ruthless mercenary.' },
+  { id: 'nomad_skiff', faction:'nomads', tier:1, emoji:'🛸', baseStats:{hull:[40,60],shield:[15,35],weapons:[20,35],engines:[35,60]}, desc:'Agile nomad.' },
 ];
-
-/* ---- GROUND ENEMY TEMPLATES ---- */
 const GROUND_ENEMY_TEMPLATES = [
-  { id: 'pirate_scavenger', faction: 'syndicate', tier: 1, icon: '⚔', baseStats: { hp: [40,60], atk: [10,16], spd: [4,7] }, desc: 'Desperate raider.' },
-  { id: 'syndicate_merc', faction: 'syndicate', tier: 3, icon: '💀', baseStats: { hp: [65,90], atk: [14,22], spd: [5,8] }, desc: 'Professional mercenary.' },
+  { id: 'pirate_scavenger', faction:'syndicate', tier:1, icon:'⚔', baseStats:{hp:[40,60],atk:[10,16],spd:[4,7]}, desc:'Desperate raider.' },
+  { id: 'syndicate_merc', faction:'syndicate', tier:3, icon:'💀', baseStats:{hp:[65,90],atk:[14,22],spd:[5,8]}, desc:'Professional mercenary.' },
+];
+const EVENTS = [
+  { id:'derelict', title:'⚠ DERELICT VESSEL', body:'A ship drifts silently.', choices:[
+    { text:'[ BOARD ] Risk crew for salvage', skillCheck:{skill:'engineering',dc:12}, success:{eff:{cr:450,scrap:3,log:'Salvage successful.'}}, failure:{eff:{hull:-15,combat:true,log:'Security drones!'}} },
+    { text:'[ SCAN REMOTELY ] Safe intel', eff:{cr:150} },
+    { text:'[ AVOID ] Continue journey', eff:{} }
+  ]},
+  { id:'distress', title:'📡 DISTRESS SIGNAL', body:'A weak beacon pulses.', choices:[
+    { text:'[ INVESTIGATE ] Answer the call', skillCheck:{skill:'charisma',dc:10}, success:{eff:{cr:400,mora:8}}, failure:{eff:{combat:true}} },
+    { text:'[ REPORT ]', eff:{cr:100,rep_federation:5} },
+    { text:'[ IGNORE ]', eff:{mora:-5} }
+  ]},
+  { id:'trader', title:'🛒 WANDERING TRADER', body:'A civilian freighter hails you.', choices:[
+    { text:'[ TRADE ] Open shop', eff:{trade:true} },
+    { text:'[ BUY FUEL ] 300cr for +25 fuel', eff:{cr:-300,fuel:25} },
+    { text:'[ DECLINE ]', eff:{} }
+  ]}
+];
+const DRAMA_EVENTS = [
+  { title:'💬 CANTINA ARGUMENT', body:'{crew1} and {crew2} are arguing.', choices:[
+    { text:'[ MEDIATE ]', skillCheck:{skill:'charisma',dc:12}, success:{eff:{mora:8,log:'Calmed down.'}}, failure:{eff:{mora:-5,log:'Made it worse.'}} },
+    { text:'[ IGNORE ]', eff:{mora:-3} }
+  ]}
 ];
 
-// ====================  RNG & UTILS  ====================
-class RNG {
-  constructor(seed) { this.s = seed | 0; }
-  next() { this.s = (this.s * 1103515245 + 12345) & 0x7fffffff; return this.s / 0x7fffffff; }
-  int(min, max) { return Math.floor(this.next() * (max - min + 1)) + min; }
-  pick(arr) { return arr[Math.floor(this.next() * arr.length)]; }
-}
-function mkRNG(seed) { return new RNG(hashStr(seed)); }
-function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0; return h; }
-function rndSeedStr() { return ['VOID','NOVA','DEEP','IRON','GHOST'][Math.floor(Math.random()*5)] + '-' + (Math.floor(Math.random()*9000)+1000); }
-
-// ====================  CORE ENTITIES  ====================
-
+/* ================================================================
+   SECTION 2 – ENTITY CLASSES
+   ================================================================ */
 class CrewMember {
-  constructor(template, customProps = {}) {
+  constructor(template, overrides = {}) {
     Object.assign(this, {
       id: 'c' + Math.random().toString(36),
-      name: template.name || 'Recruit',
-      classId: template.classId || 'vanguard',
+      name: template.name,
+      classId: template.classId,
       speciesId: template.species || 'Human',
       originId: null,
-      level: 1,
-      xp: 0, xpToNext: 100,
+      level: 1, xp: 0, xpToNext: 100,
       baseHp: 40, maxHp: 40, hp: 40,
       atk: 8, spd: 5,
       ap: 4, maxAp: 4,
       status: null,
-      skills: { combat: 3, leadership: 2 },
+      skills: { combat:3, engineering:1, medical:1, pilot:1, perception:1 },
       tier: 1, advancedClassId: null,
-      groundMoves: [],
       loyalty: 50,
       bio: template.bio || '',
-      portrait: template.portrait || '',
+      portrait: '',
       emoji: CLASS_DATA[template.classId]?.emoji || '👤',
-      ...customProps
+      ...overrides
     });
     this.recalc();
   }
@@ -627,7 +631,6 @@ class CrewMember {
   }
   get classLabel() { return CLASS_DATA[this.classId]?.name || 'Unknown'; }
   get role() { return CLASS_DATA[this.classId]?.role || 'Unknown'; }
-  get moveList() { return this.groundMoves; }
   addXp(amount) {
     this.xp += amount;
     if (this.xp >= this.xpToNext) {
@@ -637,17 +640,14 @@ class CrewMember {
       this.maxHp += 5; this.hp = this.maxHp;
       this.atk += 1;
       if (this.level >= 5 && this.tier === 1 && CLASS_DATA[this.classId]?.tier2Options) {
-        const options = CLASS_DATA[this.classId].tier2Options;
-        const chosen = options[Math.floor(Math.random() * options.length)];
-        this.advancedClassId = chosen;
+        const opts = CLASS_DATA[this.classId].tier2Options;
+        this.advancedClassId = opts[Math.floor(Math.random() * opts.length)];
         this.tier = 2;
-        const t2 = TIER2_DATA[chosen];
-        if (t2) {
-          if (t2.passive.maxHpBonus) this.maxHp += t2.passive.maxHpBonus;
-          this.groundMoves = [...CLASS_DATA[this.classId].groundMoves, ...t2.bonusMoves];
-        }
+        const t2 = TIER2_DATA[this.advancedClassId];
+        if (t2?.passive?.maxHpBonus) this.maxHp += t2.passive.maxHpBonus;
+        this.recalc();
       }
-      return true; // leveled up
+      return true;
     }
     return false;
   }
@@ -661,45 +661,42 @@ class CrewMember {
 }
 
 class Subsystem {
-  constructor(name, hp) { this.name = name; this.hp = hp; this.maxHp = hp; }
+  constructor(name, hp = 30) { this.name = name; this.hp = hp; this.maxHp = hp; }
   get functional() { return this.hp > 0; }
 }
 
 class Ship {
-  constructor(template) {
+  constructor({ name, hull, shields, cargoMax, fuelUse, moduleSlots }) {
     this.id = 'ship' + Date.now();
-    this.name = template.name || 'Unknown';
-    this.templateId = template.id;
-    this.hull = template.hull; this.maxHull = template.hull;
-    this.shields = template.shields; this.maxShields = template.shields;
-    this.cargoMax = template.cargoMax;
+    this.name = name;
+    this.hull = hull; this.maxHull = hull;
+    this.shields = shields; this.maxShields = shields;
+    this.cargoMax = cargoMax;
     this.fuel = 50; this.maxFuel = 100;
-    this.fuelUse = template.fuelUse || 1.0;
+    this.fuelUse = fuelUse || 1.0;
     this.morale = 75;
-    this.crewMax = template.crewMax || 2;
-    this.moduleSlots = template.moduleSlots || 1;
+    this.crewMax = 3;
+    this.moduleSlots = moduleSlots || 1;
     this.modules = [];
+    this.credits = 1000;
     this.systems = {
       weapons: new Subsystem('Weapons', 30),
       shields: new Subsystem('Shields', 50),
       engines: new Subsystem('Engines', 25),
     };
-    this.passive = template.passive || '';
+    this.passive = '';
   }
-  get totalCargo() { return this.cargoMax; }
-  applyModuleEffect(moduleId) {
-    const mod = MODULE_DEFS.find(m => m.id === moduleId);
-    if (!mod) return;
-    // apply effects – simplified, could be full resolver
-    if (mod.effects.shieldRegenMult) this.maxShields = Math.floor(this.maxShields * mod.effects.shieldRegenMult);
-    if (mod.effects.cargoBonus) this.cargoMax += mod.effects.cargoBonus;
-    this.modules.push(moduleId);
+  toJSON() {
+    return { ...this, systems: { weapons: {...this.systems.weapons}, shields:{...this.systems.shields}, engines:{...this.systems.engines} } };
   }
-  toJSON() { return { ...this, systems: { weapons: {...this.systems.weapons}, shields:{...this.systems.shields}, engines:{...this.systems.engines} } }; }
   static fromJSON(json) {
     const s = new Ship({ name: json.name, hull: json.maxHull, shields: json.maxShields, cargoMax: json.cargoMax, fuelUse: json.fuelUse });
     Object.assign(s, json);
-    s.systems = { weapons: new Subsystem('Weapons', json.systems.weapons.maxHp), shields: new Subsystem('Shields', json.systems.shields.maxHp), engines: new Subsystem('Engines', json.systems.engines.maxHp) };
+    s.systems = {
+      weapons: new Subsystem('Weapons', json.systems.weapons.maxHp),
+      shields: new Subsystem('Shields', json.systems.shields.maxHp),
+      engines: new Subsystem('Engines', json.systems.engines.maxHp)
+    };
     s.systems.weapons.hp = json.systems.weapons.hp;
     s.systems.shields.hp = json.systems.shields.hp;
     s.systems.engines.hp = json.systems.engines.hp;
@@ -711,8 +708,7 @@ class Fleet {
   constructor() { this.ships = []; this.flagshipIndex = 0; }
   get flagship() { return this.ships[this.flagshipIndex]; }
   addShip(ship) { this.ships.push(ship); }
-  removeShip(index) { if (index !== 0) { this.ships.splice(index, 1); if (this.flagshipIndex >= this.ships.length) this.flagshipIndex = 0; } }
-  totalCargo() { return this.ships.reduce((sum, s) => sum + s.cargoMax, 0); }
+  totalCargo() { return this.ships.reduce((s, ship) => s + ship.cargoMax, 0); }
   toJSON() { return { ships: this.ships.map(s => s.toJSON()), flagshipIndex: this.flagshipIndex }; }
   static fromJSON(json) {
     const f = new Fleet();
@@ -722,67 +718,49 @@ class Fleet {
   }
 }
 
-// ====================  MANAGERS  ====================
-const CrewStationManager = {
-  assign(stationId, crewId) {
-    // per ship, stored in G.crewStations (mapping per ship)
-    if (!G.crewStations) G.crewStations = {};
-    G.crewStations[stationId] = crewId;
-  },
-  getBonus(stationId, ship) {
-    const crewId = (G.crewStations || {})[stationId];
-    if (!crewId) return 0;
-    const c = G.crew.find(x => x.id === crewId && x.alive);
-    if (!c) return 0;
-    const skillMap = { weapons: 'combat', shields: 'engineering', engines: 'pilot', sensors: 'perception', medbay: 'medical' };
-    const sk = skillMap[stationId] || 'combat';
-    const skillVal = c.skills[sk] || 1;
-    return Math.floor(skillVal / 2);
-  }
-};
-
-// ====================  COMBAT SYSTEMS  ====================
+/* ================================================================
+   SECTION 3 – COMBAT SYSTEMS
+   ================================================================ */
 class ShipCombat {
   constructor(playerShip, enemyShip) {
-    this.player = playerShip;
-    this.enemy = enemyShip;
+    this.playerShip = playerShip;
+    this.enemyShip = enemyShip;
     this.log = [];
     this.round = 0;
-    this.hazards = [];
-    this.evasionActive = false;
     this.won = false;
     this.target = null;
+    this.evasionActive = false;
   }
-  playerAction(action, targetSys) {
+  playerAction(action, targetSystem) {
     if (this.won) return;
     if (action === 'fire') {
-      if (!targetSys || !this.enemy.systems[targetSys]) return;
-      const base = 12 + Math.floor(Math.random()*15);
-      const dmg = base + CrewStationManager.getBonus('weapons', this.player);
-      this.enemy.systems[targetSys].hp = Math.max(0, this.enemy.systems[targetSys].hp - dmg);
-      this.log.unshift(`Fired on ${targetSys} for ${dmg} damage.`);
+      if (!targetSystem || !this.enemyShip.systems[targetSystem]) return;
+      const dmg = 12 + Math.floor(Math.random() * 15) + CrewStationManager.getBonus('weapons');
+      this.enemyShip.systems[targetSystem].hp = Math.max(0, this.enemyShip.systems[targetSystem].hp - dmg);
+      this.log.unshift(`Fired on ${targetSystem} for ${dmg} damage.`);
     } else if (action === 'boost_shields') {
-      const regen = 15 + CrewStationManager.getBonus('shields', this.player);
-      this.player.shields = Math.min(this.player.maxShields, this.player.shields + regen);
+      const regen = 15 + CrewStationManager.getBonus('shields');
+      this.playerShip.shields = Math.min(this.playerShip.maxShields, this.playerShip.shields + regen);
       this.log.unshift(`Shields boosted +${regen}.`);
     }
-    // Enemy turn
-    if (this.enemy.systems.weapons.functional) {
-      const dmg = 8 + Math.floor(Math.random()*10);
-      if (this.player.shields > 0) {
-        const absorbed = Math.min(this.player.shields, dmg);
-        this.player.shields -= absorbed;
+    // enemy turn
+    if (this.enemyShip.systems.weapons.functional) {
+      const dmg = 8 + Math.floor(Math.random() * 12);
+      if (this.playerShip.shields > 0) {
+        const absorbed = Math.min(this.playerShip.shields, dmg);
+        this.playerShip.shields -= absorbed;
         const rem = dmg - absorbed;
-        if (rem > 0) this.player.hull = Math.max(0, this.player.hull - rem);
+        if (rem > 0) this.playerShip.hull = Math.max(0, this.playerShip.hull - rem);
       } else {
-        this.player.hull = Math.max(0, this.player.hull - dmg);
+        this.playerShip.hull = Math.max(0, this.playerShip.hull - dmg);
       }
       this.log.unshift(`Enemy hits for ${dmg} damage.`);
     }
-    if (this.player.hull <= 0) { triggerGameOver(); return; }
-    if (this.enemy.hull <= 0) { this.won = true; this.log.unshift('Victory!'); }
+    if (this.playerShip.hull <= 0) { triggerGameOver(); return; }
+    if (this.enemyShip.hull <= 0 || Object.values(this.enemyShip.systems).every(s => s.hp <= 0)) {
+      this.won = true; this.log.unshift('Victory!');
+    }
   }
-  board() { startGroundCombat(this.enemy); }
 }
 
 class GroundCombat {
@@ -796,7 +774,7 @@ class GroundCombat {
   performAction(actorId, moveId, targetId) {
     const actor = this.party.find(p => p.id === actorId);
     if (!actor || actor.ap <= 0) return;
-    const move = actor.moveList.find(m => m.id === moveId);
+    const move = actor.groundMoves.find(m => m.id === moveId);
     if (!move) return;
     if (move.target === 'enemy' && targetId) {
       const target = this.enemies.find(e => e.id === targetId);
@@ -806,7 +784,7 @@ class GroundCombat {
         this.log.unshift(`${actor.name} uses ${move.name} for ${dmg} damage!`);
       }
     } else if (move.target === 'all_allies') {
-      this.party.forEach(p => { if (p.alive) { p.hp = Math.min(p.maxHp, p.hp + (move.effect.aoeHeal || 10)); } });
+      this.party.forEach(p => { if (p.alive) p.hp = Math.min(p.maxHp, p.hp + (move.effect.aoeHeal || 10)); });
       this.log.unshift(`${actor.name} uses ${move.name}!`);
     }
     actor.ap -= move.cost;
@@ -816,46 +794,65 @@ class GroundCombat {
   }
 }
 
-// ====================  GLOBAL STATE & INIT  ====================
+/* ================================================================
+   SECTION 4 – MANAGERS
+   ================================================================ */
+const CrewStationManager = {
+  assign(stationId, crewId) {
+    if (!G.crewStations) G.crewStations = {};
+    G.crewStations[stationId] = crewId;
+  },
+  getBonus(stationId) {
+    const crewId = (G.crewStations || {})[stationId];
+    if (!crewId) return 0;
+    const c = G.crew.find(x => x.id === crewId && x.alive);
+    if (!c) return 0;
+    const skillMap = { weapons:'combat', shields:'engineering', engines:'pilot', sensors:'perception', medbay:'medical' };
+    const sk = skillMap[stationId] || 'combat';
+    return Math.floor((c.skills[sk] || 1) / 2);
+  }
+};
+
+/* ================================================================
+   SECTION 5 – GLOBAL STATE & HELPERS
+   ================================================================ */
 let G = {
   seed: '', rng: null, difficulty: 'normal',
   captain: { name:'', origin:null, cls:null, job:null, skills:{charisma:1,intelligence:1,engineering:1,combat:1,hacking:1}, xp:0, level:1 },
-  fleet: null,
+  fleet: new Fleet(),
   galaxy: null, curSys: 0, selSys: null,
-  rep: {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0},
-  crew: [],
-  crewStations: {},
+  rep: { federation:0, empire:0, syndicate:0, guild:0, independent:0, megacorp:0 },
+  crew: [], crewStations: {},
   cargo: [], probedFeatures: {},
   quests: [], log: [], ccStep: 0, jumps: 0,
   combat: null, groundCombat: null,
   completedRecruitmentQuests: [],
 };
-Object.defineProperty(G, 'flagship', { get: function() { return this.fleet?.flagship; } });
-Object.defineProperty(G, 'ship', { get: function() { return this.flagship; } });
-Object.defineProperty(G, 'totalCargoCap', { get: function() { return this.fleet?.totalCargo() || 10; } });
+Object.defineProperty(G, 'flagship', { get() { return this.fleet.flagship; } });
+Object.defineProperty(G, 'totalCargoCap', { get() { return this.fleet.totalCargo(); } });
 
 function initState(seed, difficulty = 'normal') {
   G.seed = seed; G.rng = mkRNG(seed); G.difficulty = difficulty;
-  // Create starter fleet
   G.fleet = new Fleet();
-  const starterTemplate = SHIP_TEMPLATES[0];
-  const starterShip = new Ship({ name: 'VAGRANT STAR', hull: 100, shields: 50, cargoMax: 10, fuelUse: 1.0, moduleSlots: 1 });
-  G.fleet.addShip(starterShip);
-  G.flagship.credits = difficulty === 'easy' ? 1500 : difficulty === 'hard' ? 500 : 1000;
-  // Starter crew
-  const crew1 = new CrewMember(CREW_TEMPLATES[0], { name: CREW_TEMPLATES[0].name, classId: CREW_TEMPLATES[0].classId });
-  const crew2 = new CrewMember(CREW_TEMPLATES[1], { name: CREW_TEMPLATES[1].name, classId: CREW_TEMPLATES[1].classId });
-  G.crew = [crew1, crew2];
-  G.cargo = [];
-  G.probedFeatures = {};
-  G.log = ['The stars await.'];
-  G.jumps = 0;
+  const starter = new Ship({ name: 'VAGRANT STAR', hull: 100, shields: 50, cargoMax: 10, fuelUse: 1.0, moduleSlots: 1 });
+  starter.credits = difficulty === 'easy' ? 1500 : difficulty === 'hard' ? 500 : 1000;
+  G.fleet.addShip(starter);
+  G.crew = [
+    new CrewMember(CREW_TEMPLATES[0], { name: CREW_TEMPLATES[0].name, classId: CREW_TEMPLATES[0].classId }),
+    new CrewMember(CREW_TEMPLATES[1], { name: CREW_TEMPLATES[1].name, classId: CREW_TEMPLATES[1].classId })
+  ];
+  G.cargo = []; G.probedFeatures = {}; G.log = ['The stars await.'];
 }
 
-// ====================  UI UPDATE HELPERS  ====================
+/* ================================================================
+   SECTION 6 – UI RENDERING
+   ================================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 function updateHUD() {
-  const s = G.flagship;
-  if (!s) return;
+  const s = G.flagship; if (!s) return;
   document.getElementById('hud-ship').textContent = s.name;
   document.getElementById('b-hull').style.width = (s.hull/s.maxHull*100)+'%';
   document.getElementById('v-hull').textContent = s.hull;
@@ -867,164 +864,233 @@ function updateHUD() {
   document.getElementById('v-mora').textContent = s.morale||75;
   document.getElementById('hud-creds').textContent = `💰 ${s.credits.toLocaleString()} CR`;
 }
-
 function updateRP() {
-  // reputation, cargo, crew, fleet, captain – minimal implementation, uses new objects
   document.getElementById('rp-rep').innerHTML = FACTIONS.map(f => {
     const r = G.rep[f.id] || 0;
-    return `<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r >= 0 ? '+' + r : r}</span></div>`;
+    return `<div class="rep-row"><span style="color:${f.color}">${f.short}</span><span>${r>=0?'+'+r:r}</span></div>`;
   }).join('');
   document.getElementById('rp-cargo').innerHTML = G.cargo.map(c => {
     const g = GOODS.find(x => x.id === c.id);
     return `<div style="display:flex;justify-content:space-between"><span>${g?.emoji} ${g?.name} ${c.qty}</span><button class="btn btn-sm" onclick="useCargoItem('${c.id}')">USE</button></div>`;
   }).join('') || '<div style="color:var(--metal)">Empty</div>';
-  document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
-    return `<div class="crew-row"><span>${c.emoji||'👤'}</span><div><b>${c.name}</b> <small>${c.classLabel}</small></div><div>HP:${c.hp}/${c.maxHp}</div></div>`;
-  }).join('');
-  document.getElementById('rp-cap').innerHTML = `<div>${G.captain.name || 'Captain'} Lv.${G.captain.level}</div>`;
+  document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c =>
+    `<div class="crew-row"><span>${c.emoji||'👤'}</span><div><b>${c.name}</b> <small>${c.classLabel}</small></div><div>HP:${c.hp}/${c.maxHp}</div></div>`
+  ).join('');
+  document.getElementById('rp-cap').innerHTML = `<div>${G.captain.name||'Captain'} Lv.${G.captain.level}</div>`;
   document.getElementById('rp-fleet').innerHTML = G.fleet.ships.map((s,i) => `<div><b>${s.name}</b> (${s.hull}/${s.maxHull})</div>`).join('');
 }
-
-function addLog(msg) { G.log.unshift(msg); if (G.log.length > 30) G.log.pop(); document.getElementById('log-list').innerHTML = G.log.slice(0,3).map(e => `<div class="log-line">${e}</div>`).join(''); }
-function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-
-// ====================  STARFIELD (title screen)  ====================
-let sfCtx, sfStars = [], sfAnim = false;
-function initStarfield() {
-  const c = document.getElementById('sf-canvas'); c.width = window.innerWidth; c.height = window.innerHeight;
-  sfCtx = c.getContext('2d'); sfStars = [];
-  for (let i = 0; i < 220; i++) sfStars.push({ x: Math.random()*c.width, y: Math.random()*c.height, r: Math.random()*1.5+.3, a: Math.random(), da: (Math.random()-.5)*.015+.005 });
-  sfAnim = true; animSF();
+function addLog(msg) {
+  G.log.unshift(msg); if (G.log.length > 30) G.log.pop();
+  document.getElementById('log-list').innerHTML = G.log.slice(0,3).map(e => `<div class="log-line">${e}</div>`).join('');
 }
-function animSF() { if(!sfAnim) return; const c = sfCtx.canvas; sfCtx.fillStyle='#0a0c10'; sfCtx.fillRect(0,0,c.width,c.height); sfStars.forEach(s => { s.a += s.da; if(s.a<=0){s.a=0;s.da=Math.abs(s.da);} if(s.a>=1){s.a=1;s.da=-Math.abs(s.da);} sfCtx.beginPath(); sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sfCtx.fillStyle=`rgba(232,240,255,${s.a})`; sfCtx.fill(); }); requestAnimationFrame(animSF); }
-function randomSeed() { document.getElementById('seed-inp').value = rndSeedStr(); }
+function updateLP() {
+  const body = document.getElementById('lp-body'), acts = document.getElementById('lp-actions');
+  if (G.selSys === null) { body.innerHTML = '<div style="color:var(--metal)">Select a system.</div>'; acts.innerHTML = ''; return; }
+  const sys = G.galaxy.systems[G.selSys], isCur = G.selSys === G.curSys;
+  body.innerHTML = `<div style="display:flex;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${sys.starColor}"></div><b>${sys.name}</b></div>`;
+  if (!isCur) acts.innerHTML = `<button class="btn btn-gold btn-full" onclick="travelTo(${G.selSys})">▶ JUMP</button>`;
+  else acts.innerHTML = `<button class="btn btn-safe btn-full" onclick="exploreSys()">◈ EXPLORE</button>${sys.hasStation?`<button class="btn btn-gold btn-full" onclick="dockStation()">⬡ DOCK</button>`:''}`;
+}
 
-// ====================  GALAXY GENERATION  ====================
+/* ================================================================
+   SECTION 7 – GALAXY GEN & CANVAS
+   ================================================================ */
 function genGalaxy(rng, W, H) {
-  const NUM = 40; const pos = [];
+  const pos = []; const NUM = 40;
   while (pos.length < NUM) {
-    const x = 55 + rng.next() * (W - 110), y = 55 + rng.next() * (H - 110);
-    if (!pos.some(p => Math.hypot(p.x - x, p.y - y) < 64)) pos.push({ x, y });
+    const x = 55 + rng.next() * (W-110), y = 55 + rng.next() * (H-110);
+    if (!pos.some(p => Math.hypot(p.x-x, p.y-y) < 64)) pos.push({x,y});
   }
-  const systems = pos.map((p, i) => {
-    const st = STAR_TYPES[Math.floor(rng.next() * STAR_TYPES.length)];
-    const fac = FACTIONS[Math.floor(rng.next() * FACTIONS.length)];
+  const systems = pos.map((p,i) => {
+    const st = STAR_TYPES[Math.floor(rng.next()*STAR_TYPES.length)];
+    const fac = FACTIONS[Math.floor(rng.next()*FACTIONS.length)];
+    const f1 = SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
+    const f2 = SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)];
     const name = SYS_PFXS[Math.floor(rng.next()*SYS_PFXS.length)] + ' ' + SYS_SFXS[Math.floor(rng.next()*SYS_SFXS.length)];
-    return {
-      id: i, name, x: p.x, y: p.y, starType: st.type, starColor: st.color, faction: fac,
-      features: [SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)], SYS_FEATURES[Math.floor(rng.next()*SYS_FEATURES.length)]],
-      danger: Math.floor(rng.next()*5)+1, wealth: Math.floor(rng.next()*5)+1,
-      visited: i === 0, revealed: i === 0, hasStation: true, stationType: 'Outpost'
-    };
+    return { id:i, name, x:p.x, y:p.y, starType:st.type, starColor:st.color, faction:fac, features:[f1,f2], danger: Math.floor(rng.next()*5)+1, wealth: Math.floor(rng.next()*5)+1, visited:i===0, revealed:i===0, hasStation:true, stationType:'Outpost' };
   });
   const conns = [];
-  for (let i=0; i<systems.length; i++) for (let j=0; j<systems.length; j++) if (i<j && Math.hypot(systems[i].x-systems[j].x, systems[i].y-systems[j].y) < 165) conns.push([i,j]);
-  return { systems, conns };
+  for (let i=0;i<systems.length;i++) for (let j=0;j<systems.length;j++) if (i<j && Math.hypot(systems[i].x-systems[j].x, systems[i].y-systems[j].y)<165) conns.push([i,j]);
+  return {systems, conns};
 }
-
-// ====================  MAP RENDERING (simplified)  ====================
-let gxCanvas, gxCtx, gxZoom = 1.0;
+let gxCanvas, gxCtx;
 function initGalaxy() {
   gxCanvas = document.getElementById('gx-canvas'); gxCtx = gxCanvas.getContext('2d');
-  // set base coordinates
   G.galaxy.systems.forEach(s => { s.rx = s.x; s.ry = s.y; });
   drawGalaxy();
-  setInterval(() => drawGalaxy(), 200);
+  setInterval(drawGalaxy, 200);
 }
 function drawGalaxy() {
   gxCtx.imageSmoothingEnabled = false;
-  gxCtx.fillStyle = '#050709'; gxCtx.fillRect(0, 0, gxCanvas.width, gxCanvas.height);
-  G.galaxy.systems.forEach(s => {
-    if (!s.revealed) return;
-    gxCtx.fillStyle = s.starColor; gxCtx.beginPath(); gxCtx.arc(s.rx, s.ry, 4, 0, Math.PI*2); gxCtx.fill();
-  });
+  gxCtx.fillStyle = '#050709'; gxCtx.fillRect(0,0,gxCanvas.width,gxCanvas.height);
+  G.galaxy.systems.forEach(s => { if (!s.revealed) return; gxCtx.fillStyle=s.starColor; gxCtx.beginPath(); gxCtx.arc(s.rx,s.ry,4,0,Math.PI*2); gxCtx.fill(); });
 }
 
-// ====================  GAME FLOW & EVENTS  ====================
+/* ================================================================
+   SECTION 8 – GAME FLOW & EVENTS
+   ================================================================ */
 function beginGame() {
   const seed = document.getElementById('seed-inp').value.trim() || rndSeedStr();
+  document.getElementById('seed-inp').value = seed;
   const diff = document.getElementById('difficulty-select').value;
   initState(seed, diff);
-  showScreen('cc-screen');
-  G.ccStep = 0; renderCC();
+  G.ccStep = 0; renderCC(); showScreen('cc-screen');
 }
 function launchGame() {
   const gc = document.querySelector('.gc'); const W = gc.clientWidth, H = gc.clientHeight;
   G.galaxy = genGalaxy(G.rng, W, H); G.curSys = 0; G.selSys = 0;
-  addLog(`Captain ${G.captain.name} takes the helm.`);
-  showScreen('galaxy-screen'); initGalaxy(); updateHUD(); updateRP();
+  addLog(`Captain ${G.captain.name} takes the helm of ${G.flagship.name}.`);
+  showScreen('galaxy-screen'); initGalaxy(); updateHUD(); updateLP(); updateRP();
 }
 function travelTo(id) {
   G.fleet.ships.forEach(s => s.fuel -= Math.ceil(10 * s.fuelUse));
   G.curSys = id; G.selSys = id; G.jumps++;
   G.galaxy.systems[id].visited = true; G.galaxy.systems[id].revealed = true;
-  updateHUD(); updateRP();
   addLog(`Jumped to ${G.galaxy.systems[id].name}.`);
+  updateHUD(); updateLP(); updateRP();
 }
-function dockStation() {
-  // placeholder – station screen
-  showScreen('station-screen');
-}
+function exploreSys() { addLog('Exploring system...'); }
+function dockStation() { showScreen('station-screen'); }
 function undock() { showScreen('galaxy-screen'); }
+function useCargoItem(id) {
+  const idx = G.cargo.findIndex(c => c.id === id); if (idx<0) return;
+  const good = GOODS.find(g => g.id === id);
+  if (good?.use?.fuel) G.flagship.fuel = Math.min(G.flagship.maxFuel, G.flagship.fuel + good.use.fuel);
+  G.cargo[idx].qty--; if (G.cargo[idx].qty <= 0) G.cargo.splice(idx,1);
+  updateHUD(); updateRP();
+}
 
-// ====================  COMBAT  ====================
+/* ================================================================
+   SECTION 9 – COMBAT LAUNCHERS
+   ================================================================ */
 function startCombat() {
-  const enemy = { name: 'Pirate Raider', hull: 60, maxHull: 60, shields: 20, maxShields: 20, systems: { weapons: new Subsystem('Weapons', 30), shields: new Subsystem('Shields', 20), engines: new Subsystem('Engines', 25) }, hull: 60, maxHull: 60, shields: 20, maxShields: 20 };
+  const enemy = {
+    name: 'Pirate Raider', hull: 60, maxHull: 60, shields: 20, maxShields: 20,
+    systems: { weapons: new Subsystem('Weapons',30), shields: new Subsystem('Shields',20), engines: new Subsystem('Engines',25) }
+  };
   G.combat = new ShipCombat(G.flagship, enemy);
-  showScreen('combat-screen');
-  renderShipCombat();
+  showScreen('combat-screen'); renderShipCombat();
 }
 function renderShipCombat() {
   if (!G.combat) return;
   const c = G.combat;
-  document.getElementById('cbat-player-name').textContent = c.player.name;
-  document.getElementById('cbat-enemy-name').textContent = c.enemy.name;
-  document.getElementById('cbat-player-bars').innerHTML = `HULL ${c.player.hull} SHLD ${c.player.shields}`;
-  document.getElementById('cbat-enemy-bars').innerHTML = `HULL ${c.enemy.hull} SHLD ${c.enemy.shields}`;
-  document.getElementById('cbat-target-lbl').textContent = c.target ? `Target: ${c.target}` : 'None';
+  document.getElementById('cbat-player-name').textContent = c.playerShip.name;
+  document.getElementById('cbat-enemy-name').textContent = c.enemyShip.name;
+  document.getElementById('cbat-player-bars').innerHTML = `HULL ${c.playerShip.hull} SHLD ${c.playerShip.shields}`;
+  document.getElementById('cbat-enemy-bars').innerHTML = `HULL ${c.enemyShip.hull} SHLD ${c.enemyShip.shields}`;
 }
 function shipCombatAction(action) {
   if (!G.combat) return;
-  G.combat.playerAction(action, G.combat.target || 'weapons');
+  G.combat.playerAction(action, 'weapons');
   renderShipCombat();
-  if (G.combat.won) { G.flagship.credits += 300; addLog('Combat won! +300 CR'); showScreen('galaxy-screen'); updateHUD(); }
+  if (G.combat.won) { G.flagship.credits += 300; addLog('Victory! +300 CR'); showScreen('galaxy-screen'); updateHUD(); }
 }
 function boardEnemy() { startGroundCombat(); }
 function startGroundCombat() {
   const party = G.crew.filter(c => c.alive);
-  const enemies = [];
+  const enemies = [ { id:'e1', name:'Scavenger', hp:40, maxHp:40, atk:10, spd:5, alive:true, groundMoves:[], loot:{} } ];
   G.groundCombat = new GroundCombat(party, enemies);
-  showScreen('ground-combat-screen');
-  renderGroundCombat();
+  showScreen('ground-combat-screen'); renderGroundCombat();
 }
 function closeGroundCombat() { showScreen('galaxy-screen'); }
-
-// ====================  UI FOR COMBAT (placeholder)  ====================
 function renderGroundCombat() {
-  // minimal – for full game, implement using GroundCombat state
+  // minimal
 }
 
-// ====================  SAVE / LOAD  ====================
+/* ================================================================
+   SECTION 10 – SAVE / LOAD
+   ================================================================ */
 function saveGame(slot) {
-  const data = { state: { ...G, fleet: G.fleet.toJSON(), crew: G.crew.map(c=>c.toJSON()), combat: null, groundCombat: null } };
+  const data = {
+    seed: G.seed, difficulty: G.difficulty,
+    captain: G.captain,
+    fleet: G.fleet.toJSON(),
+    crew: G.crew.map(c => c.toJSON()),
+    cargo: G.cargo, rep: G.rep, probedFeatures: G.probedFeatures,
+    jumps: G.jumps, log: G.log, completedRecruitmentQuests: G.completedRecruitmentQuests,
+    galaxy: G.galaxy, curSys: G.curSys, selSys: G.selSys
+  };
   localStorage.setItem(`vf_save_${slot}`, JSON.stringify(data));
+  addLog(`💾 Saved to slot ${slot}`);
 }
 function loadGame(slot) {
   const raw = localStorage.getItem(`vf_save_${slot}`);
   if (!raw) return false;
   const data = JSON.parse(raw);
-  G = data.state;
-  G.fleet = Fleet.fromJSON(data.state.fleet);
-  G.crew = data.state.crew.map(c => CrewMember.fromJSON(c));
+  G.seed = data.seed; G.rng = mkRNG(G.seed); G.difficulty = data.difficulty;
+  G.captain = data.captain;
+  G.fleet = Fleet.fromJSON(data.fleet);
+  G.crew = data.crew.map(c => CrewMember.fromJSON(c));
+  G.cargo = data.cargo; G.rep = data.rep; G.probedFeatures = data.probedFeatures || {};
+  G.jumps = data.jumps; G.log = data.log; G.completedRecruitmentQuests = data.completedRecruitmentQuests || [];
+  G.galaxy = data.galaxy; G.curSys = data.curSys; G.selSys = data.selSys;
+  showScreen('galaxy-screen'); initGalaxy(); updateHUD(); updateLP(); updateRP();
+  addLog(`📂 Loaded slot ${slot}`);
   return true;
 }
+function loadLatestSave() {
+  for (let i = 3; i >= 1; i--) if (loadGame(i)) return;
+  alert('No save found.');
+}
+function openSaveModal() {
+  const container = document.getElementById('save-slots');
+  container.innerHTML = '';
+  for (let i = 1; i <= 3; i++) {
+    const raw = localStorage.getItem(`vf_save_${i}`);
+    let meta = raw ? (() => { const d = JSON.parse(raw); return `${d.captain?.name||'Captain'} · ${d.jumps||0} jumps`; })() : 'Empty';
+    container.innerHTML += `
+      <div class="save-slot"><div class="save-meta">Slot ${i}: ${meta}</div>
+        <div class="save-actions">
+          <button class="btn btn-sm btn-safe" onclick="saveGame(${i});openSaveModal()">SAVE</button>
+          <button class="btn btn-sm btn-gold" onclick="if(loadGame(${i})){closeSaveModal();}">LOAD</button>
+        </div>
+      </div>`;
+  }
+  document.getElementById('save-load-modal').style.display = 'flex';
+}
+function closeSaveModal() { document.getElementById('save-load-modal').style.display = 'none'; }
 
-// ====================  INIT  ====================
+// ========== CHARACTER CREATION (unchanged helper) ==========
+const CC_TITLES = ['CHOOSE YOUR ORIGIN','CHOOSE YOUR CLASS','CHOOSE YOUR JOB','NAME YOUR CAPTAIN','SELECT STARTER SHIP'];
+function renderCC() {
+  const s = G.ccStep;
+  document.getElementById('cc-title').textContent = CC_TITLES[s];
+  document.getElementById('cc-desc').textContent = `Step ${s+1} of 5`;
+  document.getElementById('cc-pips').innerHTML = [0,1,2,3,4].map(i => `<div class="cc-pip ${i<s?'done':i===s?'active':''}"></div>`).join('');
+  const body = document.getElementById('cc-body'), nav = document.getElementById('cc-nav');
+  if (s === 3) {
+    body.innerHTML = `<div class="name-step"><div class="name-group"><div class="name-label">CAPTAIN NAME</div><input type="text" id="cap-name" value="${G.captain.name}" maxlength="22"/></div><div class="name-group"><div class="name-label">SHIP NAME</div><input type="text" id="ship-name-in" value="${G.flagship.name}" maxlength="22"/></div></div>`;
+    nav.innerHTML = `<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button><button class="btn btn-gold" onclick="ccNext()">▶ CONTINUE</button>`;
+    return;
+  }
+  const data = s === 0 ? ORIGINS : s === 1 ? Object.values(CLASS_DATA).map((c,i) => ({ id:Object.keys(CLASS_DATA)[i], ...c })) : JOBS;
+  const sel = s === 0 ? G.captain.origin : s === 1 ? G.captain.cls : G.captain.job;
+  body.innerHTML = `<div class="opt-grid ${s===1?'cols-3':''}">${data.map(it => `<div class="opt-card ${sel===it.id?'selected':''}" onclick="ccSelect('${it.id}')"><div class="oc-check">✦</div><div class="oc-emoji">${it.emoji}</div><div class="oc-name">${it.name}</div><div class="oc-desc">${it.desc||it.effect||''}</div><div class="oc-bonus">◈ ${it.bonus||it.trait||''}</div></div>`).join('')}</div>`;
+  nav.innerHTML = `${s>0?'<button class="btn" onclick="G.ccStep--;renderCC()">◀ BACK</button>':''}<button class="btn btn-gold" ${sel?'':'disabled'} onclick="ccNext()">▶ CONTINUE</button>`;
+}
+function ccSelect(id) {
+  if (G.ccStep === 0) { G.captain.origin = id; const o = ORIGINS.find(x => x.id === id); if (o) G.flagship.credits = o.credits || 1000; }
+  else if (G.ccStep === 1) G.captain.cls = id;
+  else if (G.ccStep === 2) G.captain.job = id;
+  renderCC();
+}
+function ccNext() { if ((G.ccStep===0&&G.captain.origin)||(G.ccStep===1&&G.captain.cls)||(G.ccStep===2&&G.captain.job)||G.ccStep===3) { G.ccStep++; renderCC(); if (G.ccStep===4) launchGame(); } }
+
+// ===== STARFIELD =====
+let sfCtx, sfStars = [], sfAnim = false;
+function initStarfield() {
+  const c = document.getElementById('sf-canvas'); c.width = window.innerWidth; c.height = window.innerHeight;
+  sfCtx = c.getContext('2d'); sfStars = [];
+  for (let i=0;i<220;i++) sfStars.push({ x:Math.random()*c.width, y:Math.random()*c.height, r:Math.random()*1.5+.3, a:Math.random(), da:(Math.random()-.5)*.015+.005 });
+  sfAnim = true; animSF();
+}
+function animSF() { if(!sfAnim) return; const c = sfCtx.canvas; sfCtx.fillStyle='#0a0c10'; sfCtx.fillRect(0,0,c.width,c.height); sfStars.forEach(s => { s.a+=s.da; if(s.a<=0){s.a=0;s.da=Math.abs(s.da);} if(s.a>=1){s.a=1;s.da=-Math.abs(s.da);} sfCtx.beginPath(); sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sfCtx.fillStyle=`rgba(232,240,255,${s.a})`; sfCtx.fill(); }); requestAnimationFrame(animSF); }
+function randomSeed() { document.getElementById('seed-inp').value = rndSeedStr(); }
+
+// ===== INIT =====
 window.addEventListener('load', () => {
-  initState(rndSeedStr());
-  document.getElementById('seed-inp').value = G.seed;
-  showScreen('title-screen');
-  initStarfield();
+  initState(rndSeedStr()); document.getElementById('seed-inp').value = G.seed;
+  showScreen('title-screen'); initStarfield();
 });
 </script>
 </body>
