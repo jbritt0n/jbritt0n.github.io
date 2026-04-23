@@ -118,7 +118,12 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .crew-name{font-size:14px;color:var(--star)}.crew-role{font-size:12px;color:var(--metal)}
 .cap-info{padding:10px;font-size:13px;color:var(--metal)}
 .tag{display:inline-block;padding:2px 6px;font-size:12px;border:1px solid;margin:2px 2px 0 0}
-
+/* Galaxy Zoom Controls */
+#gx-zoom-controls {background: var(--panel);border: 1px solid var(--border);border-radius: 4px;padding: 6px;}
+#gx-zoom-controls .btn {width: 32px;height: 32px;padding: 0;display: flex;align-items: center;justify-content: center;font-size: 14px;}
+#gx-zoom-controls .btn:disabled {opacity: 0.4;cursor: not-allowed;}
+#gx-zoom-reset {font-size: 12px;}
+  
 /* STATION */
 .st-header{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;align-items:center;gap:18px;height:48px}
 .st-name{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan)}
@@ -256,6 +261,11 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
     </div>
     <div class="gc">
       <canvas id="gx-canvas"></canvas>
+      <div id="gx-zoom-controls" style="position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:10">
+        <button id="gx-zoom-in" class="btn btn-sm" onclick="zoomGalaxy(1)" title="Zoom In">🔍 +</button>
+        <button id="gx-zoom-reset" class="btn btn-sm" onclick="resetZoom()" title="Auto-Fit Zoom">⌖</button>
+        <button id="gx-zoom-out" class="btn btn-sm" onclick="zoomGalaxy(-1)" title="Zoom Out">🔍 −</button>
+      </div>
       <div id="sys-tooltip"></div>
       <div id="ev-overlay"><div class="ev-card"><div class="ev-title" id="ev-title"></div><div class="ev-body" id="ev-body"></div><div class="ev-choices" id="ev-choices"></div></div></div>
     </div>
@@ -2011,6 +2021,13 @@ let G = {
   fleet: [],
   curShipIdx: 0,
   galaxy: null, curSys: 0, selSys: null,
+  galaxyZoom: {
+    level: 1.0,           // Current zoom level (1.0 = base scale)
+    minLevel: 0.3,        // Minimum zoom (farthest out)
+    maxLevel: 3.0,        // Maximum zoom (closest in)
+    step: 0.2,            // Zoom step per button press
+    autoFit: true         // Whether to auto-fit to explored systems
+  },
   rep: {federation:0,empire:0,syndicate:0,guild:0,independent:0,megacorp:0},
   crew: [],
   crewStations: {},
@@ -3012,37 +3029,224 @@ function reachable() {
 
   
 // ========== MAP ==========
-let gxCanvas,gxCtx,gxPulse=0,gxAniming=false;
-function initGalaxy(){
-  gxCanvas=document.getElementById('gx-canvas');gxCtx=gxCanvas.getContext('2d');gxCtx.imageSmoothingEnabled=false;
-  const gc=document.querySelector('.gc');gxCanvas.width=gc.clientWidth;gxCanvas.height=gc.clientHeight;
-  const {systems}=G.galaxy;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-  systems.forEach(s=>{minX=Math.min(minX,s.x);maxX=Math.max(maxX,s.x);minY=Math.min(minY,s.y);maxY=Math.max(maxY,s.y);});
-  const pad=52,scX=(gxCanvas.width-pad*2)/(maxX-minX||1),scY=(gxCanvas.height-pad*2)/(maxY-minY||1),sc=Math.min(scX,scY,.95);
-  const offX=pad+(gxCanvas.width-pad*2-(maxX-minX)*sc)/2-minX*sc,offY=pad+(gxCanvas.height-pad*2-(maxY-minY)*sc)/2-minY*sc;
-  systems.forEach(s=>{s.rx=Math.round(s.x*sc+offX);s.ry=Math.round(s.y*sc+offY);});
-  gxCanvas.addEventListener('click',onGxClick);gxCanvas.addEventListener('mousemove',onGxHover);gxCanvas.addEventListener('mouseleave',()=>{document.getElementById('sys-tooltip').style.display='none';});
-  gxAniming=true;drawGalaxy();
+// ========== GALAXY INITIALIZATION WITH ZOOM SYSTEM ==========
+let gxCanvas, gxCtx, gxPulse = 0, gxAniming = false;
+
+function initGalaxy() {
+  // Get canvas and context
+  gxCanvas = document.getElementById('gx-canvas');
+  gxCtx = gxCanvas.getContext('2d');
+  gxCtx.imageSmoothingEnabled = false;
+  // Set canvas size to match container
+  const gc = document.querySelector('.gc');
+  gxCanvas.width = gc.clientWidth;
+  gxCanvas.height = gc.clientHeight;
+  // Calculate bounding box of all systems for initial fit
+  const { systems } = G.galaxy;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  systems.forEach(s => {
+    minX = Math.min(minX, s.x);
+    maxX = Math.max(maxX, s.x);
+    minY = Math.min(minY, s.y);
+    maxY = Math.max(maxY, s.y);
+  });
+  // Calculate base scale to fit galaxy on screen with padding
+  const pad = 52;
+  const scX = (gxCanvas.width - pad * 2) / (maxX - minX || 1);
+  const scY = (gxCanvas.height - pad * 2) / (maxY - minY || 1);
+  const baseScale = Math.min(scX, scY, 0.95);
+  // Calculate offset to center the galaxy
+  const offX = pad + (gxCanvas.width - pad * 2 - (maxX - minX) * baseScale) / 2 - minX * baseScale;
+  const offY = pad + (gxCanvas.height - pad * 2 - (maxY - minY) * baseScale) / 2 - minY * baseScale;
+  // Apply base coordinates to all systems (used as reference for zoom)
+  systems.forEach(s => {
+    s.rx = Math.round(s.x * baseScale + offX);
+    s.ry = Math.round(s.y * baseScale + offY);
+    s.baseRx = s.rx; // Store base position for zoom calculations
+    s.baseRy = s.ry;
+  });
+  // Initialize zoom state
+  G.galaxyZoom = {
+    level: 1.0,           // Current zoom multiplier
+    baseScale: baseScale, // Original scale from init
+    offsetX: offX,        // Original offset from init
+    offsetY: offY,
+    minLevel: 0.3,        // Minimum zoom (farthest out)
+    maxLevel: 3.0,        // Maximum zoom (closest in)
+    step: 0.2,            // Zoom step per button/wheel action
+    autoFit: true         // Whether to auto-adjust to revealed systems
+  };
+  // Remove old event listeners to prevent duplicates
+  gxCanvas.removeEventListener('click', onGxClick);
+  gxCanvas.removeEventListener('mousemove', onGxHover);
+  gxCanvas.removeEventListener('mouseleave', onGxMouseLeave);
+  gxCanvas.removeEventListener('wheel', onGxWheel);
+  // Add event listeners
+  gxCanvas.addEventListener('click', onGxClick);
+  gxCanvas.addEventListener('mousemove', onGxHover);
+  gxCanvas.addEventListener('mouseleave', onGxMouseLeave);
+  gxCanvas.addEventListener('wheel', onGxWheel, { passive: false });
+  // Initialize zoom UI if buttons exist
+  if (document.getElementById('gx-zoom-in')) {
+    updateZoomUI();
+  }
+  // Start animation loop
+  gxAniming = true;
+  drawGalaxy();
+}
+// Helper: Mouse leave handler for tooltip cleanup
+function onGxMouseLeave() {
+  const tt = document.getElementById('sys-tooltip');
+  if (tt) tt.style.display = 'none';
+}
+// Helper: Mouse wheel zoom handler
+function onGxWheel(e) {
+  e.preventDefault();
+  const direction = e.deltaY > 0 ? -1 : 1; // Scroll down = zoom out
+  zoomGalaxy(direction);
+}
+
+// ========== ZOOM SYSTEM FUNCTIONS ==========
+
+// Calculate optimal zoom level to fit all revealed systems
+function calculateAutoZoom() {
+  const revealed = G.galaxy.systems.filter(s => s.revealed || s.id === G.curSys);
+  if (revealed.length === 0) return 1.0;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  revealed.forEach(s => {
+    minX = Math.min(minX, s.x);
+    maxX = Math.max(maxX, s.x);
+    minY = Math.min(minY, s.y);
+    maxY = Math.max(maxY, s.y);
+  });
+  const gxCanvas = document.getElementById('gx-canvas');
+  const padding = 100;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const scaleX = (gxCanvas.width - padding) / (width || 1);
+  const scaleY = (gxCanvas.height - padding) / (height || 1);
+  let scale = Math.min(scaleX, scaleY);
+  scale = Math.max(G.galaxyZoom.minLevel, Math.min(G.galaxyZoom.maxLevel, scale));
+  return scale;
+}
+// Manual zoom in/out
+function zoomGalaxy(direction) {
+  const z = G.galaxyZoom;
+  const newLevel = z.level + (direction * z.step);
+  z.level = Math.max(z.minLevel, Math.min(z.maxLevel, newLevel));
+  z.autoFit = false; // Disable auto-fit when manually zooming
+  drawGalaxy();
+  updateZoomUI();
+}
+// Reset to auto-fit zoom
+function resetZoom() {
+  G.galaxyZoom.autoFit = true;
+  G.galaxyZoom.level = calculateAutoZoom();
+  drawGalaxy();
+  updateZoomUI();
+}
+// Update zoom button states (disable at limits)
+function updateZoomUI() {
+  const z = G.galaxyZoom;
+  const zoomInBtn = document.getElementById('gx-zoom-in');
+  const zoomOutBtn = document.getElementById('gx-zoom-out');
+  const resetBtn = document.getElementById('gx-zoom-reset');
+  if (zoomInBtn) zoomInBtn.disabled = z.level >= z.maxLevel;
+  if (zoomOutBtn) zoomOutBtn.disabled = z.level <= z.minLevel;
+  if (resetBtn) resetBtn.style.opacity = z.autoFit ? '0.5' : '1';
+}
+
+// Apply zoom transform to canvas context
+function applyZoom(ctx, zoomLevel) {
+  const gxCanvas = document.getElementById('gx-canvas');
+  const centerX = gxCanvas.width / 2;
+  const centerY = gxCanvas.height / 2;
+  
+  ctx.translate(centerX, centerY);
+  ctx.scale(zoomLevel, zoomLevel);
+  ctx.translate(-centerX, -centerY);
 }
 function drawGalaxy(){
-  if(!gxAniming)return;const ctx=gxCtx,{systems,conns}=G.galaxy,W=gxCanvas.width,H=gxCanvas.height;gxPulse+=.04;
-  ctx.fillStyle='#050709';ctx.fillRect(0,0,W,H);
-  const reach=reachable();
-  conns.forEach(([a,b])=>{const sa=systems[a],sb=systems[b];if(sa.revealed&&sb.revealed){ctx.beginPath();ctx.moveTo(sa.rx,sa.ry);ctx.lineTo(sb.rx,sb.ry);ctx.strokeStyle='rgba(0,229,255,.16)';ctx.lineWidth=1;ctx.stroke();}});
-  systems.forEach((sys,i)=>{
-    const isCur=i===G.curSys,isSel=i===G.selSys,isReach=reach.has(i),isVis=sys.revealed||isCur;
-    if(!isVis&&!isReach)return;
-    const cx=sys.rx,cy=sys.ry,r=isCur?6:4;
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=sys.revealed?sys.starColor:sys.starColor+'66';ctx.fill();
-    if(sys.revealed){ctx.font='10px VT323';ctx.fillStyle='rgba(232,240,255,.75)';ctx.textAlign='center';ctx.fillText(sys.name,cx,cy+r+12);}
-    if(isCur){ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.strokeStyle='#00e5ff';ctx.lineWidth=1.5;ctx.stroke();}
-    if(isSel&&!isCur){ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.strokeStyle='#f1c40f';ctx.lineWidth=1.5;ctx.stroke();}
+  if(!gxAniming) return;
+  const ctx = gxCtx;
+  const {systems, conns} = G.galaxy;
+  const W = gxCanvas.width, H = gxCanvas.height;
+  gxPulse += .04;
+  ctx.fillStyle = '#050709';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  applyZoom(ctx, G.galaxyZoom.level);
+  const reach = reachable();
+  conns.forEach(([a, b]) => {
+    const sa = systems[a], sb = systems[b];
+    if (sa.revealed && sb.revealed) {
+      ctx.beginPath();
+      ctx.moveTo(sa.rx, sa.ry);
+      ctx.lineTo(sb.rx, sb.ry);
+      ctx.strokeStyle = 'rgba(0,229,255,.16)';
+      ctx.lineWidth = 1 / G.galaxyZoom.level; // Keep lines thin at any zoom
+      ctx.stroke();
+    }
   });
+  systems.forEach((sys, i) => {
+    const isCur = i === G.curSys;
+    const isSel = i === G.selSys;
+    const isReach = reach.has(i);
+    const isVis = sys.revealed || isCur;
+    if (!isVis && !isReach) return;
+    const cx = sys.rx, cy = sys.ry;
+    const baseR = isCur ? 6 : 4;
+    const r = baseR / G.galaxyZoom.level; // Keep stars readable at any zoom
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = sys.revealed ? sys.starColor : sys.starColor + '66';
+    ctx.fill();
+    // Draw name (only if zoomed in enough)
+    if (G.galaxyZoom.level > 0.7 && sys.revealed) {
+      ctx.font = `${10 / G.galaxyZoom.level}px VT323`;
+      ctx.fillStyle = 'rgba(232,240,255,.75)';
+      ctx.textAlign = 'center';
+      ctx.fillText(sys.name, cx, cy + r + 12);
+    }
+    // Draw selection rings
+    if (isCur) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 1.5 / G.galaxyZoom.level;
+      ctx.stroke();
+    }
+    if (isSel && !isCur) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = '#f1c40f';
+      ctx.lineWidth = 1.5 / G.galaxyZoom.level;
+      ctx.stroke();
+    }
+  });
+  ctx.restore();
+  // Auto-fit zoom if enabled and systems revealed
+  if (G.galaxyZoom.autoFit && G.galaxy.systems.some(s => s.revealed)) {
+    const newZoom = calculateAutoZoom();
+    if (Math.abs(newZoom - G.galaxyZoom.level) > 0.05) {
+      G.galaxyZoom.level = newZoom;
+      updateZoomUI();
+    }
+  }
   requestAnimationFrame(drawGalaxy);
 }
+  
 function revealConnected(sysId){
-  G.galaxy.systems[sysId].revealed=true;
-  G.galaxy.conns.forEach(([a,b])=>{if(a===sysId) G.galaxy.systems[b].revealed=true; if(b===sysId) G.galaxy.systems[a].revealed=true;});
+  G.galaxy.systems[sysId].revealed = true;
+  G.galaxy.conns.forEach(([a, b]) => {
+    if (a === sysId) G.galaxy.systems[b].revealed = true;
+    if (b === sysId) G.galaxy.systems[a].revealed = true;
+  });
+  // Trigger auto-zoom recalculation if enabled
+  if (G.galaxyZoom.autoFit) {
+    G.galaxyZoom.level = calculateAutoZoom();
+    updateZoomUI();
+  }
 }
 function onGxClick(e){
   const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();
@@ -3051,6 +3255,87 @@ function onGxClick(e){
 }
 function onGxHover(e){const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();const tt=document.getElementById('sys-tooltip');let found=false;G.galaxy.systems.forEach((sys,i)=>{if(Math.hypot(mx-sys.rx,my-sys.ry)<12&&(sys.revealed||reach.has(i)||i===G.curSys)){tt.textContent=sys.revealed?`${sys.name} — ${sys.faction.name}`:`${sys.name} — UNSCANNED`;tt.style.display='block';tt.style.left=(mx+14)+'px';tt.style.top=(my-10)+'px';found=true;}});if(!found)tt.style.display='none';}
 
+// ========== GALAXY ZOOM SYSTEM ==========
+// Calculate bounding box of all revealed systems
+function getExploredBounds() {
+  const revealed = G.galaxy.systems.filter(s => s.revealed || s.id === G.curSys);
+  if (revealed.length === 0) return null;
+  
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  revealed.forEach(s => {
+    minX = Math.min(minX, s.x);
+    maxX = Math.max(maxX, s.x);
+    minY = Math.min(minY, s.y);
+    maxY = Math.max(maxY, s.y);
+  });
+  return { minX, maxX, minY, maxY };
+}
+
+// Calculate optimal zoom level to fit explored systems on screen
+function calculateAutoZoom() {
+  const bounds = getExploredBounds();
+  if (!bounds) return 1.0;
+  
+  const gxCanvas = document.getElementById('gx-canvas');
+  const padding = 100; // Padding around edges
+  
+  const width = bounds.maxX - bounds.minX;
+  const height = bounds.maxY - bounds.minY;
+  
+  // Calculate scale needed to fit bounds + padding into canvas
+  const scaleX = (gxCanvas.width - padding) / (width || 1);
+  const scaleY = (gxCanvas.height - padding) / (height || 1);
+  
+  // Use smaller scale to ensure everything fits
+  let scale = Math.min(scaleX, scaleY);
+  
+  // Clamp to zoom limits
+  scale = Math.max(G.galaxyZoom.minLevel, Math.min(G.galaxyZoom.maxLevel, scale));
+  
+  return scale;
+}
+
+// Apply zoom level to canvas rendering
+function applyZoom(ctx, zoomLevel) {
+  const gxCanvas = document.getElementById('gx-canvas');
+  const centerX = gxCanvas.width / 2;
+  const centerY = gxCanvas.height / 2;
+  
+  ctx.translate(centerX, centerY);
+  ctx.scale(zoomLevel, zoomLevel);
+  ctx.translate(-centerX, -centerY);
+}
+
+// Manual zoom in/out
+function zoomGalaxy(direction) {
+  const z = G.galaxyZoom;
+  const newLevel = z.level + (direction * z.step);
+  z.level = Math.max(z.minLevel, Math.min(z.maxLevel, newLevel));
+  z.autoFit = false; // Disable auto-fit when manually zooming
+  drawGalaxy();
+  updateZoomUI();
+}
+
+// Reset to auto-fit zoom
+function resetZoom() {
+  G.galaxyZoom.autoFit = true;
+  G.galaxyZoom.level = calculateAutoZoom();
+  drawGalaxy();
+  updateZoomUI();
+}
+
+// Update zoom button states
+function updateZoomUI() {
+  const z = G.galaxyZoom;
+  const zoomInBtn = document.getElementById('gx-zoom-in');
+  const zoomOutBtn = document.getElementById('gx-zoom-out');
+  const resetBtn = document.getElementById('gx-zoom-reset');
+  
+  if (zoomInBtn) zoomInBtn.disabled = z.level >= z.maxLevel;
+  if (zoomOutBtn) zoomOutBtn.disabled = z.level <= z.minLevel;
+  if (resetBtn) resetBtn.style.opacity = z.autoFit ? '0.5' : '1';
+}
+  
 // ========== UI UPDATES ==========
 function updateHUD(){
   const s = G.flagship;
