@@ -80,12 +80,12 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .bar-track{width:72px;height:7px;background:rgba(255,255,255,.08);flex-shrink:0}.bar-fill{height:100%}
 .stat-val{font-size:15px;color:var(--star);white-space:nowrap;min-width:24px}
 .hud-creds{margin-left:auto;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold)}
-.main-area{flex:1;display:flex;overflow:hidden}
-.lp{width:215px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.main-area{flex:1;flex-direction: row;display:flex;overflow:hidden}
+.lp{width:215px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-shrink: 0;flex-direction:column}
 .panel-hdr{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);padding:9px 10px;border-bottom:1px solid var(--border);background:rgba(0,229,255,.04);display:flex;justify-content:space-between}
 .lp-body{padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;font-size:14px}
 .lp-actions{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
-.rp{width:196px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width 0.2s}
+.rp{width:196px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-shrink: 0;flex-direction:column;overflow:hidden;transition:width 0.2s}
 .rp.collapsed{width:40px}
 .rp .panel-content{overflow-y:auto;flex:1}
 .rp.collapsed .panel-content{display:none}
@@ -98,7 +98,7 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .rp-content select option {background: var(--panel);}  
 .btn-rename {background: transparent;border: 1px solid var(--metal);color: var(--metal);font-size: 7px;padding: 2px 5px;}
 .btn-rename:hover {border-color: var(--cyan);color: var(--cyan);}  
-.gc{flex:1;position:relative;overflow:hidden;background:#050709}
+.gc{flex:1;flex-shrink: 1;position:relative;overflow:hidden;background:#050709}
 #gx-canvas{display:block;image-rendering:pixelated}
 #ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
 #ev-overlay.open{display:flex}
@@ -145,18 +145,14 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .quest-item{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);padding:8px;margin-bottom:6px;font-size:13px}.quest-item.done{border-color:var(--safe);opacity:.6}.quest-hdr{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);margin-bottom:3px}.quest-obj{color:var(--star)}.quest-rw{color:var(--metal);font-size:11px}
 
 /* CREW */
-.crew-card-with-portrait {display: flex;align-items: flex-start;gap: 8px;padding: 8px 10px;border-bottom: 1px solid rgba(255,255,255,0.05);}
+.crew-card-with-portrait {display: flex;align-items: flex-start;gap: 8px;padding: 8px 10px;border-bottom: 1px solid rgba(255,255,255,0.05);width: 100%;box-sizing: border-box;}
 .crew-portrait {width: 40px;height: 40px;border-radius: 4px;object-fit: cover;border: 1px solid var(--border);background: var(--panel);flex-shrink: 0;}
 .crew-info-with-portrait {flex: 1;min-width: 0;}
-.crew-name {display: flex;justify-content: space-between;align-items: center;font-weight: bold;font-size: 13px;}
-.crew-role {font-size: 11px;color: var(--metal);}
-.crew-xp-bar {background: rgba(255,255,255,0.1);border-radius: 2px;height: 4px;margin: 4px 0;overflow: hidden;}
-.crew-xp-fill {background: var(--gold);height: 100%;transition: width 0.2s;}
-.crew-skills {display: flex;gap: 4px;flex-wrap: wrap;margin: 4px 0;}
+.crew-name {display: flex;justify-content: space-between;align-items: center;font-weight: bold;font-size: 13px;white-space: nowrap;}
+.crew-skills, .crew-station-select, .crew-ability-preview {margin-top: 4px;}
 .crew-skill {font-size: 10px;color: var(--cyan);}
-.crew-station-select {background: var(--void);border: 1px solid var(--border);color: var(--star);font-size: 10px;padding: 2px 4px;width: 100%;border-radius: 2px;margin-top: 4px;}
-.crew-tier-badge {color: var(--gold);font-size: 10px;margin-left: 4px;}
-.crew-ability-preview {font-size: 10px;color: var(--cyan);margin-top: 4px;font-style: italic;}
+.crew-station-select {background: var(--void);border: 1px solid var(--border);color: var(--star);font-size: 10px;padding: 2px 4px;width: 100%;border-radius: 2px;}
+.crew-ability-preview {font-size: 10px;color: var(--cyan);font-style: italic;}
 
 /* SHIP COMBAT */  
 #combat-screen{flex-direction:column}
