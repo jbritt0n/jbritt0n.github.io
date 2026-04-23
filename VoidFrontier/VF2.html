@@ -656,6 +656,7 @@ let sfCtx,sfStars=[],sfAnim=false;
 function initStarfield(){const c=document.getElementById('sf-canvas');c.width=window.innerWidth;c.height=window.innerHeight;sfCtx=c.getContext('2d');sfStars=[];for(let i=0;i<220;i++)sfStars.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()-.5)*.015+.005});sfAnim=true;animSF();}
 function animSF(){if(!sfAnim)return;const c=sfCtx.canvas;sfCtx.fillStyle='#0a0c10';sfCtx.fillRect(0,0,c.width,c.height);sfStars.forEach(s=>{s.a+=s.da;if(s.a<=0){s.a=0;s.da=Math.abs(s.da);}if(s.a>=1){s.a=1;s.da=-Math.abs(s.da);}sfCtx.beginPath();sfCtx.arc(s.x,s.y,s.r,0,Math.PI*2);sfCtx.fillStyle=`rgba(232,240,255,${s.a})`;sfCtx.fill();});requestAnimationFrame(animSF);}
 function randomSeed(){document.getElementById('seed-inp').value=rndSeedStr();}
+function beginGame(){sfAnim=false;const sv=document.getElementById('seed-inp').value.trim()||rndSeedStr();document.getElementById('seed-inp').value=sv;const diff=document.getElementById('difficulty-select').value;initState(sv,diff);G.ccStep=0; renderCC(); showScreen('cc-screen');}
 
 function updateHUD(){
 const s = G.flagship;
