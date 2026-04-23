@@ -261,10 +261,12 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
     </div>
     <div class="gc">
       <canvas id="gx-canvas"></canvas>
+      <!-- Simple Zoom Controls -->
       <div id="gx-zoom-controls" style="position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:10">
-        <button id="gx-zoom-in" class="btn btn-sm" onclick="zoomGalaxy(1)" title="Zoom In">🔍 +</button>
-        <button id="gx-zoom-reset" class="btn btn-sm" onclick="resetZoom()" title="Auto-Fit Zoom">⌖</button>
-        <button id="gx-zoom-out" class="btn btn-sm" onclick="zoomGalaxy(-1)" title="Zoom Out">🔍 −</button>
+        <button id="gx-zoom-in" class="btn btn-sm" onclick="zoomGalaxy(1)" title="Zoom In">+</button>
+        <button id="gx-zoom-reset" class="btn btn-sm" onclick="resetZoom()" title="Auto-Fit Zoom">⟲</button>
+        <button id="gx-zoom-out" class="btn btn-sm" onclick="zoomGalaxy(-1)" title="Zoom Out">−</button>
+      </div>
       </div>
       <div id="sys-tooltip"></div>
       <div id="ev-overlay"><div class="ev-card"><div class="ev-title" id="ev-title"></div><div class="ev-body" id="ev-body"></div><div class="ev-choices" id="ev-choices"></div></div></div>
@@ -3067,14 +3069,11 @@ function initGalaxy() {
   });
   // Initialize zoom state
   G.galaxyZoom = {
-    level: 1.0,           // Current zoom multiplier
-    baseScale: baseScale, // Original scale from init
-    offsetX: offX,        // Original offset from init
-    offsetY: offY,
-    minLevel: 0.3,        // Minimum zoom (farthest out)
-    maxLevel: 3.0,        // Maximum zoom (closest in)
-    step: 0.2,            // Zoom step per button/wheel action
-    autoFit: true         // Whether to auto-adjust to revealed systems
+    level: 1.0,
+    minLevel: 0.3,
+    maxLevel: 3.0,
+    step: 0.2,
+    autoFit: true
   };
   // Remove old event listeners to prevent duplicates
   gxCanvas.removeEventListener('click', onGxClick);
@@ -3089,6 +3088,9 @@ function initGalaxy() {
   // Initialize zoom UI if buttons exist
   if (document.getElementById('gx-zoom-in')) {
     updateZoomUI();
+    gxAniming = true;
+    drawGalaxy();
+
   }
   // Start animation loop
   gxAniming = true;
@@ -3156,12 +3158,11 @@ function updateZoomUI() {
   if (resetBtn) resetBtn.style.opacity = z.autoFit ? '0.5' : '1';
 }
 
-// Apply zoom transform to canvas context
 function applyZoom(ctx, zoomLevel) {
   const gxCanvas = document.getElementById('gx-canvas');
+  if (!gxCanvas) return;
   const centerX = gxCanvas.width / 2;
   const centerY = gxCanvas.height / 2;
-  
   ctx.translate(centerX, centerY);
   ctx.scale(zoomLevel, zoomLevel);
   ctx.translate(-centerX, -centerY);
@@ -3248,10 +3249,39 @@ function revealConnected(sysId){
     updateZoomUI();
   }
 }
-function onGxClick(e){
-  const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();
-  let best=null,bestD=20;G.galaxy.systems.forEach((sys,i)=>{const d=Math.hypot(mx-sys.rx,my-sys.ry);if(d<bestD&&(sys.revealed||reach.has(i)||i===G.curSys)){bestD=d;best=i;}});
-  if(best!==null){G.selSys=best;updateLP();}
+function onGxClick(e) {
+  const rect = gxCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const reach = reachable();
+  
+  // Get current zoom state safely
+  const z = G.galaxyZoom ? G.galaxyZoom.level : 1.0;
+  const centerX = gxCanvas.width / 2;
+  const centerY = gxCanvas.height / 2;
+  
+  let best = null;
+  let bestD = 25; // Hit radius in pixels (Screen Space)
+
+  G.galaxy.systems.forEach((sys, i) => {
+    // Calculate where the system is DRAWN on screen based on zoom
+    // Formula: Center + (WorldPos - Center) * Zoom
+    const scrX = centerX + (sys.rx - centerX) * z;
+    const scrY = centerY + (sys.ry - centerY) * z;
+    
+    const d = Math.hypot(mx - scrX, my - scrY);
+    
+    // Check if clickable and within range
+    if (d < bestD && (sys.revealed || reach.has(i) || i === G.curSys)) {
+      bestD = d;
+      best = i;
+    }
+  });
+
+  if (best !== null) {
+    G.selSys = best;
+    updateLP();
+  }
 }
 function onGxHover(e){const rect=gxCanvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const reach=reachable();const tt=document.getElementById('sys-tooltip');let found=false;G.galaxy.systems.forEach((sys,i)=>{if(Math.hypot(mx-sys.rx,my-sys.ry)<12&&(sys.revealed||reach.has(i)||i===G.curSys)){tt.textContent=sys.revealed?`${sys.name} — ${sys.faction.name}`:`${sys.name} — UNSCANNED`;tt.style.display='block';tt.style.left=(mx+14)+'px';tt.style.top=(my-10)+'px';found=true;}});if(!found)tt.style.display='none';}
 
@@ -3784,16 +3814,31 @@ function checkQuestCompletion(sysId) {
         updateRP();
     }
 }
-function exploreSys(){
+function exploreSys() {
   const sysId = G.curSys;
   const count = G.probedFeatures['explored_' + sysId] || 0;
-  if (count >= 2) {
-    addLog('Nothing more to explore here.');
-    return;
+  
+  if (count >= 2) { 
+    addLog('This system has been fully explored.'); 
+    return; 
   }
+  
   G.probedFeatures['explored_' + sysId] = count + 1;
-  console.log('exploreSys: calling triggerEvent');
-  setTimeout(() => { if (!tryNonHostileEncounter()) triggerEvent(); }, 400);
+  addLog(`Exploring ${G.galaxy.systems[sysId].name}...`);
+  
+  // Trigger event after a short delay
+  setTimeout(() => {
+    try {
+      if (typeof triggerEvent === 'function') {
+        triggerEvent();
+      } else {
+        addLog('Error: Event system not found.');
+      }
+    } catch (e) {
+      console.error(e);
+      addLog('Error triggering event.');
+    }
+  }, 400);
 }
 
 
