@@ -1913,28 +1913,41 @@ const SPECIAL_CREW = [
   }
 ];
   
-.completedRecruitmentQuests = G.completedRecruitmentQuests || [];
+G.completedRecruitmentQuests = G.completedRecruitmentQuests || [];
 
 function checkRecruitmentQuests() {
   const available = [];
-  
   SPECIAL_CREW.forEach(crew => {
     if (G.completedRecruitmentQuests.includes(crew.id)) return; // Already recruited
-    
     const req = crew.requirements;
     let canRecruit = true;
-    
     // Check reputation requirements
     if (req.reputation) {
       Object.entries(req.reputation).forEach(([fac, minRep]) => {
-        if ((G.rep[fac] || 0) < minRep) canRecruit …available.push(crew);
+        if ((G.rep[fac] || 0) < minRep) canRecruit = false;
+      });
+    }
+    // Check completed quests
+    if (req.completedQuests) {
+      req.completedQuests.forEach(qId => {
+        if (!G.completedRecruitmentQuests.includes(qId)) canRecruit = false;
+      });
+    }
+    // Check minimum jumps
+    if (req.minJumps && G.jumps < req.minJumps) canRecruit = false;
+    // Check crew species requirement
+    if (req.crewSpecies) {
+      const hasSpecies = G.crew.some(c => c.alive && c.species === req.crewSpecies[0]);
+      if (!hasSpecies) canRecruit = false;
+    }
+    if (canRecruit) {
+      available.push(crew);
       addLog(`🌟 Special recruit available: ${crew.name} at ${G.galaxy.systems[G.curSys].name}!`);
     }
   });
   
   return available;
 }
-
 function addSpecialCrewToPool(crew) {
   // Add to temporary hire pool
   if (!window._tempHirePool) window._tempHirePool = [];
