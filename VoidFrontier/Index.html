@@ -68,7 +68,11 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .dossier{background:var(--panel);border:1px solid var(--border);padding:20px;width:360px}
 .dossier-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cyan);margin-bottom:10px}
 .dossier-row{font-size:16px;color:var(--metal);line-height:2}.dossier-row span{color:var(--star)}
-
+  
+/* XENO ALIEN TEXT */
+.xeno-alien-text{font-size:22px;color:var(--alien);letter-spacing:4px;margin:10px 0;min-height:30px;animation:xenoPulse 2s infinite}
+@keyframes xenoPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  
 /* GALAXY */
 .hud{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:18px;flex-shrink:0;height:44px}
 .hud-ship{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--cyan);white-space:nowrap}
@@ -90,6 +94,10 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 .rp-toggle.collapsed-header .collapse-btn { transform: rotate(-90deg); }
 .rp-content { transition: opacity 0.15s ease; }
 .rp-content.collapsed { display: none; opacity: 0; }  
+.rp-content select {background: var(--void);border: 1px solid var(--border);color: var(--star);font-family: 'VT323', monospace;font-size: 12px;padding: 2px 4px;outline: none;cursor: pointer;}
+.rp-content select option {background: var(--panel);}  
+.btn-rename {background: transparent;border: 1px solid var(--metal);color: var(--metal);font-size: 7px;padding: 2px 5px;}
+.btn-rename:hover {border-color: var(--cyan);color: var(--cyan);}  
 .gc{flex:1;position:relative;overflow:hidden;background:#050709}
 #gx-canvas{display:block;image-rendering:pixelated}
 #ev-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
@@ -234,6 +242,21 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
   <div class="cc-nav" id="cc-nav"></div>
 </div>
 
+<!-- XENO OVERLAY (V2) -->
+<div id="xeno-overlay">
+  <div class="xeno-card">
+    <div id="xeno-title" style="font-family:'Press Start 2P';font-size:9px;color:var(--alien);margin-bottom:10px">👽 ALIEN CONTACT</div>
+    <div id="xeno-body" style="font-size:15px;color:var(--metal);line-height:1.6;margin-bottom:10px"></div>
+    <div class="xeno-alien-text" id="xeno-lang"></div>
+    <div id="xeno-translation" style="font-size:13px;color:var(--star);font-style:italic;margin-top:4px;min-height:18px"></div>
+    <div id="xeno-choices" style="margin-top:14px;display:flex;flex-direction:column;gap:7px"></div>
+    <div id="xeno-translate-bar" style="margin-top:10px;background:rgba(142,68,173,.15);border:1px solid var(--alien);padding:8px;display:none">
+      <div style="font-size:11px;color:var(--alien);margin-bottom:4px">TRANSLATOR PROGRESS</div>
+      <div style="height:5px;background:rgba(255,255,255,.1)"><div id="xeno-translate-fill" style="height:100%;background:var(--alien);width:0%;transition:width 0.5s"></div></div>
+    </div>
+  </div>
+</div>
+  
 <!-- GALAXY -->
 <div id="galaxy-screen" class="screen">
   <div class="hud">
@@ -314,8 +337,10 @@ input,select{background:var(--void);border:1px solid var(--cyan);color:var(--sta
 <!-- COMBAT (Ship) -->
 <div id="combat-screen" class="screen">
   <div class="cbat-hdr"><div class="cbat-title">⚔ SHIP COMBAT</div><div style="flex:1"></div><div id="cbat-phase-hdr">YOUR TURN</div></div>
+  <div id="cbat-hazard-bar"></div>
   <div class="cbat-body">
     <div class="cbat-ship"><div class="cbat-ship-name" id="cbat-player-name"></div><div id="cbat-player-bars"></div><div class="sys-grid" id="cbat-player-sys"></div></div>
+    <div id="cbat-stations" class="station-panel"></div>
     <div class="cbat-center"><div class="cbat-log" id="cbat-log"></div><div class="cbat-phase" id="cbat-phase-bar"></div></div>
     <div class="cbat-ship enemy-panel"><div class="cbat-ship-name" id="cbat-enemy-name"></div><div id="cbat-enemy-bars"></div><div class="sys-grid" id="cbat-enemy-sys"></div><div id="cbat-enemy-desc"></div></div>
   </div>
@@ -831,41 +856,33 @@ const SHIP_TEMPLATES = [
   { id: 'mining_castoff', class: 'Utility', tier: 0, rarity: 'common', namePool: ['Mining Castoff', 'Drill Rig', 'Rock Hauler', 'Deep Core Tug'], statRanges: { hull: [50, 70], shields: [0, 15], cargo: [10, 14], fuelUse: [2.0, 2.4], crewMax: [2, 3], moduleSlots: [1, 1] }, passive: 'Industrial Frame: +25% mining yield, but -15% evasion' },
   { id: 'courier_wreck', class: 'Speed', tier: 0, rarity: 'common', namePool: ['Wrecked Courier', 'Overtuned Runner', 'Speed Demon', 'Rushed Delivery'], statRanges: { hull: [25, 45], shields: [5, 20], cargo: [2, 5], fuelUse: [0.4, 0.8], crewMax: [1, 2], moduleSlots: [1, 1] }, passive: 'Overtuned Engines: -40% fuel use, but engines can fail mid-jump (rare event)' },
   { id: 'floating_coffin', class: 'Stealth', tier: 0, rarity: 'uncommon', namePool: ['Floating Coffin', 'Ghost Skiff', 'Cold Trace', 'Shadow Runner'], statRanges: { hull: [40, 60], shields: [0, 10], cargo: [4, 7], fuelUse: [1.0, 1.4], crewMax: [1, 2], moduleSlots: [1, 1] }, passive: 'Cold Signature: Enemy detection chance -30%, but crew morale -2 per jump' },
-  
-  // Tier 1: Light / Agile
+    // Tier 1: Light / Agile
   { id: 'scout', class: 'Explorer', tier: 1, rarity: 'common', namePool: ['Star Skipper', 'Void Runner', 'Nebula Dart', 'Horizon Chaser'], statRanges: { hull: [70, 90], shields: [25, 35], cargo: [6, 10], fuelUse: [0.6, 0.8], crewMax: [2, 3], moduleSlots: [2, 3] }, passive: 'Survey Scanner: +15% chance to reveal hidden nodes' },
   { id: 'interceptor', class: 'Combat', tier: 1, rarity: 'common', namePool: ['Light Interceptor', 'Striker', 'Blade Runner', 'Flash Fighter'], statRanges: { hull: [80, 100], shields: [20, 30], cargo: [4, 7], fuelUse: [0.5, 0.7], crewMax: [1, 2], moduleSlots: [2, 2] }, passive: 'Afterburn Thrusters: +20% evasion for first 2 turns of combat' },
-  
-  // Tier 2: Utility / Trade
+    // Tier 2: Utility / Trade
   { id: 'freighter', class: 'Trade', tier: 2, rarity: 'common', namePool: ['Cargo Hauler', 'Bulk Transport', 'Trade Wind', 'Freight Master'], statRanges: { hull: [110, 130], shields: [35, 45], cargo: [18, 22], fuelUse: [1.0, 1.4], crewMax: [4, 6], moduleSlots: [3, 4] }, passive: 'Bulk Transport: Trade profits +10%' },
   { id: 'salvager', class: 'Utility', tier: 2, rarity: 'uncommon', namePool: ['Salvage Barge', 'Wreck Hunter', 'Scrap Collector', 'Derelict Dredger'], statRanges: { hull: [130, 150], shields: [25, 35], cargo: [22, 28], fuelUse: [1.4, 1.8], crewMax: [4, 6], moduleSlots: [3, 4] }, passive: 'Scrap Harvester: +25% scrap from wrecks' },
   { id: 'smuggler', class: 'Stealth', tier: 2, rarity: 'uncommon', namePool: ['Smuggler Sloop', 'Shadow Trader', 'Contraband Runner', 'Covert Clipper'], statRanges: { hull: [100, 120], shields: [45, 55], cargo: [10, 14], fuelUse: [0.8, 1.2], crewMax: [3, 5], moduleSlots: [3, 4] }, passive: 'Hidden Compartments: 50% chance to avoid contraband scans' },
-  
-  // Tier 3: Combat Core
+    // Tier 3: Combat Core
   { id: 'corvette', class: 'Combat', tier: 3, rarity: 'common', namePool: ['Corvette', 'Patrol Vessel', 'Guard Ship', 'Ironclad'], statRanges: { hull: [140, 160], shields: [55, 65], cargo: [10, 14], fuelUse: [1.3, 1.7], crewMax: [5, 7], moduleSlots: [4, 4] }, passive: 'Balanced Systems: +5% all stats' },
   { id: 'gunship', class: 'Combat', tier: 3, rarity: 'uncommon', namePool: ['Assault Gunship', 'War Hammer', 'Broadside', 'Heavy Striker'], statRanges: { hull: [160, 180], shields: [45, 55], cargo: [8, 12], fuelUse: [1.5, 1.9], crewMax: [5, 7], moduleSlots: [4, 5] }, passive: 'Heavy Barrage: +15% weapon damage, -10% evasion' },
   { id: 'raider', class: 'Boarding', tier: 3, rarity: 'uncommon', namePool: ['Pirate Raider', 'Boarding Cutter', 'Hook Ship', 'Raven'], statRanges: { hull: [130, 150], shields: [35, 45], cargo: [13, 17], fuelUse: [1.2, 1.6], crewMax: [5, 7], moduleSlots: [4, 5] }, passive: 'Boarding Hooks: Boarding success +25%' },
-  
-  // Tier 4: Specialized
+    // Tier 4: Specialized
   { id: 'explorer', class: 'Explorer', tier: 4, rarity: 'uncommon', namePool: ['Deep Space Explorer', 'Pathfinder', 'Star Cartographer', 'Void Surveyor'], statRanges: { hull: [170, 190], shields: [90, 110], cargo: [25, 35], fuelUse: [1.0, 1.4], crewMax: [6, 8], moduleSlots: [4, 5] }, passive: 'Deep Scan Array: +25% anomaly rewards' },
   { id: 'science_vessel', class: 'Science', tier: 4, rarity: 'rare', namePool: ['Research Vessel', 'Xeno Lab', 'Data Runner', 'Academic Cruiser'], statRanges: { hull: [150, 170], shields: [70, 90], cargo: [18, 22], fuelUse: [0.9, 1.3], crewMax: [7, 9], moduleSlots: [5, 5] }, passive: 'Xeno Lab: +50% research speed, unlocks special events' },
   { id: 'carrier_light', class: 'Carrier', tier: 4, rarity: 'rare', namePool: ['Light Carrier', 'Drone Tender', 'Wasp Nest', 'Swarm Mother'], statRanges: { hull: [190, 210], shields: [65, 75], cargo: [15, 20], fuelUse: [1.6, 2.0], crewMax: [8, 10], moduleSlots: [5, 6] }, passive: 'Drone Bay: Deploy 1 extra drone in combat' },
-  
-  // Tier 5: Heavy Warships
+    // Tier 5: Heavy Warships
   { id: 'frigate', class: 'Combat', tier: 5, rarity: 'uncommon', namePool: ['Frigate', 'Escort Vessel', 'Shield Wall', 'Vanguard'], statRanges: { hull: [210, 230], shields: [85, 95], cargo: [16, 20], fuelUse: [1.8, 2.2], crewMax: [7, 9], moduleSlots: [5, 5] }, passive: 'Shield Matrix: +20% shield regen' },
   { id: 'destroyer', class: 'Combat', tier: 5, rarity: 'rare', namePool: ['Destroyer', 'Siege Breaker', 'Hammer of Dawn', 'Line Breaker'], statRanges: { hull: [290, 310], shields: [130, 150], cargo: [22, 28], fuelUse: [2.6, 3.0], crewMax: [11, 13], moduleSlots: [6, 6] }, passive: 'Siege Mode: +30% damage when stationary' },
   { id: 'cruiser', class: 'Combat', tier: 5, rarity: 'rare', namePool: ['Heavy Cruiser', 'Command Ship', 'Flagbearer', 'Dreadnought Lite'], statRanges: { hull: [370, 390], shields: [170, 190], cargo: [28, 32], fuelUse: [3.0, 3.4], crewMax: [13, 15], moduleSlots: [7, 7] }, passive: 'Command Bridge: Crew buffs +10%' },
-  
-  // Tier 6: Exotic
+    // Tier 6: Exotic
   { id: 'void_skimmer', class: 'Explorer', tier: 6, rarity: 'rare', namePool: ['Void Skimmer', 'Phase Glider', 'Nebula Surfer', 'Dark Matter Skipper'], statRanges: { hull: [190, 210], shields: [110, 130], cargo: [13, 17], fuelUse: [0.7, 1.1], crewMax: [5, 7], moduleSlots: [5, 5] }, passive: 'Void Glide: Ignores nebula penalties' },
   { id: 'bio_cruiser', class: 'Exotic', tier: 6, rarity: 'legendary', namePool: ['Living Bio-Cruiser', 'Xeno Hive', 'Flesh Ship', 'Organic Leviathan'], statRanges: { hull: [340, 360], shields: [90, 110], cargo: [18, 22], fuelUse: [1.3, 1.7], crewMax: [9, 11], moduleSlots: [6, 6] }, passive: 'Regenerative Hull: Heals 2% hull per turn' },
   { id: 'phase_runner', class: 'Stealth', tier: 6, rarity: 'legendary', namePool: ['Phase Runner', 'Ghost Vessel', 'Temporal Slip', 'Quantum Drifter'], statRanges: { hull: [170, 190], shields: [150, 170], cargo: [8, 12], fuelUse: [0.8, 1.2], crewMax: [4, 6], moduleSlots: [5, 5] }, passive: 'Phase Shift: 20% chance to avoid all damage' },
-  
-  // Tier 7: Flagships
+    // Tier 7: Flagships
   { id: 'battlecarrier', class: 'Carrier', tier: 7, rarity: 'legendary', namePool: ['Battlecarrier', 'Mobile Fortress', 'Titan Class', 'Supremacy'], statRanges: { hull: [490, 510], shields: [240, 260], cargo: [38, 42], fuelUse: [3.8, 4.2], crewMax: [17, 19], moduleSlots: [8, 8] }, passive: 'Fleet Command: +2 drone capacity' },
   { id: 'dreadnought', class: 'Combat', tier: 7, rarity: 'legendary', namePool: ['Dreadnought', 'World Breaker', 'Apex Predator', 'Colossus'], statRanges: { hull: [640, 660], shields: [290, 310], cargo: [48, 52], fuelUse: [4.8, 5.2], crewMax: [19, 21], moduleSlots: [9, 9] }, passive: 'Intimidation Aura: Enemy morale -20%' },
   { id: 'arkship', class: 'Colony', tier: 7, rarity: 'legendary', namePool: ['Arkship', 'Generation Vessel', 'Seed Carrier', 'Nova Ark'], statRanges: { hull: [540, 560], shields: [210, 230], cargo: [75, 85], fuelUse: [3.3, 3.7], crewMax: [15, 17], moduleSlots: [8, 8] }, passive: 'Self-Sustaining: Reduces all upkeep costs by 25%' },
-  
   // Tier 8: Legendary Unique
   { id: 'relic_vessel', class: 'Exotic', tier: 8, rarity: 'mythic', namePool: ['Precursor Relic', 'Ancient Power', 'First Light', 'Primordial Core'], statRanges: { hull: [390, 410], shields: [390, 410], cargo: [23, 27], fuelUse: [0.3, 0.7], crewMax: [9, 11], moduleSlots: [7, 7] }, passive: 'Ancient Power: No fuel cost for jumps' },
   { id: 'ghost_ship', class: 'Stealth', tier: 8, rarity: 'mythic', namePool: ['Ghost Ship', 'Phantom Vessel', 'Ethereal Walker', 'Void Specter'], statRanges: { hull: [290, 310], shields: [0, 0], cargo: [18, 22], fuelUse: [0.6, 1.0], crewMax: [5, 7], moduleSlots: [5, 5] }, passive: 'Ethereal: Cannot be targeted every 3rd turn' }
@@ -1446,9 +1463,7 @@ const EVENTS = [
     { text: '[ BLACKMAIL ] Demand payment', eff: { cr: 2000, rep_megacorp: -10, log: 'They paid you handsomely for silence.' } },
     { text: '[ BURY IT ]', eff: {} }
   ] }
-
-
-  
+ 
 ];
 
 // ========== EXPANDED DRAMA EVENTS FOR VOID FRONTIER ==========
@@ -1680,7 +1695,94 @@ const DRAMA_EVENTS = [
   ] }
 ];
 
+// ========== V2 ADDITIONS: COMBAT HAZARDS ==========
+const COMBAT_HAZARDS = [
+  { id: 'chrono_leak', title: '⏳ CHRONO-LEAK', desc: 'Temporal distortion slows targeting! Accuracy reduced.', effect: { playerAccuracyMod: -0.2 } },
+  { id: 'nanite_swarm', title: '🦠 NANITE SWARM', desc: 'Nanites chew through plating!', effect: { hullDrain: 6 } },
+  { id: 'gravity_surge', title: '🌀 GRAVITY SURGE', desc: 'Micro-singularity disrupts shields!', effect: { shieldDrain: 18 } },
+  { id: 'emp_pulse', title: '⚡ EMP PULSE', desc: 'Weapons knocked offline this turn!', effect: { disableWeapons: true } },
+  { id: 'debris_field', title: '💥 DEBRIS FIELD', desc: 'Collision! Hull impact.', effect: { immediateHullDmg: 10 } },
+  { id: 'radiation_burst', title: '☢ RADIATION BURST', desc: 'Cosmic radiation degrades shields!', effect: { shieldDrain: 22 } }
+];
 
+// ========== V2 ADDITIONS: XENO LANGUAGES & NONHOSTILE ENCOUNTERS ==========
+const XENO_LANGUAGES = {
+  nomads: { name: 'Drift-Speak', greetings: ['Vel-ta-krix!', 'Zho-varum, star-walker.', 'Kael-sun bok.'], translations: { 0: '[intent unclear]', 1: '[peaceful contact]', 2: '[trade offer detected]', 3: '[full conversation achieved]' } },
+  alien: { name: 'Symbiont-Pulse', greetings: ['*resonant triad hum*', '*cascading bioluminescence*', '*deep harmonic pulse*'], translations: { 0: '[biological signal]', 1: '[non-hostile resonance]', 2: '[complex message — partial]', 3: '[full neural handshake]' } },
+  cult: { name: 'Void-Script', greetings: ['KAL-VETH MOURN', 'Silence-born, we see you.', 'The Void watches.'], translations: { 0: '[ominous chanting]', 1: '[religious greeting]', 2: '[cryptic message]', 3: '[full translation — disturbing]' } }
+};
+
+const NONHOSTILE_ENCOUNTERS = [
+  { id: 'nomad_vessel', faction: 'nomads', title: '🌌 NOMAD VESSEL', intro: 'A sleek vessel materialises from drift. Their hail is... musical in nature.', xenoLang: 'nomads',
+    choices: [
+      { text: 'Respond in Standard', skillCheck: { skill: 'charisma', dc: 10 }, success: { eff: { cr: 300, log: 'Trade established.' }, trade: true }, failure: { eff: { log: 'They drifted away, confused.' } } },
+      { text: 'Attempt their language', skillCheck: { skill: 'intelligence', dc: 15 }, success: { eff: { cr: 600, artifact: 1, mora: 10, rep_nomads: 15, log: 'They are delighted! Rare goods exchanged.' } }, failure: { eff: { cr: 100, log: 'They laughed but traded a little.' } } },
+      { text: 'Universal trade signals', eff: { cr: 200, log: 'Basic exchange completed.' } },
+      { text: 'Maintain silence', eff: { log: 'They observed briefly and moved on.' } }
+    ] },
+  { id: 'lost_probe', faction: 'independent', title: '📡 ANCIENT PROBE', intro: 'A centuries-old probe drifts nearby, broadcasting a repeating signal.',
+    choices: [
+      { text: 'Decode the signal', skillCheck: { skill: 'intelligence', dc: 12 }, success: { eff: { artifact: 1, cr: 200, log: 'Ancient star charts recovered!' } }, failure: { eff: { log: 'Signal too degraded.' } } },
+      { text: 'Salvage the probe', eff: { scrap: 4, cr: 150, log: 'Salvaged for parts and historical data.' } },
+      { text: 'Report to Guild', eff: { cr: 200, rep_guild: 5, log: 'Guild credits the discovery.' } }
+    ] }
+];
+
+
+// ========== XENO AND ENCOUNTERS ==========  
+function tryNonHostileEncounter() {
+  if (G.rng.next() > 0.14) return false;
+  const enc = NONHOSTILE_ENCOUNTERS[Math.floor(G.rng.next() * NONHOSTILE_ENCOUNTERS.length)];
+  showXenoEncounter(enc);
+  return true;
+}
+
+function showXenoEncounter(enc) {
+  const lang = enc.xenoLang ? XENO_LANGUAGES[enc.xenoLang] : null;
+  document.getElementById('xeno-title').textContent = enc.title;
+  document.getElementById('xeno-body').textContent = processText(enc.intro);
+  document.getElementById('xeno-lang').textContent = lang ? lang.greetings[Math.floor(Math.random() * lang.greetings.length)] : '';
+  const tl = G.xenoTranslations[enc.xenoLang || ''] || 0;
+  document.getElementById('xeno-translation').textContent = lang && lang.translations[tl] ? `[${lang.translations[tl]}]` : '';
+  const bar = document.getElementById('xeno-translate-bar');
+  if (lang) { bar.style.display = 'block'; document.getElementById('xeno-translate-fill').style.width = (tl / 3 * 100) + '%'; }
+  else bar.style.display = 'none';
+  document.getElementById('xeno-choices').innerHTML = enc.choices.map((c, i) => `<button class="choice-btn" onclick="resolveXenoChoice(${i})">${processText(c.text)}</button>`).join('');
+  document.getElementById('xeno-overlay').classList.add('open');
+  window._curXenoEnc = enc;
+}
+
+function resolveXenoChoice(i) {
+  document.getElementById('xeno-overlay').classList.remove('open');
+  const enc = window._curXenoEnc; if (!enc) return;
+  let ch = enc.choices[i], outcome = ch;
+  if (ch.skillCheck) {
+    const { skill, dc } = ch.skillCheck;
+    const roll = Math.floor(G.rng.next() * 20) + (G.captain.skills[skill] || 1);
+    if (roll >= dc) { outcome = ch.success || ch; addLog('Success!'); }
+    else { outcome = ch.failure || { eff: { log: 'Failed.' } }; addLog('Failed.'); }
+  }
+  const eff = outcome.eff || {};
+  applyEff(eff);
+  if (enc.xenoLang) G.xenoTranslations[enc.xenoLang] = Math.min(3, (G.xenoTranslations[enc.xenoLang] || 0) + 1);
+  addLog(eff.log || 'Encounter resolved.');
+  updateHUD(); updateRP();
+  setTimeout(() => { if (eff.combat) startCombat(); else triggerEvent(); }, 300);
+}
+
+ function processText(text) {
+  if (!text) return text;
+  const alive = G.crew.filter(c => c.alive);
+  const c1 = alive[0]?.name || 'Crew Member';
+  const c2 = alive[1]?.name || 'Crew Member';
+  const sys = G.galaxy?.systems[G.curSys]?.name || 'Unknown System';
+  const fac = FACTIONS[Math.floor((G.rng?.next() || Math.random()) * FACTIONS.length)]?.name || 'Unknown Faction';
+  return text.replace(/\{crew1\}/g, c1).replace(/\{crew2\}/g, c2)
+    .replace(/\{captain_name\}/g, G.captain.name || 'Captain')
+    .replace(/\{ship_name\}/g, G.flagship?.name || 'Your Ship')
+    .replace(/\{system\}/g, sys).replace(/\{fac\}/g, fac);
+} 
+  
 // ========== EXPANDED CREW POOL (30 total, class-aligned) ==========
 const CREW_POOL = [
   // === VANGUARD (Tank) - High HP, Defense Focus ===
@@ -1746,7 +1848,14 @@ const CREW_PORTRAITS = {
   'default': 'assets/portraits/crew_default.png'
 };
 
-
+// ========== V2 ADDITIONS: CREW STATIONS ==========
+const CREW_STATIONS = {
+  weapons: { name: 'Weapons Officer', emoji: '🎯', desc: 'Boosts weapon damage' },
+  shields: { name: 'Shield Officer', emoji: '🛡️', desc: 'Speeds shield regen' },
+  engines: { name: 'Helm Officer', emoji: '🚀', desc: 'Improves evasion' },
+  medical: { name: 'Medical Officer', emoji: '💉', desc: 'Crew recover faster' }
+};
+  
 // ========== RECRUITMENT QUESTS ==========
 
 // Special crew that require quests/reputation to recruit
@@ -1905,7 +2014,72 @@ function generateRandomCrew() {
   
   return {id:'c'+Math.random().toString(36),name:names[Math.floor(Math.random()*names.length)],role:roles[Math.floor(Math.random()*roles.length)],emoji:'👤',loyalty:50,bio:'Recruit.',hp:40,maxHp:40,atk:8,spd:5,skill:5,alive:true,xp:0,level:1,equippedWeapon:null};
 }
+function renameShip(index) {
+  const ship = G.fleet[index];
+  if (!ship) return;
+  const newName = prompt(`Enter new name for ${ship.name}:`, ship.name);
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim().toUpperCase().slice(0, 22);
+    ship.name = trimmed;
+    // If this is the flagship, update HUD
+    if (index === 0) {
+      document.getElementById('hud-ship').textContent = trimmed;
+    }
+    addLog(`Renamed ship to ${trimmed}.`);
+    updateRP(); // Refresh the panel
+  }
+}
+    
+// ========== HAZARDS ==========    
+function triggerCombatHazard() {
+  const c = G.combat;
+  const h = COMBAT_HAZARDS[Math.floor(G.rng.next() * COMBAT_HAZARDS.length)];
+  c.hazardCooldown = 4;
+  const bar = document.getElementById('cbat-hazard-bar');
+  bar.innerHTML = `<div class="hazard-alert">⚠ ${h.title}: ${h.desc}</div>`;
+  setTimeout(() => bar.innerHTML = '', 3500);
+  const eff = h.effect;
+  if (eff.hullDrain) G.flagship.hull = Math.max(1, G.flagship.hull - eff.hullDrain);
+  if (eff.shieldDrain) G.flagship.shields = Math.max(0, G.flagship.shields - eff.shieldDrain);
+  if (eff.immediateHullDmg) G.flagship.hull = Math.max(1, G.flagship.hull - eff.immediateHullDmg);
+  if (eff.disableWeapons) c.hazardWeaponsDisabled = true;
+  if (eff.playerAccuracyMod) c.hazardAccMod = (c.hazardAccMod || 0) + eff.playerAccuracyMod;
+  addCombatLog(h.title + ': ' + h.desc, 'hazard');
+  renderCombat();
+}
+    
+ // ========== BATTLE STATIONS ==========   
+function getStationBonus(stId) {
+  const cId = G.crewStations[stId];
+  if (!cId) return 0;
+  const c = G.crew.find(x => x.id === cId && x.alive && x.hp > 0);
+  return c ? Math.max(1, Math.floor(c.skill / 2)) : 0;
+}
 
+function assignCrewToStation(crewId, stId) {
+  // Remove any existing assignment for this crew member
+  Object.keys(G.crewStations).forEach(k => {
+    if (G.crewStations[k] === crewId) delete G.crewStations[k];
+  });
+  // Assign to new station (if not 'none')
+  if (stId && stId !== 'none') {
+    G.crewStations[stId] = crewId;
+  }
+  updateRP(); // Refresh the right panel
+  addLog('Crew station assignment updated.');
+}
+
+function renderCombatStations() {
+  const el = document.getElementById('cbat-stations');
+  if (!el) return;
+  el.innerHTML = `<div style="font-family:'Press Start 2P';font-size:7px;color:var(--cyan);margin-bottom:5px">CREW STATIONS</div>` +
+    Object.entries(CREW_STATIONS).map(([sid, st]) => {
+      const cId = G.crewStations[sid];
+      const c = cId ? G.crew.find(x => x.id === cId) : null;
+      const bonus = getStationBonus(sid);
+      return `<div class="station-slot"><span>${st.emoji}${st.name.split(' ')[0]}</span><span style="color:${c ? 'var(--safe)' : 'var(--metal)'}">${c ? c.name + ` +${bonus}` : '—'}</span></div>`;
+    }).join('');
+}
 
 // ========== QUESTS ========== 
 function addQuest(q) {
@@ -2027,7 +2201,9 @@ function initState(seed, difficulty='normal') {
     G.jumps = 0; 
     G.dramaTimer = 0;
     G.completedRecruitmentQuests = [];
-
+    G.crewStations = {};
+    G.xenoTranslations = {};
+    G.galaxyFlags = {};
     // Apply difficulty multipliers
     const mult = {easy:1.5, normal:1.0, hard:0.6};
     G.flagship.credits = Math.floor(1000 * mult[difficulty]);
@@ -2768,29 +2944,52 @@ function updateRP(){
     document.getElementById('rp-cargo').innerHTML = cargoHtml || '<div style="color:var(--metal)">Empty</div>';
     
     // CREW
-  document.getElementById('rp-crew').innerHTML=G.crew.filter(c=>c.alive).map(c=>{
-    const portraitUrl = c.portrait || CREW_PORTRAITS['default'] || 'assets/portraits/crew_default.png';
-    return `
-      <div class="crew-row crew-card-with-portrait">
-        <img src="${portraitUrl}" alt="${c.name}" class="crew-portrait" 
-             onerror="this.src='assets/portraits/crew_default.png'">
-        <div class="crew-info crew-info-with-portrait">
-          <div class="crew-name">${c.name} Lv.${c.level||1} ${c.hp}/${c.maxHp}</div>
-          <div class="crew-role">${c.role} • ${c.species}</div>
+    document.getElementById('rp-crew').innerHTML = G.crew.filter(c => c.alive).map(c => {
+      const portraitUrl = c.portrait || CREW_PORTRAITS[c.name] || CREW_PORTRAITS['default'] || 'assets/portraits/crew_default.png';
+      const assignedStation = Object.entries(G.crewStations).find(([k, v]) => v === c.id)?.[0];
+      
+      return `
+        <div class="crew-row crew-card-with-portrait">
+          <img src="${portraitUrl}" alt="${c.name}" class="crew-portrait" 
+               onerror="this.src='assets/portraits/crew_default.png'">
+          <div class="crew-info crew-info-with-portrait">
+            <div class="crew-name">
+              ${c.name} Lv.${c.level || 1} ${c.hp}/${c.maxHp}
+              ${assignedStation ? `<span style="color:var(--gold); margin-left:6px;">${CREW_STATIONS[assignedStation].emoji}</span>` : ''}
+            </div>
+            <div class="crew-role">${c.role} • ${c.species}</div>
+            <div style="margin-top:4px;">
+              <select onchange="assignCrewToStation('${c.id}', this.value)" style="background:var(--void);border:1px solid var(--cyan);color:var(--star);font-size:11px;padding:2px 4px;width:100%;">
+                <option value="none">Unassigned</option>
+                ${Object.entries(CREW_STATIONS).map(([sid, st]) => 
+                  `<option value="${sid}" ${assignedStation === sid ? 'selected' : ''}>${st.emoji} ${st.name}</option>`
+                ).join('')}
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
-    `;
-  }).join('');
-  
+      `;
+    }).join('');
+      
     
     // CAPTAIN
     const or = ORIGINS.find(o => o.id === G.captain.origin);
     document.getElementById('rp-cap').innerHTML = `<div>${G.captain.name} Lv.${G.captain.level}</div><div>${or?.emoji} ${or?.name}</div><div>Skills: CHA ${G.captain.skills.charisma} INT ${G.captain.skills.intelligence} ENG ${G.captain.skills.engineering} CMB ${G.captain.skills.combat} HCK ${G.captain.skills.hacking}</div>`;
     
-    // FLEET
-    document.getElementById('rp-fleet').innerHTML = G.fleet.map((s, i) => 
-        `<div style="padding:5px;border-bottom:1px solid #333"><b>${s.name}</b> (${s.type})<br>Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}<br>Cargo: ${s.cargoMax}</div>`
-    ).join('');
+    // FLEET 
+    document.getElementById('rp-fleet').innerHTML = G.fleet.map((s, i) => {
+      const isFlagship = i === 0;
+      return `
+        <div style="padding:5px;border-bottom:1px solid #333;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <b style="color:${isFlagship ? 'var(--gold)' : 'var(--star)'}">${s.name}</b>
+            <button class="btn btn-sm" style="padding:2px 5px;font-size:7px;" onclick="renameShip(${i})">✎ RENAME</button>
+          </div>
+          <div style="font-size:12px;">${s.type || s.class} | Hull:${s.hull}/${s.maxHull} Fuel:${s.fuel}/${s.maxFuel}</div>
+          <div style="font-size:11px;color:var(--metal);">Cargo: ${s.cargoMax} | Slots: ${s.moduleSlots || 1}</div>
+        </div>
+      `;
+    }).join('');
     
     // QUESTS PANEL (new)
     const questPanel = document.getElementById('rp-quests');
@@ -2869,6 +3068,14 @@ function travelTo(id) {
     checkQuestCompletion(id);
     
     addLog(`Jumped to ${sys.name}.`);
+
+    if (G.dramaTimer >= 3 && G.crew.filter(c => c.alive).length >= 2) {
+    G.dramaTimer = 0;
+    setTimeout(checkDrama, 800);
+  } else {
+    setTimeout(() => { if (!tryNonHostileEncounter()) triggerEvent(); }, 700);
+  }
+
     updateHUD();
     updateLP();
     
@@ -2918,8 +3125,11 @@ function exploreSys(){
   }
   G.probedFeatures['explored_' + sysId] = count + 1;
   console.log('exploreSys: calling triggerEvent');
-  setTimeout(() => triggerEvent(), 400);
+  setTimeout(() => { if (!tryNonHostileEncounter()) triggerEvent(); }, 400);
 }
+
+
+    
 // ========== SPECIES-SPECIFIC EVENTS ==========
 
 function checkSpeciesSpecificEvent() {
@@ -3709,23 +3919,23 @@ function undock(){addLog('Undocked.');showScreen('galaxy-screen');updateHUD();up
 // ========== COMBAT (Ship & Ground) ==========
 // Update startCombat to use generateEnemy
 function startCombat(enemy = null) {
-  const e = enemy || generateEnemy(G.curSys); // Use new generator
+  const e = enemy || generateEnemy(G.curSys);
   G.combat = {
     enemy: JSON.parse(JSON.stringify(e)),
-    playerSys: {
-      weapons: { hp: 30, maxHp: 30 },
-      shields: { hp: 50, maxHp: 50 },
-      engines: { hp: 25, maxHp: 25 }
-    },
+    playerSys: { weapons: { hp: 30, maxHp: 30 }, shields: { hp: 50, maxHp: 50 }, engines: { hp: 25, maxHp: 25 } },
     log: [],
     evasionActive: false,
     round: 0,
     won: false,
-    faction: e.faction // Track for reputation effects
+    hazardCooldown: 0,        // V2
+    hazardWeaponsDisabled: false, // V2
+    hazardAccMod: 0,          // V2
+    specialUsed: false
   };
   combatTarget = null;
   addCombatLog(`⚔ ${e.type} engages!`);
   renderCombat();
+  renderCombatStations();      // V2
   showScreen('combat-screen');
 }
 
@@ -3841,22 +4051,77 @@ function renderCombat(){
   document.getElementById('cbat-target-lbl').textContent=combatTarget?e.systems[combatTarget].name:'None';
 }
 function setTarget(id){if(G.combat.enemy.systems[id].hp<=0)return;combatTarget=id;renderCombat();}
-function combatAction(action){
-  const c=G.combat,s=G.ship,e=c.enemy;if(!c||c.won)return;
-  if(action==='fire'){
-    if(!combatTarget)return;if(c.playerSys.weapons.hp<=0){addCombatLog('Weapons offline!');return;}
-    const dmg=10+Math.floor(G.rng.next()*15);const target=e.systems[combatTarget];target.hp=Math.max(0,target.hp-dmg);addCombatLog(`Hit ${target.name} -${dmg}`,'player');if(target.hp<=0)addCombatLog(`${target.name} destroyed!`);
-    e.hull=Math.max(0,e.hull-Math.floor(dmg/2));
-  }else if(action==='boost_shields'){s.shields=Math.min(s.maxShields,s.shields+15);addCombatLog('Shields boosted');}
-  else if(action==='evasive'){c.evasionActive=true;addCombatLog('Evasive maneuvers!');}
-  else if(action==='flee'){if(G.ship.fuel<20)return;if(G.rng.next()<0.6){addCombatLog('Fled!');exitCombat(false);return;}else addCombatLog('Flee failed!');}
-  if(e.systems.weapons.hp>0){
-    const hit=c.evasionActive?G.rng.next()<0.4:G.rng.next()<0.7;
-    if(hit){const dmg=8+Math.floor(G.rng.next()*12);s.hull=Math.max(0,s.hull-dmg);addCombatLog(`Enemy hits hull -${dmg}`,'enemy');}else addCombatLog('Enemy missed','enemy');
-  }else{addCombatLog('Enemy weapons destroyed, cannot fire.','system');}
-  c.evasionActive=false;
-  if(s.hull<=0){triggerGameOver();return;}
-  if(e.hull<=0){c.won=true;addCombatLog('Victory!');exitCombat(true);return;}
+function combatAction(action) {
+  const c = G.combat, s = G.flagship, e = c.enemy;
+  if (!c || c.won) return;
+  const wb = getStationBonus('weapons'), sb = getStationBonus('shields'), eb = getStationBonus('engines');
+  const accMod = c.hazardAccMod || 0;
+  
+  if (action === 'fire') {
+    if (!combatTarget) { addCombatLog('Select a target system first!'); return; }
+    if (c.playerSys.weapons.hp <= 0) { addCombatLog('Weapons offline!'); return; }
+    if (c.hazardWeaponsDisabled) { addCombatLog('Weapons knocked offline this turn!'); c.hazardWeaponsDisabled = false; return; }
+    const base = 12 + Math.floor(G.rng.next() * 15) + wb;
+    const boost = G.flagship.modules.includes('plasma_injector') ? 1.4 : 1.0;
+    const dmg = Math.floor(base * boost);
+    const hitChance = 0.9 + accMod;
+    if (G.rng.next() < hitChance) {
+      const tgt = e.systems[combatTarget];
+      tgt.hp = Math.max(0, tgt.hp - dmg);
+      addCombatLog(`${s.name} fires on ${tgt.name} — ${dmg} dmg!`, 'player');
+      if (tgt.hp <= 0) addCombatLog(`${tgt.name} DESTROYED!`, 'player');
+      const splash = Math.floor(dmg * 0.3);
+      if (e.shield > 0) e.shield = Math.max(0, e.shield - splash);
+      else e.hull = Math.max(0, e.hull - splash);
+    } else addCombatLog('Shot missed!', 'player');
+    c.hazardAccMod = 0;
+  } else if (action === 'boost_shields') {
+    const regen = 15 + sb;
+    s.shields = Math.min(s.maxShields, s.shields + regen);
+    addCombatLog(`Shields boosted +${regen}.`, 'player');
+  } else if (action === 'evasive') {
+    c.evasionActive = true;
+    s.fuel = Math.max(0, s.fuel - 5);
+    addCombatLog(`Evasive maneuvers! Fuel -5.`, 'player');
+  } else if (action === 'flee') {
+    if (s.fuel < 15) { addCombatLog('Not enough fuel!'); return; }
+    const fleeChance = 0.5 + (eb * 0.03);
+    if (G.rng.next() < fleeChance) {
+      addCombatLog('Emergency FTL! Escaped.', 'player');
+      s.fuel -= 15;
+      exitCombat(false);
+      return;
+    } else addCombatLog('Flee failed!', 'player');
+  }
+    // Hazard check
+  if (!c.hazardCooldown && G.rng.next() < 0.13) triggerCombatHazard();
+  else if (c.hazardCooldown > 0) c.hazardCooldown--;
+    // Enemy turn (original logic, but with station bonuses)
+  if (e.systems.weapons.hp > 0) {
+    const evade = c.evasionActive ? 0.35 + eb * 0.02 : 0.7;
+    if (G.rng.next() < evade) {
+      const eDmg = 8 + Math.floor(G.rng.next() * 12);
+      if (s.shields > 0) {
+        const sd = Math.min(s.shields, eDmg);
+        s.shields -= sd;
+        const spill = Math.max(0, eDmg - sd);
+        if (spill > 0) s.hull = Math.max(0, s.hull - spill);
+        addCombatLog(`Enemy hits shields -${sd}${spill > 0 ? ' hull -' + spill : ''}!`, 'enemy');
+      } else {
+        s.hull = Math.max(0, s.hull - eDmg);
+        addCombatLog(`Enemy hits hull -${eDmg}!`, 'enemy');
+      }
+      if (G.flagship.modules.includes('ai_assistant') && G.rng.next() < 0.3) {
+        const sys = Object.values(c.playerSys).find(v => v.hp < v.maxHp);
+        if (sys) { sys.hp = Math.min(sys.maxHp, sys.hp + 8); addCombatLog('AI repairs ' + sys.name, 'system'); }
+      }
+    } else addCombatLog('Enemy missed!', 'enemy');
+  } else addCombatLog('Enemy weapons offline — cannot fire.', 'system');
+  
+  c.evasionActive = false;
+  c.round++;
+  if (s.hull <= 0) { triggerGameOver(); return; }
+  if (e.hull <= 0) { c.won = true; addCombatLog('VICTORY!', 'player'); setTimeout(() => exitCombat(true), 800); return; }
   renderCombat();
 }
 function boardEnemy(){if(!G.combat||G.combat.enemy.systems.shields.hp>0){addCombatLog('Shields must be down to board.');return;}startGroundCombat(G.combat.enemy);}
