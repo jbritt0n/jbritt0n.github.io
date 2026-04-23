@@ -3923,12 +3923,37 @@ function applyUnitSprite(cardEl, unit) {
 
 // ========== COMBAT SYSTEMS (SHIP & GROUND) ==========
 
-// ---------- SHIP COMBAT ----------
+// ---------- SHIP COMBAT LOG ----------
 function addCombatLog(msg, type = 'system') {
   G.combat.log.unshift({ msg, type });
   document.getElementById('cbat-log').innerHTML = G.combat.log.map(e => `<div class="cbat-log-entry ${e.type}">${e.msg}</div>`).join('');
 }
-
+// ========== SHIP COMBAT INITIALIZATION ==========
+function startCombat(enemy = null) {
+  const e = enemy || generateEnemy(G.curSys);
+  G.combat = {
+    enemy: JSON.parse(JSON.stringify(e)),
+    playerSys: {
+      weapons: { name: 'Weapons', hp: 30, maxHp: 30 },
+      shields: { name: 'Shields', hp: 50, maxHp: 50 },
+      engines: { name: 'Engines', hp: 25, maxHp: 25 }
+    },
+    log: [],
+    evasionActive: false,
+    round: 0,
+    won: false,
+    hazardCooldown: 0,
+    hazardWeaponsDisabled: false,
+    hazardAccMod: 0,
+    specialUsed: false,
+    bountyBonus: false
+  };
+  combatTarget = null;
+  addCombatLog(`⚔ ${e.type} engages!`);
+  renderCombat();
+  renderCombatStations(); // if you have crew stations
+  showScreen('combat-screen');
+}
 function renderCombat() {
   const c = G.combat, s = G.ship, e = c.enemy;
   document.getElementById('cbat-player-name').textContent = s.name;
