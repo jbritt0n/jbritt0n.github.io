@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VOID FRONTIER: REFACTORED</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #0a0c10; --void2: #0d1117; --star: #e8f0ff;
+            --nebula: #1a3a5a; --hazard: #c41e3a; --warn: #e67e22;
+            --safe: #2ecc71; --alien: #8e44ad; --metal: #7f8c8d;
+            --gold: #f1c40f; --cyan: #00e5ff;
+            --border: rgba(0, 229, 255, 0.22); --panel: #0d1117;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--void); color: var(--star);
+            font-family: 'VT323', monospace; font-size: 18px;
+            overflow: hidden; height: 100vh; width: 100vw;
+            user-select: none;
+        }
+
+        #game { width: 100vw; height: 100vh; position: relative; }
+        .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+        .screen.active { display: flex; }
+
+        /* --- UI COMPONENTS --- */
+        .btn {
+            background: transparent; border: 1px solid var(--cyan);
+            color: var(--cyan); font-family: 'Press Start 2P', monospace;
+            font-size: 9px; padding: 10px 15px; cursor: pointer;
+            transition: all .15s; letter-spacing: 1px; white-space: nowrap;
+        }
+        .btn:hover { background: var(--cyan); color: var(--void); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .hud {
+            background: var(--panel); border-bottom: 1px solid var(--border);
+            padding: 6px 14px; display: flex; align-items: center; gap: 18px;
+            flex-shrink: 0; height: 44px;
+        }
+        .hud-stat { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .bar-track { width: 60px; height: 6px; background: rgba(255,255,255,.1); position: relative; }
+        .bar-fill { height: 100%; transition: width 0.3s ease; }
+
+        .main-area { flex: 1; display: flex; overflow: hidden; }
+        .side-panel {
+            width: 220px; background: var(--panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+        }
+        .content-area { flex: 1; position: relative; background: #050709; overflow: hidden; }
+
+        .log-area {
+            height: 100px; background: var(--panel); border-top: 1px solid var(--border);
+            padding: 8px; overflow-y: auto; font-size: 13px;
+        }
+        .log-entry { margin-bottom: 2px; border-left: 2px solid transparent; padding-left: 6px; }
+        .log-info { border-color: var(--cyan); }
+        .log-warn { border-color: var(--warn); color: var(--warn); }
+        .log-hazard { border-color: var(--hazard); color: var(--hazard); }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center; z-index: 100;
+        }
+        .overlay.active { display: flex; }
+        .modal {
+            background: var(--panel); border: 1px solid var(--cyan);
+            padding: 24px; max-width: 500px; width: 90%;
+        }
+
+        /* --- TITLE SCREEN --- */
+        #title-screen { align-items: center; justify-content: center; gap: 40px; }
+        .logo {
+            font-family: 'Press Start 2P', monospace; font-size: 48px;
+            color: var(--cyan); text-shadow: 0 0 20px var(--cyan);
+            text-align: center;
+        }
+
+        /* --- GALAXY MAP --- */
+        #gx-canvas { width: 100%; height: 100%; cursor: crosshair; }
+
+    </style>
+</head>
+<body>
+
+<div id="game">
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen active">
+        <div class="logo">VOID<br>FRONTIER</div>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <button class="btn" onclick="startNewGame()">NEW EXPEDITION</button>
+            <button class="btn" onclick="openLoadModal()">CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- Character Creation -->
+    <div id="cc-screen" class="screen">
+        <div style="padding: 40px; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+            <h2 style="font-family: 'Press Start 2P'; font-size: 14px; color: var(--cyan);">ORIGIN SELECTION</h2>
+            <div id="origin-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 800px;"></div>
+            <h2 style="font-family: 'Press Start 2P'; font-size: 14px; color: var(--cyan);">CLASS SELECTION</h2>
+            <div id="class-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 800px;"></div>
+            <button class="btn" id="start-btn" disabled onclick="finalizeCharacter()">LAUNCH SHIP</button>
+        </div>
+    </div>
+
+    <!-- Main Galaxy Screen -->
+    <div id="galaxy-screen" class="screen">
+        <div class="hud" id="hud">
+            <!-- HUD content injected by JS -->
+        </div>
+        <div class="main-area">
+            <div class="side-panel">
+                <div style="padding: 10px; border-bottom: 1px solid var(--border); font-family: 'Press Start 2P'; font-size: 8px; color: var(--cyan);">SHIP STATUS</div>
+                <div id="ship-stats" style="padding: 10px; flex: 1;"></div>
+                <div style="padding: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px;">
+                    <button class="btn" onclick="Exploration.jumpRandom()">RANDOM JUMP</button>
+                    <button class="btn" onclick="openCargo()">CARGO BAY</button>
+                </div>
+            </div>
+            <div class="content-area">
+                <canvas id="gx-canvas"></canvas>
+                <!-- Event Overlay -->
+                <div id="event-overlay" class="overlay">
+                    <div class="modal" id="event-modal">
+                        <h3 id="event-title" style="font-family: 'Press Start 2P'; font-size: 10px; color: var(--gold); margin-bottom: 15px;"></h3>
+                        <p id="event-text" style="font-size: 18px; margin-bottom: 20px; line-height: 1.5;"></p>
+                        <div id="event-choices" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="log-area" id="game-log"></div>
+    </div>
+</div>
+
+<script>
+/**
+ * VOID FRONTIER: REFACTORED CORE
+ */
+
+const CONFIG = {
+    VERSION: "2.0.0",
+    BASE_JUMP_COST: 2,
+    MAX_HULL: 100,
+    MAX_FUEL: 50,
+};
+
+const Registry = {
+    Origins: {
+        'terran_exile': {
+            id: 'terran_exile', name: 'Terran Exile',
+            desc: 'Driven from Earth, carrying remnants of old diplomacy.',
+            bonus: '+200 Credits, +1 Charisma',
+            apply: (G) => { G.player.credits += 200; G.player.skills.charisma += 1; }
+        },
+        'asteroid_miner': {
+            id: 'asteroid_miner', name: 'Asteroid Miner',
+            desc: 'Hardened by the belt. You know where the good stuff is.',
+            bonus: '+50 Scrap, +1 Engineering',
+            apply: (G) => { G.player.scrap += 50; G.player.skills.engineering += 1; }
+        }
+    },
+    Classes: {
+        'pilot': {
+            id: 'pilot', name: 'Ace Pilot',
+            desc: 'Master of the flight stick.',
+            bonus: '-20% Fuel consumption, +10% Evasion',
+            effects: { fuelMult: 0.8, evasion: 10 }
+        },
+        'engineer': {
+            id: 'engineer', name: 'Chief Engineer',
+            desc: 'Expert in ship maintenance and modules.',
+            bonus: '+20% Repair efficiency, +1 Module slot',
+            effects: { repairMult: 1.2, extraSlots: 1 }
+        }
+    },
+    Events: {
+        'pirate': {
+            title: 'PIRATE AMBUSH',
+            text: 'A group of scavengers has dropped out of warp and is demanding your cargo!',
+            choices: [
+                { text: 'Surrender 50 Credits', outcome: (G) => { G.player.credits -= 50; addLog("You paid the pirates."); } },
+                { text: 'Fight back!', outcome: (G) => { addLog("Combat system not yet fully linked."); } },
+                { text: '[Charisma] Talk your way out', requirement: (G) => G.player.skills.charisma > 1, outcome: (G) => { addLog("You convinced them you're not worth the trouble."); } }
+            ]
+        },
+        'anomaly': {
+            title: 'SPACE ANOMALY',
+            text: 'A strange swirling rift is emitting rhythmic pulses. Your sensors are picking up unusual readings.',
+            choices: [
+                { text: 'Scan the rift', outcome: (G) => { G.player.scrap += 20; addLog("Gained 20 Scrap from data salvage."); } },
+                { text: 'Ignore and move on', outcome: (G) => { addLog("Safety first."); } }
+            ]
+        }
+    }
+};
+
+let G = {};
+
+function initState(seed) {
+    G = {
+        seed: seed,
+        player: {
+            origin: null, class: null, credits: 500, scrap: 0,
+            skills: { piloting: 1, charisma: 1, engineering: 1 }
+        },
+        ship: {
+            name: "The Wanderer", hull: 100, maxHull: 100,
+            fuel: 50, maxFuel: 50, cargo: []
+        },
+        world: { sector: { x: 0, y: 0 }, jumps: 0, flags: {} },
+        runtime: { log: [], screen: 'title', event: null }
+    };
+}
+
+function addLog(msg, type = 'info') {
+    G.runtime.log.unshift({ msg, type });
+    if (G.runtime.log.length > 30) G.runtime.log.pop();
+    renderLog();
+}
+
+// --- UI Logic ---
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    G.runtime.screen = id;
+}
+
+function renderLog() {
+    const logEl = document.getElementById('game-log');
+    logEl.innerHTML = G.runtime.log.map(e => `<div class="log-entry log-${e.type}">${e.msg}</div>`).join('');
+}
+
+function updateHUD() {
+    const hud = document.getElementById('hud');
+    hud.innerHTML = `
+        <div class="hud-stat">CREDITS: <span style="color:var(--gold)">${G.player.credits}</span></div>
+        <div class="hud-stat">SCRAP: <span style="color:var(--metal)">${G.player.scrap}</span></div>
+        <div class="hud-stat">HULL: 
+            <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.hull/G.ship.maxHull)*100}%; background:var(--safe)"></div></div>
+        </div>
+        <div class="hud-stat">FUEL: 
+            <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.fuel/G.ship.maxFuel)*100}%; background:var(--cyan)"></div></div>
+        </div>
+        <div style="margin-left:auto; font-size:12px; color:var(--metal)">SECTOR [${G.world.sector.x}, ${G.world.sector.y}]</div>
+    `;
+}
+
+// --- Gameplay ---
+const Exploration = {
+    jumpRandom() {
+        if (G.ship.fuel < CONFIG.BASE_JUMP_COST) {
+            addLog("Out of fuel!", "hazard");
+            return;
+        }
+        G.ship.fuel -= CONFIG.BASE_JUMP_COST;
+        G.world.sector.x += Math.floor(Math.random() * 3) - 1;
+        G.world.sector.y += Math.floor(Math.random() * 3) - 1;
+        G.world.jumps++;
+        
+        addLog(`Jumped to Sector [${G.world.sector.x}, ${G.world.sector.y}]`);
+        
+        if (Math.random() < 0.4) {
+            const evId = Math.random() > 0.5 ? 'pirate' : 'anomaly';
+            EventEngine.start(Registry.Events[evId]);
+        }
+        
+        updateHUD();
+    }
+};
+
+const EventEngine = {
+    start(ev) {
+        G.runtime.event = ev;
+        document.getElementById('event-overlay').classList.add('active');
+        document.getElementById('event-title').innerText = ev.title;
+        document.getElementById('event-text').innerText = ev.text;
+        
+        const choicesEl = document.getElementById('event-choices');
+        choicesEl.innerHTML = '';
+        ev.choices.forEach((c, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = c.text;
+            if (c.requirement && !c.requirement(G)) {
+                btn.disabled = true;
+                btn.innerText += " (Locked)";
+            }
+            btn.onclick = () => this.choice(i);
+            choicesEl.appendChild(btn);
+        });
+    },
+    choice(i) {
+        const c = G.runtime.event.choices[i];
+        if (c.outcome) c.outcome(G);
+        this.close();
+    },
+    close() {
+        G.runtime.event = null;
+        document.getElementById('event-overlay').classList.remove('active');
+        updateHUD();
+    }
+};
+
+// --- Initialization ---
+function startNewGame() {
+    initState("seed_" + Date.now());
+    renderCC();
+    showScreen('cc-screen');
+}
+
+function renderCC() {
+    const oList = document.getElementById('origin-list');
+    oList.innerHTML = Object.values(Registry.Origins).map(o => `
+        <div class="btn" onclick="selectOrigin('${o.id}', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
+            <div style="color:var(--gold); font-size:10px;">${o.name}</div>
+            <div style="font-size:14px; color:var(--star);">${o.desc}</div>
+            <div style="font-size:12px; color:var(--safe);">${o.bonus}</div>
+        </div>
+    `).join('');
+
+    const cList = document.getElementById('class-list');
+    cList.innerHTML = Object.values(Registry.Classes).map(c => `
+        <div class="btn" onclick="selectClass('${c.id}', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
+            <div style="color:var(--cyan); font-size:10px;">${c.name}</div>
+            <div style="font-size:14px; color:var(--star);">${c.desc}</div>
+            <div style="font-size:12px; color:var(--safe);">${c.bonus}</div>
+        </div>
+    `).join('');
+}
+
+function selectOrigin(id, el) {
+    G.player.origin = id;
+    document.querySelectorAll('#origin-list .btn').forEach(b => b.style.borderColor = 'var(--cyan)');
+    el.style.borderColor = 'var(--gold)';
+    checkCCReady();
+}
+
+function selectClass(id, el) {
+    G.player.class = id;
+    document.querySelectorAll('#class-list .btn').forEach(b => b.style.borderColor = 'var(--cyan)');
+    el.style.borderColor = 'var(--gold)';
+    checkCCReady();
+}
+
+function checkCCReady() {
+    if (G.player.origin && G.player.class) {
+        document.getElementById('start-btn').disabled = false;
+    }
+}
+
+function finalizeCharacter() {
+    Registry.Origins[G.player.origin].apply(G);
+    // Apply class effects could go here
+    showScreen('galaxy-screen');
+    addLog("Welcome to the Void Frontier, Captain.");
+    updateHUD();
+}
+
+window.onload = () => {
+    // Initial setup if needed
+};
+
+</script>
+</body>
+</html>
