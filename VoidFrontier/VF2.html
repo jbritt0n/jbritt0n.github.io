@@ -650,6 +650,12 @@ const SYS_FEATURES = [
   'Abandoned Colony', 'Xeno-Archaeological Dig', 'Crystal Forest', 'Subterranean Caverns', 'Floating Sky-Islands'
 ];
 
+  { id: 'bordello', name: 'BORDELLO', emoji: '💋', minWealth: 2 },
+  { id: 'pleasure', name: 'PLEASURE HOUSE', emoji: '🎭', minWealth: 3 },
+  { id: 'embassy', name: 'EMBASSY', emoji: '🏛️', minWealth: 3 },
+  { id: 'armory', name: 'ARMORY', emoji: '🔫', minWealth: 2 },
+  { id: 'smuggler', name: 'SMUGGLER\'S DEN', emoji: '🥷', minWealth: 1, requiresLowSecurity: true }
+  
 // ---------- GOODS ----------
 const GOODS = [
   { id: 'fuel_cells', name: 'Fuel Cells', emoji: '⚡', basePrice: 55, legal: true, wt: 1, use: { fuel: 10 } },
