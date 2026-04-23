@@ -3,7 +3,7 @@
  */
 
 // --- Event Engine ---
-const EventEngine = {
+export const EventEngine = {
     current: null,
 
     start(eventData) {
@@ -13,7 +13,7 @@ const EventEngine = {
     },
 
     choice(index) {
-        const choice = this.current.choices[index];
+        export const choice = this.current.choices[index];
         if (choice.requirement && !choice.requirement(G)) {
             addLog("Requirement not met.", "warn");
             return;
@@ -38,9 +38,9 @@ const EventEngine = {
 };
 
 // --- Exploration System ---
-const Exploration = {
+export const Exploration = {
     jump(sectorX, sectorY) {
-        const fuelCost = CONFIG.BASE_JUMP_COST;
+        export const fuelCost = CONFIG.BASE_JUMP_COST;
         if (G.ship.fuel < fuelCost) {
             addLog("Not enough fuel to jump!", "hazard");
             return;
@@ -55,11 +55,11 @@ const Exploration = {
     },
 
     enterSector(x, y) {
-        const seed = `${G.seed}_${x}_${y}`;
-        const sectorRng = new RNG(seed);
+        export const seed = `${G.seed}_${x}_${y}`;
+        export const sectorRng = new RNG(seed);
         
         // Random encounter chance
-        const roll = sectorRng.next();
+        export const roll = sectorRng.next();
         if (roll < 0.4) {
             this.triggerEncounter(sectorRng);
         } else {
@@ -71,14 +71,14 @@ const Exploration = {
     },
 
     triggerEncounter(rng) {
-        const encounterType = rng.pick(['pirate', 'anomaly', 'trader', 'derelict']);
-        const event = Registry.Events[encounterType];
+        export const encounterType = rng.pick(['pirate', 'anomaly', 'trader', 'derelict']);
+        export const event = Registry.Events[encounterType];
         if (event) EventEngine.start(event);
     }
 };
 
 // --- Combat System (Unified) ---
-const Combat = {
+export const Combat = {
     state: null,
 
     init(enemies, type = 'space') {
@@ -117,7 +117,7 @@ const Combat = {
 
     executeAction(actor, target, action) {
         // Logic for applying damage, status effects, etc.
-        const damage = action.damage || 10;
+        export const damage = action.damage || 10;
         target.hp -= damage;
         this.state.log.unshift(`${actor.name} uses ${action.name} on ${target.name} for ${damage} damage!`);
         
@@ -155,10 +155,10 @@ const Combat = {
 };
 
 // --- Xeno Translation System ---
-const XenoSystem = {
+export const XenoSystem = {
     getTranslatedText(alienId, text) {
-        const skill = G.player.skills.charisma || 1;
-        const knownWords = G.world.flags[`xeno_${alienId}_words`] || 0;
+        export const skill = G.player.skills.charisma || 1;
+        export const knownWords = G.world.flags[`xeno_${alienId}_words`] || 0;
         
         // If skill + known words is high enough, show more clear text
         if (skill + knownWords > 10) return text;
