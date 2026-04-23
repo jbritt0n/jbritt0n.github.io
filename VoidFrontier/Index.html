@@ -1770,6 +1770,20 @@ function resolveXenoChoice(i) {
 } 
   
 // ========== EXPANDED CREW POOL (30 total, class-aligned) ==========
+const CREW_PORTRAITS = {
+  'Zoya Kas': 'assets/portraits/engineer_01.png',
+  'REX-7': 'assets/portraits/android_security.png',
+  'Mira Tong': 'assets/portraits/navigator_01.png',
+  'Jax Varley': 'assets/portraits/gunner_01.png',
+  'Lyra Nox': 'assets/portraits/medic_01.png',
+  'Orin Vex': 'assets/portraits/scout_01.png',
+  'Kael Thorn': 'assets/portraits/technician_01.png',
+  'Nova Chen': 'assets/portraits/pilot_01.png',
+  // Add more as needed
+  'default': 'assets/portraits/crew_default.png'
+};
+
+  
 const CREW_POOL = [
   // === VANGUARD (Tank) - High HP, Defense Focus ===
   { name: 'Zoya Kas', role: 'Vanguard', emoji: '🛡️', loyalty: 70, bio: 'Ex-military shield specialist. Never leaves a crewmate behind.', hp: 52, maxHp: 52, atk: 9, spd: 4, skill: 5, species: 'Human', classId: 'vanguard', portrait: CREW_PORTRAITS['Zoya Kas'] },
@@ -1821,18 +1835,7 @@ const CREW_POOL = [
 
 
 
-const CREW_PORTRAITS = {
-  'Zoya Kas': 'assets/portraits/engineer_01.png',
-  'REX-7': 'assets/portraits/android_security.png',
-  'Mira Tong': 'assets/portraits/navigator_01.png',
-  'Jax Varley': 'assets/portraits/gunner_01.png',
-  'Lyra Nox': 'assets/portraits/medic_01.png',
-  'Orin Vex': 'assets/portraits/scout_01.png',
-  'Kael Thorn': 'assets/portraits/technician_01.png',
-  'Nova Chen': 'assets/portraits/pilot_01.png',
-  // Add more as needed
-  'default': 'assets/portraits/crew_default.png'
-};
+
 
 // ========== V2 ADDITIONS: CREW STATIONS ==========
 const CREW_STATIONS = {
