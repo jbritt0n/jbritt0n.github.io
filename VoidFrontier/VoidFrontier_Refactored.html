@@ -138,234 +138,118 @@
     </div>
 </div>
 
-<script>
-/**
- * VOID FRONTIER: REFACTORED CORE
- */
+    <script type="module">
+        // Import Core and Systems modules
+        import { CONFIG, Registry, G, initState, addLog } from './VoidFrontier_Core.js';
+        import { EventEngine, Exploration } from './VoidFrontier_Systems.js';
 
-const CONFIG = {
-    VERSION: "2.0.0",
-    BASE_JUMP_COST: 2,
-    MAX_HULL: 100,
-    MAX_FUEL: 50,
-};
+        // Expose G, EventEngine, Exploration to the global window object for inline HTML event handlers
+        // This is necessary because module-scoped variables are not directly accessible from inline event attributes (e.g., onclick)
+        window.G = G;
+        window.EventEngine = EventEngine;
+        window.Exploration = Exploration;
+        window.addLog = addLog;
+        window.Registry = Registry;
+        window.CONFIG = CONFIG;
+        window.initState = initState;
 
-const Registry = {
-    Origins: {
-        'terran_exile': {
-            id: 'terran_exile', name: 'Terran Exile',
-            desc: 'Driven from Earth, carrying remnants of old diplomacy.',
-            bonus: '+200 Credits, +1 Charisma',
-            apply: (G) => { G.player.credits += 200; G.player.skills.charisma += 1; }
-        },
-        'asteroid_miner': {
-            id: 'asteroid_miner', name: 'Asteroid Miner',
-            desc: 'Hardened by the belt. You know where the good stuff is.',
-            bonus: '+50 Scrap, +1 Engineering',
-            apply: (G) => { G.player.scrap += 50; G.player.skills.engineering += 1; }
+        // --- UI Logic (moved from original inline script) ---
+        function showScreen(id) {
+            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+            document.getElementById(id).classList.add("active");
+            G.runtime.screen = id;
         }
-    },
-    Classes: {
-        'pilot': {
-            id: 'pilot', name: 'Ace Pilot',
-            desc: 'Master of the flight stick.',
-            bonus: '-20% Fuel consumption, +10% Evasion',
-            effects: { fuelMult: 0.8, evasion: 10 }
-        },
-        'engineer': {
-            id: 'engineer', name: 'Chief Engineer',
-            desc: 'Expert in ship maintenance and modules.',
-            bonus: '+20% Repair efficiency, +1 Module slot',
-            effects: { repairMult: 1.2, extraSlots: 1 }
+
+        function renderLog() {
+            const logEl = document.getElementById("game-log");
+            logEl.innerHTML = G.runtime.log.map(e => `<div class="log-entry log-${e.type}">${e.msg}</div>`).join("");
         }
-    },
-    Events: {
-        'pirate': {
-            title: 'PIRATE AMBUSH',
-            text: 'A group of scavengers has dropped out of warp and is demanding your cargo!',
-            choices: [
-                { text: 'Surrender 50 Credits', outcome: (G) => { G.player.credits -= 50; addLog("You paid the pirates."); } },
-                { text: 'Fight back!', outcome: (G) => { addLog("Combat system not yet fully linked."); } },
-                { text: '[Charisma] Talk your way out', requirement: (G) => G.player.skills.charisma > 1, outcome: (G) => { addLog("You convinced them you're not worth the trouble."); } }
-            ]
-        },
-        'anomaly': {
-            title: 'SPACE ANOMALY',
-            text: 'A strange swirling rift is emitting rhythmic pulses. Your sensors are picking up unusual readings.',
-            choices: [
-                { text: 'Scan the rift', outcome: (G) => { G.player.scrap += 20; addLog("Gained 20 Scrap from data salvage."); } },
-                { text: 'Ignore and move on', outcome: (G) => { addLog("Safety first."); } }
-            ]
+
+        function updateHUD() {
+            const hud = document.getElementById("hud");
+            hud.innerHTML = `
+                <div class="hud-stat">CREDITS: <span style="color:var(--gold)">${G.player.credits}</span></div>
+                <div class="hud-stat">SCRAP: <span style="color:var(--metal)">${G.player.scrap}</span></div>
+                <div class="hud-stat">HULL: 
+                    <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.hull/G.ship.maxHull)*100}%; background:var(--safe)"></div></div>
+                </div>
+                <div class="hud-stat">FUEL: 
+                    <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.fuel/G.ship.maxFuel)*100}%; background:var(--cyan)"></div></div>
+                </div>
+                <div style="margin-left:auto; font-size:12px; color:var(--metal)">SECTOR [${G.world.sector.x}, ${G.world.sector.y}]</div>
+            `;
         }
-    }
-};
 
-let G = {};
-
-function initState(seed) {
-    G = {
-        seed: seed,
-        player: {
-            origin: null, class: null, credits: 500, scrap: 0,
-            skills: { piloting: 1, charisma: 1, engineering: 1 }
-        },
-        ship: {
-            name: "The Wanderer", hull: 100, maxHull: 100,
-            fuel: 50, maxFuel: 50, cargo: []
-        },
-        world: { sector: { x: 0, y: 0 }, jumps: 0, flags: {} },
-        runtime: { log: [], screen: 'title', event: null }
-    };
-}
-
-function addLog(msg, type = 'info') {
-    G.runtime.log.unshift({ msg, type });
-    if (G.runtime.log.length > 30) G.runtime.log.pop();
-    renderLog();
-}
-
-// --- UI Logic ---
-function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    G.runtime.screen = id;
-}
-
-function renderLog() {
-    const logEl = document.getElementById('game-log');
-    logEl.innerHTML = G.runtime.log.map(e => `<div class="log-entry log-${e.type}">${e.msg}</div>`).join('');
-}
-
-function updateHUD() {
-    const hud = document.getElementById('hud');
-    hud.innerHTML = `
-        <div class="hud-stat">CREDITS: <span style="color:var(--gold)">${G.player.credits}</span></div>
-        <div class="hud-stat">SCRAP: <span style="color:var(--metal)">${G.player.scrap}</span></div>
-        <div class="hud-stat">HULL: 
-            <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.hull/G.ship.maxHull)*100}%; background:var(--safe)"></div></div>
-        </div>
-        <div class="hud-stat">FUEL: 
-            <div class="bar-track"><div class="bar-fill" style="width:${(G.ship.fuel/G.ship.maxFuel)*100}%; background:var(--cyan)"></div></div>
-        </div>
-        <div style="margin-left:auto; font-size:12px; color:var(--metal)">SECTOR [${G.world.sector.x}, ${G.world.sector.y}]</div>
-    `;
-}
-
-// --- Gameplay ---
-const Exploration = {
-    jumpRandom() {
-        if (G.ship.fuel < CONFIG.BASE_JUMP_COST) {
-            addLog("Out of fuel!", "hazard");
-            return;
+        // --- Initialization ---
+        function startNewGame() {
+            initState("seed_" + Date.now());
+            renderCC();
+            showScreen("cc-screen");
         }
-        G.ship.fuel -= CONFIG.BASE_JUMP_COST;
-        G.world.sector.x += Math.floor(Math.random() * 3) - 1;
-        G.world.sector.y += Math.floor(Math.random() * 3) - 1;
-        G.world.jumps++;
-        
-        addLog(`Jumped to Sector [${G.world.sector.x}, ${G.world.sector.y}]`);
-        
-        if (Math.random() < 0.4) {
-            const evId = Math.random() > 0.5 ? 'pirate' : 'anomaly';
-            EventEngine.start(Registry.Events[evId]);
-        }
-        
-        updateHUD();
-    }
-};
 
-const EventEngine = {
-    start(ev) {
-        G.runtime.event = ev;
-        document.getElementById('event-overlay').classList.add('active');
-        document.getElementById('event-title').innerText = ev.title;
-        document.getElementById('event-text').innerText = ev.text;
-        
-        const choicesEl = document.getElementById('event-choices');
-        choicesEl.innerHTML = '';
-        ev.choices.forEach((c, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.innerText = c.text;
-            if (c.requirement && !c.requirement(G)) {
-                btn.disabled = true;
-                btn.innerText += " (Locked)";
+        function renderCC() {
+            const oList = document.getElementById("origin-list");
+            oList.innerHTML = Object.values(Registry.Origins).map(o => `
+                <div class="btn" onclick="selectOrigin(\'${o.id}\', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
+                    <div style="color:var(--gold); font-size:10px;">${o.name}</div>
+                    <div style="font-size:14px; color:var(--star);">${o.desc}</div>
+                    <div style="font-size:12px; color:var(--safe);">${o.bonus}</div>
+                </div>
+            `).join("");
+
+            const cList = document.getElementById("class-list");
+            cList.innerHTML = Object.values(Registry.Classes).map(c => `
+                <div class="btn" onclick="selectClass(\'${c.id}\', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
+                    <div style="color:var(--cyan); font-size:10px;">${c.name}</div>
+                    <div style="font-size:14px; color:var(--star);">${c.desc}</div>
+                    <div style="font-size:12px; color:var(--safe);">${c.bonus}</div>
+                </div>
+            `).join("");
+        }
+
+        function selectOrigin(id, el) {
+            G.player.origin = id;
+            document.querySelectorAll("#origin-list .btn").forEach(b => b.style.borderColor = "var(--cyan)");
+            el.style.borderColor = "var(--gold)";
+            checkCCReady();
+        }
+
+        function selectClass(id, el) {
+            G.player.class = id;
+            document.querySelectorAll("#class-list .btn").forEach(b => b.style.borderColor = "var(--cyan)");
+            el.style.borderColor = "var(--gold)";
+            checkCCReady();
+        }
+
+        function checkCCReady() {
+            if (G.player.origin && G.player.class) {
+                document.getElementById("start-btn").disabled = false;
             }
-            btn.onclick = () => this.choice(i);
-            choicesEl.appendChild(btn);
-        });
-    },
-    choice(i) {
-        const c = G.runtime.event.choices[i];
-        if (c.outcome) c.outcome(G);
-        this.close();
-    },
-    close() {
-        G.runtime.event = null;
-        document.getElementById('event-overlay').classList.remove('active');
-        updateHUD();
-    }
-};
+        }
 
-// --- Initialization ---
-function startNewGame() {
-    initState("seed_" + Date.now());
-    renderCC();
-    showScreen('cc-screen');
-}
+        function finalizeCharacter() {
+            Registry.Origins[G.player.origin].apply(G);
+            // Apply class effects could go here
+            showScreen("galaxy-screen");
+            addLog("Welcome to the Void Frontier, Captain.");
+            updateHUD();
+        }
 
-function renderCC() {
-    const oList = document.getElementById('origin-list');
-    oList.innerHTML = Object.values(Registry.Origins).map(o => `
-        <div class="btn" onclick="selectOrigin('${o.id}', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
-            <div style="color:var(--gold); font-size:10px;">${o.name}</div>
-            <div style="font-size:14px; color:var(--star);">${o.desc}</div>
-            <div style="font-size:12px; color:var(--safe);">${o.bonus}</div>
-        </div>
-    `).join('');
+        window.onload = () => {
+            // Initial setup if needed
+            // The original game used initState(rndSeedStr()); and initStarfield();
+            // You might want to re-implement starfield or other initializations here.
+        };
 
-    const cList = document.getElementById('class-list');
-    cList.innerHTML = Object.values(Registry.Classes).map(c => `
-        <div class="btn" onclick="selectClass('${c.id}', this)" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; height:auto; padding:15px; gap:10px;">
-            <div style="color:var(--cyan); font-size:10px;">${c.name}</div>
-            <div style="font-size:14px; color:var(--star);">${c.desc}</div>
-            <div style="font-size:12px; color:var(--safe);">${c.bonus}</div>
-        </div>
-    `).join('');
-}
+        // Expose functions to global scope for HTML event handlers
+        window.startNewGame = startNewGame;
+        window.selectOrigin = selectOrigin;
+        window.selectClass = selectClass;
+        window.finalizeCharacter = finalizeCharacter;
+        window.showScreen = showScreen;
+        window.updateHUD = updateHUD;
+        window.renderLog = renderLog;
 
-function selectOrigin(id, el) {
-    G.player.origin = id;
-    document.querySelectorAll('#origin-list .btn').forEach(b => b.style.borderColor = 'var(--cyan)');
-    el.style.borderColor = 'var(--gold)';
-    checkCCReady();
-}
-
-function selectClass(id, el) {
-    G.player.class = id;
-    document.querySelectorAll('#class-list .btn').forEach(b => b.style.borderColor = 'var(--cyan)');
-    el.style.borderColor = 'var(--gold)';
-    checkCCReady();
-}
-
-function checkCCReady() {
-    if (G.player.origin && G.player.class) {
-        document.getElementById('start-btn').disabled = false;
-    }
-}
-
-function finalizeCharacter() {
-    Registry.Origins[G.player.origin].apply(G);
-    // Apply class effects could go here
-    showScreen('galaxy-screen');
-    addLog("Welcome to the Void Frontier, Captain.");
-    updateHUD();
-}
-
-window.onload = () => {
-    // Initial setup if needed
-};
-
-</script>
+    </script>
 </body>
 </html>
