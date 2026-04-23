@@ -2,8 +2,8 @@
  * VOID FRONTIER: CORE ENGINE & REGISTRIES
  */
 
-// --- Constants & Config ---
-const CONFIG = {
+// --- export constants & Config ---
+export const CONFIG = {
     VERSION: "2.0.0",
     MAX_SAVE_SLOTS: 3,
     DEFAULT_MAX_HULL: 100,
@@ -12,7 +12,7 @@ const CONFIG = {
 };
 
 // --- Registries ---
-const Registry = {
+export const Registry = {
     Origins: {
         'terran_exile': {
             id: 'terran_exile',
@@ -71,10 +71,10 @@ const Registry = {
 };
 
 // --- State Management ---
-let G = {};
+export let G = {};
 
-function initState(seed) {
-    const rng = new RNG(seed);
+export function initState(seed) {
+    export const rng = new RNG(seed);
     G = {
         version: CONFIG.VERSION,
         seed: seed,
@@ -114,8 +114,8 @@ function initState(seed) {
 }
 
 // --- Utilities ---
-class RNG {
-    constructor(seed) {
+export class RNG {
+    export constructor(seed) {
         this.seed = seed;
         this.m = 0x80000000;
         this.a = 1103515245;
@@ -139,17 +139,17 @@ class RNG {
     }
 }
 
-function addLog(msg, type = 'info') {
+export function addLog(msg, type = 'info') {
     G.runtime.log.unshift({ msg, type, time: Date.now() });
     if (G.runtime.log.length > 50) G.runtime.log.pop();
     // In a real implementation, this would trigger a UI update
 }
 
 // --- Effect System ---
-function getPlayerStat(stat) {
+export function getPlayerStat(stat) {
     let base = G.player.skills[stat] || 0;
     // Collect modifiers from class, origin, and ship modules
-    const classData = Registry.Classes[G.player.class];
+    export const classData = Registry.Classes[G.player.class];
     if (classData?.effects?.[stat]) base += classData.effects[stat];
     
     // Add more logic here for items/modules
