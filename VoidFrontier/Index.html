@@ -644,7 +644,54 @@ const CREW_SPECIES = [
   { id: 'fungal', name: 'Fungal', emoji: '🍄', traits: { regenHP: 0.02, spreadSpores: true, weakFire: true }, desc: 'Regenerates HP, spreads spores in combat.' },
   { id: 'gaseous', name: 'Gaseous', emoji: '💨', traits: { phaseChance: 0.1, immunePhysical: 0.3, weakEnergy: true }, desc: '10% chance to phase through attacks.' },
   { id: 'crystalline', name: 'Crystalline', emoji: '💎', traits: { reflectDamage: 0.1, highPerception: 1.2, brittle: true }, desc: 'Reflects 10% damage, but fragile.' },
-  { id: 'reptilian', name: 'Reptilian', emoji: '🦎', traits: { ambushBonus: 1.2, coldResist: true, slowHeal: 0.8 }, desc: 'Bonus from ambush, resists cold.' }
+  { id: 'reptilian', name: 'Reptilian', emoji: '🦎', traits: { ambushBonus: 1.2, coldResist: true, slowHeal: 0.8 }, desc: 'Bonus from ambush, resists cold.' },
+  { id: 'klik', name: 'Klik', emoji: '🦀',traits: { repairBonus: 1.3, juryRig: true, frenzyRisk: true, socialPenalty: 0.7 }, desc: 'Master engineers with a compulsion to build; socially inept and prone to uncontrolled construction frenzies.'},
+  { id: 'vorr', name: 'Vorr', emoji: '⏳',traits: { timeSense: true, reRolls: 1, anchorDependency: true, temporalFragility: 0.8 }, desc: '4D temporal symbiote that glimpses near-future events; grants one re-roll per session but weakened by timeline disruptions.'
+  },
+  {id: 'thalassan', name: 'Thalassan', emoji: '🪼',traits: { empStun: true, magneticSense: true, droneBound: true, landPhobia: 0.5 }, desc: 'Atmospheric jellyfish operating via a waldo-drone; can emit EMP stuns and sense magnetic fields, but helpless outside pressure tank.'
+  },
+  {id: 'lithos', name: 'Lithos', emoji: '💎', traits: { perfectMemory: true, seismoSense: true, slowAction: 0.6, immuneRadPoison: true, sonicVulnerability: 1.5 },desc: 'Slow crystalline mind with perfect recall and ground-sensing sonar; immune to radiation/poison but takes extra damage from sonic attacks.'
+  },
+  { id: 'myceloid',name: 'Myceloid', emoji: '🍄', traits: { shapeShift: true, regenFromOrganic: true, fireVulnerability: 1.5, aridPenalty: 0.6 }, desc: 'Shapeshifting fungal network that regenerates by consuming organic matter; highly vulnerable to fire and arid environments.'
+  },
+  { id: 'pneumamorph', name: 'Pneumamorph', emoji: '⚡',traits: { possessedShip: true, hackBonus: true, dataHunger: true, physicalForm: false }, desc: 'Plasma energy being living in the ship’s grid; can hack systems and project hard-light, but must be fed a constant stream of data.'
+  },
+  {id: 'gyranthrope',name: 'Gyranthrope',emoji: '🌀',traits: { radialVision: true, wheelSpeed: true, zeroGAgiBonus: 1.3, claustrophobiaPenalty: 0.7 }, desc: 'Radially symmetrical wheel-walker with 360° vision; excels in zero-G and can roll at high speed, but suffers in narrow corridors.'
+  },
+  {id: 'tines', name: 'Tines', emoji: '🐺', traits: { packDistributed: true, splitScout: true, memberLossMemory: true, singletonPhobia: 0.5 }, desc: 'Pack-mind of dog-like creatures; can split to scout but loses skills, and personality shifts if members die or are replaced.'
+  },
+  {id: 'cheela', name: 'Cheela',  emoji: '⏱️', traits: { oracleBurst: true, timeSlowFrustration: true, isotopeDependency: true }, desc: 'Ultra-fast neutron-star mind in a stasis shard; grants a perfect analysis “oracle” burst but impatient and needs rare isotope fuel.'
+  },
+  { id: 'oankali', name: 'Oankali',emoji: '🧬', traits: { geneticHealing: true, tempSplicing: true, mergeCompulsion: true, identityAlienationRisk: 0.8 }, desc: 'Genetic trader with healing and temporary trait-splicing; driven to merge species, risking crew trust and biological mishaps.'
+  },
+  { id: 'puppeteer', name: 'Puppeteer', emoji: '🐑', traits: { economicGenius: true, cowardicePhobia: true, safePlanMalus: 0.6, remoteOnly: true }, desc: 'Brilliant paranoid economists; ultimate negotiators but physically helpless, must propose overly safe plans, and operate remotely.'
+  },
+  { id: 'ariekai', name: 'Ariekei', emoji: '🗣️', traits: { lieDetect: true, perfectRecall: true, cannotBluff: true, metaphorBlind: true }, desc: 'Dual-voiced literalists who speak only truth; flawless lie detection and recall, but incapable of bluffing, jokes, or metaphor.'
+  },
+  { id: 'scrambler', name: 'Scrambler', emoji: '🕷️',traits: { tacticalAI: true, noConsciousness: true, emotionlessMimicry: true, creativityPenalty: 0.4 }, desc: 'Non-sentient hyper-intelligent predator; perfect tactical analysis, zero empathy, and a severe penalty to creative improvisation.'
+  },
+  { id: 'gehennaSlug', name: 'Gehenna Slug',  emoji: '🐌', traits: { hostControl: true, memoryAccess: true, spineVulnerability: true, unattachedPanic: 0.5 }, desc: 'Mind-controlling spinal parasite; superb infiltrator with host-memory access, but panics when detached and vulnerable to spine attacks.'
+  },
+  { id: 'tkra', name: "T'kra Bondmate",  emoji: '🐛', traits: { biochemicalBuff: true, empathicSense: true, gestationDependency: true, overprotectiveInstinct: true },  desc: 'Symbiotic grub implanted in the abdomen; grants healing buffs and empathy, but triggers an overwhelming protective compulsion toward the unborn.'
+  },
+  { id: 'mnemonicCyst', name: 'Mnemonic Cyst', emoji: '💠', traits: { perfectMemory: true, mindCopy: true, compulsionToArchive: true, existentialGhost: 0.8 },  desc: 'Amber parasite that records and clones minds; possesses stolen memories and a constant urge to archive everyone it meets.'
+  },
+  { id: 'silverWeft', name: 'Silver Weft', emoji: '🪡', traits: { combatReflexes: true, cyberInterface: true, nerveAtrophyRisk: true, colonyWillStruggle: true },  desc: 'Metallic neural lace granting superhuman reflexes and direct machine interface; removal leaves paralysis, and the colony may wrest control.'
+  },
+  { id: 'ghostWorm', name: 'Ghost-Worm', emoji: '👻', traits: { psychokinesisEmotion: true, phaseAbility: true, emotionAddiction: true, controlSaves: true }, desc: 'Dimensional worm that feeds on negative emotions; grants telekinesis/phasing but chemically pushes the host toward emotional extremes.'
+  },
+  { id: 'dyad', name: 'Dyad', emoji: '🧬',traits: { pastLifeSkill: true, personalityEcho: true, symbiontVulnerability: true, survivalTimer: 12 }, desc: 'Ouroboros symbiont merged with a host; can call upon past-life skills but suffers personality echoes and must be transferred within 12 hours if the host dies.'
+  },
+  { id: 'quill', name: 'Quill',emoji: '💰',traits: { tradeSense: true, valueSmell: true, giftNausea: true, altruismPenalty: 0.5 }, desc: 'Hyper-capitalist alien that perceives value as a sixth sense; brilliant at bargaining but physically nauseated by altruism or gift-giving.'
+  },
+  { id: 'arakath', name: 'Arakkath', emoji: '🏜️',traits: { silentMove: true, ultrasonicWarCry: true, waterDissolve: 3.0, humidityPenalty: 0.4, desecrationVengeance: true },  desc: 'Silent silicon desert nomads; deadly ultrasonic cry, dissolve in water, severe penalties in humidity, fanatically territorial.'
+  },
+  { id: 'lithoblob',name: 'Lithoblob', emoji: '🪨',traits: { highDefense: true, mineralHeal: true, moveSpeed: 0.4, acidVulnerability: 1.5 }, desc: 'Living rock amoeba; nearly immobile but heavily armored, slowly heals by absorbing minerals, and takes extra damage from acid.'
+  },
+  { id: 'vineClutcher', name: 'Vine-Clutcher', emoji: '🌿', traits: { rootedRegen: true, photosynthesisSustain: true, fireVulnerability: 2.0, slowRelocate: 0.6 }, desc: 'Motile plant that roots for rapid regeneration; needs sunlight to function, extremely flammable, and sluggish when not rooted.'
+  },
+  { id: 'echo', name: 'Echo', emoji: '🔊',traits: { incorporeal: true, techPossession: true, sonicCommunication: true, physicalNull: true }, desc: 'Pure soundwave lifeform; cannot physically interact but can possess any electronic device and communicate across any distance.'
+  }
 ];
 
 // ========== CREW ORIGINS (Simplified vs Captain) ==========
