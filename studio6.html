@@ -1556,10 +1556,15 @@ let S={
   geodeDrift:8,geoVibFreq:1.0,
     // Piet mode defaults
   pietPoem: 'roses are red / violets are blue / sugar is sweet / and so are you',
-  pietStartHue: 0,         // 0=Red,1=Yellow,2=Green,3=Cyan,4=Blue,5=Magenta
-  pietStartLightness: 0,   // 0=Light,1=Normal,2=Dark
-  pietCodelSize: 24,       // pixel size of each codel
-  pietShowLabels: true,     // show command abbreviation inside each codel
+  pietStartHue: 0,
+  pietStartLightness: 0,
+  pietCodelSize: 24,
+  pietShowLabels: true,
+  pietWaveEnable: false,
+  pietWaveDistort: 0.0,
+  pietTurbDistort: 5.0,
+  pietDensityMask: false,
+  pietBgNoise: false,
 
 };
   
@@ -4063,6 +4068,8 @@ function drawUnknownPleasures(p, t) {
 }
 
 
+  
+// ── Piet ─────────────────────────────────────────────────────────────────
 function drawPiet(p, t) {
   // ── Piet colour table (18 colours in HSB) ──
   const hueNames = ["Red","Yellow","Green","Cyan","Blue","Magenta"];
@@ -4122,22 +4129,49 @@ function drawPiet(p, t) {
     });
   }
 
-  // ── Draw snake‑pattern grid ──
-  let cellSize = S.pietCodelSize || 24;
-  let gridCols = Math.max(5, Math.ceil(Math.sqrt(codels.length * (p.width / p.height))));
-  let rows = Math.ceil(codels.length / gridCols);
-  let totalW = gridCols * cellSize;
-  let totalH = rows * cellSize;
-  
-  // centre the grid in the canvas
-  let ox = (p.width - totalW) / 2;
-  let oy = (p.height - totalH) / 2;
+  // ── Mode‑specific parameters (global sliders modulated by mode‑specific switches) ──
+  let useWaveDistort = S.pietWaveEnable   !== false;   // toggle
+  let waveAmp        = (S.wave || 0) * (S.pietWaveDistort   || 0.0);   // 0‑1 multiplier
+  let turbFreq       = (S.turb || 0) * (S.pietTurbDistort    || 5.0);  // frequency for wave
+  let useDensityMask = S.pietDensityMask === true;
+  let useBgNoise     = S.pietBgNoise     === true;
+  let labelSize      = Math.max(6, (S.maxSize || 20) * 0.3);            // tie label size to maxSize
 
+  // ── Canvas setup ──
   p.push();
   p.colorMode(p.HSB, 360, 100, 100);
   p.noStroke();
   p.rectMode(p.CORNER);
 
+  // ── Optional background noise texture ──
+  if (useBgNoise) {
+    p.loadPixels();
+    for (let y = 0; y < p.height; y += 2) {
+      for (let x = 0; x < p.width; x += 2) {
+        let idx = 4 * (y * p.width + x);
+        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.1);
+        let bgBright = p.map(n, 0, 1, 85, 100);
+        p.pixels[idx]     = 0;           // hue neutral
+        p.pixels[idx + 1] = 0;           // saturation
+        p.pixels[idx + 2] = bgBright;    // brightness
+        p.pixels[idx + 3] = 255;
+      }
+    }
+    p.updatePixels();
+  } else {
+    p.background(S.bg);
+  }
+
+  // ── Grid layout ──
+  let cellSize = S.pietCodelSize || 24;
+  let gridCols = Math.max(5, Math.ceil(Math.sqrt(codels.length * (p.width / p.height))));
+  let rows = Math.ceil(codels.length / gridCols);
+  let totalW = gridCols * cellSize;
+  let totalH = rows * cellSize;
+  let ox = (p.width - totalW) / 2;
+  let oy = (p.height - totalH) / 2;
+
+  // ── Draw codels with optional distortion ──
   for (let i = 0; i < codels.length; i++) {
     let row = Math.floor(i / gridCols);
     let col;
@@ -4151,21 +4185,33 @@ function drawPiet(p, t) {
     let x = ox + col * cellSize;
     let y = oy + row * cellSize;
 
+    // Apply wave distortion (optional, controlled by toggle + wave slider)
+    let dx = 0, dy = 0;
+    if (useWaveDistort && waveAmp > 0) {
+      // Use turbFreq for faster oscillations in space
+      dx = Math.sin(y * turbFreq * 0.01 + t * 0.5) * waveAmp * cellSize * 0.3;
+      dy = Math.cos(x * turbFreq * 0.01 + t * 0.4) * waveAmp * cellSize * 0.3;
+    }
+
+    // Density mask (optional) — skip drawing if noise is below threshold
+    if (useDensityMask) {
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.2);
+      if (n < (S.density || 0.5)) continue;
+    }
+
     let c = codels[i].col;
     p.fill(c.h, c.s, c.b);
-    p.rect(x, y, cellSize, cellSize);
+    p.rect(x + dx, y + dy, cellSize, cellSize);
 
-    // optional command label
+    // Command label (size driven by maxSize)
     if (S.pietShowLabels) {
-      p.push();
-      p.colorMode(p.RGB, 255);
       p.fill(0, 0, 30);
       p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(Math.max(7, cellSize * 0.3));
-      p.text(codels[i].cmd, x + cellSize / 2, y + cellSize / 2);
-      p.pop();
+      p.textSize(labelSize);
+      p.text(codels[i].cmd, x + cellSize / 2 + dx, y + cellSize / 2 + dy);
     }
   }
+
   p.pop();
 }
   
@@ -14171,7 +14217,7 @@ const PARAM_REGISTRY = {
     { id: 'numbPoemBlockSizeMult', label: 'Block size multiplier', min: 0.8, max: 2.0, step: 0.05, def: 1.0, scale: 1,
       hint: 'Scales the auto‑calculated block dimensions' },
   ], 
-  Piet Code: [
+  pietcode: [
     { id: 'pietText', name: 'Poem / Text', type: 'text', default: 'roses are red violets are blue', placeholder: 'Enter text to encode...' },
     { id: 'pietWordMode', name: 'Word → Command', type: 'dropdown', options: ['Length', 'Hash', 'Sequential'], default: 'Length' },
     { id: 'pietColorMode', name: 'Color System', type: 'dropdown', options: ['Piet 18', 'Piet 6-Hue', 'Studio Palette'], default: 'Piet 18' },
@@ -14183,9 +14229,10 @@ const PARAM_REGISTRY = {
     { id: 'pietShowCmd', name: 'Show Commands', type: 'toggle', default: false },
     { id: 'pietCharSource', name: 'Character Source', type: 'dropdown', options: ['Word Letters', 'Studio Charset', 'Mixed'], default: 'Word Letters' },
   ],
-    piet: [
+  piet: [
+    // ── Core poem and colour controls ──
     { id:'pietPoem',    label:'Poem text',     type:'text', def:'roses are red / violets are blue / sugar is sweet / and so are you',
-      hint:'Any text; words mapped to Piet commands by length' },
+      hint:'Any text; each word length maps to a Piet command' },
     { type:'select', id:'pietStartHue', label:'Start hue',
       options:[
         {value:0, label:'Red'},{value:1, label:'Yellow'},{value:2, label:'Green'},
@@ -14197,9 +14244,23 @@ const PARAM_REGISTRY = {
         {value:0, label:'Light'},{value:1, label:'Normal'},{value:2, label:'Dark'}
       ], def:0
     },
+    // ── Codel appearance ──
     { id:'pietCodelSize',  label:'Codel size (px)', min:10, max:60, step:1, def:24, scale:1 },
-    { type:'toggle', id:'pietShowLabels', label:'Show command labels', def:true }
+    { type:'toggle', id:'pietShowLabels', label:'Show command labels', def:true },
+    // ── Integration with global sliders (optional, off by default) ──
+    { type:'toggle', id:'pietWaveEnable',   label:'Enable wave distortion', def:false,
+      hint:'Warp codel positions using the Wave slider' },
+    { id:'pietWaveDistort', label:'Wave distortion amount', min:0, max:1.0, step:0.01, def:0.0, scale:1,
+      hint:'Multiplier for wave distortion (requires Wave Enable ON)' },
+    { id:'pietTurbDistort', label:'Distortion frequency',    min:0.1, max:30, step:0.5, def:5.0, scale:1,
+      hint:'Spatial frequency of the positional wave (uses Turbulence scaling)' },
+    { type:'toggle', id:'pietDensityMask', label:'Density mask (skip codels)', def:false,
+      hint:'Use the Density slider to hide codels in low-noise areas' },
+    { type:'toggle', id:'pietBgNoise',     label:'Noise background', def:false,
+      hint:'Replace background with a subtle noise texture (uses Noise Type, Octaves, etc.)' },
   ],
+
+
   
   //to be refactored
   hatch: [
