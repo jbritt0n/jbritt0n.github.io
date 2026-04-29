@@ -4440,52 +4440,54 @@ function drawPoemFields(p, t) {
     initPoemFields(p);
   }
 
-  // ── Read mode parameters (with defaults) ────────────────────
-  const flowStr   = S.pfFlowStrength   ?? 1.0;
-  const lineAtt   = S.pfLineAttraction ?? 0.02;
+  // ── Read mode parameters (with fallbacks) ────────────────────
+  const flowStr   = S.pfFlowStrength    ?? 1.0;
+  const lineAtt   = S.pfLineAttraction  ?? 0.02;
   const useSent   = S.pfSentimentEnable !== false;
   const usePhone  = S.pfPhoneticEnable  !== false;
   const useRhythm = S.pfRhythmEnable    !== false;
   const useLinks  = S.pfDependencyLinks !== false;
-  const linkAlpha = S.pfLinkAlpha       ?? 0.25;
-  const pulseScale= S.pfPulseScale      ?? 0.15;
-  const beatBPM   = S.pfBeatBPM         ?? 60;
+  const linkAlpha = S.pfLinkAlpha        ?? 0.25;
+  const pulseScale= S.pfPulseScale       ?? 0.15;
+  const beatBPM   = S.pfBeatBPM          ?? 60;
   const phoneSat  = S.pfPhoneticSaturation ?? 30;
-  const sentBias  = S.pfSentimentBias   ?? 0.5;
-  const fullWord  = S.pfShowFullWord    ?? false;
+  const sentBias  = S.pfSentimentBias    ?? 0.5;
+  const fullWord  = S.pfShowFullWord     ?? false;
 
-  const useClusters   = S.pfClustersEnable      !== false;
-  const clusterForce  = S.pfClusterAttraction    ?? 0.01;
-  const useRhymeSync  = S.pfRhymeSyncEnable     !== false;
-  const useAllitLines = S.pfAlliterationLines   !== false;
-  const useEcho       = S.pfEchoEnable          !== false;
-  const echoLen       = S.pfEchoLength          ?? 8;
-  const echoFade      = S.pfEchoFadeRate        ?? 0.03;
-  const useMetaphor   = S.pfMetaphorEnable      !== false;
-  const useParticles  = S.pfParticlesEnable     !== false;
-  const particleRate  = S.pfParticleRate         ?? 0.1;
-  const particleLife  = S.pfParticleLife         ?? 60;
-  const useRipples    = S.pfRipplesEnable       !== false;
-  const rippleSpeed   = S.pfRippleSpeed         ?? 15;
-  const useRibbons    = S.pfRibbonsEnable       !== false;
-  const useArcBg      = S.pfArcBackgroundEnable  ?? true;
+  const useClusters   = S.pfClustersEnable       !== false;
+  const clusterForce  = S.pfClusterAttraction     ?? 0.01;
+  const useRhymeSync  = S.pfRhymeSyncEnable      !== false;
+  const useAllitLines = S.pfAlliterationLines     !== false;
+  const useEcho       = S.pfEchoEnable           !== false;
+  const echoLen       = S.pfEchoLength           ?? 8;
+  const echoFade      = S.pfEchoFadeRate         ?? 0.03;
+  const useMetaphor   = S.pfMetaphorEnable       !== false;
+  const useParticles  = S.pfParticlesEnable      !== false;
+  const particleRate  = S.pfParticleRate          ?? 0.1;
+  const particleLife  = S.pfParticleLife          ?? 60;
+  const useRipples    = S.pfRipplesEnable        !== false;
+  const rippleSpeed   = S.pfRippleSpeed          ?? 15;
+  const useRibbons    = S.pfRibbonsEnable        !== false;
+  const useArcBg      = S.pfArcBackgroundEnable  !== false;
 
-  let glitchInt = S.glitchIntensity || 0;
+  let glitchInt  = S.glitchIntensity || 0;
   let glitchChrom = S.glitchChromatic || false;
   let glitchScan = S.glitchScanlines || false;
-  let entropy = S.entropy || 0;
+  let entropy    = S.entropy || 0;
 
-  // ── Emotional arc background ─────────────────────────────────
+  // ── Optional emotional arc overlay (does NOT replace your background) ──
   if (useArcBg) {
     let totalLines = _pfMeta.lineSents.length;
     if (totalLines > 0) {
-      // map time to a line index (cyclic)
       let lineIdx = Math.floor((t * 0.15) % totalLines);
       let sent = _pfMeta.lineSents[lineIdx] || 0;
       p.colorMode(p.HSB, 360, 100, 100);
       let bgHue = p.map(sent, -3, 3, 210, 30);   // blue → red
       let bgBri = p.map(Math.abs(sent), 0, 3, 90, 70);
-      p.background(bgHue, 15, bgBri, 8);          // subtle, low saturation
+      // Draw a semi‑transparent overlay instead of p.background()
+      p.fill(bgHue, 8, bgBri, 0.15);   // very subtle, see‑through
+      p.noStroke();
+      p.rect(0, 0, p.width, p.height);
       p.colorMode(p.RGB, 255);
     }
   }
@@ -4493,7 +4495,6 @@ function drawPoemFields(p, t) {
   // ── Update positions (physics) ───────────────────────────────
   if (S.playing) {
     let damping = 0.92;
-    // Compute cluster centroids (per frame, but lightweight)
     let clusterCenters = {};
     if (useClusters && clusterForce > 0) {
       for (let w of _pfWords) {
@@ -4514,7 +4515,6 @@ function drawPoemFields(p, t) {
       let fy = Math.sin(angle) * flowStr * w.speedMult * 0.02;
       fy += (w.lineY - w.y) * lineAtt;
 
-      // Dependency link
       if (w.parent >= 0 && w.parent < _pfWords.length) {
         let parent = _pfWords[w.parent];
         let dx = parent.x - w.x, dy = parent.y - w.y;
@@ -4524,7 +4524,6 @@ function drawPoemFields(p, t) {
         fy += dy / dist * force;
       }
 
-      // Semantic cluster attraction
       if (useClusters && clusterCenters[w.cluster]) {
         let cc = clusterCenters[w.cluster];
         let dx = cc.x - w.x, dy = cc.y - w.y;
@@ -4550,7 +4549,7 @@ function drawPoemFields(p, t) {
   // ── Punctuation ripples ──────────────────────────────────────
   if (useRipples) {
     for (let pm of _pfMeta.punctuation) {
-      if (S.playing) pm.t += 0.05;    // drift ripple time
+      if (S.playing) pm.t += 0.05;
       let radius = pm.t * rippleSpeed;
       let alpha = p.constrain(1.0 - pm.t * 0.1, 0, 1);
       p.noFill();
@@ -4566,9 +4565,8 @@ function drawPoemFields(p, t) {
     p.strokeWeight(0.8);
     p.strokeCap(p.ROUND);
     for (let li of _pfMeta.enjambments) {
-      if (li + 1 >= p.height / Math.max(1, p.height / 60)) continue; // dummy; just check line index
-      let endWord = _pfWords.find(w => w.lineIndex === li && w.idx === _pfWords.filter(w2 => w2.lineIndex === li).pop()?.idx);
-      let startWord = _pfWords.find(w => w.lineIndex === li + 1 && w.idx === _pfWords.filter(w2 => w2.lineIndex === li+1)[0]?.idx);
+      let endWord = _pfWords.filter(w => w.lineIndex === li).pop();
+      let startWord = _pfWords.find(w => w.lineIndex === li + 1);
       if (endWord && startWord) {
         let col = pickColor(p, (endWord.x+startWord.x)/2, (endWord.y+startWord.y)/2, t);
         p.stroke(p.red(col), p.green(col), p.blue(col), 60);
@@ -4615,19 +4613,17 @@ function drawPoemFields(p, t) {
 
   // ── Draw words ────────────────────────────────────────────────
   for (let w of _pfWords) {
-    let sz = S.maxSize * w.sizeMult;
+    let sz = S.maxSize * w.sizeMult * 1.4;   // slightly bigger for visibility
     if (useRhythm) {
       let beat = (w.idx + w.syll * 0.5) / 4;
       let pulse = Math.sin(t * (beatBPM / 60) * Math.PI * 2 + w.phase + beat) * pulseScale;
       sz *= (1 + pulse);
     }
-    // Rhyme sync (if enabled, all rhyming words share the same pulse phase)
     if (useRhymeSync) {
       let rhymeKey = w.word.toLowerCase().replace(/[^a-z]/g,'').slice(-3);
       if (_pfMeta.rhymeGroups[rhymeKey] && _pfMeta.rhymeGroups[rhymeKey].length > 1) {
-        // Use the group's first word's phase as common offset
         let leader = _pfWords[_pfMeta.rhymeGroups[rhymeKey][0]];
-        w.phase = leader.phase;   // synchronise
+        w.phase = leader.phase;
       }
     }
 
@@ -4657,7 +4653,6 @@ function drawPoemFields(p, t) {
       displayChar = glitchSymbols[Math.floor(Math.random() * glitchSymbols.length)];
     }
 
-    // Metaphor glow
     if (useMetaphor && _pfMeta.metaphors.some(m => m.tenor === w.idx || m.vehicle === w.idx)) {
       p.noFill();
       p.stroke(255, 215, 0, 70);
@@ -4665,17 +4660,15 @@ function drawPoemFields(p, t) {
       p.ellipse(w.x, w.y, sz * 1.8, sz * 1.8);
     }
 
-    // Echo trails for repeated words
+    // Repetition echoes
     if (useEcho) {
       if (!w.echoHistory) w.echoHistory = [];
       let repCount = _pfWords.filter(w2 => w2.word.toLowerCase() === w.word.toLowerCase()).length;
       if (repCount > 1) {
-        // Record position every ~15 frames
         if (S.playing && p.frameCount % 15 === 0) {
           w.echoHistory.push({ x: w.x, y: w.y, t: t });
           if (w.echoHistory.length > echoLen) w.echoHistory.shift();
         }
-        // Draw fading ghosts
         for (let i = 0; i < w.echoHistory.length; i++) {
           let e = w.echoHistory[i];
           let age = t - e.t;
@@ -4687,7 +4680,7 @@ function drawPoemFields(p, t) {
       }
     }
 
-    // Draw main character
+    // Draw the main character — mirroring and entropy are handled inside dc()
     let sz1 = Math.max(2, sz);
     if (glitchChrom && glitchInt > 0) {
       let cglitch = applyChromaticGlitch(p, w.x, w.y, t);
@@ -4708,7 +4701,6 @@ function drawPoemFields(p, t) {
       }
     }
   }
-  // Update and draw particles
   for (let pt of _pfParticles) {
     pt.x += pt.vx; pt.y += pt.vy;
     pt.life--;
@@ -4721,7 +4713,6 @@ function drawPoemFields(p, t) {
   }
   _pfParticles = _pfParticles.filter(pt => pt.life > 0);
 }
-
   
 
 // ── MONDRIAN ─────────────────────────────────────────────────────────────────
