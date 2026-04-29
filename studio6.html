@@ -4985,10 +4985,7 @@ function _pfPhysicsStep(p, t) {
 function drawPoemFields(p, t) {
   const currentText = S.poemFieldText ?? '';
 if ((currentText !== _pfLastText || _pfWords.length === 0) && !_pfInitializing) {
-  // Clear old state and build fresh (synchronous – no freeze)
   initPoemFields(p);
-  // Force an immediate redraw after sync build
-  if (window._st) window._st.rd();
 }
 
   const useSent        = S.pfSentimentEnable    !== false;
