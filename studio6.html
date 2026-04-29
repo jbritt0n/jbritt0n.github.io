@@ -360,8 +360,10 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="greengardens" title="GreenGardens">GreenGardens</button>
         <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
         <button class="mb" data-mode="piet" title="Piet program generator from a poem">🖼️ Piet</button>
-        <button class="mb" data-mode="pietcode" title="Piet code">PietCode</button>
         <button class="mb" data-mode="poemfields" title="Words as drifting particles shaped by grammar">🌾 Poem Fields</button>
+        <button class="mb" data-mode="constructivistgrids" title="constructivistgrids — dense text field with bold geometric shapes on top">Constructivism</button>
+        <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
+        <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
       </div>
     </div>
     
@@ -392,16 +394,15 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
       <div class="mg">
-        <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
+        
         <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
         <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
         <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
-        <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
+        
         <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
         <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
         <button class="mb new-mode" data-mode="scattrects"  title="Strange Loops — scattered solid and hollow rectangles">Scat. Rects</button>
-        <button class="mb new-mode" data-mode="constructivistgrids"     title="constructivistgrids — dense text field with bold geometric shapes on top">Constructivism</button>
         <button class="mb new-mode" data-mode="cosmicpoems" title="Cosmic Poems — checkerboard grid morphing into circles">Cosmic Poems</button>
         <button class="mb new-mode" data-mode="hypertype"   title="Hypertype — large characters on micro-pattern backgrounds">Hypertype</button>
         <button class="mb new-mode" data-mode="circlefield" title="Strange Loops — mixed filled/hollow circle field">Circle Field</button>
@@ -2295,48 +2296,6 @@ function initWireTerrain(p,W,H){
   }
 }
 
-// ── FRACTAL SUBDIVISION INIT ─────────────────────────────────────────────────────────────────
-function initFractalSubdiv(p,W,H){
-  fsPolygons=[];
-  let cx=W/2,cy=H/2,r=Math.min(W,H)*.38;
-  // Choose base shape: triangle, square, or hexagon based on wave
-  let sides=S.wave<30?3:S.wave<65?4:6;
-  let basePts=[];
-  for(let i=0;i<sides;i++){
-    let a=(i/sides)*Math.PI*2-Math.PI/2;
-    basePts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});
-  }
-  // Recursively subdivide
-  let maxDepth=S.fractalDepth||Math.max(2,Math.min(6,Math.floor(S.density*5+2)));
-  _fsSubdivide(p,basePts,0,maxDepth);
-}
-function _fsSubdivide(p,pts,depth,maxDepth){
-  if(depth>=maxDepth||pts.length<2){
-    fsPolygons.push({pts:pts.slice(),col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});
-    return;
-  }
-  // Split each edge at midpoint, displace by noise-driven amount
-  let newPts=[];
-  let roughness=S.wave*.004+0.02;
-  for(let i=0;i<pts.length;i++){
-    let a=pts[i],b=pts[(i+1)%pts.length];
-    newPts.push(a);
-    let mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-    let len=Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y));
-    let nx=-(b.y-a.y)/len,ny=(b.x-a.x)/len; // normal
-    let disp=(p.noise(mx*.005,my*.005,depth*.3)-.5)*len*roughness*2;
-    newPts.push({x:mx+nx*disp,y:my+ny*disp});
-  }
-  // Recursively subdivide the two halves
-  let half=Math.floor(newPts.length/2);
-  let pts1=newPts.slice(0,half+1);
-  let pts2=newPts.slice(half);
-  // Close each sub-polygon
-  if(pts1.length>2) _fsSubdivide(p,pts1,depth+1,maxDepth);
-  if(pts2.length>2) _fsSubdivide(p,pts2,depth+1,maxDepth);
-  // Also store the full subdivided polygon at this level
-  if(depth===0||Math.random()<.3) fsPolygons.push({pts:newPts,col:S.palette[Math.floor(Math.random()*S.palette.length)],depth:depth});
-}
 
 function initLissajous(W,H){
   lissParticles=[];
@@ -8184,111 +8143,355 @@ function drawWireTerrain(p,t){
   _lastFont='';_lastFill='';
 }
 
-// ── RECURSIVE SUBDIVISION (FRACTAL POLYGONS) ─────────────────────────────────────────────────────────────────
-// Recursively subdivides a base polygon by splitting edges at midpoints
-// and displacing by noise-driven distances. Result: Koch-like fractals,
-// crystalline structures, organic coastlines.
-function drawFractalSubdiv(p,t){
-  let W=p.width,H=p.height;
-  if(!fsPolygons.length) initFractalSubdiv(p,W,H);
+// ── FRACTAL SUBDIVISION INIT ─────────────────────────────────────────────────
+function initFractalSubdiv(p, W, H) {
+  fsPolygons = [];
+
+  // ── base shape selection (new: dedicated control) ──
+  let sides = S.fsBaseShape === 'triangle'   ? 3
+            : S.fsBaseShape === 'square'     ? 4
+            : S.fsBaseShape === 'pentagon'   ? 5
+            : S.fsBaseShape === 'hexagon'    ? 6
+            : S.fsBaseShape === 'octagon'    ? 8
+            : S.fsBaseShape === 'star6'      ? 6   // will be treated specially
+            : S.fsBaseShape === 'star8'      ? 8
+            : 6; // fallback
+
+  let starRatio = S.fsStarRatio ?? 0.45;          // for star shapes
+  let radius = Math.min(W, H) * (S.fsRadius ?? 0.38);
+  let cx = W / 2, cy = H / 2;
+
+  // generate base points
+  let basePts = [];
+  if (S.fsBaseShape === 'star6' || S.fsBaseShape === 'star8') {
+    // star: alternating inner/outer radii
+    let ptsCount = sides * 2;
+    for (let i = 0; i < ptsCount; i++) {
+      let a = (i / ptsCount) * Math.PI * 2 - Math.PI / 2;
+      let r = (i % 2 === 0) ? radius : radius * starRatio;
+      basePts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+    }
+  } else if (S.fsBaseShape === 'circle') {
+    // approximate circle with 32 vertices
+    let n = 32;
+    for (let i = 0; i < n; i++) {
+      let a = (i / n) * Math.PI * 2;
+      basePts.push({ x: cx + Math.cos(a) * radius, y: cy + Math.sin(a) * radius });
+    }
+  } else {
+    for (let i = 0; i < sides; i++) {
+      let a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+      basePts.push({ x: cx + Math.cos(a) * radius, y: cy + Math.sin(a) * radius });
+    }
+  }
+
+  // recursion depth (now a direct slider, with density scaling optional)
+  let maxDepth = S.fsMaxDepth ?? Math.max(2, Math.min(6, Math.floor(S.density * 5 + 2)));
+
+  // clear previous and start subdivision
+  _fsSubdivide(p, basePts, 0, maxDepth);
+}
+
+function _fsSubdivide(p, pts, depth, maxDepth) {
+  if (depth >= maxDepth || pts.length < 2) {
+    let col = _fsColorForDepth(depth, maxDepth);
+    fsPolygons.push({ pts: pts.slice(), col, depth });
+    return;
+  }
+
+  // ── get roughness for this level (falls off with depth) ──
+  let roughness = S.fsRoughness ?? (S.wave * 0.004 + 0.02);
+  let falloff = S.fsRoughnessFalloff ?? 0.75;     // multiplier per level
+  roughness *= Math.pow(falloff, depth);
+
+  // subdivide each edge: add displaced midpoint
+  let newPts = [];
+  for (let i = 0; i < pts.length; i++) {
+    let a = pts[i], b = pts[(i + 1) % pts.length];
+    newPts.push(a);
+
+    let mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    let len = Math.hypot(b.x - a.x, b.y - a.y);
+    let nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len;  // normal
+
+    // use sampleNoise so we get organic displacement (respects noise type, octaves)
+    let n = sampleNoise(p, mx * S.noiseScale * 5, my * S.noiseScale * 5, depth * 0.3);
+    let disp = (n - 0.5) * len * roughness * 2;
+    newPts.push({ x: mx + nx * disp, y: my + ny * disp });
+  }
+
+  // split into two halves and recurse
+  let half = Math.floor(newPts.length / 2);
+  if (newPts.slice(0, half + 1).length > 2) _fsSubdivide(p, newPts.slice(0, half + 1), depth + 1, maxDepth);
+  if (newPts.slice(half).length > 2)      _fsSubdivide(p, newPts.slice(half),      depth + 1, maxDepth);
+
+  // optionally store the full ring at this level (for wireframe effect)
+  if (S.fsShowAllLevels !== false && (depth === 0 || Math.random() < 0.3)) {
+    fsPolygons.push({ pts: newPts.slice(), col: _fsColorForDepth(depth, maxDepth), depth });
+  }
+}
+
+// colour helper: map depth to palette (several strategies)
+function _fsColorForDepth(depth, maxDepth) {
+  // default: random from palette
+  if (!S.fsColorMode || S.fsColorMode === 'random') {
+    return S.palette[Math.floor(Math.random() * S.palette.length)];
+  }
+  if (S.fsColorMode === 'depth') {
+    let idx = Math.floor((depth / Math.max(1, maxDepth)) * S.palette.length);
+    return S.palette[Math.min(idx, S.palette.length - 1)];
+  }
+  if (S.fsColorMode === 'rainbow') {
+    let hue = (depth / Math.max(1, maxDepth)) * 360 + (S.fsColorHueOffset ?? 0);
+    return `hsl(${hue % 360}, 80%, 60%)`;
+  }
+  return S.palette[0];
+}
+
+// ── FRACTAL SUBDIVISION DRAW ─────────────────────────────────────────────────
+function drawFractalSubdiv(p, t) {
+  let W = p.width, H = p.height;
+  if (!fsPolygons.length) initFractalSubdiv(p, W, H);
 
   CTX.save();
-  CTX.lineCap='round';
-  CTX.lineJoin='round';
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
 
-  // Animate: slowly rotate and pulse the whole structure
-  let cx=W/2,cy=H/2;
-  let rotSpeed=S.speed*.3;
-  CTX.translate(cx,cy);
-  CTX.rotate(t*rotSpeed*.1);
-  CTX.translate(-cx,-cy);
+  // ── animation transforms ──────────────────────────────────────────
+  let cx = W / 2, cy = H / 2;
+  let rotSpeed = (S.fsRotSpeed ?? 0.3) * S.speed * 10;       // rotation
+  let wobbleAmp = S.fsWobbleAmp ?? 0.04;
+  let wobbleFreq = S.fsWobbleFreq ?? 0.02;
 
-  fsPolygons.forEach(function(poly){
-    if(!poly.pts||poly.pts.length<2) return;
-    let depth=poly.depth||0;
-    let strokeW=Math.max(.4,2.5-depth*.35);
-    let alpha=0.15+depth*.08;
-    let col=poly.col;
-    if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.3) col=S.accent;
-    // Animate vertices with slight wave distortion
+  CTX.translate(cx, cy);
+  CTX.rotate(t * rotSpeed);
+  CTX.translate(-cx, -cy);
+
+  // ── global fill toggle ────────────────────────────────────────────
+  let fillEnabled = S.fsFillEnabled ?? false;
+  let fillOpacity = S.fsFillOpacity ?? 0.25;
+  let useGradient = S.fsUseGradient ?? false;
+
+  fsPolygons.forEach(function(poly, idx) {
+    if (!poly.pts || poly.pts.length < 2) return;
+    let depth = poly.depth || 0;
+    let maxDepth = S.fsMaxDepth ?? 4;
+
+    // line weight – base weight + falloff
+    let baseLW = S.fsLineWidthBase ?? 2.5;
+    let lwFalloff = S.fsLineWidthFalloff ?? 0.35;
+    let strokeW = Math.max(0.4, baseLW - depth * lwFalloff);
+
+    // alpha – increase with depth (more detail) and add ambient pulse
+    let baseAlpha = S.fsAlphaBase ?? 0.15;
+    let alphaSlope = S.fsAlphaSlope ?? 0.08;
+    let alpha = baseAlpha + depth * alphaSlope + Math.sin(t * 0.5 + idx) * 0.04;
+
+    // colour – with optional accent override
+    let col = poly.col;
+    if (S.accent !== 'none' && S.accentAmt > 0 && Math.random() < S.accentAmt * 0.3) col = S.accent;
+
+    // ── vertex wobble ───────────────────────────────────────────────
+    let wobbledPts = poly.pts.map(function(pt) {
+      let wx = Math.sin(pt.y * wobbleFreq + t * 1.2) * S.wave * wobbleAmp;
+      let wy = Math.cos(pt.x * wobbleFreq + t * 1.0) * S.wave * wobbleAmp;
+      return { x: pt.x + wx, y: pt.y + wy };
+    });
+
+    // ── fill (optional) ─────────────────────────────────────────────
+    if (fillEnabled) {
+      CTX.save();
+      CTX.beginPath();
+      wobbledPts.forEach((pt, i) => {
+        if (i === 0) CTX.moveTo(pt.x, pt.y);
+        else CTX.lineTo(pt.x, pt.y);
+      });
+      CTX.closePath();
+      if (useGradient) {
+        let grad = CTX.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
+        let col1 = col, col2 = S.palette[(idx + 1) % S.palette.length];
+        grad.addColorStop(0, col1);
+        grad.addColorStop(1, col2);
+        CTX.fillStyle = grad;
+      } else {
+        CTX.fillStyle = col;
+      }
+      CTX.globalAlpha = Math.max(0, fillOpacity);
+      CTX.fill();
+      CTX.restore();
+    }
+
+    // ── stroke polygon ─────────────────────────────────────────────
     CTX.beginPath();
-    poly.pts.forEach(function(pt,i){
-      let wx=Math.sin(pt.y*S.turb*.02+t*1.2)*S.wave*.04;
-      let wy=Math.cos(pt.x*S.turb*.02+t*1.0)*S.wave*.04;
-      let px2=pt.x+wx,py2=pt.y+wy;
-      if(i===0) CTX.moveTo(px2,py2); else CTX.lineTo(px2,py2);
+    wobbledPts.forEach((pt, i) => {
+      if (i === 0) CTX.moveTo(pt.x, pt.y);
+      else CTX.lineTo(pt.x, pt.y);
     });
     CTX.closePath();
-    // Stroke the polygon
-    CTX.globalAlpha=alpha+.1;
-    CTX.strokeStyle=col;
-    CTX.lineWidth=strokeW;
+    CTX.strokeStyle = col;
+    CTX.lineWidth = strokeW;
+    CTX.globalAlpha = Math.min(1, alpha);
     CTX.stroke();
-    // Scatter characters along the polygon edges
-    if(depth>=2&&Math.random()<S.density*.12){
-      let pts=poly.pts;
-      for(let i=0;i<pts.length;i++){
-        let a=pts[i],b=pts[(i+1)%pts.length];
-        let steps=Math.max(1,Math.floor(Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y))/(S.spacing*1.2)));
-        for(let s=0;s<=steps;s++){
-          if(Math.random()>.45) continue;
-          let frac=s/steps;
-          let px2=a.x+(b.x-a.x)*frac,py2=a.y+(b.y-a.y)*frac;
-          let ch=pickChar(p,px2,py2,t);
-          let sz=p.map(depth,0,6,S.maxSize*.8,2);
-          CTX.globalAlpha=0.6+depth*.05;
-          let fstr=(sz|0)+'px '+S.fontStack;
-          if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-          if(col!==_lastFill){CTX.fillStyle=col;_lastFill=col;}
-          CTX.fillText(ch,px2,py2);
+
+    // ── character overlay (only on deeper levels, if enabled) ──────
+    if (S.fsCharEnabled !== false && depth >= (S.fsCharMinDepth ?? 2) &&
+        Math.random() < (S.fsCharProb ?? 0.12)) {
+      let pts = poly.pts; // use original positions for character seeds
+      for (let i = 0; i < pts.length; i++) {
+        let a = pts[i], b = pts[(i + 1) % pts.length];
+        let segLen = Math.hypot(b.x - a.x, b.y - a.y);
+        let steps = Math.max(1, Math.floor(segLen / (S.spacing * 1.2)));
+        for (let s = 0; s <= steps; s++) {
+          if (Math.random() > 0.45) continue;
+          let frac = s / steps;
+          let px2 = a.x + (b.x - a.x) * frac;
+          let py2 = a.y + (b.y - a.y) * frac;
+          let ch = pickChar(p, px2, py2, t);
+          let sz = p.map(depth, 0, maxDepth, S.maxSize * 0.8, 2);
+          // add a slight angle variation
+          let rot = Math.sin(px2 * 0.05 + t) * 0.4;
+          dc(px2, py2, sz, rot, col, ch);
         }
       }
     }
   });
 
-  CTX.globalAlpha=1;
+  CTX.globalAlpha = 1;
   CTX.restore();
-  _lastFont='';_lastFill='';
 }
 
-// ── TRUCHET TILES ─────────────────────────────────────────────────────────────
-// Each tile gets two quarter-circles connecting opposite corners.
-// Noise decides orientation; wave drives animation; density controls opacity.
-function drawTruchet(p,t){
-  let W=p.width,H=p.height;
-  let sz=Math.max(8,S.spacing*1.8); // tile size
-  let cols=Math.ceil(W/sz)+1,rows=Math.ceil(H/sz)+1;
-  CTX.save();
-  CTX.lineCap='round';
-  CTX.lineWidth=Math.max(0.5,S.maxSize*.04);
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      let tx=c*sz, ty=r*sz;
-      // Noise determines orientation; animate slowly
-      let n=p.noise(c*S.noiseScale*4,r*S.noiseScale*4,t*.08);
-      let flip=n>0.5;
-      // Pick color from palette
-      let ci=Math.floor(p.noise(c*S.noiseScale*2,r*S.noiseScale*2,t*.05)*S.palette.length);
-      let col=S.palette[ci%S.palette.length];
-      if(S.accent!=='none'&&S.accentAmt>0&&Math.random()<S.accentAmt*.25) col=S.accent;
-      CTX.strokeStyle=col;
-      CTX.globalAlpha=0.55+n*.45;
-      CTX.beginPath();
-      if(flip){
-        // Arc from bottom-left corner to top-right corner
-        CTX.arc(tx,ty+sz,sz,Math.PI*1.5,0); // bottom-left → top-right arc
-        CTX.moveTo(tx+sz,ty);
-        CTX.arc(tx+sz,ty+sz,sz,Math.PI,Math.PI*1.5); // other arc through top-right
-      } else {
-        // Arc from top-left corner to bottom-right corner
-        CTX.arc(tx,ty,sz,0,Math.PI*.5);
-        CTX.moveTo(tx+sz,ty+sz);
-        CTX.arc(tx+sz,ty,sz,Math.PI*.5,Math.PI);
+
+
+
+  
+// ── TRUCHET TILES (refactored + shape variants) ──────────────────────────
+function drawTruchet(p, t) {
+  let W = p.width, H = p.height;
+
+  // ---- Mode‑specific parameters (with original defaults) ----
+  let tsMult    = S.trucTileSizeMult    ?? 1.8;
+  let lwMult    = S.trucLineWidthMult   ?? 0.04;
+  let orientFreq= S.trucOrientNoiseFreq ?? 4;
+  let colorFreq = S.trucColorNoiseFreq  ?? 2;
+  let alphaMin  = S.trucAlphaMin        ?? 0.55;
+  let alphaRange= S.trucAlphaRange      ?? 0.45;
+  let accFactor = S.trucAccentFactor    ?? 0.25;
+
+  let shapeMode = S.trucShapeMode  ?? 'arc';       // 'arc', 'line', 'sine', 'bezier'
+  let curvature = S.trucCurveAmount ?? 0.8;         // 0 = flat line, 1 = full arc-ish
+
+  let sz = Math.max(8, S.spacing * tsMult);
+  let cols = Math.ceil(W / sz) + 1;
+  let rows = Math.ceil(H / sz) + 1;
+
+  // Helper to draw a single curve from point A to B
+  function drawTileCurve(Ax, Ay, Bx, By, mode, curv, col) {
+    CTX.strokeStyle = col;
+    CTX.beginPath();
+    CTX.moveTo(Ax, Ay);
+
+    if (mode === 'line') {
+      CTX.lineTo(Bx, By);
+    } else if (mode === 'sine') {
+      // sine wave perpendicular to the line
+      let dx = Bx - Ax, dy = By - Ay;
+      let len = Math.hypot(dx, dy);
+      if (len < 1) { CTX.lineTo(Bx, By); return; }
+      let perpX = -dy / len, perpY = dx / len;
+      let steps = Math.max(4, Math.floor(len / 3));
+      for (let i = 1; i <= steps; i++) {
+        let frac = i / steps;
+        let x = Ax + dx * frac;
+        let y = Ay + dy * frac;
+        let offset = Math.sin(frac * Math.PI * 2) * curv * sz * 0.25; // amplitude
+        x += perpX * offset;
+        y += perpY * offset;
+        CTX.lineTo(x, y);
       }
-      CTX.stroke();
+    } else if (mode === 'bezier') {
+      // quadratic bezier with control point offset perpendicularly
+      let mx = (Ax + Bx) / 2, my = (Ay + By) / 2;
+      // bulge direction: perpendicular toward the tile's remaining corners
+      // We'll determine direction based on which diagonal we're drawing
+      let bulgeX = 0, bulgeY = 0;
+      // The two diagonals are: (top‑right → bottom‑left) and (bottom‑right → top‑left)
+      // For (tr→bl): bulge toward top‑left (negative in both axes)
+      // For (br→tl): bulge toward top‑right (positive X, negative Y)
+      if (Math.abs(Ax - Bx) < 1 && Math.abs(Ay - By) < 1) {
+        CTX.lineTo(Bx, By);
+        return;
+      }
+      let isDiagonal1 = (Ax > Bx) !== (Ay > By); // simplified: cross pattern
+      if (isDiagonal1) {
+        bulgeX = -1; bulgeY = -1;  // toward TL
+      } else {
+        bulgeX =  1; bulgeY = -1;  // toward TR
+      }
+      let offsetDist = curv * sz * 0.7; // max offset ~70% of tile size
+      let len2 = Math.hypot(bulgeX, bulgeY);
+      if (len2 > 0) {
+        mx += (bulgeX / len2) * offsetDist;
+        my += (bulgeY / len2) * offsetDist;
+      }
+      CTX.quadraticCurveTo(mx, my, Bx, By);
+    } else { // 'arc' – original quarter‑circle
+      // Keep original behaviour; we don't use curv here
+      // The original code used arc() with specific centres; we replicate that below
+    }
+    if (mode !== 'arc') CTX.stroke();
+  }
+
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineWidth = Math.max(0.5, S.maxSize * lwMult);
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let tx = c * sz, ty = r * sz;
+
+      let n = sampleNoise(p, c * S.noiseScale * orientFreq,
+                           r * S.noiseScale * orientFreq, t * 0.08);
+      let flip = n > 0.5;
+
+      let nCol = sampleNoise(p, c * S.noiseScale * colorFreq,
+                              r * S.noiseScale * colorFreq, t * 0.05);
+      let ci = Math.floor(nCol * S.palette.length);
+      let col = S.palette[ci % S.palette.length];
+      if (S.accent !== 'none' && S.accentAmt > 0 &&
+          Math.random() < S.accentAmt * accFactor) col = S.accent;
+
+      CTX.globalAlpha = alphaMin + n * alphaRange;
+      CTX.strokeStyle = col;
+
+      if (shapeMode === 'arc') {
+        // Original quarter‑circle arcs (fully intact)
+        CTX.beginPath();
+        if (flip) {
+          CTX.arc(tx, ty + sz, sz, Math.PI * 1.5, 0);
+          CTX.moveTo(tx + sz, ty);
+          CTX.arc(tx + sz, ty + sz, sz, Math.PI, Math.PI * 1.5);
+        } else {
+          CTX.arc(tx, ty, sz, 0, Math.PI * 0.5);
+          CTX.moveTo(tx + sz, ty + sz);
+          CTX.arc(tx + sz, ty, sz, Math.PI * 0.5, Math.PI);
+        }
+        CTX.stroke();
+      } else {
+        // New shape modes: draw two curves per tile (the two diagonals)
+        if (flip) {
+          // top‑left → bottom‑right, and bottom‑left → top‑right
+          drawTileCurve(tx, ty,              tx + sz, ty + sz, shapeMode, curvature, col);
+          drawTileCurve(tx, ty + sz,         tx + sz, ty,      shapeMode, curvature, col);
+        } else {
+          // top‑right → bottom‑left, and bottom‑right → top‑left
+          drawTileCurve(tx + sz, ty,         tx, ty + sz,      shapeMode, curvature, col);
+          drawTileCurve(tx + sz, ty + sz,    tx, ty,           shapeMode, curvature, col);
+        }
+      }
     }
   }
-  CTX.globalAlpha=1;
+
+  CTX.globalAlpha = 1;
   CTX.restore();
 }
 
@@ -15142,6 +15345,80 @@ const PARAM_REGISTRY = {
       { id:'cgGlitchPosProb',    label:'Glitch pos chance',min:0,  max:0.5,step:0.01,def:0.1, scale:1 },
       { id:'cgGlitchPosRange',   label:'Glitch pos range', min:0,  max:120,step:5,  def:40,  scale:1 },
     ],
+    truchet: [
+      { id:'trucTileSizeMult',     label:'Tile size mult',     min:0.5,max:4,  step:0.1, def:1.8,  scale:1 },
+      { id:'trucLineWidthMult',    label:'Line width mult',    min:0.01,max:0.2,step:0.01,def:0.04, scale:1 },
+      { id:'trucOrientNoiseFreq',  label:'Orient noise freq',  min:1,  max:10, step:1,   def:4,    scale:1 },
+      { id:'trucColorNoiseFreq',   label:'Color noise freq',   min:1,  max:10, step:1,   def:2,    scale:1 },
+      { id:'trucAlphaMin',         label:'Alpha min',           min:0,  max:1,  step:0.05,def:0.55, scale:1 },
+      { id:'trucAlphaRange',       label:'Alpha range',         min:0,  max:1,  step:0.05,def:0.45, scale:1 },
+      { id:'trucAccentFactor',     label:'Accent chance factor',min:0,  max:1,  step:0.05,def:0.25, scale:1 },
+      // New shape controls
+      { type:'select', id:'trucShapeMode', label:'Curve style',
+        def:'arc',
+        options:[
+          { value:'arc',    label:'Quarter‑circle (classic)' },
+          { value:'line',   label:'Straight lines' },
+          { value:'sine',   label:'Sine wave' },
+          { value:'bezier', label:'Smooth bezier' },
+        ],
+      },
+      { id:'trucCurveAmount', label:'Curve amount', min:0, max:1, step:0.01, def:0.8, scale:1,
+        hint:'0 = flat line, 1 = full bend (applies to line/sine/bezier)' },
+    ],
+    fractalsubdiv: [
+      { type:'select', id:'fsBaseShape', label:'Base shape',
+        def:'hexagon',
+        options:[
+          { value:'triangle', label:'Triangle' },
+          { value:'square',   label:'Square' },
+          { value:'pentagon', label:'Pentagon' },
+          { value:'hexagon',  label:'Hexagon' },
+          { value:'octagon',  label:'Octagon' },
+          { value:'star6',    label:'6‑point star' },
+          { value:'star8',    label:'8‑point star' },
+          { value:'circle',   label:'Circle' }
+        ],
+        extra:function(){ if(window._st) initFractalSubdiv(window._st.p, window._st.w(), window._st.h()); }
+      },
+      { id:'fsStarRatio', label:'Star inner ratio', min:0.1, max:0.9, step:0.05, def:0.45, scale:1,
+        hint:'Inner radius fraction for star shapes' },
+      { id:'fsRadius',    label:'Base radius',      min:0.1, max:0.5, step:0.01, def:0.38, scale:1,
+        hint:'Fraction of min(canvas width/height)' },
+      { id:'fsMaxDepth',  label:'Recursion depth',  min:1, max:6, step:1, def:4, scale:1,
+        extra:function(){ if(window._st) initFractalSubdiv(window._st.p, window._st.w(), window._st.h()); } },
+      { id:'fsRoughness', label:'Roughness',        min:0.005, max:0.2, step:0.005, def:0.04, scale:1,
+        hint:'Displacement strength per edge (base)' },
+      { id:'fsRoughnessFalloff', label:'Roughness falloff', min:0.4, max:1, step:0.05, def:0.75, scale:1,
+        hint:'Multiplier per recursion level' },
+      { type:'toggle', id:'fsShowAllLevels', label:'Show intermediate levels', def:true },
+      { type:'select', id:'fsColorMode', label:'Color mode',
+        def:'random',
+        options:[
+          { value:'random',  label:'Random palette' },
+          { value:'depth',   label:'By depth' },
+          { value:'rainbow', label:'Rainbow HSL' },
+        ]
+      },
+      { id:'fsColorHueOffset', label:'Hue offset (rainbow)', min:0, max:360, step:5, def:0, scale:1 },
+      // ── animation ───────────────────────────────────────
+      { id:'fsRotSpeed',   label:'Rotation speed',   min:0,   max:2, step:0.05, def:0.3, scale:1 },
+      { id:'fsWobbleAmp',  label:'Wobble amplitude', min:0,   max:0.2, step:0.01, def:0.04, scale:1 },
+      { id:'fsWobbleFreq', label:'Wobble frequency', min:0.005, max:0.1, step:0.005, def:0.02, scale:1 },
+      // ── stroke & fill ──────────────────────────────────
+      { id:'fsLineWidthBase',    label:'Base line width',   min:0.5, max:6, step:0.1, def:2.5, scale:1 },
+      { id:'fsLineWidthFalloff', label:'Line width falloff', min:0, max:1, step:0.05, def:0.35, scale:1 },
+      { id:'fsAlphaBase',        label:'Base alpha',        min:0, max:0.5, step:0.01, def:0.15, scale:1 },
+      { id:'fsAlphaSlope',       label:'Alpha per level',   min:0, max:0.2, step:0.01, def:0.08, scale:1 },
+      { type:'toggle', id:'fsFillEnabled', label:'Fill polygons', def:false },
+      { id:'fsFillOpacity', label:'Fill opacity', min:0, max:1, step:0.05, def:0.25, scale:1 },
+      { type:'toggle', id:'fsUseGradient', label:'Gradient fill', def:false },
+      // ── character overlay ──────────────────────────────
+      { type:'toggle', id:'fsCharEnabled',   label:'Show characters', def:true },
+      { id:'fsCharMinDepth', label:'Min depth for chars', min:0, max:5, step:1, def:2, scale:1 },
+      { id:'fsCharProb',    label:'Character probability', min:0, max:1, step:0.02, def:0.12, scale:1 },
+    ],
+
 
   
   //to be refactored
@@ -15154,10 +15431,6 @@ const PARAM_REGISTRY = {
     { id:'boidAln',    label:'Alignment',    min:0,   max:100, step:2,  def:6,   scale:0.001 },
     { id:'boidCoh',    label:'Cohesion',     min:0,   max:100, step:2,  def:4,   scale:0.0001 },
     { id:'boidView',   label:'Vision range', min:10,  max:200, step:5,  def:60,  scale:1    },
-  ],
-  fractalsubdiv: [
-    { id:'fractalDepth', label:'Detail level', min:1,  max:6,   step:1,  def:4,   scale:1,
-      extra: function(){ fsPolygons=[]; } },
   ],
   seisma: [
     { id:'seismaCross',  label:'Cross-hatch',  type:'toggle', def:false },
