@@ -359,6 +359,8 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="yandinsky" title="Kandinsky Yellow">Yandinsky</button>
         <button class="mb" data-mode="greengardens" title="GreenGardens">GreenGardens</button>
         <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
+        <button class="mb" data-mode="piet" title="Piet program generator from a poem">🖼️ Piet</button>
+        <button class="mb" data-mode="pietcode" title="Piet code">PietCode</button>
       </div>
     </div>
     
@@ -1552,7 +1554,12 @@ let S={
   mgAnim: true,
   mgStack: false,
   geodeDrift:8,geoVibFreq:1.0,
-  
+    // Piet mode defaults
+  pietPoem: 'roses are red / violets are blue / sugar is sweet / and so are you',
+  pietStartHue: 0,         // 0=Red,1=Yellow,2=Green,3=Cyan,4=Blue,5=Magenta
+  pietStartLightness: 0,   // 0=Light,1=Normal,2=Dark
+  pietCodelSize: 24,       // pixel size of each codel
+  pietShowLabels: true,     // show command abbreviation inside each codel
 
 };
   
@@ -4055,6 +4062,289 @@ function drawUnknownPleasures(p, t) {
   CTX.restore();
 }
 
+
+function drawPiet(p, t) {
+  // ── Piet colour table (18 colours in HSB) ──
+  const hueNames = ["Red","Yellow","Green","Cyan","Blue","Magenta"];
+  const lightnessNames = ["Light","Normal","Dark"];
+  const colorHSB = [];
+  for (let hIdx = 0; hIdx < 6; hIdx++) {
+    let hueDeg = hIdx * 60;
+    colorHSB[hIdx*3 + 0] = { h: hueDeg, s: 25, b: 100, name: `Light ${hueNames[hIdx]}` };
+    colorHSB[hIdx*3 + 1] = { h: hueDeg, s: 100, b: 100, name: `Normal ${hueNames[hIdx]}` };
+    colorHSB[hIdx*3 + 2] = { h: hueDeg, s: 100, b: 75, name: `Dark ${hueNames[hIdx]}` };
+  }
+
+  // ── Piet commands and their (hueShift, lightnessShift) ──
+  const commands = [
+    { name: "PUSH",   hShift: 0, lShift: 1 }, { name: "POP",    hShift: 0, lShift: 2 },
+    { name: "ADD",    hShift: 1, lShift: 0 }, { name: "SUB",    hShift: 1, lShift: 1 },
+    { name: "MUL",    hShift: 1, lShift: 2 }, { name: "DIV",    hShift: 2, lShift: 0 },
+    { name: "MOD",    hShift: 2, lShift: 1 }, { name: "NOT",    hShift: 2, lShift: 2 },
+    { name: "GREATER",hShift: 3, lShift: 0 }, { name: "POINTER",hShift: 3, lShift: 1 },
+    { name: "SWITCH", hShift: 3, lShift: 2 }, { name: "DUP",    hShift: 4, lShift: 0 },
+    { name: "ROLL",   hShift: 4, lShift: 1 }, { name: "IN(N)",  hShift: 4, lShift: 2 },
+    { name: "IN(C)",  hShift: 5, lShift: 0 }, { name: "OUT(N)", hShift: 5, lShift: 1 },
+    { name: "OUT(C)", hShift: 5, lShift: 2 }
+  ];
+
+  // ── Parse poem into words (remove punctuation) ──
+  let raw = S.pietPoem || '';
+  let words = raw.match(/\b\w+\b/g);
+  if (!words || words.length === 0) { words = ['hello']; }
+
+  // ── Build codel sequence ──
+  let codels = [];
+  let currentHue = (S.pietStartHue % 6 + 6) % 6;
+  let currentLightness = (S.pietStartLightness % 3 + 3) % 3;
+  
+  // Starting codel
+  codels.push({
+    hIdx: currentHue,
+    lIdx: currentLightness,
+    col: colorHSB[currentHue * 3 + currentLightness],
+    cmd: "(start)"
+  });
+
+  for (let i = 0; i < words.length; i++) {
+    let len = words[i].length;
+    let cmdIdx = len % commands.length;
+    let cmd = commands[cmdIdx];
+    
+    currentHue = (currentHue + cmd.hShift) % 6;
+    currentLightness = (currentLightness + cmd.lShift) % 3;
+    
+    codels.push({
+      hIdx: currentHue,
+      lIdx: currentLightness,
+      col: colorHSB[currentHue * 3 + currentLightness],
+      cmd: cmd.name
+    });
+  }
+
+  // ── Draw snake‑pattern grid ──
+  let cellSize = S.pietCodelSize || 24;
+  let gridCols = Math.max(5, Math.ceil(Math.sqrt(codels.length * (p.width / p.height))));
+  let rows = Math.ceil(codels.length / gridCols);
+  let totalW = gridCols * cellSize;
+  let totalH = rows * cellSize;
+  
+  // centre the grid in the canvas
+  let ox = (p.width - totalW) / 2;
+  let oy = (p.height - totalH) / 2;
+
+  p.push();
+  p.colorMode(p.HSB, 360, 100, 100);
+  p.noStroke();
+  p.rectMode(p.CORNER);
+
+  for (let i = 0; i < codels.length; i++) {
+    let row = Math.floor(i / gridCols);
+    let col;
+    if (row % 2 === 0) {
+      // left → right
+      col = i % gridCols;
+    } else {
+      // right → left (snake)
+      col = gridCols - 1 - (i % gridCols);
+    }
+    let x = ox + col * cellSize;
+    let y = oy + row * cellSize;
+
+    let c = codels[i].col;
+    p.fill(c.h, c.s, c.b);
+    p.rect(x, y, cellSize, cellSize);
+
+    // optional command label
+    if (S.pietShowLabels) {
+      p.push();
+      p.colorMode(p.RGB, 255);
+      p.fill(0, 0, 30);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(Math.max(7, cellSize * 0.3));
+      p.text(codels[i].cmd, x + cellSize / 2, y + cellSize / 2);
+      p.pop();
+    }
+  }
+  p.pop();
+}
+  
+// ── PietCode ─────────────────────────────────────────────────────────────────
+  
+function drawPietCode(p, t) {
+  const S = p.windowState;
+  
+  // ── Piet Command Definitions ──
+  const commands = [
+    { name: "PUSH", h:0, l:1 }, { name: "POP", h:0, l:2 },
+    { name: "ADD", h:1, l:0 },  { name: "SUB", h:1, l:1 },
+    { name: "MUL", h:1, l:2 },  { name: "DIV", h:2, l:0 },
+    { name: "MOD", h:2, l:1 },  { name: "NOT", h:2, l:2 },
+    { name: "GT", h:3, l:0 },   { name: "PTR", h:3, l:1 },
+    { name: "SW", h:3, l:2 },   { name: "DUP", h:4, l:0 },
+    { name: "ROLL", h:4, l:1 }, { name: "INN", h:4, l:2 },
+    { name: "INC", h:5, l:0 },  { name: "OUTN", h:5, l:1 },
+    { name: "OUTC", h:5, l:2 },
+  ];
+  
+  // ── Parse Input Text ──
+  let words = (S.pietText || '').match(/\b\w+\b/g) || [];
+  
+  // ── Build Codel Sequence ──
+  let codelSeq = [];
+  let hIdx = S.pietStartHue || 0;
+  let lIdx = S.pietStartLight || 0;
+  
+  // Start marker
+  codelSeq.push({ h: hIdx, l: lIdx, word: '★', cmd: 'START', idx: 0 });
+  
+  for (let i = 0; i < words.length; i++) {
+    let w = words[i];
+    let cmdIdx;
+    
+    switch(S.pietWordMode) {
+      case 'Hash': 
+        // Simple hash based on char codes
+        let hash = w.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+        cmdIdx = hash % commands.length; 
+        break;
+      case 'Sequential': 
+        cmdIdx = i % commands.length; 
+        break;
+      default: // Length-based
+        cmdIdx = w.length % commands.length;
+    }
+    
+    let cmd = commands[cmdIdx];
+    hIdx = (hIdx + cmd.h) % 6;
+    lIdx = (lIdx + cmd.l) % 3;
+    codelSeq.push({ h: hIdx, l: lIdx, word: w, cmd: cmd.name, idx: i+1 });
+  }
+  
+  // ── Animation State ──
+  let animIdx = -1;
+  if (S.pietAnimate) {
+    animIdx = p.floor(((p.sin(t * (S.pietSpeed||1) * 0.3) * 0.5 + 0.5) * codelSeq.length));
+  }
+  
+  // ── Grid Iteration ──
+  let spacing = S.spacing || 12;
+  let cols = p.floor(p.width / spacing);
+  
+  for (let y = 0; y < p.height; y += spacing) {
+    for (let x = 0; x < p.width; x += spacing) {
+      
+      // Density gate using studio noise system
+      if (sampleNoise(p, x/S.noiseScale, y/S.noiseScale, t) > (S.density/10)) {
+        continue;
+      }
+      
+      // ── Layout Mapping ──
+      let codel;
+      let row = p.floor(y / spacing);
+      let col = p.floor(x / spacing);
+      let linearIdx;
+      
+      switch(S.pietLayout) {
+        case 'Snake':
+          linearIdx = (row % 2 === 0) 
+            ? row * cols + col 
+            : row * cols + (cols - 1 - col);
+          break;
+        case 'Spiral':
+          // Simple spiral approximation
+          let cx = p.width/2, cy = p.height/2;
+          let angle = p.atan2(y-cy, x-cx);
+          let dist = p.dist(x, y, cx, cy);
+          linearIdx = p.floor((angle + p.TWO_PI) % p.TWO_PI / p.TWO_PI * 100 + dist/spacing);
+          break;
+        case 'Random':
+          linearIdx = p.floor(sampleNoise(p, x*0.01, y*0.01, t*0.1) * codelSeq.length);
+          break;
+        default: // Row
+          linearIdx = row * cols + col;
+      }
+      
+      let codelPtr = p.constrain(linearIdx % codelSeq.length, 0, codelSeq.length-1);
+      codel = codelSeq[codelPtr];
+      
+      // ── Glitch Integration ──
+      let gx = x, gy = y;
+      if (S.glitchIntensity > 0) {
+        let glitched = applyGlitchOffset(p, gx, gy, t, S.glitchIntensity);
+        gx = glitched.x; gy = glitched.y;
+      }
+      
+      // ── Color Selection ──
+      let baseColor;
+      if (S.pietColorMode === 'Studio Palette') {
+        baseColor = pickColor(p, gx/spacing, gy/spacing, t, S);
+      } else {
+        // Piet color mapping
+        let hueDeg = codel.h * 60;
+        let sat = codel.l === 0 ? 25 : 100;  // Light = low saturation
+        let bri = codel.l === 2 ? 75 : 100;   // Dark = lower brightness
+        
+        // Optional: blend with color mapping mode
+        if (S.colorMapMode !== 'Noise' && S.pietColorMode === 'Piet 6-Hue') {
+          // Use only hue shifts, ignore lightness for 6-color mode
+          sat = 100; bri = 100;
+        }
+        baseColor = p.color(hueDeg, sat, bri);
+      }
+      
+      // ── Character Selection ──
+      let char;
+      switch(S.pietCharSource) {
+        case 'Studio Charset':
+          char = pickChar(p, gx, gy, t, S);
+          break;
+        case 'Mixed':
+          // 50/50 blend
+          if (sampleNoise(p, gx*0.1, gy*0.1, t) > 0.5 && codel.word) {
+            let ci = p.floor(sampleNoise(p, gx*0.05, gy*0.05, t*0.2) * codel.word.length);
+            char = codel.word.charAt(ci).toUpperCase();
+          } else {
+            char = pickChar(p, gx, gy, t, S);
+          }
+          break;
+        default: // Word Letters
+          if (codel.word && codel.word.length > 0) {
+            let ci = p.floor(sampleNoise(p, gx*0.05, gy*0.05, t*0.2) * codel.word.length);
+            char = codel.word.charAt(ci).toUpperCase();
+          } else {
+            char = pickChar(p, gx, gy, t, S);
+          }
+      }
+      
+      // ── Size & Rotation ──
+      let size = (S.maxSize || 20) * (0.7 + 0.3 * sampleNoise(p, gx*0.05, gy*0.05, t));
+      size = p.constrain(size, 6, S.maxSize || 32);
+      
+      let rot = (S.charRotation || 0) * p.PI/180;
+      // Pulse animation for active codel
+      if (S.pietAnimate && codelPtr === animIdx) {
+        rot += p.sin(t * 5) * 0.3;
+        size *= 1.1;
+      }
+      
+      // ── Draw via Studio dc() ──
+      dc(gx, gy, size, rot, baseColor, char);
+      
+      // ── Optional Command Labels ──
+      if (S.pietShowCmd && spacing > 18) {
+        p.push();
+        p.textAlign(p.CENTER, p.TOP);
+        p.textSize(7);
+        p.noStroke();
+        p.fill(0, 0, 100, 50);
+        p.text(codel.cmd, gx, gy + size/2 + 6);
+        p.pop();
+      }
+    }
+  }
+}
+  
 
 // ── MONDRIAN ─────────────────────────────────────────────────────────────────
 // Recursive subdivision into rectangles filled with Mondrian primaries.
@@ -13063,7 +13353,10 @@ function rd() {
       case 'newspaper': drawNewspaper(p, t); break; 
       case 'numbcollage': drawNumbCollage(p, t); break;
       case 'numbpoem': drawNumbPoem(p, t); break;
-      
+      case 'piet': drawPiet(p, t); break;
+      case 'pietcode': drawPietCode(p, t); break;  
+
+        
     } // closes switch
 } // closes drawScene function
     
@@ -13878,7 +14171,35 @@ const PARAM_REGISTRY = {
     { id: 'numbPoemBlockSizeMult', label: 'Block size multiplier', min: 0.8, max: 2.0, step: 0.05, def: 1.0, scale: 1,
       hint: 'Scales the auto‑calculated block dimensions' },
   ], 
-
+  Piet Code: [
+    { id: 'pietText', name: 'Poem / Text', type: 'text', default: 'roses are red violets are blue', placeholder: 'Enter text to encode...' },
+    { id: 'pietWordMode', name: 'Word → Command', type: 'dropdown', options: ['Length', 'Hash', 'Sequential'], default: 'Length' },
+    { id: 'pietColorMode', name: 'Color System', type: 'dropdown', options: ['Piet 18', 'Piet 6-Hue', 'Studio Palette'], default: 'Piet 18' },
+    { id: 'pietStartHue', name: 'Start Hue', type: 'slider', min: 0, max: 5, step: 1, default: 0 },
+    { id: 'pietStartLight', name: 'Start Light', type: 'slider', min: 0, max: 2, step: 1, default: 0 },
+    { id: 'pietLayout', name: 'Layout Flow', type: 'dropdown', options: ['Row', 'Snake', 'Spiral', 'Random'], default: 'Snake' },
+    { id: 'pietAnimate', name: 'Animate Execution', type: 'toggle', default: false },
+    { id: 'pietSpeed', name: 'Anim Speed', type: 'slider', min: 0.1, max: 5, step: 0.1, default: 1 },
+    { id: 'pietShowCmd', name: 'Show Commands', type: 'toggle', default: false },
+    { id: 'pietCharSource', name: 'Character Source', type: 'dropdown', options: ['Word Letters', 'Studio Charset', 'Mixed'], default: 'Word Letters' },
+  ],
+    piet: [
+    { id:'pietPoem',    label:'Poem text',     type:'text', def:'roses are red / violets are blue / sugar is sweet / and so are you',
+      hint:'Any text; words mapped to Piet commands by length' },
+    { type:'select', id:'pietStartHue', label:'Start hue',
+      options:[
+        {value:0, label:'Red'},{value:1, label:'Yellow'},{value:2, label:'Green'},
+        {value:3, label:'Cyan'},{value:4, label:'Blue'},{value:5, label:'Magenta'}
+      ], def:0
+    },
+    { type:'select', id:'pietStartLightness', label:'Start lightness',
+      options:[
+        {value:0, label:'Light'},{value:1, label:'Normal'},{value:2, label:'Dark'}
+      ], def:0
+    },
+    { id:'pietCodelSize',  label:'Codel size (px)', min:10, max:60, step:1, def:24, scale:1 },
+    { type:'toggle', id:'pietShowLabels', label:'Show command labels', def:true }
+  ],
   
   //to be refactored
   hatch: [
