@@ -244,8 +244,8 @@ select option{background:var(--ink)}
         <button class="pbar-btn" data-preset="mondrian_shift" title="Primary color subdivisions">Mondrian</button>
         <button class="pbar-btn" data-preset="strange_loops_dna" title="Strange Loops — sl_29 vertical bars">DNA Strips</button>
         <button class="pbar-btn" data-preset="strange_loops_rects" title="Strange Loops — ms_04 scattered rects navy+red">Scat. Rects</button>
-        <button class="pbar-btn" data-preset="distrkt_orange" title="distraKted — light bg, orange shapes (dskt_007 style)">distraKted ☀</button>
-        <button class="pbar-btn" data-preset="distrkt_dark" title="distraKted — dark bg, white shapes + magenta text (dstk_038 style)">distraKted ◼</button>
+        <button class="pbar-btn" data-preset="constructivism_orange" title="constructivism — light bg, orange shapes (dskt_007 style)">constructivism ☀</button>
+        <button class="pbar-btn" data-preset="constructivism_dark" title="constructivism — dark bg, white shapes + magenta text (dstk_038 style)">constructivism ◼</button>
         <button class="pbar-btn" data-preset="cosmic_red" title="Cosmic Poems — red checkerboard + circles">Cosmic Red</button>
         <button class="pbar-btn" data-preset="cosmic_purple" title="Cosmic Poems — purple/green zones">Cosmic Purple</button>
         <button class="pbar-btn" data-preset="hypertype_mode" title="Hypertype — large glyphs on pattern backgrounds">Hypertype</button>
@@ -401,7 +401,7 @@ select option{background:var(--ink)}
         <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
         <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
         <button class="mb new-mode" data-mode="scattrects"  title="Strange Loops — scattered solid and hollow rectangles">Scat. Rects</button>
-        <button class="mb new-mode" data-mode="distrkt"     title="distraKted — dense text field with bold geometric shapes on top">distraKted</button>
+        <button class="mb new-mode" data-mode="constructivistgrids"     title="constructivistgrids — dense text field with bold geometric shapes on top">Constructivism</button>
         <button class="mb new-mode" data-mode="cosmicpoems" title="Cosmic Poems — checkerboard grid morphing into circles">Cosmic Poems</button>
         <button class="mb new-mode" data-mode="hypertype"   title="Hypertype — large characters on micro-pattern backgrounds">Hypertype</button>
         <button class="mb new-mode" data-mode="circlefield" title="Strange Loops — mixed filled/hollow circle field">Circle Field</button>
@@ -8935,19 +8935,28 @@ function drawScatteredRects(p, t) {
 }
 
 
-// ── DISTRAKTER — distraKted series ───────────────────────────────────────
-// Dense tiny-text field fills the whole canvas, then bold geometric shapes
-// (solid rectangles, L-shapes, T-shapes, horizontal bars) are drawn on top.
-// Light bg + colored shapes (dskt_007/Image 4) OR
-// Dark bg + white shapes (dstk_022/Image 5): controlled by bg color.
+// ── CONSTRUCTIVIST GRIDS ──────────────────────────────────────────────────
+// Dense typographic background with bold geometric overlays.
+// Mode id: "constructivistgrids" (formerly distraKted)
 
-function initDistrktShapes(W, H) {
-  distrktShapes = [];
-  let types = ['rect', 'rect', 'rect', 'hbar', 'vbar', 'Lshape', 'Tshape', 'step'];
-  let count = 3 + Math.floor(S.density * 8);
+function initConstructivistGrids(W, H) {
+  distrktShapes = []; // reuse global array (or declare new: see note)
+  
+  // Shape types (unchanged)
+  let types = ['rect','rect','rect','hbar','vbar','Lshape','Tshape','step'];
+  
+  // Shape count (former: 3 + S.density * 8)
+  let count = Math.max(2, Math.floor(S.cgShapeCount || (3 + S.density * 8)));
+  
+  // Size range (former: w = W*(0.08+random*0.45), h = H*(0.06+random*0.38))
+  let wMinFrac = S.cgShapeWMin !== undefined ? S.cgShapeWMin : 0.08;
+  let wRangeFrac = S.cgShapeWRange !== undefined ? S.cgShapeWRange : 0.45;
+  let hMinFrac = S.cgShapeHMin !== undefined ? S.cgShapeHMin : 0.06;
+  let hRangeFrac = S.cgShapeHRange !== undefined ? S.cgShapeHRange : 0.38;
+  
   for (let i = 0; i < count; i++) {
-    let bw = W * (0.08 + Math.random() * 0.45);
-    let bh = H * (0.06 + Math.random() * 0.38);
+    let bw = W * (wMinFrac + Math.random() * wRangeFrac);
+    let bh = H * (hMinFrac + Math.random() * hRangeFrac);
     distrktShapes.push({
       x:     Math.random() * (W - bw),
       y:     Math.random() * (H - bh),
@@ -8959,57 +8968,69 @@ function initDistrktShapes(W, H) {
   }
 }
 
-function drawDistrkt(p, t) {
-  if (!distrktShapes.length) initDistrktShapes(p.width, p.height);
+function drawConstructivistGrids(p, t) {
+  if (!distrktShapes.length) initConstructivistGrids(p.width, p.height);
 
-  // ── Text field background ─────────────────────────────────────────────
+  // ── Parameter fetch with fallback ──────────────────────────────────────
+  let textSzFactor   = S.cgTextSizeFactor   !== undefined ? S.cgTextSizeFactor   : 0.65;    // scale vs spacing
+  let diagPhaseScale = S.cgDiagPhaseScale   !== undefined ? S.cgDiagPhaseScale   : 8;       // diagonal band frequency (0=off)
+  let diagPhaseSpeed = S.cgDiagPhaseSpeed   !== undefined ? S.cgDiagPhaseSpeed   : 0.2;
+  let waveThreshold  = S.cgWaveThreshold    !== undefined ? S.cgWaveThreshold    : 0.35;    // skip threshold for banding
+  let driftAmpX      = S.cgDriftAmpX        !== undefined ? S.cgDriftAmpX        : 0.005;   // wave amplitude multiplier for X drift
+  let driftAmpY      = S.cgDriftAmpY        !== undefined ? S.cgDriftAmpY        : 0.003;   // Y drift
+  let driftSpeedX    = S.cgDriftSpeedX      !== undefined ? S.cgDriftSpeedX      : 0.4;
+  let driftSpeedY    = S.cgDriftSpeedY      !== undefined ? S.cgDriftSpeedY      : 0.3;
+  let entropySkipProb= S.cgEntropySkipProb  !== undefined ? S.cgEntropySkipProb  : 0.04;    // chance to not draw a shape
+  let glitchPosProb  = S.cgGlitchPosProb    !== undefined ? S.cgGlitchPosProb    : 0.1;     // chance to glitch position per shape
+  let glitchPosRange = S.cgGlitchPosRange   !== undefined ? S.cgGlitchPosRange   : 40;       // glitch displacement range X (Y=20)
+
+  // ── Typographic background ─────────────────────────────────────────────
   let tokens = S.chars && S.chars.length ? S.chars : ['·'];
-  let sz     = Math.max(2, S.spacing * 0.65);
-  let charW  = sz * 0.62;
-  let charH  = sz * 1.05;
+  let sz = Math.max(2, S.spacing * textSzFactor);
+  let charW = sz * 0.62;
+  let charH = sz * 1.05;
   let tokOff = Math.floor(S.fc * S.speed * 0.5) % tokens.length;
-  // Text color is a very faint tint of accent or palette[0]
-  let textCol = S.palette[0];
+  let textCol = S.palette[0]; // subtle tint
+
   for (let y = 0; y < p.height + sz; y += charH) {
     for (let x = 0; x < p.width + charW; x += charW) {
-      // Noise drives subtle diagonal wave in the text
+      // Two‑component noise for subtle diagonal waves (original behavior)
       let n  = p.noise(x * S.noiseScale * 1.5, y * S.noiseScale * 0.8, t * 0.25);
       let n2 = p.noise(x * S.noiseScale * 4 + 30, y * S.noiseScale * 4, t * 0.5) * 0.3;
       let wave = (n + n2) / 1.3;
-      // Create diagonal banding like in dstk_038
-      let diagPhase = (x * 0.6 + y * 0.4) * S.noiseScale * 8 + t * 0.2;
-      if (wave < 0.35 && (diagPhase % 1.0) < 0.45) continue;
+      
+      // Optional diagonal phase banding (if diagPhaseScale > 0)
+      if (diagPhaseScale > 0) {
+        let diagPhase = (x * 0.6 + y * 0.4) * S.noiseScale * diagPhaseScale + t * diagPhaseSpeed;
+        if (wave < waveThreshold && (diagPhase % 1.0) < 0.45) continue;
+      }
+      
       let ch = tokens[(tokOff + Math.floor(x / charW) + Math.floor(y / charH)) % tokens.length];
       dc(x, y, sz, 0, textCol, ch);
     }
   }
 
-  // ── Geometric shape overlays ──────────────────────────────────────────
+  // ── Geometric overlays ─────────────────────────────────────────────────
   distrktShapes.forEach(function(sh) {
     if (S.playing) {
-      // Shapes slowly drift
-      sh.x += Math.sin(t * 0.4 + sh.phase) * S.wave * 0.005;
-      sh.y += Math.cos(t * 0.3 + sh.phase) * S.wave * 0.003;
+      sh.x += Math.sin(t * driftSpeedX + sh.phase) * S.wave * driftAmpX;
+      sh.y += Math.cos(t * driftSpeedY + sh.phase) * S.wave * driftAmpY;
     }
-    if (S.entropy > 0 && Math.random() < S.entropy * 0.04) return;
+    if (S.entropy > 0 && Math.random() < S.entropy * entropySkipProb) return;
+    
     let col = S.palette[sh.palIdx % S.palette.length];
     if (S.accent !== 'none' && sh.palIdx === 0) col = S.accent;
-    // Entropy: glitch position
-    let ex = S.entropy > 0 && Math.random() < S.entropy * 0.1 ? (Math.random()-0.5)*40 : 0;
-    let ey = S.entropy > 0 && Math.random() < S.entropy * 0.1 ? (Math.random()-0.5)*20 : 0;
+    
+    // Glitch position
+    let ex = S.entropy > 0 && Math.random() < S.entropy * glitchPosProb ? (Math.random()-0.5)*glitchPosRange : 0;
+    let ey = S.entropy > 0 && Math.random() < S.entropy * glitchPosProb ? (Math.random()-0.5)*20 : 0;
     let x = sh.x + ex, y = sh.y + ey, w = sh.w, h = sh.h;
 
     CTX.fillStyle = col;
     switch (sh.type) {
-      case 'rect':
-        CTX.fillRect(x, y, w, h);
-        break;
-      case 'hbar': // Wide thin horizontal bar
-        CTX.fillRect(x, y + h * 0.45, w * 1.8, h * 0.12);
-        break;
-      case 'vbar': // Tall thin vertical bar
-        CTX.fillRect(x + w * 0.45, y, w * 0.1, h * 1.6);
-        break;
+      case 'rect': CTX.fillRect(x, y, w, h); break;
+      case 'hbar': CTX.fillRect(x, y + h * 0.45, w * 1.8, h * 0.12); break;
+      case 'vbar': CTX.fillRect(x + w * 0.45, y, w * 0.1, h * 1.6); break;
       case 'Lshape':
         CTX.fillRect(x, y, w * 0.18, h);          // vertical leg
         CTX.fillRect(x, y + h * 0.82, w, h * 0.18); // horizontal foot
@@ -9018,7 +9039,7 @@ function drawDistrkt(p, t) {
         CTX.fillRect(x, y, w, h * 0.16);          // top bar
         CTX.fillRect(x + w * 0.42, y, w * 0.16, h); // vertical stem
         break;
-      case 'step': // Staircase form like dskt_007 bottom-right
+      case 'step':
         let step = w / 4;
         for (let si = 0; si < 4; si++) {
           CTX.fillRect(x + si * step * 0.7, y + si * (h * 0.22), step, h * 0.2);
@@ -9029,6 +9050,8 @@ function drawDistrkt(p, t) {
   _lastFill = '';
 }
 
+
+  
 
 // ── COSMIC POEMS — Cosmic Poems / cs_image series ────────────────────────
 // Uniform grid where each cell can be: filled square, hollow circle,
@@ -14223,7 +14246,7 @@ function rd() {
       case 'clyffordstill':  drawClyffordStill(p, t);   break; 
       case 'dnastrips':      drawDnaStrips(p, t);      break;
       case 'scattrects':     drawScatteredRects(p, t);  break;
-      case 'distrkt':        drawDistrkt(p, t);         break;
+      case 'constructivistgrids':        drawConstructivistGrids(p, t);         break;
       case 'cosmicpoems':    drawCosmicPoems(p, t);     break;
       case 'hypertype':      drawHypertype(p, t);       break;
       case 'circlefield':    drawCircleField(p, t);     break;  
@@ -15055,7 +15078,6 @@ const PARAM_REGISTRY = {
    poemfields: [
       { id:'poemFieldText', label:'Poem text', type:'text',
         def:'Tendrils of longing stretch out\nfrom every atom and idea\nFeeling\nYearning\nseeking out a single dormant neuron\nto spark against,\nto sound its note,\nto grant a pulse,\nwithin the mad and desperate engine\nof the senile universe revealing\nitself to itself.' },
-    
       // Physics
       { id:'pfSpringStiffness',   label:'Spring stiffness',   min:0.0005,max:0.025,step:0.0005,def:0.004,scale:1 },
       { id:'pfRepulsionStrength', label:'Repulsion',          min:0.1,max:5.0,step:0.05,def:1.5,scale:1 },
@@ -15065,21 +15087,17 @@ const PARAM_REGISTRY = {
       { id:'pfFlowStrength',      label:'Flow strength',      min:0,max:0.6,step:0.01,def:0.06,scale:1 },
       { id:'pfCenterGravity',     label:'Center gravity',     min:0,max:0.006,step:0.0001,def:0.0006,scale:1 },
       { id:'pfLineAttraction',    label:'Line pull',          min:0,max:0.003,step:0.0001,def:0.0003,scale:1 },
-    
       // Visual form
       { type:'toggle', id:'pfShowFullWord', label:'Show full words', def:false },
-    
       // Sentiment & phonetics
       { type:'toggle', id:'pfSentimentEnable', label:'Sentiment colour', def:true },
       { id:'pfSentimentBias', label:'Sentiment bias', min:0,max:1,step:0.05,def:0.50,scale:1 },
       { type:'toggle', id:'pfPhoneticEnable', label:'Phonetic hue', def:true },
       { id:'pfPhoneticSaturation', label:'Phone saturation', min:0,max:90,step:1,def:35,scale:1 },
-    
       // Rhythm
       { type:'toggle', id:'pfRhythmEnable', label:'Rhythm pulse', def:true },
       { id:'pfPulseScale', label:'Pulse scale', min:0,max:0.5,step:0.01,def:0.18,scale:1 },
       { id:'pfBeatBPM',    label:'Beat BPM',    min:20,max:200,step:1,def:60,scale:1 },
-    
       // Connections
       { type:'toggle', id:'pfDependencyLinks',  label:'Dependency links',  def:true },
       { id:'pfLinkAlpha', label:'Link opacity', min:0,max:1,step:0.02,def:0.28,scale:1 },
@@ -15089,7 +15107,6 @@ const PARAM_REGISTRY = {
       { type:'toggle', id:'pfRibbonsEnable',    label:'Enjambment ribbons',def:true },
       { type:'toggle', id:'pfRipplesEnable',    label:'Punct ripples',     def:true },
       { type:'toggle', id:'pfArcBackgroundEnable', label:'Emotional arc bg', def:true },
-    
       // Effects
       { type:'toggle', id:'pfEchoEnable',   label:'Echo trails',    def:true },
       { id:'pfEchoLength',  label:'Echo length',   min:2,max:24,step:1,def:8,scale:1 },
@@ -15099,12 +15116,32 @@ const PARAM_REGISTRY = {
       { id:'pfParticleRate', label:'Particle rate', min:0,max:0.35,step:0.01,def:0.08,scale:1 },
       { id:'pfParticleLife', label:'Particle life', min:20,max:200,step:5,def:80,scale:1 },
       { id:'pfRippleSpeed',  label:'Ripple speed',  min:2,max:40,step:1,def:14,scale:1 },
-    
       // AI semantic weight
       { type:'toggle', id:'pfSemanticWeightEnable', label:'AI semantic weight', def:false },
       { id:'pfSemanticInfluence', label:'AI influence', min:0,max:1.5,step:0.05,def:0.50,scale:1 },
     ],
-
+    constructivistgrids: [
+      { id:'cgShapeCount',       label:'Shape count',      min:2, max:30, step:1,  def:0,   scale:1,
+        hint:'0 = auto (from Density)' },
+      { id:'cgShapeWMin',        label:'Min shape width',  min:0.01,max:0.3,step:0.01,def:0.08,scale:1,
+        hint:'Fraction of canvas width' },
+      { id:'cgShapeWRange',      label:'Width range',      min:0.05,max:0.8,step:0.05,def:0.45,scale:1 },
+      { id:'cgShapeHMin',        label:'Min shape height', min:0.01,max:0.3,step:0.01,def:0.06,scale:1 },
+      { id:'cgShapeHRange',      label:'Height range',     min:0.05,max:0.8,step:0.05,def:0.38,scale:1 },
+      { id:'cgTextSizeFactor',   label:'Text size factor', min:0.3,max:1.2,step:0.05,def:0.65,scale:1 },
+      { id:'cgWaveThreshold',    label:'Banding threshold',min:0,  max:1,  step:0.05,def:0.35,scale:1,
+        hint:'Higher = less diagonal banding' },
+      { id:'cgDiagPhaseScale',   label:'Banding scale',    min:0,  max:20, step:1,  def:8,   scale:1,
+        hint:'0 = no banding' },
+      { id:'cgDiagPhaseSpeed',   label:'Banding speed',    min:0,  max:1,  step:0.05,def:0.2, scale:1 },
+      { id:'cgDriftAmpX',        label:'Drift X strength', min:0,  max:0.05,step:0.001,def:0.005,scale:1 },
+      { id:'cgDriftAmpY',        label:'Drift Y strength', min:0,  max:0.05,step:0.001,def:0.003,scale:1 },
+      { id:'cgDriftSpeedX',      label:'Drift X speed',    min:0,  max:1.5,step:0.1,def:0.4,  scale:1 },
+      { id:'cgDriftSpeedY',      label:'Drift Y speed',    min:0,  max:1.5,step:0.1,def:0.3,  scale:1 },
+      { id:'cgEntropySkipProb',  label:'Entropy skip prob',min:0,  max:0.5,step:0.01,def:0.04,scale:1 },
+      { id:'cgGlitchPosProb',    label:'Glitch pos chance',min:0,  max:0.5,step:0.01,def:0.1, scale:1 },
+      { id:'cgGlitchPosRange',   label:'Glitch pos range', min:0,  max:120,step:5,  def:40,  scale:1 },
+    ],
 
   
   //to be refactored
@@ -16943,8 +16980,8 @@ const PRESETS={
   still_red: function(){ap({mode:'clyffordstill', font:'courier', entropy:.03, speed:.002,wave:30, bg:'#1a0a05',spacing:4, maxSize:18,noiseScale:.012, palette:'volcanic', compEnabled:false });stillForms = [];},
   strange_loops_dna: function() {ap({ mode:'dnastrips', font:'courier', entropy:0, speed:.003,wave:18, bg:'#f5f0ea', spacing:10, maxSize:28,noiseScale:.008, palette:'pumpkin', compEnabled:false });dnaCols = [];},
   strange_loops_rects: function() {ap({ mode:'scattrects', font:'courier', entropy:.04, speed:.002,wave:8, bg:'#f5f0ea', spacing:14, maxSize:20,noiseScale:.01, palette:'abyss', compEnabled:false });scatteredRects = [];},
-  distrkt_orange: function() {ap({ mode:'distrkt', font:'courier', entropy:.02, speed:.002,wave:15, bg:'#f5f0ea', spacing:7, maxSize:14,noiseScale:.009, palette:'ember', compEnabled:false,chars: 'distraKted '.split('') });distrktShapes = [];},
-  distrkt_dark: function() {ap({ mode:'distrkt', font:'courier', entropy:.06, speed:.004,wave:20, bg:'#ffffff', spacing:6, maxSize:12,noiseScale:.012, palette:'dusk', compEnabled:false,chars: 'language is broken '.split('') });distrktShapes = [];},
+  constructivism_orange: function() {ap({ mode:'constructivistgrids', font:'courier', entropy:.02, speed:.002,wave:15, bg:'#f5f0ea', spacing:7, maxSize:14,noiseScale:.009, palette:'ember', compEnabled:false,chars: 'distraKted '.split('') });distrktShapes = [];},
+  constructivism_dark: function() {ap({ mode:'constructivistgrids', font:'courier', entropy:.06, speed:.004,wave:20, bg:'#ffffff', spacing:6, maxSize:12,noiseScale:.012, palette:'dusk', compEnabled:false,chars: 'language is broken '.split('') });distrktShapes = [];},
   cosmic_red: function() {ap({ mode:'cosmicpoems', font:'courier', entropy:0, speed:.003,wave:0, bg:'#f5f0ea', spacing:14, maxSize:14,noiseScale:.009, palette:'fire', compEnabled:false });cosmicGrid = [];},
   cosmic_purple: function() {ap({ mode:'cosmicpoems', font:'courier', entropy:0, speed:.002,wave:5, bg:'#f5f0ea', spacing:16, maxSize:16,noiseScale:.008, palette:'dusk', compEnabled:false });cosmicGrid = [];},
   hypertype_mode: function() {ap({ mode:'hypertype', font:'courier', entropy:.04, speed:.004,wave:15, bg:'#f5f0ea', spacing:18, maxSize:24,noiseScale:.01, palette:'neon', compEnabled:false,chars: CHARSETS.ascii });hypertypeGrid = [];},
