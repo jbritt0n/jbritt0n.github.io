@@ -4676,7 +4676,7 @@ async function _pfBuild(p, text) {
         });
       }
     }
-    if (raw.trim() && !/[.!?]$/.test(raw.trim())) {
+    if (String(raw).trim() && !/[.!?]$/.test(String(raw).trim())) {
       _pfMeta.enjambments.push(li);
     }
     const avgSent = lineWords.length
@@ -4685,25 +4685,15 @@ async function _pfBuild(p, text) {
     _pfMeta.lineSents.push(avgSent);
   }
 }
-
-// ── Synchronous build – runs instantly, no waiting ───────────
-function _pfBuildSync(p, text) {
-  // Reuse the exact same logic as _pfBuild, but without any async.
-  // (you can literally copy the body of _pfBuild and remove the async keyword,
-  //  but for brevity I’ll just call _pfBuild here – it’s already sync under the hood.)
-  // However _pfBuild is async, but it doesn’t contain any await, so it’s effectively sync.
-  // We’ll just call it synchronously by using the promise but we need it to block… 
-  // Better: just duplicate the synchronous part.
-}
   
 function initPoemFields(p) {
   // Already initialising? skip
   if (_pfInitializing) return;
   _pfInitializing = true;
-
-  const raw  = S.poemFieldText ?? '';
-  const text = raw.trim() || 'Your poem goes here';
-  _pfLastText = S.poemFieldText;
+  
+  const raw  = typeof S.poemFieldText === 'string' ? S.poemFieldText : '';
+  const text = String(raw).trim() || 'Your poem goes here';
+  _pfLastText = raw;
 
   // Reset state
   _pfWords = [];
@@ -4862,7 +4852,7 @@ function initPoemFields(p) {
         _pfMeta.punctuation.push({ x: last.x, y: last.y, t: 0, type: punct, pauseVal, line: li });
       }
     }
-    if (raw.trim() && !/[.!?]$/.test(raw.trim())) {
+    if (String(raw).trim() && !/[.!?]$/.test(String(raw).trim())) {
       _pfMeta.enjambments.push(li);
     }
     const avgSent = lineWords.length
@@ -5032,6 +5022,9 @@ if ((currentText !== _pfLastText || _pfWords.length === 0) && !_pfInitializing) 
   const glitchChrom    = S.glitchChromatic      ?? false;
   const glitchScan     = S.glitchScanlines      ?? false;
 
+    // Safety: if metadata is missing, don't draw
+  if (!_pfMeta || !_pfMeta.connections || !_pfWords.length) return;
+  
   if (useArcBg && _pfMeta.lineSents?.length > 0) {
     const lineIdx = Math.floor((t * 0.10) % _pfMeta.lineSents.length);
     const sent    = _pfMeta.lineSents[lineIdx] || 0;
