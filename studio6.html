@@ -8548,35 +8548,53 @@ function drawSeisma(p,t){
   CTX.globalAlpha=1;
   CTX.restore();
 }
-// ── HATCH LINES (updated 4/10/26) ─────────────────────────────────────────────────────────
+
+  
+// ── HATCH LINES (refactored) ─────────────────────────────────────────────
 function drawHatch(p, t) {
-  // 1. Get the values from the state or fallback
-  let baseDeg = S.hatchAngle !== undefined ? S.hatchAngle : 45;
-  let curveVal = S.hatchCurve !== undefined ? S.hatchCurve : 5;
-  // 2. Convert base degree to Radians
+  // 1. Fetch parameters with defaults (original behavior preserved)
+  let baseDeg     = S.hatchAngle     ?? 45;
+  let curveFactor = S.hatchCurve     ?? 5;       // angular deviation strength
+  let lengthMult  = S.hatchLength    ?? 2.0;      // line length = spacing * lengthMult
+  let lw          = S.hatchLineWidth ?? 1.0;      // stroke width
+  let alpha       = S.hatchOpacity   ?? 1.0;      // global opacity
+  let crossEnabled= S.hatchCrossEnabled !== false; // cross-hatch on/off (default on)
+  let crossThresh = S.hatchCrossThreshold ?? 0.2; // additional density threshold for cross lines
+
   let baseRad = baseDeg * Math.PI / 180;
   let sp = S.spacing;
-  CTX.lineWidth = 1;
+
+  CTX.save();
+  CTX.lineWidth   = lw;
+  CTX.lineCap     = 'round';
+  CTX.strokeStyle = '#000'; // placeholder, will be set per line
+
   for (let x = 0; x < p.width; x += sp) {
     for (let y = 0; y < p.height; y += sp) {
-      let n = p.noise(x * S.noiseScale, y * S.noiseScale, t);
+      // Use sampleNoise so global noise type / octaves influence density
+      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t);
       if (n < S.density) continue;
-      // 3. APPLY THE CURVE HERE (This creates the "wiggle")
-      // We take the baseRad and add a noise-based offset
-      let localAng = baseRad + (n - 0.5) * curveVal * 0.2;
-      // 4. Use localAng for the actual drawing
-      let x2 = x + Math.cos(localAng) * sp * 2;
-      let y2 = y + Math.sin(localAng) * sp * 2;
-      CTX.strokeStyle = pickColor(p, x, y, t);
+
+      let col = pickColor(p, x, y, t);
+      CTX.strokeStyle = col;
+      CTX.globalAlpha = alpha;
+
+      // Angular jitter (original p.noise for local geometric wiggles)
+      let localAng = baseRad + (n - 0.5) * curveFactor * 0.2;
+
+      let len = sp * lengthMult;
+      let x2 = x + Math.cos(localAng) * len;
+      let y2 = y + Math.sin(localAng) * len;
+
       CTX.beginPath();
       CTX.moveTo(x, y);
       CTX.lineTo(x2, y2);
       CTX.stroke();
-      // Cross-hatching logic
-      if (n > S.density + 0.2) {
-        // Cross lines should also follow the local curve, just 90 degrees offset
-        let x3 = x + Math.cos(localAng + Math.PI / 2) * sp * 2;
-        let y3 = y + Math.sin(localAng + Math.PI / 2) * sp * 2;
+
+      // Cross‑hatch logic (if enabled and noise exceeds extra threshold)
+      if (crossEnabled && n > S.density + crossThresh) {
+        let x3 = x + Math.cos(localAng + Math.PI / 2) * len;
+        let y3 = y + Math.sin(localAng + Math.PI / 2) * len;
         CTX.beginPath();
         CTX.moveTo(x, y);
         CTX.lineTo(x3, y3);
@@ -8584,6 +8602,9 @@ function drawHatch(p, t) {
       }
     }
   }
+
+  CTX.restore();
+  _lastFill = '';   // invalidate cached fill color if needed
 }
   
 // ── WARPED GRID ───────────────────────────────────────────────────────────────
@@ -15418,14 +15439,21 @@ const PARAM_REGISTRY = {
       { id:'fsCharMinDepth', label:'Min depth for chars', min:0, max:5, step:1, def:2, scale:1 },
       { id:'fsCharProb',    label:'Character probability', min:0, max:1, step:0.02, def:0.12, scale:1 },
     ],
-
+    hatch: [
+      { id:'hatchAngle',         label:'Angle (degrees)',   min:0,   max:180, step:5,   def:45,  scale:1 },
+      { id:'hatchCurve',         label:'Curve amount',      min:0,   max:20,  step:1,   def:5,   scale:1,
+        hint:'Higher = more angular variation' },
+      { id:'hatchLength',        label:'Line length mult',  min:0.5, max:5,   step:0.1, def:2.0, scale:1,
+        hint:'Lines are spacing × this value' },
+      { id:'hatchLineWidth',     label:'Line width',        min:0.2, max:4,   step:0.1, def:1.0, scale:1 },
+      { id:'hatchOpacity',       label:'Opacity',           min:0,   max:1,   step:0.05,def:1.0, scale:1 },
+      { type:'toggle', id:'hatchCrossEnabled', label:'Cross‑hatch', def:true },
+      { id:'hatchCrossThreshold',label:'Cross threshold',   min:0,   max:0.5, step:0.01,def:0.2, scale:1,
+        hint:'Extra density needed for second line layer' },
+    ],
 
   
   //to be refactored
-  hatch: [
-    { id:'hatchAngle', label:'Angle',        min:0,   max:180, step:5,  def:45,  scale:1    },
-    { id:'hatchCurve', label:'Curvature',    min:0,   max:20,  step:1,  def:5,   scale:1    },
-  ],
   boids: [
     { id:'boidSep',    label:'Separation',   min:0,   max:100, step:2,  def:15,  scale:0.01 },
     { id:'boidAln',    label:'Alignment',    min:0,   max:100, step:2,  def:6,   scale:0.001 },
