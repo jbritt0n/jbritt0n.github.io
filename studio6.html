@@ -367,6 +367,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="spiro">Spiro</button>
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
+        <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
       </div>
     </div>
     
@@ -414,7 +415,7 @@ select option{background:var(--ink)}
       <div class="mg">
         <button class="mb" data-mode="isocontour" title="Pure isolines using marching squares">Iso Lines</button>
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
-        <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
+
         <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
         <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
         <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
@@ -2258,41 +2259,6 @@ function initShatter(W,H){
   }
 }
 
-function initRecursive(W,H){
-  recRects=[];
-  subdivide(0,0,W,H,S.recursionDepth||Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
-}
-  
-function subdivide(x,y,w,h,depth,cols){
-  if(depth===0||w<S.spacing*3||h<S.spacing*3){
-    recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;
-  }
-  if(Math.random()<0.3){recRects.push({x,y,w,h,col:cols[Math.floor(Math.random()*cols.length)]});return;}
-  let vert=w>h||(w===h&&Math.random()<.5);
-  let split=vert?x+w*(.3+Math.random()*.4):y+h*(.3+Math.random()*.4);
-  if(vert){subdivide(x,y,split-x,h,depth-1,cols);subdivide(split,y,x+w-split,h,depth-1,cols);}
-  else{subdivide(x,y,w,split-y,depth-1,cols);subdivide(x,split,w,y+h-split,depth-1,cols);}
-}
-
-  
-// ── WIREFRAME TERRAIN INIT ─────────────────────────────────────────────────────────────────
-function initWireTerrain(p,W,H){
-  // Grid resolution driven by spacing slider
-  let res=Math.max(8,Math.floor(S.spacing*1.5));
-  wtW=Math.floor(W/res)+1;
-  wtH=Math.floor(H/res)+1;
-  wtHeightmap=new Float32Array(wtW*wtH);
-  for(let row=0;row<wtH;row++) for(let col=0;col<wtW;col++){
-    let x=col/(wtW-1),y=row/(wtH-1);
-    // Multi-octave Perlin noise via p5 noise
-    let n=p.noise(x*3+100,y*3+100);
-    n+=0.5*p.noise(x*6+200,y*6+200);
-    n+=0.25*p.noise(x*12+300,y*12+300);
-    n/=1.75;
-    wtHeightmap[row*wtW+col]=n;
-  }
-}
-
 
 function initLissajous(W,H){
   lissParticles=[];
@@ -3538,6 +3504,12 @@ function drawTopo(p, t) {
 }
 
 // ── RECURSIVE 2.0 Refactored 4/13/26 ────────────────────────────────────────────
+
+function initRecursive(W,H){
+  recRects=[];
+  subdivide(0,0,W,H,S.recursionDepth||Math.floor(3+S.density*1.5),S.compCols||COMP_PALETTES.default);
+}
+  
 function drawRecursive(p, t) {
   if (!recRects.length) initRecursive(p.width, p.height);
   let sp = S.spacing;
@@ -8126,84 +8098,163 @@ function drawLissajous(p,t){
 // ── WIREFRAME TERRAIN ─────────────────────────────────────────────────────────────────
 // Generates a Perlin-noise heightmap and projects it as a 3D wireframe grid
 // Camera orbit is driven by speed slider; mountain roughness by wave slider.
-function drawWireTerrain(p,t){
-  let W=p.width,H=p.height;
-  if(!wtHeightmap) initWireTerrain(p,W,H);
-  let res=Math.max(8,Math.floor(S.spacing*1.5));
-  // Rebuild heightmap if resolution changed
-  if(wtW!==Math.floor(W/res)+1||wtH!==Math.floor(H/res)+1) initWireTerrain(p,W,H);
-  // Camera orbit angle driven by speed
-  let camAngle=t*S.speed*(S.terrainCamSpeed||4)*10;
-  let camAlt=0.35+Math.sin(t*S.speed*15)*.12;
-  let camDist=S.terrainCamDist||1.8;
-  // 3D projection helper: isometric-style with camera orbit
-  let cosA=Math.cos(camAngle),sinA=Math.sin(camAngle);
-  let cosE=Math.cos(camAlt*Math.PI*.5),sinE=Math.sin(camAlt*Math.PI*.5);
-  function project(gx,gy,gz){
-    // gx,gy in [-1,1], gz in [0,1]
-    let rx=gx*cosA-gy*sinA;
-    let ry=gx*sinA+gy*cosA;
-    let rz=gz;
-    // Perspective projection
-    let px2=rx*cosE-rz*sinE;
-    let py2=ry;
-    let pz2=rx*sinE+rz*cosE+camDist;
-    let scale=W*.55/pz2;
-    return {sx:W/2+px2*scale,sy:H*.55-py2*scale*.7};
-  }
-  // Animate heightmap by shifting noise over time
-  let ns=S.noiseScale*.5;
-  let roughness=0.5+S.wave*.008;
-  for(let row=0;row<wtH;row++) for(let col=0;col<wtW;col++){
-    let x=col/(wtW-1),y=row/(wtH-1);
-  let hScale=(S.terrainHeight||0.6);
-  let n=p.noise(x*3*roughness+t*.3,y*3*roughness+t*.2);
-  n+=0.5*p.noise(x*6*roughness+t*.2,y*6*roughness+t*.15);
-    n/=1.5;
-    wtHeightmap[row*wtW+col]=n;
-  }
-  // Draw wireframe grid
-  CTX.save();
-  CTX.lineWidth=.8;
-  CTX.lineCap='round';
-  // Draw quads as two triangles
-  for(let row=0;row<wtH-1;row++) for(let col=0;col<wtW-1;col++){
-    let h00=wtHeightmap[row*wtW+col];
-    let h10=wtHeightmap[row*wtW+col+1];
-    let h01=wtHeightmap[(row+1)*wtW+col];
-    let h11=wtHeightmap[(row+1)*wtW+col+1];
-    let gx0=(col/(wtW-1))*2-1,gy0=(row/(wtH-1))*2-1;
-    let gx1=((col+1)/(wtW-1))*2-1,gy1=((row+1)/(wtH-1))*2-1;
-    let p00=project(gx0,gy0,h00*hScale);
-    let p10=project(gx1,gy0,h10*hScale);
-    let p01=project(gx0,gy1,h01*hScale);
-    let p11=project(gx1,gy1,h11*hScale);
-    let avgH=(h00+h10+h01+h11)/4;
-    let ci=Math.floor(avgH*S.palette.length)%S.palette.length;
-    let col2=S.palette[ci];
-    if(S.accent!=='none'&&S.accentAmt>0&&avgH>(1-S.accentAmt*.8)) col2=S.accent;
-    CTX.globalAlpha=0.5+avgH*.45;
-    CTX.strokeStyle=col2;
-    // Triangle 1: 00-10-01
-    CTX.beginPath();CTX.moveTo(p00.sx,p00.sy);CTX.lineTo(p10.sx,p10.sy);CTX.lineTo(p01.sx,p01.sy);CTX.closePath();CTX.stroke();
-    // Triangle 2: 10-11-01
-    CTX.beginPath();CTX.moveTo(p10.sx,p10.sy);CTX.lineTo(p11.sx,p11.sy);CTX.lineTo(p01.sx,p01.sy);CTX.closePath();CTX.stroke();
-    // Scatter characters at vertices
-    if(Math.random()<S.density*.08){
-      let pv=project(gx0,gy0,h00*.6);
-      let ch=pickChar(p,col*res,row*res,t);
-      let sz=p.map(h00,0,1,3,S.maxSize*.6);
-      if(col2!==_lastFill){CTX.fillStyle=col2;_lastFill=col2;}
-      CTX.globalAlpha=0.7+h00*.3;
-      let fstr=(sz|0)+'px '+S.fontStack;
-      if(fstr!==_lastFont){CTX.font=fstr;_lastFont=fstr;}
-      CTX.fillText(ch,pv.sx,pv.sy);
+function initWireTerrain(p, W, H) {
+  let res = Math.max(4, Math.floor(S.spacing * (S.wtResMult ?? 1.5)));
+  wtW = Math.floor(W / res) + 1;
+  wtH = Math.floor(H / res) + 1;
+  wtHeightmap = new Float32Array(wtW * wtH);
+
+  let freq   = S.wtNoiseFreq   ?? 3;
+  let octaves = S.wtNoiseOctaves ?? 3;
+  let falloff = S.wtNoiseFalloff ?? 0.5;
+
+  for (let row = 0; row < wtH; row++) {
+    for (let col = 0; col < wtW; col++) {
+      let x = col / (wtW - 1), y = row / (wtH - 1);
+      let val = 0, amp = 1, totalAmp = 0, f = 1;
+      for (let o = 0; o < octaves; o++) {
+        // Use sampleNoise to respect global noise type and octaves
+        val += sampleNoise(p, x * freq * f + 100, y * freq * f + 100, o * 0.3) * amp;
+        totalAmp += amp;
+        amp *= falloff;
+        f *= 2;
+      }
+      wtHeightmap[row * wtW + col] = Math.max(0, Math.min(1, val / totalAmp));
     }
   }
-  CTX.globalAlpha=1;
-  CTX.restore();
-  _lastFont='';_lastFill='';
 }
+
+function drawWireTerrain(p, t) {
+  let W = p.width, H = p.height;
+
+  // ── Parameters ───────────────────────────────────────────────────
+  let res        = Math.max(4, Math.floor(S.spacing * (S.wtResMult ?? 1.5)));
+  let hScale     = S.wtHeightScale    ?? 0.6;
+  let camSpeed   = S.wtCamSpeed       ?? 0.4;
+  let camAltBase = S.wtCamAltBase     ?? 0.35;
+  let camAltAmp  = S.wtCamAltAmp      ?? 0.12;
+  let camDist    = S.wtCamDist        ?? 1.8;
+  let noiseSpeed = S.wtNoiseSpeed     ?? 0.3;   // morph rate
+  let lw         = S.wtLineWidth      ?? 0.8;
+  let opMin      = S.wtLineOpacityMin ?? 0.5;
+  let opRange    = S.wtLineOpacityRange?? 0.45;
+  let wireMode   = S.wtWireMode       ?? 'triangles';  // 'triangles','singlediag','grid','quads'
+  let charOn     = S.wtCharEnabled    ?? true;
+  let charDens   = S.wtCharDensity    ?? 0.08;
+  let charSzMin  = S.wtCharSizeMin    ?? 3;
+  let charSzMax  = S.maxSize * (S.wtCharSizeMaxFactor ?? 0.6);
+  let colorMode  = S.wtColorMode      ?? 'palette';  // 'palette','accent','mono'
+
+  // ── Initialise / rebuild if resolution changes ─────────────────────
+  if (!wtHeightmap || wtW !== Math.floor(W / res) + 1 || wtH !== Math.floor(H / res) + 1)
+    initWireTerrain(p, W, H);
+
+  // ── Animate heightmap with noise morph ────────────────────────────
+  let freq   = S.wtNoiseFreq   ?? 3;
+  let octaves = S.wtNoiseOctaves ?? 3;
+  let falloff = S.wtNoiseFalloff ?? 0.5;
+
+  for (let row = 0; row < wtH; row++) {
+    for (let col = 0; col < wtW; col++) {
+      let x = col / (wtW - 1), y = row / (wtH - 1);
+      let val = 0, amp = 1, totalAmp = 0, f = 1;
+      for (let o = 0; o < octaves; o++) {
+        val += sampleNoise(p, x * freq * f + 100 + t * noiseSpeed,
+                           y * freq * f + 100 + t * noiseSpeed * 0.85,
+                           o * 0.3 + t * noiseSpeed * 0.5) * amp;
+        totalAmp += amp;
+        amp *= falloff;
+        f *= 2;
+      }
+      wtHeightmap[row * wtW + col] = Math.max(0, Math.min(1, val / totalAmp));
+    }
+  }
+
+  // ── Camera transform ──────────────────────────────────────────────
+  let camAngle = t * camSpeed;
+  let camAlt   = camAltBase + Math.sin(t * 1.5) * camAltAmp;
+
+  let cosA = Math.cos(camAngle), sinA = Math.sin(camAngle);
+  let cosE = Math.cos(camAlt * Math.PI * 0.5), sinE = Math.sin(camAlt * Math.PI * 0.5);
+
+  function project(gx, gy, gz) {
+    let rx = gx * cosA - gy * sinA;
+    let ry = gx * sinA + gy * cosA;
+    let rz = gz;
+
+    let px = rx * cosE - rz * sinE;
+    let py = ry;
+    let pz = rx * sinE + rz * cosE + camDist;
+    let scale = W * 0.55 / pz;
+    return { sx: W/2 + px * scale, sy: H * 0.55 - py * scale * 0.7 };
+  }
+
+  // ── Draw wireframe ────────────────────────────────────────────────
+  CTX.save();
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+  CTX.lineWidth = lw;
+
+  for (let row = 0; row < wtH - 1; row++) {
+    for (let col = 0; col < wtW - 1; col++) {
+      let h00 = wtHeightmap[row * wtW + col];
+      let h10 = wtHeightmap[row * wtW + col + 1];
+      let h01 = wtHeightmap[(row + 1) * wtW + col];
+      let h11 = wtHeightmap[(row + 1) * wtW + col + 1];
+      let avgH = (h00 + h10 + h01 + h11) / 4;
+
+      // colour
+      let col2;
+      if (colorMode === 'mono') {
+        col2 = S.palette[0];
+      } else if (colorMode === 'accent') {
+        col2 = S.accent !== 'none' ? S.accent : S.palette[0];
+      } else { // palette
+        let ci = Math.floor(avgH * S.palette.length) % S.palette.length;
+        col2 = S.palette[ci];
+        if (S.accent !== 'none' && S.accentAmt > 0 && avgH > (1 - S.accentAmt * 0.8))
+          col2 = S.accent;
+      }
+
+      CTX.strokeStyle = col2;
+      CTX.globalAlpha = opMin + avgH * opRange;
+
+      // Compute projected points
+      let gx0 = (col / (wtW - 1)) * 2 - 1, gy0 = (row / (wtH - 1)) * 2 - 1;
+      let gx1 = ((col + 1) / (wtW - 1)) * 2 - 1, gy1 = ((row + 1) / (wtH - 1)) * 2 - 1;
+      let p00 = project(gx0, gy0, h00 * hScale);
+      let p10 = project(gx1, gy0, h10 * hScale);
+      let p01 = project(gx0, gy1, h01 * hScale);
+      let p11 = project(gx1, gy1, h11 * hScale);
+
+      // Draw geometry based on wire mode
+      if (wireMode === 'triangles') {
+        CTX.beginPath(); CTX.moveTo(p00.sx,p00.sy); CTX.lineTo(p10.sx,p10.sy); CTX.lineTo(p01.sx,p01.sy); CTX.closePath(); CTX.stroke();
+        CTX.beginPath(); CTX.moveTo(p10.sx,p10.sy); CTX.lineTo(p11.sx,p11.sy); CTX.lineTo(p01.sx,p01.sy); CTX.closePath(); CTX.stroke();
+      } else if (wireMode === 'singlediag') {
+        CTX.beginPath(); CTX.moveTo(p00.sx,p00.sy); CTX.lineTo(p10.sx,p10.sy); CTX.lineTo(p11.sx,p11.sy); CTX.lineTo(p01.sx,p01.sy); CTX.closePath(); CTX.stroke();
+      } else if (wireMode === 'grid') {
+        CTX.beginPath(); CTX.moveTo(p00.sx,p00.sy); CTX.lineTo(p10.sx,p10.sy); CTX.stroke();
+        CTX.beginPath(); CTX.moveTo(p00.sx,p00.sy); CTX.lineTo(p01.sx,p01.sy); CTX.stroke();
+      } else if (wireMode === 'quads') {
+        CTX.beginPath(); CTX.moveTo(p00.sx,p00.sy); CTX.lineTo(p10.sx,p10.sy); CTX.lineTo(p11.sx,p11.sy); CTX.lineTo(p01.sx,p01.sy); CTX.closePath(); CTX.stroke();
+      }
+
+      // ── Character overlay at vertices (optional) ──────────────────
+      if (charOn && Math.random() < charDens) {
+        let pv = project(gx0, gy0, h00 * hScale * 0.6);
+        let ch = pickChar(p, col * res, row * res, t);
+        let sz = p.map(h00, 0, 1, charSzMin, charSzMax);
+        CTX.globalAlpha = 0.7 + h00 * 0.3;
+        dc(pv.sx, pv.sy, sz, 0, col2, ch);
+      }
+    }
+  }
+
+  CTX.restore();
+}
+
+  
 
 // ── FRACTAL SUBDIVISION INIT ─────────────────────────────────────────────────
 function initFractalSubdiv(p, W, H) {
@@ -15698,7 +15749,44 @@ const PARAM_REGISTRY = {
       { type:'toggle', id:'magShowPoles', label:'Show poles', def:true },
       { id:'magPoleGlowSize',   label:'Pole glow size',    min:2,  max:20, step:1,  def:5,    scale:1 },
     ],
-
+    wireterrain: [
+      { id:'wtResMult',            label:'Resolution mult',    min:0.5, max:3,   step:0.1, def:1.5,  scale:1,
+        extra:function(){ if(window._st) initWireTerrain(window._st.p, window._st.w(), window._st.h()); } },
+      { id:'wtHeightScale',        label:'Height scale',      min:0.1, max:2,   step:0.05,def:0.6,  scale:1 },
+      { id:'wtNoiseFreq',          label:'Noise frequency',   min:1,   max:12,  step:0.5, def:3,    scale:1 },
+      { id:'wtNoiseOctaves',       label:'Noise octaves',     min:1,   max:6,   step:1,   def:3,    scale:1 },
+      { id:'wtNoiseFalloff',       label:'Octave falloff',    min:0.1, max:1,   step:0.05,def:0.5,  scale:1 },
+      { id:'wtNoiseSpeed',         label:'Morph speed',       min:0,   max:2,   step:0.05,def:0.3,  scale:1 },
+      { id:'wtCamSpeed',           label:'Orbit speed',       min:0,   max:2,   step:0.05,def:0.4,  scale:1 },
+      { id:'wtCamAltBase',         label:'Camera altitude',   min:0,   max:0.8, step:0.02,def:0.35, scale:1 },
+      { id:'wtCamAltAmp',          label:'Altitude wobble',   min:0,   max:0.3, step:0.01,def:0.12, scale:1 },
+      { id:'wtCamDist',            label:'Camera distance',   min:0.5, max:4,   step:0.1, def:1.8,  scale:1 },
+      { id:'wtLineWidth',          label:'Line width',        min:0.2, max:3,   step:0.1, def:0.8,  scale:1 },
+      { id:'wtLineOpacityMin',     label:'Opacity min',       min:0,   max:1,   step:0.05,def:0.5,  scale:1 },
+      { id:'wtLineOpacityRange',   label:'Opacity range',     min:0,   max:1,   step:0.05,def:0.45, scale:1 },
+      { type:'select', id:'wtWireMode', label:'Wire mode',
+        def:'triangles',
+        options:[
+          { value:'triangles',   label:'Two triangles' },
+          { value:'singlediag',  label:'Single diagonal' },
+          { value:'grid',        label:'Grid (no diagonals)' },
+          { value:'quads',       label:'Quads only' }
+        ]
+      },
+      { type:'toggle', id:'wtCharEnabled',  label:'Show characters', def:true },
+      { id:'wtCharDensity',        label:'Character density', min:0,   max:0.5, step:0.01,def:0.08, scale:1 },
+      { id:'wtCharSizeMin',        label:'Min char size',    min:1,   max:10,  step:1,   def:3,    scale:1 },
+      { id:'wtCharSizeMaxFactor',  label:'Max size factor',  min:0.1, max:1.5, step:0.05,def:0.6,  scale:1,
+        hint:'Multiplier on maxSize' },
+      { type:'select', id:'wtColorMode', label:'Color mode',
+        def:'palette',
+        options:[
+          { value:'palette', label:'Palette by height' },
+          { value:'accent',  label:'Accent colour' },
+          { value:'mono',    label:'Monochrome' }
+        ]
+      },
+    ],
   
   //to be refactored
   boids: [
@@ -15725,11 +15813,6 @@ const PARAM_REGISTRY = {
     { id:'qtMaxDepth',  label:'Max splits',    min:2,  max:8,   step:1,  def:5,   scale:1,
       extra: function(){ qtTree=null; } },
     { id:'qtThreshold', label:'Split threshold', min:5, max:95, step:5,  def:40,  scale:0.01 },
-  ],
-  wireterrain: [
-    { id:'terrainHeight',   label:'Mountain height', min:1, max:20, step:1,  def:6,  scale:0.1  },
-    { id:'terrainCamDist',  label:'Camera distance', min:5, max:50, step:1,  def:18, scale:0.1  },
-    { id:'terrainCamSpeed', label:'Orbit speed',     min:0, max:20, step:1,  def:4,  scale:0.01 },
   ],
   interference: [
     { id:'interfSources', label:'Wave sources',   min:2,  max:8,   step:1, def:2,   scale:1,
