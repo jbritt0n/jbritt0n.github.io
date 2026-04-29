@@ -365,6 +365,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
         <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
         <button class="mb" data-mode="spiro">Spiro</button>
+        <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
       </div>
     </div>
@@ -427,7 +428,7 @@ select option{background:var(--ink)}
       <div class="mg">
         <button class="mb" data-mode="boids" title="Flocking agents following collective rules">Boids</button>
         <button class="mb" data-mode="lissajous" title="Harmonic mathematical pendulum curves">Lissajous</button>
-        <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
+        
         
       </div>
     </div>
@@ -13779,105 +13780,213 @@ function drawBauhaus(p, t) {
 }
   
   
-// ── MAGNETIC FIELD LINES ──────────────────────────────────────────────────────
-// Dipole (and multipole) magnetic field: trace field lines from seed angles,
-// render as smooth curves with characters placed along them.
-function initMagnetic(W,H){
-  // Place poles: one positive, one negative
-  magneticPoles=[
-    {x:W*.35,y:H*.5,sign:+1},
-    {x:W*.65,y:H*.5,sign:-1}
-  ];
-  // Optional extra poles driven by wave slider
-  if(S.wave>40){
-    magneticPoles.push({x:W*.5,y:H*.25,sign:+1});
-    magneticPoles.push({x:W*.5,y:H*.75,sign:-1});
+// ── MAGNETIC FIELD LINES (refactored) ──────────────────────────────────────
+// Multi‑pole electromagnetic fields. Poles can orbit, drift, and pulse.
+// Field lines are seeded from positive poles, traced through the vector field,
+// and optionally decorated with characters. Works as both a scientific and
+// meditative visualisation.
+
+let magneticPoles = [];  // renamed for global consistency
+
+function initMagnetic(W, H) {
+  magneticPoles = [];
+
+  // ── Parameters (with defaults) ──────────────────────────────────────
+  let poleCount   = S.magPoleCount   ?? 2;
+  let placement   = S.magPlacement   ?? 'dipole';
+  let radius      = Math.min(W, H) * (S.magSpread ?? 0.38);
+  let seed        = S.magSeed        ?? 0.42;
+  let chaos       = S.magChaos       ?? 0.0;        // random jitter
+
+  // ── Positive/negative probability ──────────────────────────────────
+  let posProb     = S.magPosProb     ?? 0.6;
+
+  let cx = W / 2, cy = H / 2;
+
+  // Helper to add a pole with sign, position
+  function addPole(sign, x, y) {
+    // Apply chaos (spread jitter)
+    if (chaos > 0) {
+      x += (Math.random() - 0.5) * chaos * W * 0.3;
+      y += (Math.random() - 0.5) * chaos * H * 0.3;
+    }
+    magneticPoles.push({ x, y, sign, phase: Math.random() * Math.PI * 2 });
+  }
+
+  // ── Placement strategies ───────────────────────────────────────────
+  if (placement === 'dipole') {
+    addPole(+1, cx - radius * 0.7, cy);
+    addPole(-1, cx + radius * 0.7, cy);
+  }
+  else if (placement === 'quadrupole') {
+    addPole(+1, cx - radius * 0.7, cy - radius * 0.4);
+    addPole(-1, cx + radius * 0.7, cy - radius * 0.4);
+    addPole(+1, cx - radius * 0.7, cy + radius * 0.4);
+    addPole(-1, cx + radius * 0.7, cy + radius * 0.4);
+  }
+  else if (placement === 'circle') {
+    let div = poleCount;
+    let signPattern = S.magSignPattern ?? 'alternate'; // 'alternate', 'random', 'allPositive'
+    for (let i = 0; i < div; i++) {
+      let angle = (i / div) * Math.PI * 2;
+      let sign;
+      if (signPattern === 'alternate') sign = i % 2 === 0 ? 1 : -1;
+      else if (signPattern === 'random') sign = Math.random() < posProb ? 1 : -1;
+      else sign = 1; // allPositive
+      addPole(sign, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+    }
+  }
+  else if (placement === 'grid') {
+    let cols = Math.ceil(Math.sqrt(poleCount));
+    let rows = Math.ceil(poleCount / cols);
+    let stepX = radius * 1.8 / cols;
+    let stepY = radius * 1.8 / rows;
+    let idx = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (idx >= poleCount) break;
+        let sign = Math.random() < posProb ? 1 : -1;
+        addPole(sign, cx + (c - (cols-1)/2) * stepX, cy + (r - (rows-1)/2) * stepY);
+        idx++;
+      }
+    }
+  }
+  else if (placement === 'spiral') {
+    for (let i = 0; i < poleCount; i++) {
+      let frac = i / poleCount;
+      let angle = frac * Math.PI * 8;   // 4 full turns
+      let dist = frac * radius;
+      let sign = Math.random() < posProb ? 1 : -1;
+      addPole(sign, cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist);
+    }
   }
 }
-function drawMagnetic(p,t){
-  let W=p.width,H=p.height;
-  if(!magneticPoles.length) initMagnetic(W,H);
-  // Slowly rotate poles for animation
-  if(S.playing){
-    let angle=S.fc*S.speed*.8;
-    let cx2=W*.5,cy2=H*.5;
-    magneticPoles.forEach(function(pole,i){
-      let dist=Math.sqrt((pole.x-cx2)*(pole.x-cx2)+(pole.y-cy2)*(pole.y-cy2));
-      let baseAngle=Math.atan2(pole.y-cy2,pole.x-cx2);
-      let rotAngle=baseAngle+angle*(i%2===0?1:-1)*(S.magRotSpeed||0.015);
-      pole.x=cx2+Math.cos(rotAngle)*dist;
-      pole.y=cy2+Math.sin(rotAngle)*dist;
+
+function drawMagnetic(p, t) {
+  let W = p.width, H = p.height;
+  if (!magneticPoles.length) initMagnetic(W, H);
+
+  // ── Parameters ──────────────────────────────────────────────────
+  let orbitSpeed   = S.magOrbitSpeed  ?? 0.02;
+  let orbitRadius  = S.magOrbitRadius ?? 0.12;  // fraction of canvas
+  let driftAmp     = S.magDriftAmp    ?? 0.004;
+  let driftSpeed   = S.magDriftSpeed  ?? 0.3;
+  let pulseAmp     = S.magPulseAmp    ?? 0.04;
+  let pulseSpeed   = S.magPulseSpeed  ?? 1.2;
+  let nLines       = S.magLines       ?? Math.floor(8 + S.density * 24);
+  let stepSize     = Math.max(1, S.spacing * (S.magStepScale ?? 0.4));
+  let maxSteps     = Math.floor(Math.min(W, H) / stepSize * 2.5);
+  let lineAlpha    = S.magLineAlpha   ?? 0.45;
+  let lineWidth    = S.magLineWidth   ?? Math.max(0.5, S.maxSize * 0.03);
+  let charEnabled  = S.magCharEnabled !== false;
+  let charDensity  = S.magCharDensity ?? 8;
+  let charSizeMin  = S.magCharSizeMin ?? 4;
+  let charSizeFactor = S.magCharSizeFactor ?? 0.5; // multiplier on maxSize
+  let showPoles    = S.magShowPoles   !== false;
+  let poleGlowSize = S.magPoleGlowSize ?? 5;
+
+  // ── Animation: orbit + drift + pulse ────────────────────────────
+  if (S.playing) {
+    let ang = S.fc * S.speed * orbitSpeed;
+    magneticPoles.forEach(function(pole, i) {
+      // Orbit around center
+      if (S.magOrbitEnabled !== false) {
+        let dist = Math.hypot(pole.x - W/2, pole.y - H/2);
+        let baseAng = Math.atan2(pole.y - H/2, pole.x - W/2);
+        baseAng += ang * (i % 2 === 0 ? 1 : -1) * (0.7 + 0.3 * (i % 3));
+        pole.x = W/2 + Math.cos(baseAng) * dist;
+        pole.y = H/2 + Math.sin(baseAng) * dist;
+      }
+      // Per‑pole noise drift
+      pole.x += Math.sin(t * driftSpeed + pole.phase) * driftAmp * W;
+      pole.y += Math.cos(t * driftSpeed * 1.3 + pole.phase) * driftAmp * H;
     });
   }
-  function fieldAt(x,y){
-    let fx=0,fy=0;
-    magneticPoles.forEach(function(pole){
-      let dx=x-pole.x,dy=y-pole.y;
-      let r2=dx*dx+dy*dy+100;
-      let r3=Math.pow(r2,1.5);
-      fx+=pole.sign*dx/r3;
-      fy+=pole.sign*dy/r3;
+
+  // ── Field vector function ───────────────────────────────────────
+  function fieldAt(x, y) {
+    let fx = 0, fy = 0;
+    magneticPoles.forEach(function(pole) {
+      let dx = x - pole.x, dy = y - pole.y;
+      let r2 = dx*dx + dy*dy + 100;
+      let r3 = Math.pow(r2, 1.5);
+      fx += pole.sign * dx / r3;
+      fy += pole.sign * dy / r3;
     });
-    let mag=Math.sqrt(fx*fx+fy*fy)||1;
-    return {bx:fx/mag,by:fy/mag,mag};
+    let mag = Math.hypot(fx, fy) || 1;
+    return { bx: fx/mag, by: fy/mag, mag };
   }
-  // Seed field lines from positive poles at many angles
-  let nLines=S.magLines||Math.floor(8+S.density*24);
-  let stepSize=Math.max(2,S.spacing*.4);
-  let maxSteps=Math.floor(Math.min(W,H)/stepSize*2.5);
+
+  let pulsate = 1 + Math.sin(t * pulseSpeed) * pulseAmp;
+
   CTX.save();
-  CTX.lineCap='round';
-  CTX.lineJoin='round';
-  CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
-  let positivePoles=magneticPoles.filter(function(p2){return p2.sign>0;});
-  positivePoles.forEach(function(pole,pi){
-    for(let li=0;li<nLines;li++){
-      let seedAngle=(li/nLines)*Math.PI*2;
-      let px2=pole.x+Math.cos(seedAngle)*8;
-      let py2=pole.y+Math.sin(seedAngle)*8;
-      let col=S.palette[(pi*nLines/Math.ceil(nLines/S.palette.length)+li)%S.palette.length];
-      if(li===0&&S.accent!=='none') col=S.accent;
-      CTX.strokeStyle=col;
-      CTX.globalAlpha=0.45;
+  CTX.lineCap = 'round';
+  CTX.lineJoin = 'round';
+
+  let positivePoles = magneticPoles.filter(p => p.sign > 0);
+  positivePoles.forEach(function(pole, pi) {
+    for (let li = 0; li < nLines; li++) {
+      let seedAngle = (li / nLines) * Math.PI * 2;
+      let px = pole.x + Math.cos(seedAngle) * 8;
+      let py = pole.y + Math.sin(seedAngle) * 8;
+
+      // Colour: cycle palette
+      let col = S.palette[(pi * nLines + li) % S.palette.length];
+      if (li === 0 && S.accent !== 'none') col = S.accent;
+
+      CTX.strokeStyle = col;
+      CTX.globalAlpha = lineAlpha;
+      CTX.lineWidth = lineWidth * pulsate;
       CTX.beginPath();
-      CTX.moveTo(px2,py2);
-      let charStep=Math.floor(maxSteps/(8+Math.floor(S.density*8)));
-      for(let si=0;si<maxSteps;si++){
-        let {bx,by}=fieldAt(px2,py2);
-        px2+=bx*stepSize;py2+=by*stepSize;
-        if(px2<0||px2>W||py2<0||py2>H) break;
-        CTX.lineTo(px2,py2);
-        // Place character periodically along field line
-        if(si%charStep===charStep-1){
-          CTX.stroke();
+      CTX.moveTo(px, py);
+
+      let charStep = Math.max(1, Math.floor(maxSteps / (charDensity + Math.floor(S.density * 8))));
+
+      for (let si = 0; si < maxSteps; si++) {
+        let { bx, by } = fieldAt(px, py);
+        px += bx * stepSize;
+        py += by * stepSize;
+        if (px < 0 || px > W || py < 0 || py > H) break;
+        CTX.lineTo(px, py);
+
+        // Place character
+        if (charEnabled && si % charStep === charStep - 1) {
+          CTX.stroke(); // flush current line segment
+          let rot = Math.atan2(by, bx);
+          let ch = pickChar(p, px, py, t + si * 0.01);
+          let sz = Math.max(charSizeMin, S.maxSize * (0.3 + charSizeFactor * Math.min(1, fieldAt(px, py).mag * 100)));
+          CTX.globalAlpha = 0.75;
+          dc(px, py, sz, rot, col, ch);
+          CTX.globalAlpha = lineAlpha;
+          CTX.strokeStyle = col;
+          CTX.lineWidth = lineWidth * pulsate;
           CTX.beginPath();
-          CTX.moveTo(px2,py2);
-          let rot=Math.atan2(by,bx);
-          let ch=pickChar(p,px2,py2,t+si*.01);
-          let sz=Math.max(4,S.maxSize*(0.3+0.5*Math.min(1,fieldAt(px2,py2).mag*100)));
-          CTX.globalAlpha=0.7;
-          dc(px2,py2,sz,rot,col,ch);
-          CTX.globalAlpha=0.45;
-          CTX.strokeStyle=col;
-          CTX.lineWidth=Math.max(0.5,S.maxSize*.03);
+          CTX.moveTo(px, py);
         }
       }
       CTX.stroke();
     }
   });
-  // Draw poles as glowing dots
-  magneticPoles.forEach(function(pole2){
-    CTX.globalAlpha=0.8;
-    CTX.fillStyle=pole2.sign>0?(S.accent!=='none'?S.accent:S.palette[0]):S.palette[Math.floor(S.palette.length/2)];
-    CTX.beginPath();
-    CTX.arc(pole2.x,pole2.y,5,0,6.28);
-    CTX.fill();
-  });
-  CTX.globalAlpha=1;
-  CTX.restore();
-  _lastFont='';_lastFill='';
-}
 
+  // ── Draw poles as glowing particles ──────────────────────────────
+  if (showPoles) {
+    magneticPoles.forEach(function(pole) {
+      let glowsize = poleGlowSize * pulsate;
+      CTX.globalAlpha = 0.8;
+      CTX.fillStyle = pole.sign > 0
+        ? (S.accent !== 'none' ? S.accent : S.palette[0])
+        : S.palette[Math.floor(S.palette.length / 2)];
+      CTX.beginPath();
+      CTX.arc(pole.x, pole.y, glowsize, 0, Math.PI * 2);
+      CTX.fill();
+    });
+  }
+
+  CTX.globalAlpha = 1;
+  CTX.restore();
+  _lastFont = '';
+  _lastFill = '';
+}
 
   
 // ── SHAPE HELPERS ─────────────────────────────────────────────────────────────────
@@ -15539,6 +15648,58 @@ const PARAM_REGISTRY = {
         ],
       },
     ],
+    magnetic: [
+      { id:'magPoleCount',       label:'Pole count',        min:1,  max:20, step:1,  def:2,   scale:1,
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); } },
+      { type:'select', id:'magPlacement', label:'Placement',
+        def:'dipole',
+        options:[
+          { value:'dipole',     label:'Dipole' },
+          { value:'quadrupole', label:'Quadrupole' },
+          { value:'circle',     label:'Circle' },
+          { value:'grid',       label:'Grid' },
+          { value:'spiral',     label:'Spiral' }
+        ],
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); }
+      },
+      { id:'magSpread',         label:'Spread radius',     min:0.1, max:0.5, step:0.01,def:0.38,scale:1,
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); } },
+      { id:'magChaos',          label:'Position chaos',    min:0,   max:1,   step:0.05,def:0.0, scale:1,
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); } },
+      { id:'magPosProb',        label:'Positive prob',     min:0,   max:1,   step:0.05,def:0.6, scale:1,
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); } },
+      { type:'select', id:'magSignPattern', label:'Sign pattern', def:'alternate',
+        options:[
+          { value:'alternate',  label:'Alternate' },
+          { value:'random',     label:'Random' },
+          { value:'allPositive',label:'All Positive' }
+        ],
+        extra:function(){ if(window._st) initMagnetic(window._st.w(), window._st.h()); }
+      },
+      // Animation
+      { type:'toggle', id:'magOrbitEnabled', label:'Orbit poles',       def:true },
+      { id:'magOrbitSpeed',     label:'Orbit speed',       min:0,   max:0.1, step:0.002, def:0.02, scale:1 },
+      { id:'magOrbitRadius',    label:'Orbit radius',      min:0,   max:0.3, step:0.01,  def:0.12, scale:1 },
+      { id:'magDriftAmp',       label:'Drift amplitude',   min:0,   max:0.02, step:0.001, def:0.004, scale:1 },
+      { id:'magDriftSpeed',     label:'Drift speed',       min:0,   max:1,   step:0.1,   def:0.3,   scale:1 },
+      { id:'magPulseAmp',       label:'Pulse amplitude',   min:0,   max:0.2, step:0.01,  def:0.04,  scale:1 },
+      { id:'magPulseSpeed',     label:'Pulse speed',       min:0,   max:3,   step:0.1,   def:1.2,   scale:1 },
+      // Field lines
+      { id:'magLines',          label:'Lines per pole',    min:4,  max:40, step:2,  def:8,    scale:1 },
+      { id:'magStepScale',      label:'Step scale',        min:0.1, max:1.5, step:0.05, def:0.4, scale:1 },
+      { id:'magLineAlpha',      label:'Line opacity',      min:0.1, max:1,   step:0.05, def:0.45, scale:1 },
+      { id:'magLineWidth',      label:'Line width',        min:0.2, max:5,   step:0.1,  def:0,    scale:1,
+        hint:'0 = auto (from maxSize)' },
+      // Characters
+      { type:'toggle', id:'magCharEnabled', label:'Show characters', def:true },
+      { id:'magCharDensity',    label:'Char spacing',      min:2,  max:20, step:1,  def:8,    scale:1 },
+      { id:'magCharSizeMin',    label:'Min char size',     min:2,  max:15, step:1,  def:4,    scale:1 },
+      { id:'magCharSizeFactor', label:'Size factor',       min:0.1, max:1.5, step:0.1, def:0.5, scale:1 },
+      // Poles
+      { type:'toggle', id:'magShowPoles', label:'Show poles', def:true },
+      { id:'magPoleGlowSize',   label:'Pole glow size',    min:2,  max:20, step:1,  def:5,    scale:1 },
+    ],
+
   
   //to be refactored
   boids: [
@@ -15575,12 +15736,6 @@ const PARAM_REGISTRY = {
     { id:'interfSources', label:'Wave sources',   min:2,  max:8,   step:1, def:2,   scale:1,
       extra: function(){ window._st.rd(); } },
     { id:'interfSpeed',   label:'Wave speed',     min:1,  max:20,  step:1, def:3,   scale:1    },
-  ],
-  magnetic: [
-    { id:'magPoles',      label:'Pole count',     min:1,  max:8,   step:1, def:2,   scale:1,
-      extra: function(){ window._st.ri(); } },
-    { id:'magLines',      label:'Field lines',    min:4,  max:32,  step:2, def:8,   scale:1    },
-    { id:'magRotSpeed',   label:'Rotation speed', min:0,  max:20,  step:1, def:8,   scale:0.001 },
   ],
   
 };
