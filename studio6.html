@@ -15524,9 +15524,16 @@ const PARAM_REGISTRY = {
 (function applyRegistryDefaults(){
   Object.values(PARAM_REGISTRY).forEach(function(params){
     params.forEach(function(p){
-      if(!(p.id in S)){
-        S[p.id] = p.type === 'toggle' ? (p.def || false)
-                : ((p.def || 0) * (p.scale || 1));
+      if (p.id in S) return;                    // already set, skip
+      switch (p.type) {
+        case 'toggle':   S[p.id] = p.def || false;           break;
+        case 'select':   S[p.id] = p.def || p.options[0].value; break;
+        case 'color':    S[p.id] = p.def || '#ffffff';        break;
+        case 'text':     S[p.id] = p.def || '';               break;
+        case 'button':   /* no state needed */                break;
+        default:         // range slider
+          let raw = (p.def || 0) * (p.scale || 1);
+          S[p.id] = isNaN(raw) ? p.def : raw;
       }
     });
   });
