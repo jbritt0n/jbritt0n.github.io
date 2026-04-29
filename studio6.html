@@ -361,6 +361,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="welcome" title="Introduction and tips">👋 Welcome</button>
         <button class="mb" data-mode="piet" title="Piet program generator from a poem">🖼️ Piet</button>
         <button class="mb" data-mode="pietcode" title="Piet code">PietCode</button>
+        <button class="mb" data-mode="poemfields" title="Words as drifting particles shaped by grammar">🌾 Poem Fields</button>
       </div>
     </div>
     
@@ -1565,7 +1566,11 @@ let S={
   pietTurbDistort: 5.0,
   pietDensityMask: false,
   pietBgNoise: false,
-
+  // PoemField
+  poemFieldText: 'Tendrils of longing stretch out\nfrom every atom and idea\nFeeling\nYearning\nseeking out a single dormant neuron\nto spark against,\nto sound its note,\nto grant a pulse,\nwithin the mad and desperate engine\nof the senile universe revealing\nitself to itself.',
+  pfNounSize: 2.0, pfVerbSize: 1.6, pfAdjSize: 1.3, pfAdvSize: 1.0, pfOtherSize: 0.7,
+  pfNounSpeed: 0.5, pfVerbSpeed: 1.5, pfAdjSpeed: 1.0, pfAdvSpeed: 2.0, pfOtherSpeed: 0.8,
+  pfFlowStrength: 1.0, pfLineAttraction: 0.02, pfSentimentEnable: true,
 };
   
 
@@ -4215,179 +4220,155 @@ function drawPiet(p, t) {
   p.pop();
 }
   
-// ── PietCode ─────────────────────────────────────────────────────────────────
-  
-function drawPietCode(p, t) {
-  const S = p.windowState;
-  
-  // ── Piet Command Definitions ──
-  const commands = [
-    { name: "PUSH", h:0, l:1 }, { name: "POP", h:0, l:2 },
-    { name: "ADD", h:1, l:0 },  { name: "SUB", h:1, l:1 },
-    { name: "MUL", h:1, l:2 },  { name: "DIV", h:2, l:0 },
-    { name: "MOD", h:2, l:1 },  { name: "NOT", h:2, l:2 },
-    { name: "GT", h:3, l:0 },   { name: "PTR", h:3, l:1 },
-    { name: "SW", h:3, l:2 },   { name: "DUP", h:4, l:0 },
-    { name: "ROLL", h:4, l:1 }, { name: "INN", h:4, l:2 },
-    { name: "INC", h:5, l:0 },  { name: "OUTN", h:5, l:1 },
-    { name: "OUTC", h:5, l:2 },
-  ];
-  
-  // ── Parse Input Text ──
-  let words = (S.pietText || '').match(/\b\w+\b/g) || [];
-  
-  // ── Build Codel Sequence ──
-  let codelSeq = [];
-  let hIdx = S.pietStartHue || 0;
-  let lIdx = S.pietStartLight || 0;
-  
-  // Start marker
-  codelSeq.push({ h: hIdx, l: lIdx, word: '★', cmd: 'START', idx: 0 });
-  
-  for (let i = 0; i < words.length; i++) {
-    let w = words[i];
-    let cmdIdx;
-    
-    switch(S.pietWordMode) {
-      case 'Hash': 
-        // Simple hash based on char codes
-        let hash = w.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
-        cmdIdx = hash % commands.length; 
-        break;
-      case 'Sequential': 
-        cmdIdx = i % commands.length; 
-        break;
-      default: // Length-based
-        cmdIdx = w.length % commands.length;
-    }
-    
-    let cmd = commands[cmdIdx];
-    hIdx = (hIdx + cmd.h) % 6;
-    lIdx = (lIdx + cmd.l) % 3;
-    codelSeq.push({ h: hIdx, l: lIdx, word: w, cmd: cmd.name, idx: i+1 });
+// ── Poem Fields ──────────────────────────────────────────────────────────
+let _poemFieldWords = [];
+let _poemFieldLastText = '';
+
+function initPoemFields(p) {
+  _poemFieldWords = [];
+  let raw = S.poemFieldText || '';
+  if (!raw.trim()) { raw = 'Your poem goes here'; }         // fallback
+  let lines = raw.split(/\n/);
+  let lineHeight = p.height / Math.max(1, lines.length);
+  let baseY = lineHeight * 0.4;
+
+  lines.forEach((line, li) => {
+    let words = line.match(/\b\w+\b/g) || [];
+    let lineCenterY = li * lineHeight + lineHeight * 0.4;
+    words.forEach((word, wi) => {
+      // initial position near line centre
+      let x = p.width * 0.2 + Math.random() * p.width * 0.6;
+      let y = lineCenterY + (Math.random() - 0.5) * lineHeight * 0.5;
+
+      // lightweight POS guess
+      let pos = _guessPOS(word);
+      // sentiment score (tiny built‑in list)
+      let sent = _wordSentiment(word);
+
+      // size mapping (base size from POS, scaled by maxSize)
+      let sizeMult = 1.0;
+      if (pos === 'noun')       sizeMult = S.pfNounSize      || 2.0;
+      else if (pos === 'verb')  sizeMult = S.pfVerbSize      || 1.6;
+      else if (pos === 'adj')   sizeMult = S.pfAdjSize       || 1.3;
+      else if (pos === 'adv')   sizeMult = S.pfAdvSize       || 1.0;
+      else                      sizeMult = S.pfOtherSize     || 0.7;
+
+      // speed mapping
+      let speedMult = 1.0;
+      if (pos === 'noun')       speedMult = S.pfNounSpeed    || 0.5;
+      else if (pos === 'verb')  speedMult = S.pfVerbSpeed    || 1.5;
+      else if (pos === 'adj')   speedMult = S.pfAdjSpeed     || 1.0;
+      else if (pos === 'adv')   speedMult = S.pfAdvSpeed     || 2.0;
+      else                      speedMult = S.pfOtherSpeed   || 0.8;
+
+      _poemFieldWords.push({
+        word,
+        pos,
+        sent,
+        x, y,
+        vx: 0, vy: 0,
+        lineIndex: li,
+        sizeMult,
+        speedMult,
+        phase: Math.random() * Math.PI * 2,
+      });
+    });
+  });
+  _poemFieldLastText = S.poemFieldText;
+}
+
+// super‑lightweight part‑of‑speech guesser (English only)
+function _guessPOS(w) {
+  let lw = w.toLowerCase();
+  // static short list of determiners / prepositions / conjunctions
+  const closed = new Set(['the','a','an','of','in','on','at','to','for','with',
+    'and','or','but','is','are','was','were','be','been','it','its','he','she',
+    'they','we','you','i','me','my','your','his','her','our','their','this','that',
+    'these','those','all','each','every','some','any','no','not','as','if','than','so']);
+  if (closed.has(lw)) return 'other';
+
+  // suffix heuristics
+  if (lw.endsWith('ing') || lw.endsWith('ed') || lw.endsWith('es') && !lw.endsWith('ness'))
+    return 'verb';
+  if (lw.endsWith('ly')) return 'adv';
+  if (lw.endsWith('ness') || lw.endsWith('tion') || lw.endsWith('sion') ||
+      lw.endsWith('ment') || lw.endsWith('ity') || lw.endsWith('ance') ||
+      lw.endsWith('ence') || lw.endsWith('er') || lw.endsWith('or'))
+    return 'noun';
+  if (lw.endsWith('able') || lw.endsWith('ible') || lw.endsWith('ful') ||
+      lw.endsWith('less') || lw.endsWith('ous') || lw.endsWith('ive') ||
+      lw.endsWith('al') || lw.endsWith('ic') || lw.endsWith('y') && w.length>3)
+    return 'adj';
+
+  // default: assume noun
+  return 'noun';
+}
+
+// tiny sentiment dictionary (AFINN‑111 subset + hand‑crafted)
+const _sentDict = {
+  longing:-1, tendrils:0, stretch:0, atom:0, idea:1, feeling:0, yearning:-1,
+  seeking:0, spark:1, against:-1, sound:1, note:1, grant:1, pulse:2,
+  mad:-2, desperate:-2, engine:0, senile:-2, universe:1, revealing:0,
+  itself:0, void:-1, dark:-1, light:2, love:3, hate:-3, pain:-2, joy:3,
+  sorrow:-2, hope:2, fear:-2, anger:-2, peace:3, war:-3, beauty:3,
+  death:-2, life:2, dream:1, memory:0, whisper:0, silence:0,
+};
+function _wordSentiment(w) {
+  let lw = w.toLowerCase();
+  if (_sentDict[lw] !== undefined) return _sentDict[lw];
+  // simple heuristic: happy endings? not really, return 0
+  return 0;
+}
+
+function drawPoemFields(p, t) {
+  // rebuild words if text changed or empty
+  if (_poemFieldWords.length === 0 || S.poemFieldText !== _poemFieldLastText) {
+    initPoemFields(p);
   }
-  
-  // ── Animation State ──
-  let animIdx = -1;
-  if (S.pietAnimate) {
-    animIdx = p.floor(((p.sin(t * (S.pietSpeed||1) * 0.3) * 0.5 + 0.5) * codelSeq.length));
-  }
-  
-  // ── Grid Iteration ──
-  let spacing = S.spacing || 12;
-  let cols = p.floor(p.width / spacing);
-  
-  for (let y = 0; y < p.height; y += spacing) {
-    for (let x = 0; x < p.width; x += spacing) {
-      
-      // Density gate using studio noise system
-      if (sampleNoise(p, x/S.noiseScale, y/S.noiseScale, t) > (S.density/10)) {
-        continue;
-      }
-      
-      // ── Layout Mapping ──
-      let codel;
-      let row = p.floor(y / spacing);
-      let col = p.floor(x / spacing);
-      let linearIdx;
-      
-      switch(S.pietLayout) {
-        case 'Snake':
-          linearIdx = (row % 2 === 0) 
-            ? row * cols + col 
-            : row * cols + (cols - 1 - col);
-          break;
-        case 'Spiral':
-          // Simple spiral approximation
-          let cx = p.width/2, cy = p.height/2;
-          let angle = p.atan2(y-cy, x-cx);
-          let dist = p.dist(x, y, cx, cy);
-          linearIdx = p.floor((angle + p.TWO_PI) % p.TWO_PI / p.TWO_PI * 100 + dist/spacing);
-          break;
-        case 'Random':
-          linearIdx = p.floor(sampleNoise(p, x*0.01, y*0.01, t*0.1) * codelSeq.length);
-          break;
-        default: // Row
-          linearIdx = row * cols + col;
-      }
-      
-      let codelPtr = p.constrain(linearIdx % codelSeq.length, 0, codelSeq.length-1);
-      codel = codelSeq[codelPtr];
-      
-      // ── Glitch Integration ──
-      let gx = x, gy = y;
-      if (S.glitchIntensity > 0) {
-        let glitched = applyGlitchOffset(p, gx, gy, t, S.glitchIntensity);
-        gx = glitched.x; gy = glitched.y;
-      }
-      
-      // ── Color Selection ──
-      let baseColor;
-      if (S.pietColorMode === 'Studio Palette') {
-        baseColor = pickColor(p, gx/spacing, gy/spacing, t, S);
-      } else {
-        // Piet color mapping
-        let hueDeg = codel.h * 60;
-        let sat = codel.l === 0 ? 25 : 100;  // Light = low saturation
-        let bri = codel.l === 2 ? 75 : 100;   // Dark = lower brightness
-        
-        // Optional: blend with color mapping mode
-        if (S.colorMapMode !== 'Noise' && S.pietColorMode === 'Piet 6-Hue') {
-          // Use only hue shifts, ignore lightness for 6-color mode
-          sat = 100; bri = 100;
-        }
-        baseColor = p.color(hueDeg, sat, bri);
-      }
-      
-      // ── Character Selection ──
-      let char;
-      switch(S.pietCharSource) {
-        case 'Studio Charset':
-          char = pickChar(p, gx, gy, t, S);
-          break;
-        case 'Mixed':
-          // 50/50 blend
-          if (sampleNoise(p, gx*0.1, gy*0.1, t) > 0.5 && codel.word) {
-            let ci = p.floor(sampleNoise(p, gx*0.05, gy*0.05, t*0.2) * codel.word.length);
-            char = codel.word.charAt(ci).toUpperCase();
-          } else {
-            char = pickChar(p, gx, gy, t, S);
-          }
-          break;
-        default: // Word Letters
-          if (codel.word && codel.word.length > 0) {
-            let ci = p.floor(sampleNoise(p, gx*0.05, gy*0.05, t*0.2) * codel.word.length);
-            char = codel.word.charAt(ci).toUpperCase();
-          } else {
-            char = pickChar(p, gx, gy, t, S);
-          }
-      }
-      
-      // ── Size & Rotation ──
-      let size = (S.maxSize || 20) * (0.7 + 0.3 * sampleNoise(p, gx*0.05, gy*0.05, t));
-      size = p.constrain(size, 6, S.maxSize || 32);
-      
-      let rot = (S.charRotation || 0) * p.PI/180;
-      // Pulse animation for active codel
-      if (S.pietAnimate && codelPtr === animIdx) {
-        rot += p.sin(t * 5) * 0.3;
-        size *= 1.1;
-      }
-      
-      // ── Draw via Studio dc() ──
-      dc(gx, gy, size, rot, baseColor, char);
-      
-      // ── Optional Command Labels ──
-      if (S.pietShowCmd && spacing > 18) {
-        p.push();
-        p.textAlign(p.CENTER, p.TOP);
-        p.textSize(7);
-        p.noStroke();
-        p.fill(0, 0, 100, 50);
-        p.text(codel.cmd, gx, gy + size/2 + 6);
-        p.pop();
-      }
+
+  let useSentiment = S.pfSentimentEnable !== false;
+  let flowStrength = S.pfFlowStrength || 1.0;
+  let lineAttract   = S.pfLineAttraction || 0.02;
+  let damping       = 0.92;
+
+  for (let w of _poemFieldWords) {
+    if (S.playing) {
+      // flow field
+      let angle = sampleNoise(p, w.x * S.noiseScale, w.y * S.noiseScale, t * 0.3) * Math.PI * 2;
+      let fx = Math.cos(angle) * flowStrength * w.speedMult * 0.02;
+      let fy = Math.sin(angle) * flowStrength * w.speedMult * 0.02;
+      // line attraction (slow pull towards line’s average y)
+      let targetY = (w.lineIndex + 0.5) * (p.height / Math.max(1, _poemFieldWords.filter(w2=>w2.lineIndex===w.lineIndex).length||1));
+      fy += (targetY - w.y) * lineAttract;
+
+      w.vx = w.vx * damping + fx;
+      w.vy = w.vy * damping + fy;
+      w.x += w.vx;
+      w.y += w.vy;
+
+      // soft boundaries
+      w.x = Math.max(10, Math.min(p.width  - 10, w.x));
+      w.y = Math.max(10, Math.min(p.height - 10, w.y));
     }
+
+    // colour
+    let col = pickColor(p, w.x, w.y, t);
+    // sentiment colour override if enabled
+    if (useSentiment && w.sent !== 0) {
+      let hueShift = w.sent * 20;  // positive = warmer, negative = cooler
+      col = p.color(p.hue(p.color(col)) + hueShift,
+                     p.saturation(p.color(col)),
+                     p.brightness(p.color(col)));
+    }
+
+    // size
+    let sz = S.maxSize * w.sizeMult * (0.8 + 0.2 * Math.sin(t * 2 + w.phase));
+
+    // display character (first letter)
+    let ch = w.word[0].toUpperCase();
+
+    // draw
+    dc(w.x, w.y, sz, 0, col, ch);
   }
 }
   
@@ -13209,7 +13190,7 @@ const DEFAULT_STATE = {
   // ========== SIGNAL COLLAPSE (temporary effect) ==========
   signalCollapse: false,             // Trigger scan‑line collapse effect
   signalStart: 0,                    // Frame counter when effect started
-
+  
 };
 
   
@@ -13400,7 +13381,7 @@ function rd() {
       case 'numbcollage': drawNumbCollage(p, t); break;
       case 'numbpoem': drawNumbPoem(p, t); break;
       case 'piet': drawPiet(p, t); break;
-      case 'pietcode': drawPietCode(p, t); break;  
+      case 'poemfields': drawPoemFields(p, t); break;
 
         
     } // closes switch
@@ -14217,17 +14198,28 @@ const PARAM_REGISTRY = {
     { id: 'numbPoemBlockSizeMult', label: 'Block size multiplier', min: 0.8, max: 2.0, step: 0.05, def: 1.0, scale: 1,
       hint: 'Scales the auto‑calculated block dimensions' },
   ], 
-  pietcode: [
-    { id: 'pietText', name: 'Poem / Text', type: 'text', default: 'roses are red violets are blue', placeholder: 'Enter text to encode...' },
-    { id: 'pietWordMode', name: 'Word → Command', type: 'dropdown', options: ['Length', 'Hash', 'Sequential'], default: 'Length' },
-    { id: 'pietColorMode', name: 'Color System', type: 'dropdown', options: ['Piet 18', 'Piet 6-Hue', 'Studio Palette'], default: 'Piet 18' },
-    { id: 'pietStartHue', name: 'Start Hue', type: 'slider', min: 0, max: 5, step: 1, default: 0 },
-    { id: 'pietStartLight', name: 'Start Light', type: 'slider', min: 0, max: 2, step: 1, default: 0 },
-    { id: 'pietLayout', name: 'Layout Flow', type: 'dropdown', options: ['Row', 'Snake', 'Spiral', 'Random'], default: 'Snake' },
-    { id: 'pietAnimate', name: 'Animate Execution', type: 'toggle', default: false },
-    { id: 'pietSpeed', name: 'Anim Speed', type: 'slider', min: 0.1, max: 5, step: 0.1, default: 1 },
-    { id: 'pietShowCmd', name: 'Show Commands', type: 'toggle', default: false },
-    { id: 'pietCharSource', name: 'Character Source', type: 'dropdown', options: ['Word Letters', 'Studio Charset', 'Mixed'], default: 'Word Letters' },
+  poemfields: [
+    { id:'poemFieldText', label:'Poem text', type:'text',
+      def:'Tendrils of longing stretch out\nfrom every atom and idea\nFeeling\nYearning\nseeking out a single dormant neuron\nto spark against,\nto sound its note,\nto grant a pulse,\nwithin the mad and desperate engine\nof the senile universe revealing\nitself to itself.',
+      hint:'Each word becomes a particle – its behaviour is shaped by guessed part‑of‑speech' },
+    // Size multipliers per POS
+    { id:'pfNounSize',  label:'Noun size',  min:0.5, max:5, step:0.1, def:2.0, scale:1 },
+    { id:'pfVerbSize',  label:'Verb size',  min:0.5, max:5, step:0.1, def:1.6, scale:1 },
+    { id:'pfAdjSize',   label:'Adj size',   min:0.5, max:5, step:0.1, def:1.3, scale:1 },
+    { id:'pfAdvSize',   label:'Adv size',   min:0.5, max:5, step:0.1, def:1.0, scale:1 },
+    { id:'pfOtherSize', label:'Other size', min:0.5, max:5, step:0.1, def:0.7, scale:1 },
+    // Speed multipliers per POS
+    { id:'pfNounSpeed',  label:'Noun speed',  min:0, max:3, step:0.1, def:0.5, scale:1 },
+    { id:'pfVerbSpeed',  label:'Verb speed',  min:0, max:3, step:0.1, def:1.5, scale:1 },
+    { id:'pfAdjSpeed',   label:'Adj speed',   min:0, max:3, step:0.1, def:1.0, scale:1 },
+    { id:'pfAdvSpeed',   label:'Adv speed',   min:0, max:3, step:0.1, def:2.0, scale:1 },
+    { id:'pfOtherSpeed', label:'Other speed', min:0, max:3, step:0.1, def:0.8, scale:1 },
+    // Flow and attraction
+    { id:'pfFlowStrength',   label:'Flow field strength', min:0, max:5, step:0.1, def:1.0, scale:1 },
+    { id:'pfLineAttraction', label:'Line grouping force', min:0, max:0.1, step:0.001, def:0.02, scale:1 },
+    // Sentiment
+    { type:'toggle', id:'pfSentimentEnable', label:'Sentiment colour shift', def:true,
+      hint:'Positive words become warmer, negative cooler' },
   ],
   piet: [
     // ── Core poem and colour controls ──
