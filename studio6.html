@@ -1567,22 +1567,40 @@ let S={
   pietDensityMask: false,
   pietBgNoise: false,
   // PoemField
+  pfSpringStiffness: 0.004,
+  pfRepulsionStrength: 1.5,
+  pfIdealDistMult: 0.85,
+  pfDamping: 0.88,
+  pfJitterAmount: 0.10,
+  pfFlowStrength: 0.06,
+  pfCenterGravity: 0.0006,
+  pfLineAttraction: 0.0003,
   pfShowFullWord: false,
-  pfClustersEnable: true, pfClusterAttraction: 0.01,
-  pfRhymeSyncEnable: true,
+  pfSentimentEnable: true,
+  pfSentimentBias: 0.50,
+  pfPhoneticEnable: true,
+  pfPhoneticSaturation: 35,
+  pfRhythmEnable: true,
+  pfPulseScale: 0.18,
+  pfBeatBPM: 60,
+  pfDependencyLinks: true,
+  pfLinkAlpha: 0.28,
   pfAlliterationLines: true,
-  pfEchoEnable: true, pfEchoLength: 8, pfEchoFadeRate: 0.03,
-  pfMetaphorEnable: true,
-  pfParticlesEnable: true, pfParticleRate: 0.1, pfParticleLife: 60,
-  pfRipplesEnable: true, pfRippleSpeed: 15,
+  pfRhymeSyncEnable: true,
+  pfClustersEnable: true,
   pfRibbonsEnable: true,
+  pfRipplesEnable: true,
   pfArcBackgroundEnable: true,
-  pfSpringStiffness: 0.02,
-  pfRepulsionStrength: 0.5,
-  pfJitterAmount: 0.15,
-  pfLineAttraction: 0.001,
+  pfEchoEnable: true,
+  pfEchoLength: 8,
+  pfEchoFadeRate: 0.025,
+  pfMetaphorEnable: true,
+  pfParticlesEnable: true,
+  pfParticleRate: 0.08,
+  pfParticleLife: 80,
+  pfRippleSpeed: 14,
   pfSemanticWeightEnable: false,
-  pfSemanticInfluence: 0.5,
+  pfSemanticInfluence: 0.50,
 };
   
 
@@ -4234,418 +4252,369 @@ function drawPiet(p, t) {
   
 
 // ═══════════════════════════════════════════════════════════════
-//  POEM FIELDS – linguistic particle engine  (v2)
+//  POEM FIELDS – linguistic particle engine (v3 – polished)
+//  Drop‑in replacement for the whole Poem Fields section.
 // ═══════════════════════════════════════════════════════════════
 
-// ── Helpers ────────────────────────────────────────────────────
+// ── Closed‑class words ─────────────────────────────────────────
 const _closedWords = new Set([
-  // determiners
   'the','a','an',
-  // prepositions
   'of','in','on','at','to','for','with','from','by','into','onto','upon',
   'within','without','among','between','through','during','over','under',
   'above','below','behind','beside','against','toward','towards','after',
   'before','since','until','till',
-  // conjunctions
   'and','or','but','nor','so','yet','both','either','neither','whether',
   'if','than','because','although','though','while','whereas','as',
-  // pronouns (subject / object / possessive)
   'i','you','he','she','it','we','they','me','him','her','us','them',
-  'my','your','his','her','its','our','their','mine','yours','hers',
-  'ours','theirs',
-  // demonstratives
+  'my','your','his','its','our','their','mine','yours','hers','ours','theirs',
   'this','that','these','those',
-  // quantifiers
   'all','each','every','some','any','no','none','many','much','more',
   'most','few','little','several',
-  // auxiliary / modal verbs
   'is','are','was','were','be','been','being','am',
-  'have','has','had','having',
-  'do','does','did','doing',
+  'have','has','had','having','do','does','did','doing',
   'shall','will','would','could','should','may','might','must','can',
-  // particles
-  'to','not','n\'t',
-  // articles already covered
+  'not',"n't",
 ]);
 
 function _guessPOS(word) {
   const w = word.toLowerCase();
   if (_closedWords.has(w)) return 'function';
-  const verbEnd = ['ing','ed','es','en','ify','ise','ize','ate'];
-  const adjEnd  = ['able','ible','ful','less','ous','ive','al','ic','y','ish'];
-  const advEnd  = ['ly','wards','wise'];
-  const nounEnd = ['tion','sion','ment','ness','ity','ty','ance','ence','er','or','ist','ism','ship','dom','hood'];
-
-  if (verbEnd.some(e => w.endsWith(e)) && w.length > 3) return 'verb';
-  if (advEnd.some(e => w.endsWith(e))) return 'adv';
-  if (adjEnd.some(e => w.endsWith(e))) return 'adj';
-  if (nounEnd.some(e => w.endsWith(e))) return 'noun';
+  if (['ing','ed','es','en','ify','ise','ize','ate'].some(e => w.endsWith(e)) && w.length > 3) return 'verb';
+  if (['ly','wards','wise'].some(e => w.endsWith(e))) return 'adv';
+  if (['able','ible','ful','less','ous','ive','al','ic','y','ish'].some(e => w.endsWith(e))) return 'adj';
+  if (['tion','sion','ment','ness','ity','ty','ance','ence','er','or',
+       'ist','ism','ship','dom','hood'].some(e => w.endsWith(e))) return 'noun';
   return 'noun';
 }
 
 function _phoneType(w) {
-  const c = w[0].toLowerCase();
-  if ('aeiou'.includes(c)) return 'vowel';
+  const c = (w[0] || 'x').toLowerCase();
+  if ('aeiou'.includes(c))  return 'vowel';
   if ('pbtdkg'.includes(c)) return 'stop';
-  if ('mn'.includes(c)) return 'nasal';
+  if ('mn'.includes(c))     return 'nasal';
   if ('fvszxh'.includes(c)) return 'fricative';
-  if ('lr'.includes(c)) return 'liquid';
+  if ('lr'.includes(c))     return 'liquid';
   return 'other';
 }
 
 function _countSyllables(w) {
-  const t = w.toLowerCase().replace(/[^a-z]/g,'');
+  const t = w.toLowerCase().replace(/[^a-z]/g, '');
   if (t.length <= 3) return 1;
-  const vowelGroups = t.match(/[aeiouy]+/g) || [];
-  let count = vowelGroups.length;
-  if (t.endsWith('e') && count > 1) count--;
-  if (t.endsWith('le') && count > 1) count++;
-  return Math.max(1, count);
+  const vg = t.match(/[aeiouy]+/g) || [];
+  let n = vg.length;
+  if (t.endsWith('e')  && n > 1) n--;
+  if (t.endsWith('le') && n > 1) n++;
+  return Math.max(1, n);
 }
 
 const _sentDict = {
-  // original poem words
-  longing:-1, tendrils:0, stretch:0, atom:0, idea:1, feeling:0, yearning:-1,
-  seeking:0, spark:1, against:-1, sound:1, note:1, grant:1, pulse:2,
-  mad:-2, desperate:-2, engine:0, senile:-2, universe:1, revealing:0,
-  itself:0, void:-1, dark:-1, light:2, love:3, hate:-3, pain:-2, joy:3,
-  sorrow:-2, hope:2, fear:-2, anger:-2, peace:3, war:-3, beauty:3,
-  death:-2, life:2, dream:1, memory:0, whisper:0, silence:0,
-  bloom:2, wither:-2, radiant:2, gloomy:-2, gentle:1, fierce:-1,
-  tender:1, harsh:-1, serene:2, turbulent:-1, warmth:2, cold:-1,
-  bright:2, dim:-1, soft:1, hard:-1, sweet:2, bitter:-2, fresh:1, stale:-1,
-  happy:3, sad:-2, angry:-2, excited:2, bored:-1, lonely:-2, grateful:3,
-  frustrated:-2, disappointed:-2, proud:2, ashamed:-2, guilty:-2,
-  relieved:2, anxious:-2, worried:-2, calm:2, nervous:-1,
-  passionate:2, indifferent:-1, enthusiastic:2, depressed:-3,
-  devastated:-3, heartbroken:-3, elated:3, ecstatic:3, content:2,
-  miserable:-2, hopeful:2, hopeless:-2, despair:-3, courage:2,
-  cowardice:-1, brave:2, afraid:-2, terrified:-3, confident:2,
-  insecure:-1, jealous:-2, envious:-2, greedy:-1, generous:2,
-  selfish:-1, kind:2, cruel:-3, mean:-2, friendly:2, hostile:-2,
-  warm:2, cool:0, icy:-2, flaming:1, freezing:-1, burning:-1,
-  heavenly:3, hellish:-3, divine:3, demonic:-3, angelic:3,
-  magical:2, miraculous:3, tragic:-3, comic:1, absurd:-1,
-  mysterious:0, strange:-1, weird:-1, eerie:-2, uncanny:-2,
-  beautiful:3, ugly:-2, pretty:2, handsome:2, plain:0,
-  delicious:2, disgusting:-2, fragrant:2, stinking:-2,
-  loud:-1, quiet:1, soft:1, rough:-1, smooth:1, sharp:-1,
-  rich:1, poor:-1, wealthy:1, impoverished:-1,
-  healthy:2, sick:-2, strong:2, weak:-1, powerful:2, powerless:-2,
-  fast:1, slow:-1, quick:1, sluggish:-1,
-  open:1, closed:-1, free:2, trapped:-2, liberated:2, enslaved:-3,
-  alive:2, dead:-2, living:2, dying:-2,
-  pure:2, impure:-1, clean:1, dirty:-1,
-  true:1, false:-1, real:1, fake:-1, honest:2, dishonest:-2,
-  just:2, unjust:-2, fair:2, unfair:-2, right:1, wrong:-1,
-  wise:2, foolish:-1, smart:1, stupid:-2,
-  young:1, old:0, ancient:0, new:1, fresh:1,
-  eternal:1, ephemeral:-1, infinite:1, finite:0,
-  blossoming:2, blooming:2, decaying:-2, rotting:-3,
-  grow:1, shrink:-1, expand:1, contract:-1,
-  rise:1, fall:-1, ascend:2, descend:-1,
-  heal:2, wound:-2, mend:1, break:-2,
-  create:2, destroy:-2, build:2, ruin:-3,
-  unite:2, divide:-1, join:1, separate:-1,
-  embrace:3, reject:-2, accept:1, refuse:-1,
-  laugh:3, cry:-1, weep:-2, smile:2, frown:-1,
-  sing:2, scream:-2, sigh:-1, breathe:1, suffocate:-3,
-  dance:3, stumble:-1, soar:2, crash:-2,
-  burn:1, freeze:-1, melt:1, harden:0,
-  feel:0, touch:1, taste:0, smell:0,
-  dream:1, nightmare:-2, fantasy:1, reality:0,
-  memory:0, forget:-1, remember:1,
-  seek:0, find:1, lose:-1, wander:0,
-  give:2, take:-1, steal:-2, share:1,
-  gain:1, lose:-1, win:3, defeat:-2,
-  love:3, hate:-3, like:1, dislike:-1,
-  trust:2, mistrust:-2, believe:1, doubt:-1,
-  hope:2, despair:-3, wish:1, want:0,
-  need:0, desire:1, crave:1, lust:-1,
-  think:0, ponder:0, consider:0, reflect:0,
-  know:1, understand:1, misunderstand:-1,
-  wonder:1, awe:2, marvel:2,
-  inspire:2, discourage:-1,
-  peace:3, war:-3, calm:2, storm:-2,
-  order:1, chaos:-2, harmony:2, discord:-2,
-  freedom:3, slavery:-4, liberty:3, oppression:-4,
-  justice:3, injustice:-3, equality:2, inequality:-2,
-  cruelty:-3, kindness:3, mercy:3, vengeance:-2,
+  longing:-1,tendrils:0,stretch:0,atom:0,idea:1,feeling:0,yearning:-1,
+  seeking:0,spark:1,against:-1,sound:1,note:1,grant:1,pulse:2,
+  mad:-2,desperate:-2,engine:0,senile:-2,universe:1,revealing:0,
+  itself:0,void:-1,dark:-1,light:2,
+  love:3,hate:-3,pain:-2,joy:3,sorrow:-2,hope:2,fear:-2,anger:-2,
+  peace:3,war:-3,beauty:3,death:-2,life:2,dream:1,memory:0,
+  whisper:0,silence:0,bloom:2,wither:-2,radiant:2,gloomy:-2,
+  gentle:1,fierce:-1,tender:1,harsh:-1,serene:2,turbulent:-1,
+  warmth:2,cold:-1,bright:2,dim:-1,soft:1,hard:-1,sweet:2,bitter:-2,
+  fresh:1,stale:-1,
+  happy:3,sad:-2,angry:-2,excited:2,bored:-1,lonely:-2,grateful:3,
+  frustrated:-2,disappointed:-2,proud:2,ashamed:-2,guilty:-2,
+  relieved:2,anxious:-2,worried:-2,calm:2,nervous:-1,
+  passionate:2,indifferent:-1,enthusiastic:2,depressed:-3,
+  devastated:-3,heartbroken:-3,elated:3,ecstatic:3,content:2,
+  miserable:-2,hopeful:2,hopeless:-2,despair:-3,courage:2,
+  cowardice:-1,brave:2,afraid:-2,terrified:-3,confident:2,
+  insecure:-1,jealous:-2,envious:-2,greedy:-1,generous:2,
+  selfish:-1,kind:2,cruel:-3,mean:-2,friendly:2,hostile:-2,
+  warm:2,cool:0,icy:-2,flaming:1,freezing:-1,burning:-1,
+  heavenly:3,hellish:-3,divine:3,demonic:-3,angelic:3,
+  magical:2,miraculous:3,tragic:-3,comic:1,absurd:-1,
+  mysterious:0,strange:-1,weird:-1,eerie:-2,uncanny:-2,
+  beautiful:3,ugly:-2,pretty:2,handsome:2,plain:0,
+  delicious:2,disgusting:-2,fragrant:2,stinking:-2,
+  loud:-1,quiet:1,rough:-1,smooth:1,sharp:-1,
+  rich:1,poor:-1,wealthy:1,impoverished:-1,
+  healthy:2,sick:-2,strong:2,weak:-1,powerful:2,powerless:-2,
+  fast:1,slow:-1,quick:1,sluggish:-1,
+  open:1,closed:-1,free:2,trapped:-2,liberated:2,enslaved:-3,
+  alive:2,dead:-2,living:2,dying:-2,
+  pure:2,impure:-1,clean:1,dirty:-1,
+  true:1,false:-1,real:1,fake:-1,honest:2,dishonest:-2,
+  just:2,unjust:-2,fair:2,unfair:-2,right:1,wrong:-1,
+  wise:2,foolish:-1,smart:1,stupid:-2,
+  young:1,old:0,ancient:0,new:1,
+  eternal:1,ephemeral:-1,infinite:1,finite:0,
+  blossoming:2,blooming:2,decaying:-2,rotting:-3,
+  grow:1,shrink:-1,expand:1,contract:-1,
+  rise:1,fall:-1,ascend:2,descend:-1,
+  heal:2,wound:-2,mend:1,break:-2,
+  create:2,destroy:-2,build:2,ruin:-3,
+  unite:2,divide:-1,join:1,separate:-1,
+  embrace:3,reject:-2,accept:1,refuse:-1,
+  laugh:3,cry:-1,weep:-2,smile:2,frown:-1,
+  sing:2,scream:-2,sigh:-1,breathe:1,suffocate:-3,
+  dance:3,stumble:-1,soar:2,crash:-2,
+  burn:1,freeze:-1,melt:1,harden:0,
+  seek:0,find:1,lose:-1,wander:0,
+  give:2,take:-1,steal:-2,share:1,
+  gain:1,win:3,defeat:-2,like:1,dislike:-1,
+  trust:2,mistrust:-2,believe:1,doubt:-1,
+  wish:1,want:0,need:0,desire:1,crave:1,lust:-1,
+  think:0,ponder:0,consider:0,reflect:0,
+  know:1,understand:1,misunderstand:-1,
+  wonder:1,awe:2,marvel:2,
+  inspire:2,discourage:-1,
+  order:1,chaos:-2,harmony:2,discord:-2,
+  freedom:3,slavery:-4,liberty:3,oppression:-4,
+  justice:3,injustice:-3,equality:2,inequality:-2,
+  cruelty:-3,kindness:3,mercy:3,vengeance:-2,
 };
 function _wordSentiment(w) {
-  let v = _sentDict[w.toLowerCase()];
+  const v = _sentDict[w.toLowerCase()];
   if (v !== undefined) return v;
-  if (w.endsWith('ful')) return 1;
+  if (w.endsWith('ful'))      return  1;
   if (w.endsWith('lessness')) return -1;
   return 0;
 }
 
-// ── Semantic clusters (keyword‑based) ──────────────────────────
 const _SEMANTIC_CLUSTERS = {
   nature: [
-    'rose','tree','river','mountain','wind','rain','bloom','leaf','water','stone','earth','sky','sun','moon','star',
-    'ocean','sea','wave','cloud','storm','snow','ice','frost','flame','fire','ash','desert','forest','garden','field',
-    'meadow','hill','valley','cliff','cave','stream','lake','pond','root','branch','bark','seed','petal','thorn','fruit',
-    'bird','wing','feather','nest','fish','whale','wolf','deer','fox','bear','snake','insect','butterfly','spider','web',
+    'rose','tree','river','mountain','wind','rain','bloom','leaf','water','stone',
+    'earth','sky','sun','moon','star','ocean','sea','wave','cloud','storm','snow',
+    'ice','frost','flame','fire','ash','desert','forest','garden','field','meadow',
+    'hill','valley','cliff','cave','stream','lake','pond','root','branch','bark',
+    'seed','petal','thorn','fruit','bird','wing','feather','nest','fish','whale',
+    'wolf','deer','fox','bear','snake','insect','butterfly','spider','web',
   ],
   emotion: [
-    'love','fear','joy','sorrow','hope','anger','peace','dream','pain','grief','bliss','rage','calm','desire',
-    'hate','envy','pride','shame','guilt','trust','doubt','courage','panic','anxiety','melancholy','ecstasy',
-    'tenderness','compassion','pity','regret','remorse','longing','yearning','nostalgia','wonder','awe',
-    'adoration','contempt','disgust','sadness','happiness','delight','pleasure','misery','loneliness',
-    'solace','comfort','relief','satisfaction','contentment','discontent','frustration',
+    'love','fear','joy','sorrow','hope','anger','peace','dream','pain','grief',
+    'bliss','rage','calm','desire','hate','envy','pride','shame','guilt','trust',
+    'doubt','courage','panic','anxiety','melancholy','ecstasy','tenderness',
+    'compassion','pity','regret','remorse','longing','yearning','nostalgia',
+    'wonder','awe','adoration','contempt','disgust','sadness','happiness',
+    'delight','pleasure','misery','loneliness','solace','comfort','relief',
+    'satisfaction','contentment','discontent','frustration',
   ],
   time: [
-    'dawn','dusk','year','moment','forever','never','always','now','then','past','future','eternity','age',
-    'hour','minute','second','day','night','morning','evening','afternoon','midnight','noon','season',
-    'spring','summer','autumn','winter','decade','century','millennium','era','epoch','history',
-    'yesterday','today','tomorrow','soon','later','already','still','yet','ancient','modern',
+    'dawn','dusk','year','moment','forever','never','always','now','then','past',
+    'future','eternity','age','hour','minute','second','day','night','morning',
+    'evening','afternoon','midnight','noon','season','spring','summer','autumn',
+    'winter','decade','century','millennium','era','epoch','history','yesterday',
+    'today','tomorrow','soon','later','already','still','yet','ancient','modern',
   ],
   body: [
-    'hand','heart','eye','head','foot','skin','bone','blood','face','tongue','finger',
-    'arm','leg','shoulder','knee','elbow','wrist','ankle','toe','chest','back','spine',
-    'mouth','lip','tooth','ear','nose','hair','neck','throat','stomach','lung','liver',
-    'vein','artery','muscle','nerve','brain','palm','fist','knuckle','nail',
+    'hand','heart','eye','head','foot','skin','bone','blood','face','tongue',
+    'finger','arm','leg','shoulder','knee','elbow','wrist','ankle','toe','chest',
+    'back','spine','mouth','lip','tooth','ear','nose','hair','neck','throat',
+    'stomach','lung','liver','vein','artery','muscle','nerve','brain','palm',
+    'fist','knuckle','nail',
   ],
   mind: [
-    'thought','idea','memory','knowledge','wisdom','truth','lie','doubt','belief','reason',
-    'mind','consciousness','soul','spirit','intellect','logic','cognition','perception',
-    'insight','intuition','imagination','creativity','delusion','illusion','fantasy','dream',
-    'nightmare','forgetfulness','amnesia','awareness','ignorance','curiosity','wonder',
+    'thought','idea','memory','knowledge','wisdom','truth','lie','doubt','belief',
+    'reason','mind','consciousness','soul','spirit','intellect','logic','cognition',
+    'perception','insight','intuition','imagination','creativity','delusion',
+    'illusion','fantasy','dream','nightmare','forgetfulness','amnesia','awareness',
+    'ignorance','curiosity','wonder',
   ],
   movement: [
-    'run','walk','fly','swim','crawl','jump','leap','dance','drift','flow','rush','creep',
-    'slide','glide','soar','sink','rise','fall','spin','twirl','wander','roam','travel',
-    'march','stroll','race','dash','sprint','float','hover','surge','pour',
+    'run','walk','fly','swim','crawl','jump','leap','dance','drift','flow','rush',
+    'creep','slide','glide','soar','sink','rise','fall','spin','twirl','wander',
+    'roam','travel','march','stroll','race','dash','sprint','float','hover',
+    'surge','pour',
   ],
   light: [
-    'light','dark','shadow','glow','shimmer','shine','gleam','flicker','radiance','brilliance',
-    'luminous','dim','bright','blaze','flare','sparkle','twinkle','glimmer','dazzle','beam',
-    'ray','sunlight','moonlight','starlight','twilight','gloom','obscurity',
+    'light','dark','shadow','glow','shimmer','shine','gleam','flicker','radiance',
+    'brilliance','luminous','dim','bright','blaze','flare','sparkle','twinkle',
+    'glimmer','dazzle','beam','ray','sunlight','moonlight','starlight','twilight',
+    'gloom','obscurity',
   ],
   sound: [
-    'whisper','silence','echo','roar','murmur','cry','song','chant','music','rhythm',
-    'melody','harmony','noise','din','clatter','bang','crash','thunder','buzz','hum',
-    'hiss','rustle','sigh','laugh','weep','sob','scream','shout','tone','pitch',
+    'whisper','silence','echo','roar','murmur','cry','song','chant','music',
+    'rhythm','melody','harmony','noise','din','clatter','bang','crash','thunder',
+    'buzz','hum','hiss','rustle','sigh','laugh','weep','sob','scream','shout',
+    'tone','pitch',
   ],
   abstract: [
-    'truth','lie','beauty','ugliness','good','evil','justice','mercy','grace','sin',
-    'virtue','vice','honor','shame','fate','destiny','chance','luck','random','order',
-    'chaos','harmony','balance','freedom','bondage','power','weakness','strength',
-    'courage','cowardice','wisdom','folly',
+    'truth','lie','beauty','ugliness','good','evil','justice','mercy','grace',
+    'sin','virtue','vice','honor','shame','fate','destiny','chance','luck',
+    'random','order','chaos','harmony','balance','freedom','bondage','power',
+    'weakness','strength','courage','cowardice','wisdom','folly',
   ],
-  // 'general' is the fallback for words that match none of the above
-  general: []
+  general: [],
 };
 function _getSemanticCluster(word) {
   const w = word.toLowerCase();
-  for (let [cluster, list] of Object.entries(_SEMANTIC_CLUSTERS)) {
+  for (const [cluster, list] of Object.entries(_SEMANTIC_CLUSTERS)) {
     if (list.includes(w)) return cluster;
   }
   return 'general';
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  State
-// ═══════════════════════════════════════════════════════════════
-let _pfWords = [];
-let _pfMeta = {};        // rhyme groups, metaphors, punctuation events, line sentiments, enjambments
-let _pfLastText = '';
-let _pfParticles = [];   // word‑emitted particles
+// ── Visual multipliers ─────────────────────────────────────────
+const _POS_SIZE = { noun: 1.75, verb: 1.30, adj: 1.10, adv: 0.88, function: 0.55 };
+const _PHONE_HUE = { vowel: 18, stop: -30, nasal: 45, fricative: -55, liquid: 70, other: 0 };
+const _GLITCH_CHARS = ['█','▓','▒','░','_','#','%','■','□','·','×','≠','~','@'];
 
-async function initPoemFields(p) {
-  _pfWords = [];
-  _pfMeta = { rhymeGroups:{}, alliterations:[], metaphors:[], punctuation:[], lineSents:[], enjambments:[],
-              connections: { dependencies:[], rhymes:[], alliterations:[], clusters:[] } };
-  _pfParticles = [];
-
-  let text = S.poemFieldText || '';
-  if (!text.trim()) text = 'Your poem goes here';
-  let lines = text.split(/\n/);
-
-  // 1. Build word objects with linguistic annotation (positions later)
-  let wordIdx = 0;
-  for (let li = 0; li < lines.length; li++) {
-    let rawLine = lines[li];
-    let words = rawLine.match(/\b\w+\b/g) || [];
-    for (let wi = 0; wi < words.length; wi++) {
-      let word = words[wi];
-      let pos   = _guessPOS(word);
-      let sent  = _wordSentiment(word);
-      let phone = _phoneType(word);
-      let syll  = _countSyllables(word);
-      let cluster = _getSemanticCluster(word);
-
-      _pfWords.push({
-        word, pos, sent, phone, syll, cluster,
-        x: 0, y: 0,
-        vx: 0, vy: 0,
-        lineIndex: li,
-        lineY: 0,
-        sizeMult: 1.0,
-        speedMult: 1.0,
-        phase: Math.random() * Math.PI * 2,
-        idx: wordIdx,
-        parent: -1,
-        glitchTimer: Math.random() * 100,
-        semanticWeight: 1.0   // will be filled after embedding
-      });
-      wordIdx++;
-    }
-  }
-
-  // ── 2. Compute semantic weights (if model available) ──
-  if (S.pfSemanticWeightEnable !== false && window._loadEmbeddingModel) {
+// ── AI extractor (lazy, non‑blocking) ───────────────────────────
+let _extractorSingleton = null;
+function _requestExtractor() {
+  if (_extractorSingleton !== null) return Promise.resolve(_extractorSingleton);
+  const load = (async () => {
     try {
-      const extractor = await window._loadEmbeddingModel();
-
-      // Get unique words
-      const uniqueWords = [...new Set(_pfWords.map(w => w.word.toLowerCase()))];
-      
-      // Compute embeddings for unique words (batch by 32 to avoid memory issues)
-      const embeddings = {};
-      for (let i = 0; i < uniqueWords.length; i += 32) {
-        const batch = uniqueWords.slice(i, i + 32);
-        const results = await extractor(batch, { pooling: 'mean', normalize: true });
-        // results is a 2D array (batch_size x embedding_dim)
-        batch.forEach((word, j) => {
-          embeddings[word] = results[j].data;   // Float32Array
-        });
-      }
-
-      // Compute average embedding of all unique words
-      const dim = embeddings[uniqueWords[0]].length;
-      const avgEmbedding = new Float32Array(dim);
-      for (const word of uniqueWords) {
-        const vec = embeddings[word];
-        for (let k = 0; k < dim; k++) avgEmbedding[k] += vec[k];
-      }
-      for (let k = 0; k < dim; k++) avgEmbedding[k] /= uniqueWords.length;
-
-      // Compute semantic weight as cosine distance from average (range ~0-2)
-      for (const w of _pfWords) {
-        const vec = embeddings[w.word.toLowerCase()];
-        let dot = 0, normA = 0, normB = 0;
-        for (let k = 0; k < dim; k++) {
-          dot += vec[k] * avgEmbedding[k];
-          normA += vec[k] * vec[k];
-          normB += avgEmbedding[k] * avgEmbedding[k];
-        }
-        const similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
-        // Distance from average (1 - similarity), mapped to a weight between 0.5 and 2.5
-        w.semanticWeight = 1.0 + (1 - similarity) * 2.0;  // range ~1-3
-      }
+      const { pipeline, env } = await import(
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js'
+      );
+      env.allowLocalModels = false;
+      const ext = await pipeline(
+        'feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true }
+      );
+      _extractorSingleton = ext;
+      return ext;
     } catch (err) {
-      console.warn('Semantic weighting failed, falling back to default', err);
-      // Fallback: all words get weight 1.0 (already set)
-      for (const w of _pfWords) w.semanticWeight = 1.0;
+      console.warn('[PoemFields] Transformer model unavailable:', err.message ?? err);
+      _extractorSingleton = false;
+      return null;
     }
+  })();
+  _extractorSingleton = load;
+  return load;
+}
+
+async function _computeSemanticWeights(wordList) {
+  const extractor = await _requestExtractor();
+  if (!extractor || typeof extractor !== 'function') return;
+  const unique    = [...new Set(wordList.map(w => w.word.toLowerCase()))];
+  const batchSize = 24;
+  const embMap    = {};
+  for (let i = 0; i < unique.length; i += batchSize) {
+    const batch = unique.slice(i, i + batchSize);
+    try {
+      const out = await extractor(batch, { pooling: 'mean', normalize: true });
+      batch.forEach((word, j) => { embMap[word] = Array.from(out[j].data); });
+    } catch (e) { break; }
   }
-
-  // ── Grid placement (needs totalWord count, now semanticWeight exists) ──
-  let totalWords = _pfWords.length;
-  if (totalWords > 0) {
-    let lineHeight = Math.max(60, p.height / lines.length);
-    for (let w of _pfWords) {
-      w.lineY = (w.lineIndex + 0.5) * lineHeight;
-    }
-
-    let cols = Math.ceil(Math.sqrt(totalWords * (p.width / p.height)));
-    let rows = Math.ceil(totalWords / cols);
-    let cellW = p.width / cols;
-    let cellH = p.height / rows;
-
-    for (let wi = 0; wi < totalWords; wi++) {
-      let col = wi % cols;
-      let row = Math.floor(wi / cols);
-      let w = _pfWords[wi];
-      w.x = col * cellW + cellW * 0.5 + (Math.random() - 0.5) * cellW * 0.6;
-      w.y = row * cellH + cellH * 0.3 + (Math.random() - 0.5) * cellH * 0.6;
-    }
+  const dim = Object.values(embMap)[0]?.length;
+  if (!dim) return;
+  const centroid = new Array(dim).fill(0);
+  const keys     = Object.keys(embMap);
+  for (const k of keys) embMap[k].forEach((v, d) => { centroid[d] += v; });
+  centroid.forEach((_, d) => { centroid[d] /= keys.length; });
+  const centNorm = Math.sqrt(centroid.reduce((s, v) => s + v * v, 0)) || 1;
+  for (const w of wordList) {
+    const vec = embMap[w.word.toLowerCase()];
+    if (!vec) continue;
+    let dot = 0, normV = 0;
+    vec.forEach((v, d) => { dot += v * centroid[d]; normV += v * v; });
+    const cos = dot / (Math.sqrt(normV) * centNorm || 1);
+    w.semanticWeight = 0.6 + (1 - cos) * 2.4;
   }
+}
 
-  // 2. Now that positions exist, detect punctuation, enjambment, and line sentiments
+// ── Module state ────────────────────────────────────────────────
+let _pfWords       = [];
+let _pfMeta        = {};
+let _pfParticles   = [];
+let _pfLastText    = null;
+let _pfInitializing = false;
+let _pfPhysFrame   = 0;
+
+// ── Build – linguistic analysis and grid placement ────────────────
+async function _pfBuild(p, text) {
+  _pfWords = [];
+  _pfMeta = {
+    rhymeGroups:  {},
+    alliterations: [],
+    metaphors:    [],
+    punctuation:  [],
+    lineSents:    [],
+    enjambments:  [],
+    connections: {
+      sequential:    [],
+      dependencies:  [],
+      rhymes:        [],
+      alliterations: [],
+      clusters:      [],
+    },
+  };
+  _pfParticles = [];
+  _pfPhysFrame = 0;
+  const lines = text.split(/\n/);
+  let idx = 0;
+
   for (let li = 0; li < lines.length; li++) {
-    let rawLine = lines[li];
-    let lineWords = _pfWords.filter(w => w.lineIndex === li);
-
-    // Punctuation detection
-    let punctMatches = rawLine.match(/[.!?,;:—]/g) || [];
-    punctMatches.forEach(punct => {
-      let lastWord = lineWords[lineWords.length - 1]; // last word of the line
-      if (lastWord) {
-        let pauseVal = (punct === '.' || punct === '?') ? 2 : (punct === ',' ? 1 : 3);
-        _pfMeta.punctuation.push({ x: lastWord.x, y: lastWord.y, t: 0, type: punct, pauseVal, line: li });
-      }
-    });
-
-    // Enjambment (line does not end with .!?)
-    if (rawLine.trim() && !/[.!?]$/.test(rawLine.trim())) {
-      _pfMeta.enjambments.push(li);
+    const raw   = lines[li];
+    const words = raw.match(/\b\w+(?:'\w+)?\b/g) || [];
+    for (let wi = 0; wi < words.length; wi++) {
+      const word = words[wi];
+      _pfWords.push({
+        word,
+        pos:     _guessPOS(word),
+        sent:    _wordSentiment(word),
+        phone:   _phoneType(word),
+        syll:    _countSyllables(word),
+        cluster: _getSemanticCluster(word),
+        x: 0, y: 0, vx: 0, vy: 0,
+        phase:       Math.random() * Math.PI * 2,
+        glitchTimer: Math.random() * 120,
+        lineIndex:   li,
+        lineY:       0,
+        idx,
+        parent:      -1,
+        semanticWeight: 1.0,
+        echoHistory: [],
+      });
+      idx++;
     }
-
-    // Line sentiment average
-    let avgSent = 0;
-    if (lineWords.length) avgSent = lineWords.reduce((s,w) => s + w.sent, 0) / lineWords.length;
-    _pfMeta.lineSents.push(avgSent);
   }
 
-  // 3. Rhyme groups (last 3 letters)
-  for (let w of _pfWords) {
-    let key = w.word.toLowerCase().replace(/[^a-z]/g,'').slice(-3);
+  const N = _pfWords.length;
+  if (N === 0) return;
+
+  const cols = Math.max(1, Math.ceil(Math.sqrt(N * (p.width / p.height))));
+  const rows = Math.max(1, Math.ceil(N / cols));
+  const cW   = p.width  / cols;
+  const cH   = p.height / rows;
+  const lineH = Math.max(40, p.height / Math.max(lines.length, 1));
+
+  for (let i = 0; i < N; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const w   = _pfWords[i];
+    w.x = (col + 0.5) * cW + (Math.random() - 0.5) * cW * 0.45;
+    w.y = (row + 0.5) * cH + (Math.random() - 0.5) * cH * 0.45;
+    w.lineY = (w.lineIndex + 0.5) * lineH;
+    w.x = Math.max(15, Math.min(p.width  - 15, w.x));
+    w.y = Math.max(15, Math.min(p.height - 15, w.y));
+  }
+
+  // Sequential connections (same-line adjacent words)
+  for (let i = 0; i < N - 1; i++) {
+    if (_pfWords[i].lineIndex === _pfWords[i + 1].lineIndex) {
+      _pfMeta.connections.sequential.push([i, i + 1]);
+    }
+  }
+
+  // Dependencies
+  for (let i = 0; i < N - 1; i++) {
+    const a = _pfWords[i], b = _pfWords[i+1];
+    if (
+      (a.pos === 'adj'      && b.pos === 'noun') ||
+      (a.pos === 'adv'      && (b.pos === 'verb' || b.pos === 'adj')) ||
+      (a.pos === 'function' && a.word.length <= 3 && b.pos === 'noun')
+    ) {
+      a.parent = i+1;
+      _pfMeta.connections.dependencies.push([i, i+1]);
+    }
+  }
+
+  // Rhyme
+  for (const w of _pfWords) {
+    const key = w.word.toLowerCase().replace(/[^a-z]/g, '').slice(-3);
     if (!_pfMeta.rhymeGroups[key]) _pfMeta.rhymeGroups[key] = [];
     _pfMeta.rhymeGroups[key].push(w.idx);
   }
-
-  // 4. Alliteration groups (first letter, only groups with ≥2 kept)
-  let allitMap = {};
-  for (let w of _pfWords) {
-    let c = w.word[0].toLowerCase();
-    if (!allitMap[c]) allitMap[c] = [];
-    allitMap[c].push(w.idx);
-  }
-  for (let [c, idxs] of Object.entries(allitMap)) {
-    if (idxs.length >= 2) {
-      _pfMeta.alliterations.push(idxs);
-      // build chain connections
-      for (let i = 0; i < idxs.length - 1; i++) {
-        _pfMeta.connections.alliterations.push([idxs[i], idxs[i+1]]);
-      }
-    }
-  }
-
-  // 5. Metaphor detection ("X is (like) Y")
-  for (let i = 0; i < _pfWords.length - 2; i++) {
-    let w1 = _pfWords[i], w2 = _pfWords[i+1], w3 = _pfWords[i+2];
-    if ((w2.word.toLowerCase() === 'is' || w2.word.toLowerCase() === 'like') &&
-        w1.pos === 'noun' && w3.pos === 'noun') {
-      _pfMeta.metaphors.push({ tenor: w1.idx, vehicle: w3.idx });
-      // extra spring between tenor and vehicle
-      _pfMeta.connections.clusters.push([w1.idx, w3.idx]);
-    }
-  }
-
-  // 6. Dependency linking (same as before, but also builds a connection list)
-  for (let i = 0; i < _pfWords.length - 1; i++) {
-    let a = _pfWords[i], b = _pfWords[i+1];
-    if (a.pos === 'adj' && b.pos === 'noun') { a.parent = i+1; _pfMeta.connections.dependencies.push([a.idx, b.idx]); }
-    else if (a.pos === 'adv' && (b.pos === 'verb' || b.pos === 'adj')) { a.parent = i+1; _pfMeta.connections.dependencies.push([a.idx, b.idx]); }
-    else if (a.pos === 'function' && a.word.length <= 3 && b.pos === 'noun') { a.parent = i+1; _pfMeta.connections.dependencies.push([a.idx, b.idx]); }
-  }
-  for (let i = 0; i < _pfWords.length; i++) {
-    let w = _pfWords[i];
-    if (w.parent >= 0 || w.pos === 'function') continue;
-    for (let j = i+1; j < _pfWords.length; j++) {
-      if (_pfWords[j].pos === 'noun' || _pfWords[j].pos === 'verb') {
-        w.parent = j;
-        _pfMeta.connections.dependencies.push([w.idx, _pfWords[j].idx]);
-        break;
-      }
-    }
-  }
-
-  // 7. Rhyme group chains
-  for (let [key, idxs] of Object.entries(_pfMeta.rhymeGroups)) {
+  for (const idxs of Object.values(_pfMeta.rhymeGroups)) {
     if (idxs.length >= 2) {
       for (let i = 0; i < idxs.length - 1; i++) {
         _pfMeta.connections.rhymes.push([idxs[i], idxs[i+1]]);
@@ -4653,362 +4622,455 @@ async function initPoemFields(p) {
     }
   }
 
-  // 8. Semantic cluster chains
-  let clusterWords = {};
-  for (let w of _pfWords) {
-    if (!clusterWords[w.cluster]) clusterWords[w.cluster] = [];
-    clusterWords[w.cluster].push(w.idx);
+  // Alliteration
+  const allitMap = {};
+  for (const w of _pfWords) {
+    const c = w.word[0].toLowerCase();
+    if (!allitMap[c]) allitMap[c] = [];
+    allitMap[c].push(w.idx);
   }
-  for (let [cl, idxs] of Object.entries(clusterWords)) {
+  for (const idxs of Object.values(allitMap)) {
     if (idxs.length >= 2) {
+      _pfMeta.alliterations.push(idxs);
+      for (let i = 0; i < idxs.length - 1; i++) {
+        _pfMeta.connections.alliterations.push([idxs[i], idxs[i+1]]);
+      }
+    }
+  }
+
+  // Metaphor
+  for (let i = 0; i < N - 2; i++) {
+    const w1 = _pfWords[i], w2 = _pfWords[i+1], w3 = _pfWords[i+2];
+    const bridge = w2.word.toLowerCase();
+    if ((bridge === 'is' || bridge === 'like') && w1.pos === 'noun' && w3.pos === 'noun') {
+      _pfMeta.metaphors.push({ tenor: w1.idx, vehicle: w3.idx });
+      _pfMeta.connections.clusters.push([w1.idx, w3.idx]);
+    }
+  }
+
+  // Semantic cluster chains
+  const clusterMap = {};
+  for (const w of _pfWords) {
+    if (!clusterMap[w.cluster]) clusterMap[w.cluster] = [];
+    clusterMap[w.cluster].push(w.idx);
+  }
+  for (const [cl, idxs] of Object.entries(clusterMap)) {
+    if (cl !== 'general' && idxs.length >= 2) {
       for (let i = 0; i < idxs.length - 1; i++) {
         _pfMeta.connections.clusters.push([idxs[i], idxs[i+1]]);
       }
     }
   }
 
-  _pfLastText = S.poemFieldText;
+  // Punctuation, enjambment, line sentiments
+  for (let li = 0; li < lines.length; li++) {
+    const raw       = lines[li];
+    const lineWords = _pfWords.filter(w => w.lineIndex === li);
+    const last      = lineWords[lineWords.length - 1];
+
+    if (last) {
+      for (const punct of (raw.match(/[.!?,;:—]/g) || [])) {
+        const pauseVal = (punct === '.' || punct === '?') ? 2.0 : (punct === ',' ? 1.0 : 1.5);
+        _pfMeta.punctuation.push({
+          x: last.x, y: last.y, t: 0, type: punct, pauseVal, line: li,
+        });
+      }
+    }
+    if (raw.trim() && !/[.!?]$/.test(raw.trim())) {
+      _pfMeta.enjambments.push(li);
+    }
+    const avgSent = lineWords.length
+      ? lineWords.reduce((s, w) => s + w.sent, 0) / lineWords.length
+      : 0;
+    _pfMeta.lineSents.push(avgSent);
+  }
 }
-  
-// ═══════════════════════════════════════════════════════════════
-//  Main Draw
-// ═══════════════════════════════════════════════════════════════
-function drawPoemFields(p, t) {
-  if (_pfWords.length === 0 || S.poemFieldText !== _pfLastText) {
-    // Asynchronous loading – the model will only load once
-    initPoemFields(p).then(() => {
-      // Ensure a redraw after words are ready
-      if (window._st) window._st.rd();
-    });
-    return;   // skip drawing this frame, we'll redraw soon
+
+// ── Public init (async, non‑blocking) ──────────────────────────
+async function initPoemFields(p) {
+  if (_pfInitializing) return;
+  _pfInitializing = true;
+  const raw  = S.poemFieldText ?? '';
+  const text = raw.trim() || 'Your poem goes here\nType or paste any poem above';
+  _pfLastText = S.poemFieldText;
+  try {
+    await _pfBuild(p, text);
+  } catch (err) {
+    console.error('[PoemFields] Build error:', err);
+  } finally {
+    _pfInitializing = false;
+  }
+  if (S.pfSemanticWeightEnable && _pfWords.length > 0) {
+    _computeSemanticWeights(_pfWords)
+      .then(() => { if (window._st) window._st.rd(); })
+      .catch(() => {});
+  }
+}
+
+// ── Physics step ─────────────────────────────────────────────────
+function _pfPhysicsStep(p, t) {
+  const N = _pfWords.length;
+  if (N === 0) return;
+
+  const baseK   = (S.pfSpringStiffness  ?? 0.004) * (1 + (S.wave ?? 0) * 0.9);
+  const repStr  =  S.pfRepulsionStrength ?? 1.5;
+  const jitter  = (S.pfJitterAmount     ?? 0.10) * (1 + (S.turb ?? 0) * 2.5);
+  const flowStr =  S.pfFlowStrength     ?? 0.06;
+  const centerG =  S.pfCenterGravity    ?? 0.0006;
+  const lineAtt =  S.pfLineAttraction   ?? 0.0003;
+  const damping =  S.pfDamping          ?? 0.88;
+  const ns      = (S.noiseScale ?? 1.0) * 0.0032;
+  const sp      =  S.spacing            ?? 1.0;
+
+  const idealD = Math.sqrt((p.width * p.height) / N) * (S.pfIdealDistMult ?? 0.85) * sp;
+  const minD   = idealD * 0.58;
+
+  const fx = new Float32Array(N);
+  const fy = new Float32Array(N);
+
+  function addSpring(a, b, kMult) {
+    const wa = _pfWords[a], wb = _pfWords[b];
+    const dx = wb.x - wa.x, dy = wb.y - wa.y;
+    const d  = Math.sqrt(dx * dx + dy * dy) || 0.001;
+    const stretch = d - idealD;
+    const mag = baseK * kMult * stretch;
+    const nx  = dx / d, ny = dy / d;
+    fx[a] += nx * mag; fy[a] += ny * mag;
+    fx[b] -= nx * mag; fy[b] -= ny * mag;
   }
 
-  // ── Parameters ────────────────────────────────────────────────
-  const springK      = S.pfSpringStiffness   ?? 0.02;
-  const repulsion    = S.pfRepulsionStrength  ?? 0.5;
-  const jitterAmt    = S.pfJitterAmount       ?? 0.15;
-  const flowStr      = S.pfFlowStrength       ?? 0.2;   // reduced
-  const lineAtt      = S.pfLineAttraction     ?? 0.001; // very weak
-  const damping      = 0.95;
+  for (const [a, b] of _pfMeta.connections.sequential)    addSpring(a, b, 0.45);
+  for (const [a, b] of _pfMeta.connections.dependencies)  addSpring(a, b, 1.30);
+  for (const [a, b] of _pfMeta.connections.rhymes)        addSpring(a, b, 0.72);
+  for (const [a, b] of _pfMeta.connections.alliterations) addSpring(a, b, 0.50);
+  for (const [a, b] of _pfMeta.connections.clusters)      addSpring(a, b, 0.58);
 
-  // visual toggles
-  const useSent      = S.pfSentimentEnable    !== false;
-  const usePhone     = S.pfPhoneticEnable     !== false;
-  const useRhythm    = S.pfRhythmEnable       !== false;
-  const pulseScale   = S.pfPulseScale         ?? 0.15;
-  const beatBPM      = S.pfBeatBPM            ?? 60;
-  const phoneSat     = S.pfPhoneticSaturation  ?? 30;
-  const sentBias     = S.pfSentimentBias      ?? 0.5;
-  const fullWord     = S.pfShowFullWord       ?? false;
+  const repSearch = minD * 2;
+  for (let i = 0; i < N; i++) {
+    const wi = _pfWords[i];
+    for (let j = i + 1; j < N; j++) {
+      const wj = _pfWords[j];
+      const dx = wj.x - wi.x, dy = wj.y - wi.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= repSearch * repSearch) continue;
+      const d = Math.sqrt(d2) || 0.001;
+      if (d >= minD) continue;
+      const overlap = (minD - d) / minD;
+      const mag     = repStr * overlap * overlap * 1.6;
+      const nx = dx / d, ny = dy / d;
+      fx[i] -= nx * mag; fy[i] -= ny * mag;
+      fx[j] += nx * mag; fy[j] += ny * mag;
+    }
+  }
 
-  const useClusters  = S.pfClustersEnable     !== false;
-  const useRhymeSync = S.pfRhymeSyncEnable    !== false;
-  const useLinks     = S.pfDependencyLinks    !== false;
-  const linkAlpha    = S.pfLinkAlpha          ?? 0.25;
-  const useAllitLines= S.pfAlliterationLines  !== false;
-  const useEcho      = S.pfEchoEnable         !== false;
-  const echoLen      = S.pfEchoLength         ?? 8;
-  const echoFade     = S.pfEchoFadeRate       ?? 0.03;
-  const useMetaphor  = S.pfMetaphorEnable     !== false;
-  const useParticles = S.pfParticlesEnable     !== false;
-  const particleRate = S.pfParticleRate        ?? 0.1;
-  const particleLife = S.pfParticleLife        ?? 60;
-  const useRipples   = S.pfRipplesEnable      !== false;
-  const rippleSpeed  = S.pfRippleSpeed        ?? 15;
-  const useRibbons   = S.pfRibbonsEnable      !== false;
-  const useArcBg     = S.pfArcBackgroundEnable !== false;
+  let cx = 0, cy = 0;
+  for (const w of _pfWords) { cx += w.x; cy += w.y; }
+  cx /= N; cy /= N;
+  const dcx = p.width  * 0.5 - cx;
+  const dcy = p.height * 0.5 - cy;
+  for (let i = 0; i < N; i++) {
+    fx[i] += dcx * centerG;
+    fy[i] += dcy * centerG;
+  }
 
-  // global glitch
-  let glitchInt   = S.glitchIntensity || 0;
-  let glitchChrom = S.glitchChromatic || false;
-  let glitchScan  = S.glitchScanlines || false;
-  let entropy     = S.entropy || 0;
+  const margin = 38;
+  for (const w of _pfWords) {
+    const i  = w.idx;
+    const dl = w.x - margin;
+    const dr = (p.width  - margin) - w.x;
+    const dt = w.y - margin;
+    const db = (p.height - margin) - w.y;
+    if (dl < 0) fx[i] -= dl * 0.13;
+    if (dr < 0) fx[i] += dr * 0.13;
+    if (dt < 0) fy[i] -= dt * 0.13;
+    if (db < 0) fy[i] += db * 0.13;
+  }
 
-  // ── Emotional arc overlay (transparent, does not replace background) ──
-  if (useArcBg && _pfMeta.lineSents.length) {
-    let lineIdx = Math.floor((t * 0.15) % _pfMeta.lineSents.length);
-    let sent = _pfMeta.lineSents[lineIdx] || 0;
-    p.colorMode(p.HSB, 360, 100, 100);
-    let bgHue = p.map(sent, -3, 3, 210, 30);
-    let bgBri = p.map(Math.abs(sent), 0, 3, 90, 70);
-    p.fill(bgHue, 8, bgBri, 0.15);
+  const noiseT = _pfPhysFrame * 0.006;
+  for (const w of _pfWords) {
+    const nfx = sampleNoise(p, w.x * ns,        w.y * ns,        noiseT) - 0.5;
+    const nfy = sampleNoise(p, w.x * ns + 73.9, w.y * ns + 13.7, noiseT) - 0.5;
+    fx[w.idx] += nfx * flowStr * 0.09;
+    fy[w.idx] += nfy * flowStr * 0.09;
+  }
+
+  for (const w of _pfWords) {
+    fy[w.idx] += (w.lineY - w.y) * lineAtt;
+  }
+
+  for (let i = 0; i < N; i++) {
+    fx[i] += (Math.random() - 0.5) * jitter;
+    fy[i] += (Math.random() - 0.5) * jitter;
+  }
+
+  const maxSpd = 5.5;
+  for (const w of _pfWords) {
+    const i = w.idx;
+    w.vx = (w.vx + fx[i]) * damping;
+    w.vy = (w.vy + fy[i]) * damping;
+    const spd = Math.sqrt(w.vx * w.vx + w.vy * w.vy);
+    if (spd > maxSpd) { w.vx = (w.vx / spd) * maxSpd; w.vy = (w.vy / spd) * maxSpd; }
+    w.x += w.vx;
+    w.y += w.vy;
+    w.x = Math.max(4, Math.min(p.width  - 4, w.x));
+    w.y = Math.max(4, Math.min(p.height - 4, w.y));
+  }
+  _pfPhysFrame++;
+}
+
+// ── Draw ─────────────────────────────────────────────────────────
+function drawPoemFields(p, t) {
+  const currentText = S.poemFieldText ?? '';
+  if (currentText !== _pfLastText && !_pfInitializing) {
+    _pfWords = [];
+    initPoemFields(p).catch(e => console.error('[PoemFields]', e));
+  }
+
+  if (_pfWords.length === 0) {
+    p.push();
+    p.colorMode(p.RGB, 255);
+    p.noStroke();
+    p.fill(150);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.textSize(13);
+    p.text(
+      _pfInitializing ? '⠿ Building field…' : 'Paste a poem above ↑',
+      p.width / 2, p.height / 2
+    );
+    p.pop();
+    return;
+  }
+
+  const useSent        = S.pfSentimentEnable    !== false;
+  const usePhone       = S.pfPhoneticEnable     !== false;
+  const useRhythm      = S.pfRhythmEnable       !== false;
+  const pulseScale     = S.pfPulseScale         ?? 0.18;
+  const beatBPM        = S.pfBeatBPM            ?? 60;
+  const sentBias       = S.pfSentimentBias      ?? 0.50;
+  const phoneSat       = S.pfPhoneticSaturation ?? 35;
+  const fullWord       = S.pfShowFullWord       ?? false;
+  const linkAlpha      = S.pfLinkAlpha          ?? 0.28;
+  const useLinks       = S.pfDependencyLinks    !== false;
+  const useAllitLines  = S.pfAlliterationLines  !== false;
+  const useRhymeLines  = S.pfRhymeSyncEnable    !== false;
+  const useClustLines  = S.pfClustersEnable     !== false;
+  const useEcho        = S.pfEchoEnable         !== false;
+  const echoLen        = S.pfEchoLength         ?? 8;
+  const echoFade       = S.pfEchoFadeRate       ?? 0.025;
+  const useMetaphor    = S.pfMetaphorEnable     !== false;
+  const useParticles   = S.pfParticlesEnable    !== false;
+  const particleRate   = S.pfParticleRate       ?? 0.08;
+  const particleLife   = S.pfParticleLife       ?? 80;
+  const useRipples     = S.pfRipplesEnable      !== false;
+  const rippleSpeed    = S.pfRippleSpeed        ?? 14;
+  const useRibbons     = S.pfRibbonsEnable      !== false;
+  const useArcBg       = S.pfArcBackgroundEnable !== false;
+  const seWeight       = S.pfSemanticWeightEnable !== false;
+  const seInfluence    = S.pfSemanticInfluence  ?? 0.50;
+  const entropy        = S.entropy              ?? 0;
+  const glitchInt      = S.glitchIntensity      ?? 0;
+  const glitchChrom    = S.glitchChromatic      ?? false;
+  const glitchScan     = S.glitchScanlines      ?? false;
+
+  if (useArcBg && _pfMeta.lineSents?.length > 0) {
+    const lineIdx = Math.floor((t * 0.10) % _pfMeta.lineSents.length);
+    const sent    = _pfMeta.lineSents[lineIdx] || 0;
+    p.colorMode(p.HSB, 360, 100, 100, 1);
+    const bgH = p.map(sent, -3, 3, 215, 28);
+    const bgB = p.map(Math.abs(sent), 0, 3, 93, 74);
+    p.fill(bgH, 10, bgB, 0.11);
     p.noStroke();
     p.rect(0, 0, p.width, p.height);
     p.colorMode(p.RGB, 255);
   }
 
-  // ── Physics ───────────────────────────────────────────────────
-  if (S.playing) {
-  const springK    = S.pfSpringStiffness   ?? 0.005;   // reduced stiffness for gentle fabric
-  const repulsion  = S.pfRepulsionStrength  ?? 1.2;     // stronger repulsion to keep words apart
-  const jitterAmt  = S.pfJitterAmount       ?? 0.08;    // small random kicks
-  const flowStr    = S.pfFlowStrength       ?? 0.05;    // very weak flow, just for subtle movement
-  const lineAtt    = S.pfLineAttraction     ?? 0.0005;  // almost none
-  const damping    = 0.92;
-  const edgeMargin = 30;  // pixels from edge before push
+  if (S.playing) _pfPhysicsStep(p, t);
 
-  // Ideal distance based on canvas area and word count
-  const idealDist = Math.sqrt((p.width * p.height) / _pfWords.length) * 0.85;
-
-  // Force accumulators
-  let fx = new Array(_pfWords.length).fill(0);
-  let fy = new Array(_pfWords.length).fill(0);
-
-  // ── Spring forces for all connections ──
-  function addSpring(i, j, strengthMult = 1.0) {
-    let w1 = _pfWords[i], w2 = _pfWords[j];
-    let dx = w2.x - w1.x, dy = w2.y - w1.y;
-    let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    let f = (dist - idealDist) * springK * strengthMult;   // spring tries to keep distance around idealDist
-    let fxComp = (dx / dist) * f;
-    let fyComp = (dy / dist) * f;
-    fx[i] += fxComp; fy[i] += fyComp;
-    fx[j] -= fxComp; fy[j] -= fyComp;
-  }
-
-  // Apply connections
-  for (let [a, b] of _pfMeta.connections.dependencies) addSpring(a, b, 1.2);
-  for (let [a, b] of _pfMeta.connections.rhymes)         addSpring(a, b, 0.6);
-  for (let [a, b] of _pfMeta.connections.alliterations)   addSpring(a, b, 0.5);
-  for (let [a, b] of _pfMeta.connections.clusters)        addSpring(a, b, 0.7);
-
-  // ── Repulsion between all pairs (if too close) ──
-  for (let i = 0; i < _pfWords.length; i++) {
-    for (let j = i+1; j < _pfWords.length; j++) {
-      let w1 = _pfWords[i], w2 = _pfWords[j];
-      let dx = w2.x - w1.x, dy = w2.y - w1.y;
-      let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      if (dist < idealDist * 0.8) {   // only push when too close
-        let force = repulsion * (1 - dist / (idealDist * 0.8));  // stronger when closer
-        fx[i] -= (dx / dist) * force;
-        fy[i] -= (dy / dist) * force;
-        fx[j] += (dx / dist) * force;
-        fy[j] += (dy / dist) * force;
-      }
-    }
-  }
-
-  // ── Weak flow field (unbiased noise angles) ──
-  for (let w of _pfWords) {
-    let angle = p.noise(w.x * 0.003, w.y * 0.003, t * 0.15) * Math.PI * 2;
-    let fxFlow = Math.cos(angle) * flowStr * 0.01;
-    let fyFlow = Math.sin(angle) * flowStr * 0.01;
-    // add with small magnitude, no systematic bias due to noise values being in [0,1]
-    fx[w.idx] += fxFlow;
-    fy[w.idx] += fyFlow;
-  }
-
-  // ── Random jitter (Gaussian‑like with zero mean) ──
-  for (let w of _pfWords) {
-    fx[w.idx] += (Math.random() - 0.5) * jitterAmt;
-    fy[w.idx] += (Math.random() - 0.5) * jitterAmt;
-  }
-
-  // ── Minimal line attraction (helps vertical distribution) ──
-  for (let w of _pfWords) {
-    fy[w.idx] += (w.lineY - w.y) * lineAtt;
-  }
-
-  // ── Apply forces, integrate ──
-  for (let w of _pfWords) {
-    let i = w.idx;
-    w.vx = w.vx * damping + fx[i];
-    w.vy = w.vy * damping + fy[i];
-    w.x += w.vx;
-    w.y += w.vy;
-
-    // Bounce at edges with more restitution
-    if (w.x < edgeMargin)       { w.x = edgeMargin; w.vx *= -0.6; }
-    if (w.x > p.width - edgeMargin)  { w.x = p.width - edgeMargin; w.vx *= -0.6; }
-    if (w.y < edgeMargin)       { w.y = edgeMargin; w.vy *= -0.6; }
-    if (w.y > p.height - edgeMargin) { w.y = p.height - edgeMargin; w.vy *= -0.6; }
-  }
-}
-  // ── Drawing ───────────────────────────────────────────────────
   p.push();
   p.colorMode(p.RGB, 255);
 
-  // Draw connection links
-  function drawConnectionLine(idx1, idx2, col, alpha, weight = 0.5) {
-    let w1 = _pfWords[idx1], w2 = _pfWords[idx2];
+  const connLine = (a, b, alpha, weight, col) => {
+    const wa = _pfWords[a], wb = _pfWords[b];
+    if (!wa || !wb) return;
     p.stroke(p.red(col), p.green(col), p.blue(col), alpha * 255);
     p.strokeWeight(weight);
-    p.line(w1.x, w1.y, w2.x, w2.y);
-  }
+    p.line(wa.x, wa.y, wb.x, wb.y);
+  };
+  p.noFill();
 
-  // Dependency links
   if (useLinks && linkAlpha > 0) {
-    for (let [a, b] of _pfMeta.connections.dependencies) {
-      let col = pickColor(p, _pfWords[a].x, _pfWords[a].y, t);
-      drawConnectionLine(a, b, col, linkAlpha, 1.2);
+    for (const [a, b] of _pfMeta.connections.dependencies) {
+      connLine(a, b, linkAlpha * 0.90, 1.10, pickColor(p, _pfWords[a].x, _pfWords[a].y, t));
     }
   }
-
-  // Alliteration threads
   if (useAllitLines) {
-    for (let [a, b] of _pfMeta.connections.alliterations) {
-      let col = pickColor(p, _pfWords[a].x, _pfWords[a].y, t);
-      drawConnectionLine(a, b, col, 0.45, 0.4);
+    for (const [a, b] of _pfMeta.connections.alliterations) {
+      connLine(a, b, linkAlpha * 0.50, 0.45, pickColor(p, _pfWords[a].x, _pfWords[a].y, t));
+    }
+  }
+  if (useRhymeLines) {
+    for (const [a, b] of _pfMeta.connections.rhymes) {
+      connLine(a, b, linkAlpha * 0.65, 0.65, pickColor(p, _pfWords[a].x, _pfWords[a].y, t));
+    }
+  }
+  if (useClustLines) {
+    for (const [a, b] of _pfMeta.connections.clusters) {
+      connLine(a, b, linkAlpha * 0.32, 0.35, pickColor(p, _pfWords[a].x, _pfWords[a].y, t));
     }
   }
 
-  // Rhyme chains
-  if (useRhymeSync) {   // we use the same toggle to show rhyme lines, keep pulse sync too but lines visible
-    for (let [a, b] of _pfMeta.connections.rhymes) {
-      let col = pickColor(p, _pfWords[a].x, _pfWords[a].y, t);
-      drawConnectionLine(a, b, col, 0.5, 0.6);
-    }
-  }
-
-  // Cluster lines
-  if (useClusters) {
-    for (let [a, b] of _pfMeta.connections.clusters) {
-      let col = pickColor(p, _pfWords[a].x, _pfWords[a].y, t);
-      drawConnectionLine(a, b, col, 0.3, 0.3);
-    }
-  }
-
-  // Enjambment ribbons (unchanged)
   if (useRibbons) {
-    p.strokeWeight(0.8);
-    for (let li of _pfMeta.enjambments) {
-      let endWord = _pfWords.filter(w => w.lineIndex === li).pop();
-      let startWord = _pfWords.find(w => w.lineIndex === li + 1);
-      if (endWord && startWord) {
-        let col = pickColor(p, (endWord.x+startWord.x)/2, (endWord.y+startWord.y)/2, t);
-        p.stroke(p.red(col), p.green(col), p.blue(col), 60);
-        p.noFill();
-        p.bezier(endWord.x, endWord.y, (endWord.x+startWord.x)/2, endWord.y-30,
-                 (endWord.x+startWord.x)/2, startWord.y+30, startWord.x, startWord.y);
-      }
-    }
-  }
-
-  // Punctuation ripples (unchanged)
-  if (useRipples) {
-    for (let pm of _pfMeta.punctuation) {
-      if (S.playing) pm.t += 0.05;
-      let radius = pm.t * rippleSpeed;
-      let alpha = p.constrain(1.0 - pm.t * 0.1, 0, 1);
+    p.strokeWeight(0.75);
+    for (const li of _pfMeta.enjambments) {
+      const endW   = _pfWords.filter(w => w.lineIndex === li).pop();
+      const startW = _pfWords.find(w => w.lineIndex === li + 1);
+      if (!endW || !startW) continue;
+      const midX = (endW.x + startW.x) / 2;
+      const col  = pickColor(p, midX, (endW.y + startW.y) / 2, t);
+      p.stroke(p.red(col), p.green(col), p.blue(col), 52);
       p.noFill();
-      p.stroke(255, 255, 255, alpha * 70);
-      p.strokeWeight(1);
-      p.ellipse(pm.x, pm.y, radius*2, radius*2);
-      if (alpha < 0.01) _pfMeta.punctuation.splice(_pfMeta.punctuation.indexOf(pm), 1);
+      p.bezier(endW.x, endW.y, midX, endW.y - 26, midX, startW.y + 26, startW.x, startW.y);
     }
   }
 
-  // Draw words
-  for (let w of _pfWords) {
-    let sz = S.maxSize * w.sizeMult * 1.4;
+  if (useRipples) {
+    for (let pi = _pfMeta.punctuation.length - 1; pi >= 0; pi--) {
+      const pm = _pfMeta.punctuation[pi];
+      if (S.playing) pm.t += 0.038;
+      const radius = pm.t * rippleSpeed * pm.pauseVal;
+      const alpha  = Math.max(0, 1 - pm.t * 0.07);
+      p.noFill();
+      p.stroke(255, 255, 255, alpha * 62);
+      p.strokeWeight(0.85);
+      p.ellipse(pm.x, pm.y, radius * 2, radius * 2);
+      if (alpha <= 0) _pfMeta.punctuation.splice(pi, 1);
+    }
+  }
 
-    // Apply semantic weight to size and speed
-    if (S.pfSemanticWeightEnable !== false) {
-      let sw = w.semanticWeight || 1.0;
-      let influence = S.pfSemanticInfluence ?? 0.5;   // how much it affects size/speed
-      // Scale size: distinct words get larger (or smaller, if you invert)
-      sz *= 1.0 + (sw - 1.0) * influence;
-      // Also adjust speed (distinct words slower? or faster? we'll make them slightly heavier)
-      w.speedMult *= 1.0 - (sw - 1.0) * influence * 0.5;
+  const beatPhase     = t * (beatBPM / 60) * Math.PI * 2;
+  const metaphorSet   = new Set(_pfMeta.metaphors.flatMap(m => [m.tenor, m.vehicle]));
+
+  for (const w of _pfWords) {
+    let sz = (S.maxSize ?? 24) * (_POS_SIZE[w.pos] ?? 1.0);
+
+    if (seWeight) {
+      const sw = w.semanticWeight ?? 1.0;
+      sz *= Math.pow(sw, seInfluence * 0.65);
     }
+
     if (useRhythm) {
-      let beat = (w.idx + w.syll * 0.5) / 4;
-      let pulse = Math.sin(t * (beatBPM / 60) * Math.PI * 2 + w.phase + beat) * pulseScale;
-      sz *= (1 + pulse);
+      const beat  = (w.idx + w.syll * 0.28) / 5;
+      const pulse = Math.sin(beatPhase + w.phase + beat) * pulseScale;
+      sz *= 1 + pulse;
     }
-    // Rhyme sync – pulse phase sync (unchanged)
-    if (useRhymeSync) {
-      let rhymeKey = w.word.toLowerCase().replace(/[^a-z]/g,'').slice(-3);
-      if (_pfMeta.rhymeGroups[rhymeKey] && _pfMeta.rhymeGroups[rhymeKey].length > 1) {
-        let leader = _pfWords[_pfMeta.rhymeGroups[rhymeKey][0]];
-        w.phase = leader.phase;
-      }
+
+    if (useRhymeLines) {
+      const rKey   = w.word.toLowerCase().replace(/[^a-z]/g, '').slice(-3);
+      const rGroup = _pfMeta.rhymeGroups[rKey];
+      if (rGroup?.length > 1) w.phase = _pfWords[rGroup[0]].phase;
     }
+
+    sz = Math.max(5, sz);
 
     let col = pickColor(p, w.x, w.y, t);
+
     if (useSent && w.sent !== 0) {
       p.colorMode(p.HSB, 360, 100, 100);
-      let colObj = p.color(col);
-      let h = p.hue(colObj), s = p.saturation(colObj), b = p.brightness(colObj);
-      h = (h + w.sent * 30 * sentBias + 360) % 360;
-      b = p.constrain(b + w.sent * 8 * sentBias, 10, 100);
+      const c = p.color(col);
+      let h = p.hue(c), s = p.saturation(c), b = p.brightness(c);
+      h = (h + w.sent * 26 * sentBias + 360) % 360;
+      b = p.constrain(b + w.sent * 6 * sentBias, 8, 100);
       col = p.color(h, s, b);
       p.colorMode(p.RGB, 255);
     }
+
     if (usePhone) {
       p.colorMode(p.HSB, 360, 100, 100);
-      let colObj = p.color(col);
-      let h = p.hue(colObj), s = p.saturation(colObj), b = p.brightness(colObj);
-      let phoneMap = { vowel: 18, stop: -30, nasal: 45, fricative: -55, liquid: 70, other: 0 };
-      h = (h + (phoneMap[w.phone] || 0) * phoneSat / 100 + 360) % 360;
+      const c = p.color(col);
+      let h = p.hue(c), s = p.saturation(c), b = p.brightness(c);
+      h = (h + (_PHONE_HUE[w.phone] ?? 0) * phoneSat / 100 + 360) % 360;
       col = p.color(h, s, b);
       p.colorMode(p.RGB, 255);
     }
 
-    let displayChar = fullWord ? w.word : w.word[0].toUpperCase();
-    if (entropy > 0 && Math.random() < entropy * 0.5) {
-      let glitchSymbols = ['█','▓','▒','░','_','#','%','■','□','·'];
-      displayChar = glitchSymbols[Math.floor(Math.random() * glitchSymbols.length)];
+    let glyph = fullWord ? w.word : w.word[0].toUpperCase();
+    if (entropy > 0 && Math.random() < entropy * 0.40) {
+      glyph = _GLITCH_CHARS[Math.floor(Math.random() * _GLITCH_CHARS.length)];
     }
 
-    // Metaphor aura
-    if (useMetaphor && _pfMeta.metaphors.some(m => m.tenor === w.idx || m.vehicle === w.idx)) {
+    const velAngle = (w.vx || w.vy) ? Math.atan2(w.vy, w.vx) * 0.07 : 0;
+
+    if (useMetaphor && metaphorSet.has(w.idx)) {
       p.noFill();
-      p.stroke(255, 215, 0, 70);
-      p.strokeWeight(1.5);
-      p.ellipse(w.x, w.y, sz * 1.8, sz * 1.8);
+      p.stroke(255, 215, 0, 58);
+      p.strokeWeight(1.1);
+      p.ellipse(w.x, w.y, sz * 2.0, sz * 2.0);
+      p.strokeWeight(0.5);
+      p.stroke(255, 215, 0, 28);
+      p.ellipse(w.x, w.y, sz * 2.8, sz * 2.8);
     }
 
-    // Echo trails
     if (useEcho) {
-      if (!w.echoHistory) w.echoHistory = [];
-      let repCount = _pfWords.filter(w2 => w2.word.toLowerCase() === w.word.toLowerCase()).length;
+      const repCount = _pfWords.filter(w2 => w2.word.toLowerCase() === w.word.toLowerCase()).length;
       if (repCount > 1) {
-        if (S.playing && p.frameCount % 15 === 0) {
-          w.echoHistory.push({ x: w.x, y: w.y, t: t });
+        if (S.playing && _pfPhysFrame % 10 === 0) {
+          w.echoHistory.push({ x: w.x, y: w.y, t });
           if (w.echoHistory.length > echoLen) w.echoHistory.shift();
         }
-        for (let e of w.echoHistory) {
-          let age = t - e.t;
-          let alpha = p.constrain(1.0 - age * echoFade, 0, 1);
-          if (alpha > 0.01) {
-            dc(e.x, e.y, sz*0.9, 0, p.color(p.red(col), p.green(col), p.blue(col), alpha*255), displayChar);
+        for (const e of w.echoHistory) {
+          const age = t - e.t;
+          const a   = Math.max(0, 1 - age * echoFade);
+          if (a > 0.01) {
+            dc(e.x, e.y, sz * 0.82, velAngle,
+               p.color(p.red(col), p.green(col), p.blue(col), a * 255), glyph);
           }
         }
       }
     }
 
-    let sz1 = Math.max(2, sz);
-    if (glitchChrom && glitchInt > 0) {
-      let cglitch = applyChromaticGlitch(p, w.x, w.y, t);
-      dc(cglitch.r.x, cglitch.r.y, sz1, 0, 'rgba(255,0,0,0.8)', displayChar);
-      dc(cglitch.g.x, cglitch.g.y, sz1, 0, 'rgba(0,255,0,0.8)', displayChar);
-      dc(cglitch.b.x, cglitch.b.y, sz1, 0, 'rgba(0,0,255,0.8)', displayChar);
+    if (glitchChrom && glitchInt > 0 && typeof applyChromaticGlitch === 'function') {
+      const cg = applyChromaticGlitch(p, w.x, w.y, t);
+      dc(cg.r.x, cg.r.y, sz, velAngle, 'rgba(255,0,0,0.85)', glyph);
+      dc(cg.g.x, cg.g.y, sz, velAngle, 'rgba(0,255,0,0.85)', glyph);
+      dc(cg.b.x, cg.b.y, sz, velAngle, 'rgba(0,0,255,0.85)', glyph);
     } else {
-      dc(w.x, w.y, sz1, 0, col, displayChar);
+      dc(w.x, w.y, sz, velAngle, col, glyph);
     }
-    if (glitchScan) applyScanline(w.x - sz/2, w.y - sz/2, sz, sz, Math.floor(w.y / 4));
+
+    if (glitchScan && typeof applyScanline === 'function') {
+      applyScanline(w.x - sz / 2, w.y - sz / 2, sz, sz, Math.floor(w.y / 4));
+    }
   }
 
-  // Particle emission (unchanged)
   if (useParticles && S.playing) {
-    for (let w of _pfWords) {
-      if (Math.random() < Math.abs(w.sent) * particleRate + 0.02) {
-        _pfParticles.push({ x: w.x, y: w.y, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3, life: particleLife, color: pickColor(p, w.x, w.y, t) });
+    const density = S.density ?? 1.0;
+    for (const w of _pfWords) {
+      const sentMag = Math.abs(w.sent);
+      if (Math.random() < (sentMag * particleRate + 0.012) * density * 0.5) {
+        _pfParticles.push({
+          x: w.x + (Math.random() - 0.5) * 10,
+          y: w.y + (Math.random() - 0.5) * 10,
+          vx: (Math.random() - 0.5) * 0.45,
+          vy: (Math.random() - 0.5) * 0.45 - 0.25,
+          life: particleLife,
+          maxLife: particleLife,
+          color: pickColor(p, w.x, w.y, t),
+          size: Math.random() * 2.2 + 0.8,
+        });
       }
     }
   }
-  for (let pt of _pfParticles) {
+
+  for (let pi = _pfParticles.length - 1; pi >= 0; pi--) {
+    const pt = _pfParticles[pi];
     pt.x += pt.vx; pt.y += pt.vy;
     pt.life--;
-    if (pt.life > 0) {
-      let alpha = p.map(pt.life, 0, particleLife, 0, 255);
-      p.fill(p.red(pt.color), p.green(pt.color), p.blue(pt.color), alpha);
-      p.noStroke();
-      p.ellipse(pt.x, pt.y, 2, 2);
-    }
+    if (pt.life <= 0) { _pfParticles.splice(pi, 1); continue; }
+    const a = (pt.life / pt.maxLife) * 170;
+    p.fill(p.red(pt.color), p.green(pt.color), p.blue(pt.color), a);
+    p.noStroke();
+    p.ellipse(pt.x, pt.y, pt.size, pt.size);
   }
-  _pfParticles = _pfParticles.filter(pt => pt.life > 0);
 
   p.pop();
 }
@@ -14841,79 +14903,57 @@ const PARAM_REGISTRY = {
       hint: 'Scales the auto‑calculated block dimensions' },
   ], 
    poemfields: [
-    { id:'poemFieldText', label:'Poem text', type:'text',
-      def:'Tendrils of longing stretch out\nfrom every atom and idea\nFeeling\nYearning\nseeking out a single dormant neuron\nto spark against,\nto sound its note,\nto grant a pulse,\nwithin the mad and desperate engine\nof the senile universe revealing\nitself to itself.',
-      hint:'Each word becomes a particle – its behaviour is shaped by grammar, sound and sentiment' },
-  
-    // ── Visual form ──
-    { type:'toggle', id:'pfShowFullWord', label:'Show full word', def:false },
-  
-    // Size / speed per POS (unchanged)
-    { id:'pfNounSize',  label:'Noun size',  min:0.5, max:5, step:0.1, def:2.0, scale:1 },
-    { id:'pfVerbSize',  label:'Verb size',  min:0.5, max:5, step:0.1, def:1.6, scale:1 },
-    { id:'pfAdjSize',   label:'Adj size',   min:0.5, max:5, step:0.1, def:1.3, scale:1 },
-    { id:'pfAdvSize',   label:'Adv size',   min:0.5, max:5, step:0.1, def:1.0, scale:1 },
-    { id:'pfOtherSize', label:'Function size', min:0.5, max:5, step:0.1, def:0.7, scale:1 },
-    { id:'pfNounSpeed',  label:'Noun speed',  min:0, max:3, step:0.1, def:0.5, scale:1 },
-    { id:'pfVerbSpeed',  label:'Verb speed',  min:0, max:3, step:0.1, def:1.5, scale:1 },
-    { id:'pfAdjSpeed',   label:'Adj speed',   min:0, max:3, step:0.1, def:1.0, scale:1 },
-    { id:'pfAdvSpeed',   label:'Adv speed',   min:0, max:3, step:0.1, def:2.0, scale:1 },
-    { id:'pfOtherSpeed', label:'Function speed', min:0, max:3, step:0.1, def:0.8, scale:1 },
-  
-    // Flow and attraction
-    { id:'pfFlowStrength',   label:'Flow field strength', min:0, max:5, step:0.1, def:1.0, scale:1 },
-    { id:'pfLineAttraction', label:'Line grouping force', min:0, max:0.1, step:0.001, def:0.02, scale:1 },
-  
-    // Sentiment
-    { type:'toggle', id:'pfSentimentEnable', label:'Sentiment colour shift', def:true },
-    { id:'pfSentimentBias', label:'Sentiment strength', min:0, max:2, step:0.1, def:0.5, scale:1 },
-  
-    // Phonetics
-    { type:'toggle', id:'pfPhoneticEnable', label:'Phonetic colour shift', def:true },
-    { id:'pfPhoneticSaturation', label:'Phonetic influence', min:0, max:100, step:5, def:30, scale:1 },
-  
-    // Rhythm
-    { type:'toggle', id:'pfRhythmEnable', label:'Rhythmic pulse', def:true },
-    { id:'pfPulseScale', label:'Pulse amount', min:0, max:0.5, step:0.01, def:0.15, scale:1 },
-    { id:'pfBeatBPM',    label:'Beat (BPM)',   min:20, max:200, step:5, def:60, scale:1 },
-  
-    // Dependency links
-    { type:'toggle', id:'pfDependencyLinks', label:'Show dependency lines', def:true },
-    { id:'pfLinkAlpha', label:'Link opacity', min:0, max:1, step:0.05, def:0.25, scale:1 },
-    { type:'toggle', id:'pfSemanticWeightEnable', label:'Semantic weight (AI)', def:false,
-      hint:'Load a small embedding model to compute how distinctive each word is' },
-    { id:'pfSemanticInfluence', label:'Semantic influence', min:0, max:1, step:0.05, def:0.5, scale:1 }, 
-    { id:'pfSpringStiffness',  label:'Spring stiffness',  min:0, max:0.1, step:0.001, def:0.02, scale:1 },
-    { id:'pfRepulsionStrength', label:'Repulsion',        min:0, max:2,   step:0.1,   def:0.5, scale:1 },
-    { id:'pfJitterAmount',      label:'Jitter amount',    min:0, max:0.5, step:0.01,  def:0.15, scale:1 },
-    { type:'toggle', id:'pfClustersEnable',   label:'Semantic clusters', def:true,
-      hint:'Words of similar meaning attract each other' },
-    { id:'pfClusterAttraction', label:'Cluster force', min:0, max:0.05, step:0.001, def:0.01, scale:1 },
-    { type:'toggle', id:'pfRhymeSyncEnable',  label:'Rhyme sync', def:true,
-      hint:'Rhyming words pulse in unison' },
-    { type:'toggle', id:'pfAlliterationLines', label:'Alliteration threads', def:true,
-      hint:'Draw faint lines between words that start with the same letter' },
-    { type:'toggle', id:'pfEchoEnable',       label:'Repetition echoes', def:true,
-      hint:'Repeated words leave fading ghost trails' },
-    { id:'pfEchoLength', label:'Echo trail length', min:2, max:20, step:1, def:8, scale:1 },
-    { id:'pfEchoFadeRate', label:'Echo fade rate', min:0.005, max:0.2, step:0.005, def:0.03, scale:1 },
-    { type:'toggle', id:'pfMetaphorEnable',   label:'Metaphor aura', def:true,
-      hint:'Golden glow around metaphor pairs (X is Y)' },
-    { type:'toggle', id:'pfParticlesEnable',  label:'Word particle trails', def:true,
-      hint:'Words emit tiny glowing particles' },
-    { id:'pfParticleRate', label:'Particle emit rate', min:0.01, max:0.5, step:0.01, def:0.1, scale:1 },
-    { id:'pfParticleLife', label:'Particle lifetime', min:20, max:150, step:5, def:60, scale:1 },
-    { type:'toggle', id:'pfRipplesEnable',    label:'Punctuation ripples', def:true,
-      hint:'Commas, periods, and marks create expanding circles' },
-    { id:'pfRippleSpeed', label:'Ripple speed', min:2, max:30, step:1, def:15, scale:1 },
-    { type:'toggle', id:'pfRibbonsEnable',    label:'Enjambment ribbons', def:true,
-      hint:'Soft curves connect line breaks without punctuation' },
-    { type:'toggle', id:'pfArcBackgroundEnable', label:'Emotional arc background', def:true,
-      hint:'Canvas background shifts colour with the poem’s sentiment' },
-  
-    // Glitch note
-    { type:'note', text:'Use global Glitch / Entropy / Chromatic / Scanlines sliders to affect the entire poem.' },
-  ],
+      { id:'poemFieldText', label:'Poem text', type:'text',
+        def:'Tendrils of longing stretch out\nfrom every atom and idea\nFeeling\nYearning\nseeking out a single dormant neuron\nto spark against,\nto sound its note,\nto grant a pulse,\nwithin the mad and desperate engine\nof the senile universe revealing\nitself to itself.' },
+    
+      // Physics
+      { id:'pfSpringStiffness',   label:'Spring stiffness',   min:0.0005,max:0.025,step:0.0005,def:0.004,scale:1 },
+      { id:'pfRepulsionStrength', label:'Repulsion',          min:0.1,max:5.0,step:0.05,def:1.5,scale:1 },
+      { id:'pfIdealDistMult',     label:'Ideal spacing',      min:0.3,max:1.8,step:0.05,def:0.85,scale:1 },
+      { id:'pfDamping',           label:'Damping',            min:0.50,max:0.98,step:0.01,def:0.88,scale:1 },
+      { id:'pfJitterAmount',      label:'Jitter',             min:0,max:0.6,step:0.01,def:0.10,scale:1 },
+      { id:'pfFlowStrength',      label:'Flow strength',      min:0,max:0.6,step:0.01,def:0.06,scale:1 },
+      { id:'pfCenterGravity',     label:'Center gravity',     min:0,max:0.006,step:0.0001,def:0.0006,scale:1 },
+      { id:'pfLineAttraction',    label:'Line pull',          min:0,max:0.003,step:0.0001,def:0.0003,scale:1 },
+    
+      // Visual form
+      { type:'toggle', id:'pfShowFullWord', label:'Show full words', def:false },
+    
+      // Sentiment & phonetics
+      { type:'toggle', id:'pfSentimentEnable', label:'Sentiment colour', def:true },
+      { id:'pfSentimentBias', label:'Sentiment bias', min:0,max:1,step:0.05,def:0.50,scale:1 },
+      { type:'toggle', id:'pfPhoneticEnable', label:'Phonetic hue', def:true },
+      { id:'pfPhoneticSaturation', label:'Phone saturation', min:0,max:90,step:1,def:35,scale:1 },
+    
+      // Rhythm
+      { type:'toggle', id:'pfRhythmEnable', label:'Rhythm pulse', def:true },
+      { id:'pfPulseScale', label:'Pulse scale', min:0,max:0.5,step:0.01,def:0.18,scale:1 },
+      { id:'pfBeatBPM',    label:'Beat BPM',    min:20,max:200,step:1,def:60,scale:1 },
+    
+      // Connections
+      { type:'toggle', id:'pfDependencyLinks',  label:'Dependency links',  def:true },
+      { id:'pfLinkAlpha', label:'Link opacity', min:0,max:1,step:0.02,def:0.28,scale:1 },
+      { type:'toggle', id:'pfAlliterationLines', label:'Alliteration lines', def:true },
+      { type:'toggle', id:'pfRhymeSyncEnable',  label:'Rhyme lines',      def:true },
+      { type:'toggle', id:'pfClustersEnable',   label:'Cluster lines',     def:true },
+      { type:'toggle', id:'pfRibbonsEnable',    label:'Enjambment ribbons',def:true },
+      { type:'toggle', id:'pfRipplesEnable',    label:'Punct ripples',     def:true },
+      { type:'toggle', id:'pfArcBackgroundEnable', label:'Emotional arc bg', def:true },
+    
+      // Effects
+      { type:'toggle', id:'pfEchoEnable',   label:'Echo trails',    def:true },
+      { id:'pfEchoLength',  label:'Echo length',   min:2,max:24,step:1,def:8,scale:1 },
+      { id:'pfEchoFadeRate',label:'Echo fade',     min:0.005,max:0.12,step:0.005,def:0.025,scale:1 },
+      { type:'toggle', id:'pfMetaphorEnable', label:'Metaphor aura', def:true },
+      { type:'toggle', id:'pfParticlesEnable', label:'Particles',    def:true },
+      { id:'pfParticleRate', label:'Particle rate', min:0,max:0.35,step:0.01,def:0.08,scale:1 },
+      { id:'pfParticleLife', label:'Particle life', min:20,max:200,step:5,def:80,scale:1 },
+      { id:'pfRippleSpeed',  label:'Ripple speed',  min:2,max:40,step:1,def:14,scale:1 },
+    
+      // AI semantic weight
+      { type:'toggle', id:'pfSemanticWeightEnable', label:'AI semantic weight', def:false },
+      { id:'pfSemanticInfluence', label:'AI influence', min:0,max:1.5,step:0.05,def:0.50,scale:1 },
+    ],
 
 
   
