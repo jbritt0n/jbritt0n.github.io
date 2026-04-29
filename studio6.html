@@ -364,6 +364,8 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="constructivistgrids" title="constructivistgrids — dense text field with bold geometric shapes on top">Constructivism</button>
         <button class="mb" data-mode="truchet" title="Quarter-circles forming infinite patterns">Truchet</button>
         <button class="mb" data-mode="fractalsubdiv" title="Infinite self-similar plane splitting">Fractal</button>
+        <button class="mb" data-mode="spiro">Spiro</button>
+        <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
       </div>
     </div>
     
@@ -372,8 +374,6 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-fluid" style="padding:0">
       <div class="mg">
-
-        <button class="mb" data-mode="spiro">✦ Spiro</button>
         <button class="mb" data-mode="interference" title="Overlapping wave patterns creating moiré">Interfere</button>
       </div>
     </div>
@@ -385,7 +385,6 @@ select option{background:var(--ink)}
       <div class="mg">
         <button class="mb" data-mode="typescale" title="Maeda — characters grade from enormous to microscopic">Typescale</button>
         <button class="mb" data-mode="imgtext" title="Real-time brightness-to-ASCII conversion">Img→Text</button>
-        
       </div>
     </div>
 
@@ -394,12 +393,10 @@ select option{background:var(--ink)}
     </div>
     <div class="sec-body collapsed" id="body-mode-geo" style="padding:0">
       <div class="mg">
-        
         <button class="mb" data-mode="mondrian" title="Recursive subdivision with primary color fills">Mondrian</button>
         <button class="mb" data-mode="bauhaus" title="Geometric primary shapes with orbital animation">Bauhaus</button>
         <button class="mb" data-mode="tesseract" title="4D hypercube rotating through 3D projection">Tesseract</button>
         <button class="mb" data-mode="hypersphere" title="Rotating 4D hypersphere lattice">Hypersphere</button>
-        
         <div style="grid-column:1/-1;font-size:.42rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);padding:.3rem 0 .12rem;border-bottom:1px solid var(--stone);margin-bottom:2px;margin-top:4px">◈ Webster</div>
         <button class="mb new-mode" data-mode="dnastrips"   title="Strange Loops — stacked colored bar columns like DNA strips">DNA Strips</button>
         <button class="mb new-mode" data-mode="scattrects"  title="Strange Loops — scattered solid and hollow rectangles">Scat. Rects</button>
@@ -418,7 +415,6 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="brushcontour" title="Contour levels drawn as rotated rectangles">Brush Contour</button>
         <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
         <button class="mb" data-mode="warpgrid" title="Warped lattice deformed by noise field">Warp Grid</button>
-        <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
         <button class="mb" data-mode="unknownpleasures" title="Stacked noise peaks (Joy Division)">Unknown Pleasures</button>
         <button class="mb" data-mode="seisma" title="Horizontal seismographic pulse data">Seisma</button>
       </div>
@@ -15451,7 +15447,32 @@ const PARAM_REGISTRY = {
       { id:'hatchCrossThreshold',label:'Cross threshold',   min:0,   max:0.5, step:0.01,def:0.2, scale:1,
         hint:'Extra density needed for second line layer' },
     ],
-
+    spiro: [
+      { id:'spiroR',            label:'Outer radius',      min:20,  max:400, step:10,  def:180, scale:1 },
+      { id:'spiror',            label:'Inner radius',      min:10,  max:300, step:5,   def:60,  scale:1 },
+      { id:'spiroOffset',       label:'Pen offset',        min:0.1, max:2,   step:0.05,def:0.7, scale:1,
+        hint:'Distance from inner circle centre, as fraction of inner radius' },
+      { id:'spiroRevolutions',  label:'Revolutions',       min:1,   max:50,  step:1,   def:10,  scale:1 },
+      { id:'spiroCharDensity',  label:'Point density',     min:50,  max:600, step:10,  def:300, scale:1,
+        hint:'Total sample points across all revolutions' },
+      { id:'spiroCharScale',    label:'Character scale',   min:0.1, max:2,   step:0.1, def:0.5, scale:1,
+        hint:'Multiplier on maxSize' },
+      { id:'spiroMultiple',     label:'Overlaid spiros',   min:1,   max:6,   step:1,   def:1,   scale:1,
+        hint:'Number of spirographs with angular offsets' },
+      { id:'spiroRotSpeed',     label:'Rotation speed',    min:0,   max:3,   step:0.1, def:0.2, scale:1 },
+      { type:'toggle', id:'spiroDrawLines', label:'Connect with lines', def:true },
+      { id:'spiroLineAlpha',    label:'Line opacity',      min:0,   max:1,   step:0.05,def:0.3, scale:1 },
+      { id:'spiroLineWidth',    label:'Line width',        min:0.2, max:5,   step:0.1, def:0.8, scale:1 },
+      { id:'spiroShowChars',    label:'Show characters',   type:'toggle', def:true },
+      { type:'select', id:'spiroColorMode', label:'Color mode',
+        def:'palette',
+        options:[
+          { value:'palette', label:'Palette (by segment)' },
+          { value:'time',    label:'Time cycled palette' },
+          { value:'noise',   label:'Noise‑driven colour' }
+        ],
+      },
+    ],
   
   //to be refactored
   boids: [
@@ -15467,12 +15488,6 @@ const PARAM_REGISTRY = {
     { id:'lissA',   label:'Harmonic A',     min:1, max:7, step:1, def:2,  scale:1,
       hint:'Frequency ratio — try 2:3, 3:4, 1:2' },
     { id:'lissB',   label:'Harmonic B',     min:1, max:7, step:1, def:3,  scale:1 },
-  ],
-  spiro: [
-    { id:'spiroR',      label:'Outer radius', min:10, max:200, step:5,  def:80,  scale:1   },
-    { id:'spiror',      label:'Inner radius',  min:2,  max:100, step:2,  def:30,  scale:1   },
-    { id:'spiroPetals', label:'Petal ratio',   min:1,  max:9,   step:1,  def:5,   scale:1   },
-    { id:'spiroSkew',   label:'Skew',          min:0,  max:100, step:2,  def:0,   scale:0.01 },
   ],
   flowfield: [
     { id:'fbmOctaves',  label:'Complexity',    min:1,  max:8,   step:1,  def:4,   scale:1   },
