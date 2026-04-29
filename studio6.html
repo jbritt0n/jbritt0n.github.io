@@ -3317,24 +3317,89 @@ function drawSpiral(p, t) {
 }
   
 // ── SPIRO (4/10/26) ──────────────────────────────────────────────────
-function drawSpiro(p) {
-    p.push();
-    p.translate(p.width/2, p.height/2);
-    let time = p.frameCount * (S.speed * 0.1);
-    // Spirograph Math (Hypotrochoid)
-    // R = S.spiroR, r = S.spiror, p = S.spiroPetals
-    for (let i = 0; i < S.density * 5; i++) {
-        let theta = p.map(i, 0, S.density * 5, 0, p.TWO_PI * S.spiroPetals);
-        let x = (S.spiroR - S.spiror) * p.cos(theta) + S.spiroSkew * p.cos(((S.spiroR - S.spiror) / S.spiror) * theta);
-        let y = (S.spiroR - S.spiror) * p.sin(theta) - S.spiroSkew * p.sin(((S.spiroR - S.spiror) / S.spiror) * theta);
-        // Use your existing color index logic
-        let col = getColorIndex(p, x + p.width/2, y + p.height/2, time);
-        p.fill(col);
-        let char = pickChar(p, x, y, time);
-        p.textSize(S.maxSize);
-        p.text(char, x, y);
+function drawSpiro(p, t) {
+  let W = p.width, H = p.height;
+  let cx = W / 2, cy = H / 2;
+
+  // ── Force defaults (in case registry ever fails) ──
+  let R         = S.spiroR            = S.spiroR            || 180;
+  let r         = S.spiror           = S.spiror           || 60;
+  let penDist   = S.spiroOffset      = S.spiroOffset      || 0.7;
+  let d         = r * penDist;
+  let revs      = S.spiroRevolutions = S.spiroRevolutions || 10;
+  let density   = S.spiroCharDensity = S.spiroCharDensity || 300;
+  let mult      = S.spiroMultiple    = S.spiroMultiple    || 1;
+  let charScale = S.spiroCharScale   = S.spiroCharScale   || 0.5;
+  let rotSpeed  = S.spiroRotSpeed    = S.spiroRotSpeed    || 0.2;
+  let drawLines = S.spiroDrawLines   = S.spiroDrawLines   !== false;
+  let lineAlpha = S.spiroLineAlpha   = S.spiroLineAlpha   || 0.3;
+  let lineWidth = S.spiroLineWidth   = S.spiroLineWidth   || 0.8;
+  let colorMode = S.spiroColorMode   = S.spiroColorMode   || 'palette';
+  let showChars = S.spiroShowChars   = S.spiroShowChars   !== false;
+
+  // ── Build points ───────────────────────────────────────────
+  let totalPoints = Math.floor(revs * density);
+  let dTheta = (Math.PI * 2 * revs) / totalPoints;
+
+  function getPoints(phaseOff) {
+    let pts = [];
+    for (let i = 0; i <= totalPoints; i++) {
+      let theta = i * dTheta + phaseOff;
+      let x = (R - r) * Math.cos(theta) + d * Math.cos(((R - r) / r) * theta);
+      let y = (R - r) * Math.sin(theta) - d * Math.sin(((R - r) / r) * theta);
+      pts.push({ x, y });
     }
-    p.pop();
+    return pts;
+  }
+
+  CTX.save();
+  CTX.translate(cx, cy);
+  CTX.rotate(t * rotSpeed * 0.3);
+
+  for (let m = 0; m < mult; m++) {
+    let phaseOff = (m / Math.max(1, mult)) * Math.PI * 2;
+    let pts = getPoints(phaseOff);
+
+    // ── Lines ────────────────────────────────────────────────
+    if (drawLines) {
+      CTX.save();
+      CTX.globalAlpha = lineAlpha;
+      CTX.lineWidth   = lineWidth;
+      CTX.lineCap     = 'round';
+      CTX.lineJoin    = 'round';
+      CTX.beginPath();
+      let first = true;
+      for (let pt of pts) {
+        if (first) { CTX.moveTo(pt.x, pt.y); first = false; }
+        else CTX.lineTo(pt.x, pt.y);
+      }
+      CTX.strokeStyle = S.palette[m % S.palette.length];
+      CTX.stroke();
+      CTX.restore();
+    }
+
+    // ── Characters ───────────────────────────────────────────
+    if (showChars) {
+      let step = Math.max(1, Math.floor(totalPoints / (revs * 30)));
+      for (let i = 0; i < pts.length; i += step) {
+        let pt = pts[i];
+        let ch = pickChar(p, pt.x + cx, pt.y + cy, t);
+        let col;
+        if (colorMode === 'time') {
+          let ci = Math.floor(((i / totalPoints) + t * 0.2) * S.palette.length) % S.palette.length;
+          col = S.palette[ci];
+        } else if (colorMode === 'noise') {
+          col = pickColor(p, pt.x + cx, pt.y + cy, t);
+        } else {
+          col = S.palette[(Math.floor(i / 20) + m) % S.palette.length];
+        }
+        let sz = S.maxSize * charScale * (0.8 + Math.sin(i * 0.1 + t) * 0.2);
+        dc(pt.x, pt.y, sz, 0, col, ch);
+      }
+    }
+  }
+
+  CTX.restore();
 }
 
 // ── SCAN 2.0 Refactored 4/13/26 ────────────────────────────────────────────  
