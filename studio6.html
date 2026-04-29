@@ -1581,6 +1581,8 @@ let S={
   pfRepulsionStrength: 0.5,
   pfJitterAmount: 0.15,
   pfLineAttraction: 0.001,
+  pfSemanticWeightEnable: false,
+  pfSemanticInfluence: 0.5,
 };
   
 
@@ -4451,7 +4453,7 @@ let _pfMeta = {};        // rhyme groups, metaphors, punctuation events, line se
 let _pfLastText = '';
 let _pfParticles = [];   // word‑emitted particles
 
-function initPoemFields(p) {
+async function initPoemFields(p) {
   _pfWords = [];
   _pfMeta = { rhymeGroups:{}, alliterations:[], metaphors:[], punctuation:[], lineSents:[], enjambments:[],
               connections: { dependencies:[], rhymes:[], alliterations:[], clusters:[] } };
@@ -4461,10 +4463,7 @@ function initPoemFields(p) {
   if (!text.trim()) text = 'Your poem goes here';
   let lines = text.split(/\n/);
 
-  // Pre‑compute line height for vertical anchoring (very weak later)
-  let lineHeight = Math.max(60, p.height / lines.length);
-
-  // 1. Build word objects (linguistic annotation only – positions are placeholders)
+  // 1. Build word objects with linguistic annotation (positions later)
   let wordIdx = 0;
   for (let li = 0; li < lines.length; li++) {
     let rawLine = lines[li];
@@ -4479,30 +4478,78 @@ function initPoemFields(p) {
 
       _pfWords.push({
         word, pos, sent, phone, syll, cluster,
-        x: 0, y: 0,                      // ← filled after all words are collected
+        x: 0, y: 0,
         vx: 0, vy: 0,
         lineIndex: li,
-        lineY: 0,                         // ← set below
+        lineY: 0,
         sizeMult: 1.0,
         speedMult: 1.0,
         phase: Math.random() * Math.PI * 2,
         idx: wordIdx,
         parent: -1,
         glitchTimer: Math.random() * 100,
+        semanticWeight: 1.0   // will be filled after embedding
       });
       wordIdx++;
     }
   }
 
-  // ── Now spread all words across the canvas in a rough grid ──
+  // ── 2. Compute semantic weights (if model available) ──
+  if (S.pfSemanticWeightEnable !== false && window._loadEmbeddingModel) {
+    try {
+      const extractor = await window._loadEmbeddingModel();
+
+      // Get unique words
+      const uniqueWords = [...new Set(_pfWords.map(w => w.word.toLowerCase()))];
+      
+      // Compute embeddings for unique words (batch by 32 to avoid memory issues)
+      const embeddings = {};
+      for (let i = 0; i < uniqueWords.length; i += 32) {
+        const batch = uniqueWords.slice(i, i + 32);
+        const results = await extractor(batch, { pooling: 'mean', normalize: true });
+        // results is a 2D array (batch_size x embedding_dim)
+        batch.forEach((word, j) => {
+          embeddings[word] = results[j].data;   // Float32Array
+        });
+      }
+
+      // Compute average embedding of all unique words
+      const dim = embeddings[uniqueWords[0]].length;
+      const avgEmbedding = new Float32Array(dim);
+      for (const word of uniqueWords) {
+        const vec = embeddings[word];
+        for (let k = 0; k < dim; k++) avgEmbedding[k] += vec[k];
+      }
+      for (let k = 0; k < dim; k++) avgEmbedding[k] /= uniqueWords.length;
+
+      // Compute semantic weight as cosine distance from average (range ~0-2)
+      for (const w of _pfWords) {
+        const vec = embeddings[w.word.toLowerCase()];
+        let dot = 0, normA = 0, normB = 0;
+        for (let k = 0; k < dim; k++) {
+          dot += vec[k] * avgEmbedding[k];
+          normA += vec[k] * vec[k];
+          normB += avgEmbedding[k] * avgEmbedding[k];
+        }
+        const similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+        // Distance from average (1 - similarity), mapped to a weight between 0.5 and 2.5
+        w.semanticWeight = 1.0 + (1 - similarity) * 2.0;  // range ~1-3
+      }
+    } catch (err) {
+      console.warn('Semantic weighting failed, falling back to default', err);
+      // Fallback: all words get weight 1.0 (already set)
+      for (const w of _pfWords) w.semanticWeight = 1.0;
+    }
+  }
+
+  // ── Grid placement (needs totalWord count, now semanticWeight exists) ──
   let totalWords = _pfWords.length;
   if (totalWords > 0) {
-    // Set lineY (used later for extremely weak vertical attraction)
+    let lineHeight = Math.max(60, p.height / lines.length);
     for (let w of _pfWords) {
       w.lineY = (w.lineIndex + 0.5) * lineHeight;
     }
 
-    // Grid geometry
     let cols = Math.ceil(Math.sqrt(totalWords * (p.width / p.height)));
     let rows = Math.ceil(totalWords / cols);
     let cellW = p.width / cols;
@@ -4628,7 +4675,12 @@ function initPoemFields(p) {
 // ═══════════════════════════════════════════════════════════════
 function drawPoemFields(p, t) {
   if (_pfWords.length === 0 || S.poemFieldText !== _pfLastText) {
-    initPoemFields(p);
+    // Asynchronous loading – the model will only load once
+    initPoemFields(p).then(() => {
+      // Ensure a redraw after words are ready
+      if (window._st) window._st.rd();
+    });
+    return;   // skip drawing this frame, we'll redraw soon
   }
 
   // ── Parameters ────────────────────────────────────────────────
@@ -4849,6 +4901,16 @@ function drawPoemFields(p, t) {
   // Draw words
   for (let w of _pfWords) {
     let sz = S.maxSize * w.sizeMult * 1.4;
+
+    // Apply semantic weight to size and speed
+    if (S.pfSemanticWeightEnable !== false) {
+      let sw = w.semanticWeight || 1.0;
+      let influence = S.pfSemanticInfluence ?? 0.5;   // how much it affects size/speed
+      // Scale size: distinct words get larger (or smaller, if you invert)
+      sz *= 1.0 + (sw - 1.0) * influence;
+      // Also adjust speed (distinct words slower? or faster? we'll make them slightly heavier)
+      w.speedMult *= 1.0 - (sw - 1.0) * influence * 0.5;
+    }
     if (useRhythm) {
       let beat = (w.idx + w.syll * 0.5) / 4;
       let pulse = Math.sin(t * (beatBPM / 60) * Math.PI * 2 + w.phase + beat) * pulseScale;
@@ -14818,7 +14880,9 @@ const PARAM_REGISTRY = {
     // Dependency links
     { type:'toggle', id:'pfDependencyLinks', label:'Show dependency lines', def:true },
     { id:'pfLinkAlpha', label:'Link opacity', min:0, max:1, step:0.05, def:0.25, scale:1 },
-
+    { type:'toggle', id:'pfSemanticWeightEnable', label:'Semantic weight (AI)', def:false,
+      hint:'Load a small embedding model to compute how distinctive each word is' },
+    { id:'pfSemanticInfluence', label:'Semantic influence', min:0, max:1, step:0.05, def:0.5, scale:1 }, 
     { id:'pfSpringStiffness',  label:'Spring stiffness',  min:0, max:0.1, step:0.001, def:0.02, scale:1 },
     { id:'pfRepulsionStrength', label:'Repulsion',        min:0, max:2,   step:0.1,   def:0.5, scale:1 },
     { id:'pfJitterAmount',      label:'Jitter amount',    min:0, max:0.5, step:0.01,  def:0.15, scale:1 },
@@ -17070,6 +17134,17 @@ function togglePanel() {
   }, 50);
 }
 </script>
+
+
+<script type="module">
+  // This will be used by the poem-fields init function
+  window._loadEmbeddingModel = async function() {
+    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    return await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+  };
+</script>
+
+  
 </body>
 </html>
 
