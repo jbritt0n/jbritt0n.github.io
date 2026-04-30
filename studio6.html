@@ -3225,25 +3225,25 @@ function _spawnBlock(p, W, H, gridUnit, minU, maxU, spdMin, spdMax, alphaMin, al
 
   let alpha = alphaMin + Math.random() * (alphaMax - alphaMin);
 
-  // Palette index (resolved at draw time using current S.palette)
-  let palIdx = Math.floor(Math.random() * (S.palette ? S.palette.length : 6));
-  let hasGrain = Math.random() < texProb;
-  let useCharGrain = charGrain && (Math.random() < 0.8);  // 80% chance
+  // Store the initial position – colour will be sampled from here every frame
+  let initX = sx + w / 2;   // use block centre for a more stable colour feel
+  let initY = sy + h / 2;
 
-  FolkBlocks.push({ x:sx, y:sy, w, h, vx, vy, dir, alpha, palIdx, hasGrain, useCharGrain });
+  let hasGrain = Math.random() < texProb;
+  let useCharGrain = charGrain && (Math.random() < 0.8);
+
+  FolkBlocks.push({ x:sx, y:sy, w, h, vx, vy, dir, alpha, initX, initY, hasGrain, useCharGrain });
 }
 
 // ── Main draw ────────────────────────────────────────────────────────────────
 function drawFolkTale(p, t) {
   let W = p.width, H = p.height;
 
-  // Re‑init if canvas size changed
   if (!FolkBlocks.length || FolkBlocks._canvasW !== W || FolkBlocks._canvasH !== H) {
     initFolkTale(p, W, H);
     return;
   }
 
-  // ── Dynamic parameters ────────────────────────────────────────────────────
   let gridUnit   = S.folkGridUnit   ?? 60;
   let minSizeU   = S.folkMinSize    ?? 1;
   let maxSizeU   = S.folkMaxSize    ?? 4;
@@ -3256,13 +3256,10 @@ function drawFolkTale(p, t) {
   let alphaMax   = S.folkAlphaMax   ?? 0.95;
   let texProb    = S.folkTextureProb ?? 0.3;
   let charGrain  = S.folkCharGrain  ?? false;
-  let speedFactor = S.speed * 200;           // global speed → pixel motion
+  let speedFactor = S.speed * 200;
+  let charSpacing = Math.max(4, S.spacing || 12);
 
-  // Palette (global) – can change at any time
-  let pal = S.palette && S.palette.length ? S.palette : ['#9A2A2A','#E3B23C','#2A7F7F','#F5F0E6','#1C3A5A','#2E5A2E'];
-  let charSpacing = Math.max(4, S.spacing || 12);   // character grain step
-
-  // ── Spawn new blocks ─────────────────────────────────────────────────────
+  // Spawning
   if (S.playing) {
     let framesPerSpawn = Math.max(1, Math.round(60 / Math.max(0.1, spawnRate)));
     _folkSpawnTimer += 1;
@@ -3271,7 +3268,6 @@ function drawFolkTale(p, t) {
       _spawnBlock(p, W, H, gridUnit, minSizeU, maxSizeU, speedMin, speedMax, alphaMin, alphaMax, texProb, charGrain);
     }
 
-    // Update positions with screen wrapping
     for (let block of FolkBlocks) {
       if (block.dir === 'H') {
         block.x += block.vx * speedFactor;
@@ -3285,6 +3281,56 @@ function drawFolkTale(p, t) {
     }
   }
 
+  // Drawing
+  CTX.save();
+  for (let block of FolkBlocks) {
+    // Use the global colour mapping (respects S.colorMapMode, noiseType, etc.)
+    let col = pickColor(p, block.initX, block.initY, t);
+
+    CTX.fillStyle = col;
+    CTX.globalAlpha = block.alpha;
+    CTX.fillRect(block.x, block.y, block.w, block.h);
+
+    // ── Character grain ───────────────────────────────────────────────────
+    if (block.useCharGrain) {
+      CTX.save();
+      CTX.beginPath();
+      CTX.rect(block.x, block.y, block.w, block.h);
+      CTX.clip();
+      CTX.globalAlpha = 0.35;
+
+      for (let gx = block.x; gx < block.x + block.w; gx += charSpacing) {
+        for (let gy = block.y; gy < block.y + block.h; gy += charSpacing) {
+          let ch = pickChar(p, gx, gy, t);
+          let sz = charSpacing * 0.8;
+          CTX.font = `${sz}px ${S.fontStack}`;
+          CTX.fillStyle = pickColor(p, gx, gy, t);   // also global‑mapped
+          CTX.textAlign = 'center';
+          CTX.textBaseline = 'middle';
+          CTX.fillText(ch, gx + charSpacing/2, gy + charSpacing/2);
+        }
+      }
+      CTX.restore();
+    }
+
+    // ── Canvas‑style grain ──────────────────────────────────────────────────
+    if (block.hasGrain) {
+      CTX.save();
+      CTX.globalAlpha = 0.08;
+      let cnt = Math.floor(block.w * block.h * 0.008);
+      for (let i = 0; i < cnt; i++) {
+        let gx = block.x + Math.random() * block.w;
+        let gy = block.y + Math.random() * block.h;
+        CTX.fillStyle = Math.random() < 0.5 ? '#000' : '#fff';
+        CTX.fillRect(gx, gy, 1.2, 1.2);
+      }
+      CTX.restore();
+    }
+  }
+
+  CTX.restore();
+  _lastFill = '';
+}
   // ── Draw ──────────────────────────────────────────────────────────────────
   // The global blend mode (S.blendMode) is already applied before drawFolkTale
   // via the drawScene wrapper.  We only need to set per‑block alpha and colour.
@@ -14737,7 +14783,8 @@ new p5(function(p){
     initLoops(W,H); initStripedRects(W,H); initTrabeculum(W, H); initNumbCollage(p); initNumbPoem(p);
     recRects=[]; collageBlocks=[]; rdGrid=null; voronoiSites=[]; myceliumBranches=[]; 
     mazeGrid=null; mondrianRects=[]; sandParticles=[]; caGrid=null; 
-    lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[]; 
+    lissParticles=[]; geodeTiles=[]; monogridBlocks=[]; bauhausShapes=[];
+    FolkBlocks = []; _folkSpawnTimer = 0; initFolkTale(p, W, H);
     cascadeRects=[]; scatterClouds=[]; stillForms=[]; dnaCols=[]; cosmicGrid=[]; hypertypeGrid=[]; distrktShapes=[];
     wtHeightmap=null; fsPolygons=[]; _driftMap.clear();
     boidAgents=[]; magneticPoles=[]; calligStrokes=[]; _calligClock=0;
