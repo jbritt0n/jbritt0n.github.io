@@ -1445,6 +1445,7 @@ const PALETTES={
   risograph:   ['#ff6b35','#00b4d8','#f72585','#06d6a0','#ffd166','#ff0055'],
   mondrian:    ['#FAFAFA','#212121','#D32F2F','#1A237E','#FDD835','#9E9E9E'],
   yandinsky:   ['#d4166e','#3a7882','#18120a','#c02020','#e0a030','#4a6a2a'],
+  folktale:    ['#9A2A2A','#E3B23C','#2A7F7F','#F5F0E6','#1C3A5A','#2E5A2E'],
   // ──────────────────────────────────────────────────────────────────────────
   // Monochrome & Greyscale
   // ──────────────────────────────────────────────────────────────────────────
@@ -3158,100 +3159,175 @@ function drawWebster(p, t) {
   });
 }
 
+                                                               
+// ── FOLK TALE ────────────────────────────────────────────────────────────────
+// Modular, sliding-block composition inspired by Christy Moore’s "Folk Tale"
+// album cover.  Blocks move on fixed axes, overlap with multiply blending,
+// and can optionally be replaced by typographic characters.  Texture, opacity
+// variation, and the studio’s own palette system are fully exposed as sliders.
 
+// Global state (kept in the existing `FolkBlocks` array)
+let FolkBlocks = [];
 
-// ── FolkTale 4/30/26 ───────────────────────────────────────────
-// inspired by Folk Tale album art from Christy Moore                                                                   
+// Spawn timer (frame count based)
+let _folkSpawnTimer = 0;
+
+// ── Initialisation ───────────────────────────────────────────────────────────
 function initFolkTale(W, H) {
-  folkBlocks = [];
+  FolkBlocks = [];
+  _folkSpawnTimer = 0;
 
-  // ── Parameters (with defaults) ──────────────────────────────────
+  // ── Parameters (with defaults) ──────────────────────────────────────────
   let gridUnit   = S.folkGridUnit   ?? 60;
-  let count      = S.folkBlockCount ?? 20;
-  let palette    = S.folkPalette    ?? [
-    '#9A2A2A',   // Deep Madder Red
-    '#E3B23C',   // Mustard Yellow
-    '#2A7F7F',   // Teal
-    '#F5F0E6',   // Off‑White
-    '#1C3A5A',   // Navy Blue
-    '#2E5A2E'    // Forest Green
-  ];
+  let maxBlocks  = S.folkMaxBlocks  ?? 30;
+  let speedMin   = S.folkSpeedMin   ?? 0.5;      // units per second (at default speed scaling)
+  let speedMax   = S.folkSpeedMax   ?? 2.5;
+  let alphaMin   = S.folkAlphaMin   ?? 0.35;
+  let alphaMax   = S.folkAlphaMax   ?? 0.95;
+  let textMode   = S.folkTextMode   ?? false;     // global toggle, applied to future blocks
+  let textureProb= S.folkTextureProb ?? 0.3;
 
-  for (let i = 0; i < count; i++) {
-    // Random size multiples of gridUnit (1x to 4x)
-    let wMult = 1 + Math.floor(Math.random() * 4);   // 1–4 units wide
-    let hMult = 1 + Math.floor(Math.random() * 4);   // 1–4 units high
-    let w = wMult * gridUnit;
-    let h = hMult * gridUnit;
+  // Use the current studio palette (or fall back to the built‑in folk palette)
+  let palette = S.palette && S.palette.length ? S.palette
+               : ['#9A2A2A','#E3B23C','#2A7F7F','#F5F0E6','#1C3A5A','#2E5A2E'];
 
-    // Random placement snapped to the unit grid
-    let cols = Math.floor(W / gridUnit);
-    let rows = Math.floor(H / gridUnit);
-    let startX = Math.floor(Math.random() * (cols - wMult + 1)) * gridUnit;
-    let startY = Math.floor(Math.random() * (rows - hMult + 1)) * gridUnit;
-
-    // Direction: 'H' (horizontal) or 'V' (vertical)
-    let dir = Math.random() < 0.5 ? 'H' : 'V';
-
-    // Base speed (±1 to ±3 units per second at default speed scaling)
-    let baseSpeed = 1 + Math.floor(Math.random() * 3);
-    // Random sign to give movement left/right or up/down
-    let sign = Math.random() < 0.5 ? 1 : -1;
-    let vx = dir === 'H' ? sign * baseSpeed : 0;
-    let vy = dir === 'V' ? sign * baseSpeed : 0;
-
-    // Random colour from the folk palette
-    let col = palette[Math.floor(Math.random() * palette.length)];
-
-    folkBlocks.push({ x: startX, y: startY, w, h, vx, vy, dir, col });
+  // Pre‑seed with a few blocks so the canvas isn’t empty
+  for (let i = 0; i < 12; i++) {
+    _spawnFolkBlock(W, H, gridUnit, palette, speedMin, speedMax, alphaMin, alphaMax, textMode, textureProb);
   }
 }
 
+// ── Block factory (called both on init and during play) ─────────────────────
+function _spawnFolkBlock(W, H, gridUnit, palette, spdMin, spdMax, alphaMin, alphaMax, textMode, textureProb) {
+  // Size: multiple of gridUnit (1–4)
+  let wMult = 1 + Math.floor(Math.random() * 4);
+  let hMult = 1 + Math.floor(Math.random() * 4);
+  let w = wMult * gridUnit;
+  let h = hMult * gridUnit;
+
+  // Snap start position to grid
+  let cols = Math.floor(W / gridUnit);
+  let rows = Math.floor(H / gridUnit);
+  let sx = Math.floor(Math.random() * (cols - wMult + 1)) * gridUnit;
+  let sy = Math.floor(Math.random() * (rows - hMult + 1)) * gridUnit;
+
+  // Direction axis
+  let dir = Math.random() < 0.5 ? 'H' : 'V';
+  let baseSpeed = spdMin + Math.random() * (spdMax - spdMin);
+  let sign = Math.random() < 0.5 ? 1 : -1;
+  let vx = dir === 'H' ? sign * baseSpeed : 0;
+  let vy = dir === 'V' ? sign * baseSpeed : 0;
+
+  let alpha = alphaMin + Math.random() * (alphaMax - alphaMin);
+  let col   = palette[Math.floor(Math.random() * palette.length)];
+
+  // Text mode fields
+  let char = null, charSize = 0;
+  if (textMode && S.chars && S.chars.length > 0) {
+    char = S.chars[Math.floor(Math.random() * S.chars.length)];
+    // Font size derived from grid unit (about 80% of unit)
+    charSize = gridUnit * 0.8;
+  }
+
+  // Grain texture flag
+  let hasGrain = Math.random() < textureProb;
+
+  FolkBlocks.push({ x: sx, y: sy, w, h, vx, vy, dir, col, alpha, char, charSize, hasGrain });
+}
+
+// ── Main draw ────────────────────────────────────────────────────────────────
 function drawFolkTale(p, t) {
   let W = p.width, H = p.height;
 
-  // Reinitialise if canvas size has changed or no blocks exist
-  if (!folkBlocks.length || folkBlocks[0]._canvasW !== W || folkBlocks[0]._canvasH !== H) {
+  // (Re)initialise if canvas size changed or array missing
+  if (!FolkBlocks.length || FolkBlocks[0]._canvasW !== W || FolkBlocks[0]._canvasH !== H) {
     initFolkTale(W, H);
-  }
-
-  // ── Update positions (if playing) with wrapping ─────────────────
-  if (S.playing) {
-    let speedFactor = S.speed * 200;   // adjust so movement is visible at default speed
-
-    for (let block of folkBlocks) {
-      if (block.dir === 'H') {
-        block.x += block.vx * speedFactor;
-        // Wrap horizontally
-        if (block.vx > 0 && block.x > W) {
-          block.x = -block.w;
-        } else if (block.vx < 0 && block.x + block.w < 0) {
-          block.x = W;
-        }
-      } else { // Vertical
-        block.y += block.vy * speedFactor;
-        if (block.vy > 0 && block.y > H) {
-          block.y = -block.h;
-        } else if (block.vy < 0 && block.y + block.h < 0) {
-          block.y = H;
-        }
-      }
+    // Stamp canvas dimensions onto first block so we know when to reinit
+    if (FolkBlocks.length) {
+      FolkBlocks[0]._canvasW = W;
+      FolkBlocks[0]._canvasH = H;
     }
   }
 
-  // ── Render with multiply blending ────────────────────────────────
-  let alpha = S.folkAlpha ?? 0.8;
+  // ── Parameters that can change dynamically ────────────────────────────────
+  let gridUnit    = S.folkGridUnit   ?? 60;
+  let speedFactor = S.speed * 200;            // maps S.speed (0.004) to usable value
+  let maxBlocks   = S.folkMaxBlocks  ?? 30;
+  let spawnRate   = S.folkSpawnRate  ?? 2;    // blocks per second (approximate)
+  let textMode    = S.folkTextMode   ?? false;
+  let textureProb = S.folkTextureProb ?? 0.3;
+  let speedMin    = S.folkSpeedMin   ?? 0.5;
+  let speedMax    = S.folkSpeedMax   ?? 2.5;
+  let alphaMin    = S.folkAlphaMin   ?? 0.35;
+  let alphaMax    = S.folkAlphaMax   ?? 0.95;
+  let palette     = S.palette && S.palette.length ? S.palette
+                   : ['#9A2A2A','#E3B23C','#2A7F7F','#F5F0E6','#1C3A5A','#2E5A2E'];
 
-  CTX.save();
-  CTX.globalCompositeOperation = 'multiply';
-  CTX.globalAlpha = alpha;
-
-  for (let block of folkBlocks) {
-    CTX.fillStyle = block.col;
-    CTX.fillRect(block.x, block.y, block.w, block.h);
+  // ── Spawn new blocks over time ──────────────────────────────────────────
+  if (S.playing) {
+    // Adjust spawn rate to be independent of frame‑rate
+    let framesPerSpawn = Math.max(1, Math.round(60 / Math.max(0.1, spawnRate)));
+    _folkSpawnTimer += 1;
+    while (_folkSpawnTimer >= framesPerSpawn && FolkBlocks.length < maxBlocks) {
+      _folkSpawnTimer -= framesPerSpawn;
+      _spawnFolkBlock(W, H, gridUnit, palette, speedMin, speedMax, alphaMin, alphaMax, textMode, textureProb);
+    }
   }
 
-  CTX.restore();   // resets compositeOperation and alpha
+  // ── Update positions with wrapping ──────────────────────────────────────
+  for (let block of FolkBlocks) {
+    if (block.dir === 'H') {
+      block.x += block.vx * speedFactor;
+      if (block.vx > 0 && block.x > W) block.x = -block.w;
+      else if (block.vx < 0 && block.x + block.w < 0) block.x = W;
+    } else {
+      block.y += block.vy * speedFactor;
+      if (block.vy > 0 && block.y > H) block.y = -block.h;
+      else if (block.vy < 0 && block.y + block.h < 0) block.y = H;
+    }
+  }
+
+  // ── Draw ────────────────────────────────────────────────────────────────
+  let blendMode = S.folkBlendMode ?? 'multiply';
+
+  CTX.save();
+  CTX.globalCompositeOperation = blendMode;
+
+  for (let block of FolkBlocks) {
+    CTX.globalAlpha = block.alpha;
+
+    if (block.char && block.charSize) {
+      // Text mode – reuse dc() while respecting globalAlpha
+      let sz = block.charSize;
+      let x = block.x + block.w/2;
+      let y = block.y + block.h/2;
+      CTX.font = `${sz}px ${S.fontStack}`;
+      CTX.textAlign = 'center';
+      CTX.textBaseline = 'middle';
+      CTX.fillStyle = block.col;
+      CTX.fillText(block.char, x, y);
+    } else {
+      // Rectangle mode
+      CTX.fillStyle = block.col;
+      CTX.fillRect(block.x, block.y, block.w, block.h);
+    }
+
+    // ── Optional grain texture overlay ────────────────────────────────────
+    if (block.hasGrain) {
+      CTX.save();
+      CTX.globalAlpha = 0.12;     // subtle grain
+      let grainCount = Math.floor(block.w * block.h * 0.008);   // ~0.8% coverage per pixel
+      for (let i = 0; i < grainCount; i++) {
+        let gx = block.x + Math.random() * block.w;
+        let gy = block.y + Math.random() * block.h;
+        CTX.fillStyle = Math.random() < 0.5 ? '#000000' : '#ffffff';
+        CTX.fillRect(gx, gy, 1.2, 1.2);
+      }
+      CTX.restore();
+    }
+  }
+
+  CTX.restore();
   _lastFill = '';   // invalidate colour cache
 }
   
@@ -15129,11 +15205,25 @@ const PARAM_REGISTRY = {
     { id: 'websterBlockWobAmp',    label: 'Block wobble amp',  min: 0,     max: 0.3,  step: 0.01,  def: 0.08,  scale: 1 },
   ],
   folktale: [
-    { id:'folkGridUnit',   label:'Grid unit (px)',   min:20, max:120, step:5,  def:60,  scale:1,
-      extra:function(){ if(window._st) initFolkTale(window._st.w(), window._st.h()); } },
-    { id:'folkBlockCount', label:'Number of blocks', min:4,  max:60,  step:2,  def:20,  scale:1,
-      extra:function(){ if(window._st) initFolkTale(window._st.w(), window._st.h()); } },
-    { id:'folkAlpha',      label:'Block opacity',    min:0.2, max:1,    step:0.05, def:0.8, scale:1 },
+    { id:'folkGridUnit',   label:'Grid unit (px)',    min:20,  max:150, step:5,   def:60,  scale:1 },
+    { id:'folkMaxBlocks',  label:'Max blocks',        min:4,   max:80,  step:2,   def:30,  scale:1 },
+    { id:'folkSpawnRate',  label:'Spawn rate (per s)',min:0.5, max:10,  step:0.5, def:2,   scale:1 },
+    { id:'folkSpeedMin',   label:'Min speed',         min:0.2, max:4,   step:0.1, def:0.5, scale:1,
+      hint:'In grid units per second at default speed' },
+    { id:'folkSpeedMax',   label:'Max speed',         min:0.5, max:6,   step:0.1, def:2.5, scale:1 },
+    { id:'folkAlphaMin',   label:'Min opacity',       min:0.1, max:1,   step:0.05,def:0.35,scale:1 },
+    { id:'folkAlphaMax',   label:'Max opacity',       min:0.1, max:1,   step:0.05,def:0.95,scale:1 },
+    { id:'folkTextureProb',label:'Texture probability',min:0,  max:1,   step:0.05,def:0.3, scale:1 },
+    { type:'toggle', id:'folkTextMode', label:'Use characters',  def:false },
+    { type:'select', id:'folkBlendMode', label:'Blend mode',
+      def:'multiply',
+      options:[
+        { value:'multiply',     label:'Multiply (classic)' },
+        { value:'overlay',      label:'Overlay' },
+        { value:'source-over',  label:'Normal'  },
+        { value:'screen',       label:'Screen (bright)' }
+      ]
+    },
   ],
   stripedrects: [
     { id:'srDensityGate',  label:'Density threshold',min:0, max:1, step:0.02, def:0.5, scale:1,
