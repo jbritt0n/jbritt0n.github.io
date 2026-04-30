@@ -1501,6 +1501,36 @@ const COMP_PALETTES={
   navy2:  ['#0a1628','#1a3050','#2a5080','#3a70b0','#0d2040','#204060','#4a7fb5','#6090c8'],
 };
 
+
+// ── PIET ESOLANG CONSTANTS ────────────────────────────────────────────────────
+// 18 authentic Piet colors: 6 hues × 3 lightness (light/normal/dark)
+// Index: hIdx * 3 + lIdx
+const PIET_COLORS_HEX = [
+  '#FFC0C0','#FF0000','#C00000',  // Red
+  '#FFFFC0','#FFFF00','#C0C000',  // Yellow
+  '#C0FFC0','#00FF00','#00C000',  // Green
+  '#C0FFFF','#00FFFF','#00C0C0',  // Cyan
+  '#C0C0FF','#0000FF','#0000C0',  // Blue
+  '#FFC0FF','#FF00FF','#C000C0',  // Magenta
+];
+const PIET_HUE_NAMES   = ['Red','Yellow','Green','Cyan','Blue','Magenta'];
+const PIET_LIGHT_NAMES = ['Light','Normal','Dark'];
+// Command table: PIET_CMD_TABLE[hueShift][lightnessShift]
+const PIET_CMD_TABLE = [
+  ['NOP',     'PUSH',    'POP'    ],
+  ['ADD',     'SUB',     'MUL'    ],
+  ['DIV',     'MOD',     'NOT'    ],
+  ['GREATER', 'POINTER', 'SWITCH' ],
+  ['DUP',     'ROLL',    'IN(N)'  ],
+  ['IN(C)',   'OUT(N)',  'OUT(C)' ],
+];
+const PIET_CMD_SHORT = {
+  'NOP':'—','PUSH':'PSH','POP':'POP','ADD':'ADD','SUB':'SUB','MUL':'MUL',
+  'DIV':'DIV','MOD':'MOD','NOT':'NOT','GREATER':'>','POINTER':'PTR',
+  'SWITCH':'SWI','DUP':'DUP','ROLL':'RLL','IN(N)':'IN#','IN(C)':'IN@',
+  'OUT(N)':'OUT#','OUT(C)':'OUT@',
+};
+  
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let S={
   mode:'welcome',chars:CHARSETS.chinese,palette:PALETTES.site,
@@ -1656,6 +1686,12 @@ let _lastFrame=0,_fps=0,_frameCount=0,_fpsTimer=0;
 let CTX=null;
 let _lastFont='',_lastSize=-1,_lastFill='';
 
+// ── PIET MODE STATE ───────────────────────────────────────────────────────────
+let pietCodels   = [];   // [{hIdx,lIdx,cmd,word,hShift,lShift}]
+let pietExecPos  = 0;    // animated execution cursor
+let pietLastText = '';   // cache — reparse only when text changes
+let pietStack    = [];   // simulated stack (display only)
+let pietOutput   = '';   // accumulated OUT(C)/OUT(N) text    
   
 
 // ── WELCOME SECTIONS ─────────────────────────────────────────────────────
@@ -4329,151 +4365,7 @@ function drawUnknownPleasures(p, t) {
 
 
   
-// ── Piet ─────────────────────────────────────────────────────────────────
-function drawPiet(p, t) {
-  // ── Piet colour table (18 colours in HSB) ──
-  const hueNames = ["Red","Yellow","Green","Cyan","Blue","Magenta"];
-  const lightnessNames = ["Light","Normal","Dark"];
-  const colorHSB = [];
-  for (let hIdx = 0; hIdx < 6; hIdx++) {
-    let hueDeg = hIdx * 60;
-    colorHSB[hIdx*3 + 0] = { h: hueDeg, s: 25, b: 100, name: `Light ${hueNames[hIdx]}` };
-    colorHSB[hIdx*3 + 1] = { h: hueDeg, s: 100, b: 100, name: `Normal ${hueNames[hIdx]}` };
-    colorHSB[hIdx*3 + 2] = { h: hueDeg, s: 100, b: 75, name: `Dark ${hueNames[hIdx]}` };
-  }
 
-  // ── Piet commands and their (hueShift, lightnessShift) ──
-  const commands = [
-    { name: "PUSH",   hShift: 0, lShift: 1 }, { name: "POP",    hShift: 0, lShift: 2 },
-    { name: "ADD",    hShift: 1, lShift: 0 }, { name: "SUB",    hShift: 1, lShift: 1 },
-    { name: "MUL",    hShift: 1, lShift: 2 }, { name: "DIV",    hShift: 2, lShift: 0 },
-    { name: "MOD",    hShift: 2, lShift: 1 }, { name: "NOT",    hShift: 2, lShift: 2 },
-    { name: "GREATER",hShift: 3, lShift: 0 }, { name: "POINTER",hShift: 3, lShift: 1 },
-    { name: "SWITCH", hShift: 3, lShift: 2 }, { name: "DUP",    hShift: 4, lShift: 0 },
-    { name: "ROLL",   hShift: 4, lShift: 1 }, { name: "IN(N)",  hShift: 4, lShift: 2 },
-    { name: "IN(C)",  hShift: 5, lShift: 0 }, { name: "OUT(N)", hShift: 5, lShift: 1 },
-    { name: "OUT(C)", hShift: 5, lShift: 2 }
-  ];
-
-  // ── Parse poem into words (remove punctuation) ──
-  let raw = S.pietPoem || '';
-  let words = raw.match(/\b\w+\b/g);
-  if (!words || words.length === 0) { words = ['hello']; }
-
-  // ── Build codel sequence ──
-  let codels = [];
-  let currentHue = (S.pietStartHue % 6 + 6) % 6;
-  let currentLightness = (S.pietStartLightness % 3 + 3) % 3;
-  
-  // Starting codel
-  codels.push({
-    hIdx: currentHue,
-    lIdx: currentLightness,
-    col: colorHSB[currentHue * 3 + currentLightness],
-    cmd: "(start)"
-  });
-
-  for (let i = 0; i < words.length; i++) {
-    let len = words[i].length;
-    let cmdIdx = len % commands.length;
-    let cmd = commands[cmdIdx];
-    
-    currentHue = (currentHue + cmd.hShift) % 6;
-    currentLightness = (currentLightness + cmd.lShift) % 3;
-    
-    codels.push({
-      hIdx: currentHue,
-      lIdx: currentLightness,
-      col: colorHSB[currentHue * 3 + currentLightness],
-      cmd: cmd.name
-    });
-  }
-
-  // ── Mode‑specific parameters (global sliders modulated by mode‑specific switches) ──
-  let useWaveDistort = S.pietWaveEnable   !== false;   // toggle
-  let waveAmp        = (S.wave || 0) * (S.pietWaveDistort   || 0.0);   // 0‑1 multiplier
-  let turbFreq       = (S.turb || 0) * (S.pietTurbDistort    || 5.0);  // frequency for wave
-  let useDensityMask = S.pietDensityMask === true;
-  let useBgNoise     = S.pietBgNoise     === true;
-  let labelSize      = Math.max(6, (S.maxSize || 20) * 0.3);            // tie label size to maxSize
-
-  // ── Canvas setup ──
-  p.push();
-  p.colorMode(p.HSB, 360, 100, 100);
-  p.noStroke();
-  p.rectMode(p.CORNER);
-
-  // ── Optional background noise texture ──
-  if (useBgNoise) {
-    p.loadPixels();
-    for (let y = 0; y < p.height; y += 2) {
-      for (let x = 0; x < p.width; x += 2) {
-        let idx = 4 * (y * p.width + x);
-        let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.1);
-        let bgBright = p.map(n, 0, 1, 85, 100);
-        p.pixels[idx]     = 0;           // hue neutral
-        p.pixels[idx + 1] = 0;           // saturation
-        p.pixels[idx + 2] = bgBright;    // brightness
-        p.pixels[idx + 3] = 255;
-      }
-    }
-    p.updatePixels();
-  } else {
-    p.background(S.bg);
-  }
-
-  // ── Grid layout ──
-  let cellSize = S.pietCodelSize || 24;
-  let gridCols = Math.max(5, Math.ceil(Math.sqrt(codels.length * (p.width / p.height))));
-  let rows = Math.ceil(codels.length / gridCols);
-  let totalW = gridCols * cellSize;
-  let totalH = rows * cellSize;
-  let ox = (p.width - totalW) / 2;
-  let oy = (p.height - totalH) / 2;
-
-  // ── Draw codels with optional distortion ──
-  for (let i = 0; i < codels.length; i++) {
-    let row = Math.floor(i / gridCols);
-    let col;
-    if (row % 2 === 0) {
-      // left → right
-      col = i % gridCols;
-    } else {
-      // right → left (snake)
-      col = gridCols - 1 - (i % gridCols);
-    }
-    let x = ox + col * cellSize;
-    let y = oy + row * cellSize;
-
-    // Apply wave distortion (optional, controlled by toggle + wave slider)
-    let dx = 0, dy = 0;
-    if (useWaveDistort && waveAmp > 0) {
-      // Use turbFreq for faster oscillations in space
-      dx = Math.sin(y * turbFreq * 0.01 + t * 0.5) * waveAmp * cellSize * 0.3;
-      dy = Math.cos(x * turbFreq * 0.01 + t * 0.4) * waveAmp * cellSize * 0.3;
-    }
-
-    // Density mask (optional) — skip drawing if noise is below threshold
-    if (useDensityMask) {
-      let n = sampleNoise(p, x * S.noiseScale, y * S.noiseScale, t * 0.2);
-      if (n < (S.density || 0.5)) continue;
-    }
-
-    let c = codels[i].col;
-    p.fill(c.h, c.s, c.b);
-    p.rect(x + dx, y + dy, cellSize, cellSize);
-
-    // Command label (size driven by maxSize)
-    if (S.pietShowLabels) {
-      p.fill(0, 0, 30);
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(labelSize);
-      p.text(codels[i].cmd, x + cellSize / 2 + dx, y + cellSize / 2 + dy);
-    }
-  }
-
-  p.pop();
-}
   
 
 // ═══════════════════════════════════════════════════════════════
@@ -14270,6 +14162,442 @@ function drawMagnetic(p, t) {
   _lastFill = '';
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PIET ESOLANG MODE
+// Translates any text/poem into a sequence of authentic Piet color codels.
+// Each word drives a hue + lightness shift, determining the Piet command
+// for that transition. Execution is animated and simulated in real time.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Parse text → codel sequence ───────────────────────────────────────────────
+function parsePietText(text) {
+  if (!text || !text.trim()) return [];
+  let words = text.match(/[a-zA-Z']+/g) || [];
+  if (!words.length) return [];
+  words = words.slice(0, 200); // performance cap
+
+  let hIdx = Math.max(0, Math.min(5, Math.round(S.pietStartHue  || 0)));
+  let lIdx = Math.max(0, Math.min(2, Math.round(S.pietStartLight || 0)));
+
+  let codels = [{ hIdx, lIdx, cmd:'START', word:'(start)', hShift:0, lShift:0 }];
+
+  for (let i = 0; i < words.length; i++) {
+    let w  = words[i];
+    // hue shift  : word length mod 6
+    // light shift: (first-char code + position) mod 3 — gives colour variety
+    let hS = w.length % 6;
+    let lS = (w.charCodeAt(0) + i) % 3;
+    let nh = (hIdx + hS) % 6;
+    let nl = (lIdx + lS) % 3;
+    codels.push({ hIdx:nh, lIdx:nl, cmd:PIET_CMD_TABLE[hS][lS], word:w, hShift:hS, lShift:lS });
+    hIdx = nh; lIdx = nl;
+  }
+  return codels;
+}
+
+// ── Colour helpers ─────────────────────────────────────────────────────────────
+function getPietFill(codel, p, x, y, t) {
+  let mode     = S.pietColorMode || 'piet';
+  let authentic = PIET_COLORS_HEX[codel.hIdx * 3 + codel.lIdx];
+  if (mode === 'palette') {
+    return S.palette[(codel.hIdx * 3 + codel.lIdx) % S.palette.length];
+  }
+  if (mode === 'tinted') {
+    let pc = S.palette[codel.hIdx % S.palette.length] || '#888888';
+    return _blendPietHex(authentic, pc, 0.38);
+  }
+  return authentic;
+}
+
+function _blendPietHex(a, b, t) {
+  function parse(c) {
+    if (!c) return [128,128,128];
+    if (c.charAt(0) === '#') return [parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)];
+    let m = c.match(/\d+/g); return m ? [+m[0],+m[1],+m[2]] : [128,128,128];
+  }
+  let [ar,ag,ab] = parse(a), [br,bg,bb] = parse(b);
+  return `rgb(${Math.round(ar+(br-ar)*t)},${Math.round(ag+(bg-ag)*t)},${Math.round(ab+(bb-ab)*t)})`;
+}
+
+function pietContrast(col) {
+  let r, g, b;
+  if (!col) return '#000';
+  if (col.charAt(0) === '#') { r=parseInt(col.slice(1,3),16); g=parseInt(col.slice(3,5),16); b=parseInt(col.slice(5,7),16); }
+  else { let m=col.match(/\d+/g)||[128,128,128]; r=+m[0]; g=+m[1]; b=+m[2]; }
+  return (0.299*r+0.587*g+0.114*b)/255 > 0.55 ? '#1a1a1a' : '#f0f0f0';
+}
+
+// ── Simulate one Piet step (simplified, for stack display) ────────────────────
+function pietSimStep(codel) {
+  let s = pietStack, cmd = codel.cmd;
+  switch(cmd) {
+    case 'PUSH':    s.push(1); break;
+    case 'POP':     if(s.length) s.pop(); break;
+    case 'ADD':     if(s.length>=2){let b=s.pop(),a=s.pop();s.push(a+b);} break;
+    case 'SUB':     if(s.length>=2){let b=s.pop(),a=s.pop();s.push(a-b);} break;
+    case 'MUL':     if(s.length>=2){let b=s.pop(),a=s.pop();s.push(a*b);} break;
+    case 'DIV':     if(s.length>=2&&s[s.length-1]!==0){let b=s.pop(),a=s.pop();s.push(Math.trunc(a/b));} break;
+    case 'MOD':     if(s.length>=2&&s[s.length-1]!==0){let b=s.pop(),a=s.pop();s.push(((a%b)+b)%b);} break;
+    case 'NOT':     if(s.length){s.push(s.pop()===0?1:0);} break;
+    case 'GREATER': if(s.length>=2){let b=s.pop(),a=s.pop();s.push(a>b?1:0);} break;
+    case 'DUP':     if(s.length){s.push(s[s.length-1]);} break;
+    case 'OUT(C)':  if(s.length){let v=s.pop();pietOutput+=String.fromCharCode(Math.abs(v)%128);} break;
+    case 'OUT(N)':  if(s.length){pietOutput+=String(s.pop());} break;
+    default: break;
+  }
+  if(s.length>24) s.splice(0,s.length-24);
+  if(pietOutput.length>60) pietOutput = pietOutput.slice(-60);
+}
+
+// ── MAIN DRAW DISPATCHER ──────────────────────────────────────────────────────
+function drawPiet(p, t) {
+  let W = p.width, H = p.height;
+
+  // Reparse if text changed
+  let srcText = S.pietText || 'the quick brown fox jumps over the lazy dog';
+  if (srcText !== pietLastText) {
+    pietCodels   = parsePietText(srcText);
+    pietLastText = srcText;
+    pietExecPos  = 0;
+    pietStack    = [];
+    pietOutput   = '';
+  }
+  if (!pietCodels.length) return;
+
+  // Advance execution cursor
+  if (S.playing && S.pietAnimExec !== false) {
+    let interval = Math.max(1, Math.round(30 / (S.pietExecSpeed || 8)));
+    if (S.fc % interval === 0) {
+      let prev = pietExecPos;
+      pietExecPos = (pietExecPos + 1) % pietCodels.length;
+      pietSimStep(pietCodels[pietExecPos]);
+      if (pietExecPos === 0) { pietStack = []; pietOutput = ''; } // wrap reset
+    }
+  }
+
+  let cellSz = Math.max(8, Math.round(S.pietCellSize || 28));
+  let cols   = S.pietGridCols > 0
+    ? Math.min(Math.round(S.pietGridCols), pietCodels.length)
+    : Math.max(4, Math.floor(W / (cellSz + 2)));
+
+  switch (S.pietLayout || 'snake') {
+    case 'radial':    drawPietRadial(p, t, cellSz); break;
+    case 'scattered': drawPietScattered(p, t, cellSz); break;
+    case 'river':     drawPietRiver(p, t, cellSz, cols); break;
+    default:          drawPietSnake(p, t, cellSz, cols); break;
+  }
+
+  if (S.pietShowExec !== false) drawPietExecUI(p, t, W, H);
+}
+
+// ── LAYOUT: Snake Grid ─────────────────────────────────────────────────────────
+function drawPietSnake(p, t, cellSz, cols) {
+  let W = p.width, H = p.height;
+  let n    = pietCodels.length;
+  let rows = Math.ceil(n / cols);
+  let offX = Math.max(0, (W - cols * cellSz) / 2);
+  let offY = Math.max(0, (H - rows * cellSz) / 2);
+
+  let wAmp    = S.pietWaveAmp    || 0;
+  let glow    = S.pietGlow       || 0;
+  let border  = (S.pietBorder    !== undefined ? S.pietBorder : 1) * 0.5;
+  let showLbl = S.pietShowLabels !== false;
+  let showWrd = S.pietShowWords  === true;
+  let charOvr = S.pietCharOverlay !== false;
+
+  CTX.save();
+  CTX.textAlign = 'center'; CTX.textBaseline = 'middle';
+
+  // Connection lines (omit for very large sets)
+  if (n <= 100) {
+    CTX.globalAlpha = 0.18; CTX.lineWidth = 1;
+    for (let i = 1; i < n; i++) {
+      let [x1,y1] = _pietSnakeXY(i-1, cols, offX, offY, cellSz, t, wAmp);
+      let [x2,y2] = _pietSnakeXY(i,   cols, offX, offY, cellSz, t, wAmp);
+      CTX.strokeStyle = PIET_COLORS_HEX[pietCodels[i].hIdx*3+pietCodels[i].lIdx];
+      CTX.beginPath(); CTX.moveTo(x1+cellSz/2,y1+cellSz/2); CTX.lineTo(x2+cellSz/2,y2+cellSz/2); CTX.stroke();
+    }
+  }
+  CTX.globalAlpha = 1;
+
+  for (let i = 0; i < n; i++) {
+    let codel     = pietCodels[i];
+    let [bx, by]  = _pietSnakeXY(i, cols, offX, offY, cellSz, t, wAmp);
+    let isActive  = (i === pietExecPos);
+    let wasPrev   = (i === (pietExecPos - 1 + n) % n);
+    let fillCol   = getPietFill(codel, p, bx, by, t);
+
+    // Glow
+    if (glow > 0 && (isActive || wasPrev)) {
+      CTX.save();
+      CTX.shadowColor = isActive ? '#ffffff' : fillCol;
+      CTX.shadowBlur  = isActive ? glow * 4 : glow * 1.5;
+      CTX.globalAlpha = isActive ? 1.0 : 0.65;
+      CTX.fillStyle   = fillCol;
+      CTX.fillRect(bx, by, cellSz, cellSz);
+      CTX.restore();
+    }
+
+    // Block fill
+    CTX.globalAlpha = isActive ? 1.0 : (wasPrev ? 0.88 : 0.78);
+    CTX.fillStyle   = fillCol;
+    CTX.fillRect(bx, by, cellSz, cellSz);
+
+    // Bevel edges
+    if (cellSz >= 12) {
+      CTX.globalAlpha = 0.32;
+      CTX.fillStyle   = 'rgba(255,255,255,0.45)';
+      CTX.fillRect(bx, by, cellSz, 2); CTX.fillRect(bx, by, 2, cellSz);
+      CTX.fillStyle   = 'rgba(0,0,0,0.38)';
+      CTX.fillRect(bx, by + cellSz-2, cellSz, 2); CTX.fillRect(bx + cellSz-2, by, 2, cellSz);
+    }
+
+    // Border
+    if (border > 0) {
+      CTX.globalAlpha = 0.5; CTX.strokeStyle = 'rgba(0,0,0,0.5)';
+      CTX.lineWidth   = border;
+      CTX.strokeRect(bx+border/2, by+border/2, cellSz-border, cellSz-border);
+    }
+
+    // Active frame
+    if (isActive) {
+      CTX.globalAlpha = 1; CTX.strokeStyle = '#ffffff'; CTX.lineWidth = 2;
+      CTX.strokeRect(bx+2, by+2, cellSz-4, cellSz-4);
+    }
+
+    let cc = pietContrast(fillCol);
+
+    // Command label
+    if (showLbl && cellSz >= 18 && i > 0) {
+      let fs  = Math.max(5, Math.min(cellSz*0.25, 13));
+      let lbl = cellSz < 30 ? (PIET_CMD_SHORT[codel.cmd]||codel.cmd) : codel.cmd;
+      CTX.font = `bold ${fs}px "Courier New",monospace`;
+      CTX.fillStyle = cc; CTX.globalAlpha = isActive ? 1 : 0.78;
+      CTX.fillText(lbl, bx+cellSz/2, by+cellSz*(showWrd ? 0.35 : 0.5));
+    }
+
+    // Word label
+    if (showWrd && codel.word && codel.word !== '(start)' && cellSz >= 24) {
+      let fs = Math.max(4, cellSz*0.17);
+      CTX.font = `${fs}px "EB Garamond",serif`;
+      CTX.fillStyle = cc; CTX.globalAlpha = isActive ? 0.9 : 0.52;
+      let w = codel.word.length>6 ? codel.word.slice(0,5)+'…' : codel.word;
+      CTX.fillText(w, bx+cellSz/2, by+cellSz*0.76);
+    }
+
+    // Studio char overlay
+    if (charOvr && S.chars && S.chars.length && cellSz >= 16) {
+      let ch = pickChar(p, bx+i, by+i, t);
+      CTX.font = `${(cellSz*0.38)|0}px ${S.fontStack}`;
+      CTX.fillStyle = cc; CTX.globalAlpha = 0.10;
+      CTX.fillText(ch, bx+cellSz/2, by+cellSz/2);
+    }
+
+    CTX.globalAlpha = 1;
+  }
+  CTX.restore(); _lastFont=''; _lastFill='';
+}
+
+function _pietSnakeXY(i, cols, offX, offY, cellSz, t, wAmp) {
+  let row = Math.floor(i / cols);
+  let col = (row % 2 === 0) ? (i % cols) : (cols - 1 - (i % cols));
+  let bx  = offX + col * cellSz;
+  let by  = offY + row * cellSz;
+  if (wAmp > 0) {
+    bx += Math.sin(t*1.1 + row*0.42 + col*0.18) * wAmp * 0.4;
+    by += Math.cos(t*0.9  + col*0.38 + row*0.25) * wAmp * 0.3;
+  }
+  return [bx, by];
+}
+
+// ── LAYOUT: Radial Spiral ──────────────────────────────────────────────────────
+function drawPietRadial(p, t, cellSz) {
+  let W=p.width, H=p.height, cx=W/2, cy=H/2, n=pietCodels.length;
+  if(!n) return;
+  let glow=S.pietGlow||0, showLbl=S.pietShowLabels!==false;
+  let border=(S.pietBorder!==undefined?S.pietBorder:1)*0.5, wAmp=S.pietWaveAmp||0;
+
+  CTX.save(); CTX.textAlign='center'; CTX.textBaseline='middle';
+
+  // Spiral path
+  CTX.globalAlpha=0.18; CTX.strokeStyle=S.accent!=='none'?S.accent:S.palette[0]||'#888';
+  CTX.lineWidth=1; CTX.beginPath();
+  for(let i=0;i<n;i++){let[x,y]=_pietRadialXY(i,n,cx,cy,cellSz,t,wAmp);i===0?CTX.moveTo(x,y):CTX.lineTo(x,y);}
+  CTX.stroke(); CTX.globalAlpha=1;
+
+  for(let i=0;i<n;i++){
+    let codel=pietCodels[i], [rx,ry]=_pietRadialXY(i,n,cx,cy,cellSz,t,wAmp);
+    let angle=(i/n)*Math.PI*2;
+    let isActive=(i===pietExecPos), sz=isActive?cellSz*1.35:cellSz;
+    let fillCol=getPietFill(codel,p,rx,ry,t);
+
+    CTX.save(); CTX.translate(rx,ry); CTX.rotate(angle+Math.PI/4+t*0.04);
+    if(glow>0&&isActive){CTX.shadowColor='#ffffff';CTX.shadowBlur=glow*4;}
+    CTX.globalAlpha=isActive?1.0:0.82; CTX.fillStyle=fillCol;
+    CTX.fillRect(-sz/2,-sz/2,sz,sz);
+    if(border>0){CTX.globalAlpha=0.5;CTX.strokeStyle='rgba(0,0,0,0.45)';CTX.lineWidth=border;CTX.strokeRect(-sz/2+border/2,-sz/2+border/2,sz-border,sz-border);}
+    if(isActive){CTX.globalAlpha=1;CTX.strokeStyle='#ffffff';CTX.lineWidth=2;CTX.strokeRect(-sz/2+2,-sz/2+2,sz-4,sz-4);}
+    if(showLbl&&sz>=18&&i>0){
+      let fs=Math.max(5,sz*0.22);
+      CTX.font=`bold ${fs}px "Courier New",monospace`;
+      CTX.fillStyle=pietContrast(fillCol); CTX.globalAlpha=isActive?1:0.75;
+      CTX.rotate(-(angle+Math.PI/4+t*0.04));
+      CTX.fillText(PIET_CMD_SHORT[codel.cmd]||codel.cmd,0,0);
+    }
+    CTX.restore();
+  }
+  CTX.restore(); _lastFont=''; _lastFill='';
+}
+
+function _pietRadialXY(i,n,cx,cy,cellSz,t,wAmp){
+  let angle=(i/n)*Math.PI*2;
+  let r=cellSz*0.8+i*(cellSz*0.35);
+  let rx=cx+Math.cos(angle)*r, ry=cy+Math.sin(angle)*r;
+  if(wAmp>0){rx+=Math.sin(t*1.3+i*0.2)*wAmp*0.5;ry+=Math.cos(t*1.1+i*0.25)*wAmp*0.5;}
+  return[rx,ry];
+}
+
+// ── LAYOUT: Scattered Field ────────────────────────────────────────────────────
+function drawPietScattered(p, t, cellSz) {
+  let W=p.width,H=p.height,n=pietCodels.length;
+  if(!n) return;
+  let glow=S.pietGlow||0,showLbl=S.pietShowLabels!==false;
+  let border=(S.pietBorder!==undefined?S.pietBorder:1)*0.5,wAmp=S.pietWaveAmp||0;
+
+  CTX.save(); CTX.textAlign='center'; CTX.textBaseline='middle';
+
+  // Connections
+  CTX.lineWidth=1;
+  for(let i=1;i<n;i++){
+    let[x1,y1]=_pietScatterXY(p,i-1,W,H,t,wAmp,cellSz);
+    let[x2,y2]=_pietScatterXY(p,i,  W,H,t,wAmp,cellSz);
+    CTX.globalAlpha=0.2;
+    CTX.strokeStyle=PIET_COLORS_HEX[pietCodels[i].hIdx*3+pietCodels[i].lIdx];
+    CTX.beginPath();CTX.moveTo(x1,y1);CTX.lineTo(x2,y2);CTX.stroke();
+  }
+  CTX.globalAlpha=1;
+
+  for(let i=0;i<n;i++){
+    let codel=pietCodels[i],[rx,ry]=_pietScatterXY(p,i,W,H,t,wAmp,cellSz);
+    let isActive=(i===pietExecPos),sz=isActive?cellSz*1.4:cellSz;
+    let fillCol=getPietFill(codel,p,rx,ry,t);
+
+    if(glow>0&&isActive){CTX.save();CTX.shadowColor='#ffffff';CTX.shadowBlur=glow*4;CTX.fillStyle=fillCol;CTX.globalAlpha=1;CTX.fillRect(rx-sz/2,ry-sz/2,sz,sz);CTX.restore();}
+    CTX.globalAlpha=isActive?1.0:0.80;CTX.fillStyle=fillCol;CTX.fillRect(rx-sz/2,ry-sz/2,sz,sz);
+    if(border>0){CTX.globalAlpha=0.5;CTX.strokeStyle='rgba(0,0,0,0.45)';CTX.lineWidth=border;CTX.strokeRect(rx-sz/2+border/2,ry-sz/2+border/2,sz-border,sz-border);}
+    if(isActive){CTX.globalAlpha=1;CTX.strokeStyle='#ffffff';CTX.lineWidth=2;CTX.strokeRect(rx-sz/2+2,ry-sz/2+2,sz-4,sz-4);}
+    if(showLbl&&sz>=18&&i>0){
+      let fs=Math.max(5,sz*0.22);
+      CTX.font=`bold ${fs}px "Courier New",monospace`;
+      CTX.fillStyle=pietContrast(fillCol);CTX.globalAlpha=isActive?1:0.8;
+      CTX.fillText(PIET_CMD_SHORT[codel.cmd]||codel.cmd,rx,ry);
+    }
+    CTX.globalAlpha=1;
+  }
+  CTX.restore(); _lastFont=''; _lastFill='';
+}
+
+function _pietScatterXY(p,i,W,H,t,wAmp,cellSz){
+  let pad=cellSz;
+  let nx=p.noise(i*0.17+500,0)*(W-2*pad)+pad;
+  let ny=p.noise(0,i*0.17+500)*(H-2*pad)+pad;
+  if(wAmp>0){nx+=Math.sin(t*1.2+i*0.28)*wAmp*0.7;ny+=Math.cos(t*0.95+i*0.33)*wAmp*0.7;}
+  return[nx,ny];
+}
+
+// ── LAYOUT: River Flow ─────────────────────────────────────────────────────────
+function drawPietRiver(p, t, cellSz, cols) {
+  let W=p.width,H=p.height,n=pietCodels.length;
+  let padX=Math.max(0,(W-cols*(cellSz+3))/2), padY=cellSz*0.6, rowH=cellSz+12;
+  let glow=S.pietGlow||0,showLbl=S.pietShowLabels!==false;
+  let wAmp=S.pietWaveAmp||0,border=(S.pietBorder!==undefined?S.pietBorder:1)*0.5;
+
+  CTX.save(); CTX.textAlign='center'; CTX.textBaseline='middle';
+
+  for(let i=0;i<n;i++){
+    let codel=pietCodels[i];
+    let bx=padX+(i%cols)*(cellSz+3), by=padY+Math.floor(i/cols)*rowH;
+    let wy=wAmp>0?Math.sin(t*2.2+(i%cols)*0.6)*wAmp*0.5:0;
+    let isActive=(i===pietExecPos),fillCol=getPietFill(codel,p,bx,by,t);
+
+    if(glow>0&&isActive){CTX.save();CTX.shadowColor='#ffffff';CTX.shadowBlur=glow*4;CTX.fillStyle=fillCol;CTX.globalAlpha=1;CTX.fillRect(bx,by+wy,cellSz,cellSz);CTX.restore();}
+    CTX.globalAlpha=isActive?1.0:0.82;CTX.fillStyle=fillCol;CTX.fillRect(bx,by+wy,cellSz,cellSz);
+    if(border>0){CTX.globalAlpha=0.5;CTX.strokeStyle='rgba(0,0,0,0.45)';CTX.lineWidth=border;CTX.strokeRect(bx+border/2,by+wy+border/2,cellSz-border,cellSz-border);}
+    if(isActive){CTX.globalAlpha=1;CTX.strokeStyle='#ffffff';CTX.lineWidth=2;CTX.strokeRect(bx+2,by+wy+2,cellSz-4,cellSz-4);}
+
+    let cc=pietContrast(fillCol);
+    if(showLbl&&cellSz>=18&&i>0){
+      let fs=Math.max(5,Math.min(cellSz*0.25,13));
+      CTX.font=`bold ${fs}px "Courier New",monospace`;
+      CTX.fillStyle=cc;CTX.globalAlpha=isActive?1:0.8;
+      CTX.fillText(PIET_CMD_SHORT[codel.cmd]||codel.cmd,bx+cellSz/2,by+wy+cellSz*0.35);
+    }
+    if(codel.word&&codel.word!=='(start)'&&cellSz>=22){
+      let fs=Math.max(4,cellSz*0.18);
+      CTX.font=`${fs}px "EB Garamond",serif`;
+      CTX.fillStyle=cc;CTX.globalAlpha=isActive?0.9:0.5;
+      let w=codel.word.length>5?codel.word.slice(0,5)+'…':codel.word;
+      CTX.fillText(w,bx+cellSz/2,by+wy+cellSz*0.74);
+    }
+    CTX.globalAlpha=1;
+  }
+  CTX.restore(); _lastFont=''; _lastFill='';
+}
+
+// ── Execution status bar ───────────────────────────────────────────────────────
+function drawPietExecUI(p, t, W, H) {
+  if(!pietCodels.length) return;
+  let current=pietCodels[pietExecPos];
+  if(!current) return;
+  let hexFill=PIET_COLORS_HEX[current.hIdx*3+current.lIdx];
+  let rr=parseInt(hexFill.slice(1,3),16), gg=parseInt(hexFill.slice(3,5),16), bb=parseInt(hexFill.slice(5,7),16);
+
+  CTX.save();
+  let barH=34, barY=H-barH;
+
+  // Background strip
+  CTX.globalAlpha=0.72;
+  CTX.fillStyle=`rgba(${rr},${gg},${bb},0.22)`;
+  CTX.fillRect(0,barY,W,barH);
+  CTX.strokeStyle=hexFill; CTX.lineWidth=1; CTX.globalAlpha=0.6;
+  CTX.beginPath();CTX.moveTo(0,barY);CTX.lineTo(W,barY);CTX.stroke();
+
+  // Color swatch
+  CTX.globalAlpha=1;
+  CTX.fillStyle=hexFill;
+  CTX.fillRect(8,barY+6,barH-12,barH-12);
+
+  // Command + color name
+  CTX.font=`bold 11px "Courier New",monospace`;
+  CTX.fillStyle=hexFill; CTX.textAlign='left'; CTX.textBaseline='middle';
+  CTX.fillText(`${current.cmd}  ·  ${PIET_HUE_NAMES[current.hIdx]} ${PIET_LIGHT_NAMES[current.lIdx]}`,barH+4,barY+barH/2);
+
+  // Source word (center)
+  if(current.word&&current.word!=='(start)'){
+    CTX.font=`italic 11px "EB Garamond",serif`;
+    CTX.fillStyle='rgba(255,255,255,0.62)'; CTX.textAlign='center';
+    CTX.fillText(`"${current.word}"`,W/2,barY+barH/2);
+  }
+
+  // Stack / output (right)
+  if(pietOutput){
+    CTX.font=`9px "Courier New",monospace`;
+    CTX.fillStyle='rgba(255,255,255,0.45)'; CTX.textAlign='right';
+    CTX.fillText('out: '+pietOutput.slice(-22),W-10,barY+barH/2);
+  }
+
+  // Progress bar
+  CTX.fillStyle=hexFill; CTX.globalAlpha=0.45;
+  CTX.fillRect(0,H-3,W*(pietExecPos/Math.max(1,pietCodels.length-1)),3);
+
+  // Position counter
+  CTX.globalAlpha=0.38; CTX.font=`8px "Courier New",monospace`;
+  CTX.fillStyle='rgba(255,255,255,0.4)'; CTX.textAlign='right';
+  CTX.fillText(`[${pietExecPos}/${pietCodels.length-1}]`,W-10,barY+8);
+
+  CTX.restore(); _lastFont=''; _lastFill='';
+}  
   
 // ── SHAPE HELPERS ─────────────────────────────────────────────────────────────────
 function pointInPoly(px,py,pts){
@@ -16037,6 +16365,37 @@ const PARAM_REGISTRY = {
         ]
       },
     ],
+    piet: [
+    { type:'text', id:'pietText', label:'Source text / poem',
+      def:'the quick brown fox jumps over the lazy dog',
+      extra: function(){ pietLastText=''; } },
+    { id:'pietCellSize',   label:'Block size (px)',       min:8,  max:80, step:2,  def:28, scale:1 },
+    { id:'pietGlow',       label:'Execution glow',        min:0,  max:30, step:1,  def:8,  scale:1 },
+    { id:'pietWaveAmp',    label:'Wave amplitude',         min:0,  max:40, step:2,  def:5,  scale:1 },
+    { id:'pietExecSpeed',  label:'Exec speed (steps/sec)', min:1,  max:30, step:1,  def:8,  scale:1 },
+    { id:'pietStartHue',   label:'Start hue (0–5)',        min:0,  max:5,  step:1,  def:0,  scale:1 },
+    { id:'pietStartLight', label:'Start lightness (0–2)',  min:0,  max:2,  step:1,  def:0,  scale:1 },
+    { id:'pietGridCols',   label:'Grid cols (0 = auto)',   min:0,  max:40, step:1,  def:0,  scale:1 },
+    { id:'pietBorder',     label:'Border width',           min:0,  max:8,  step:1,  def:1,  scale:1 },
+    { type:'toggle', id:'pietShowLabels',  label:'Show command labels',  def:true  },
+    { type:'toggle', id:'pietShowWords',   label:'Show source words',    def:false },
+    { type:'toggle', id:'pietCharOverlay', label:'Studio char overlay',  def:true  },
+    { type:'toggle', id:'pietAnimExec',    label:'Animate execution',    def:true  },
+    { type:'toggle', id:'pietShowExec',    label:'Status bar',           def:true  },
+    { type:'select', id:'pietLayout', label:'Layout style', def:'snake',
+      options:[
+        {value:'snake',     label:'Snake grid'    },
+        {value:'radial',    label:'Radial spiral' },
+        {value:'scattered', label:'Scattered field'},
+        {value:'river',     label:'River / flow'  },
+      ] },
+    { type:'select', id:'pietColorMode', label:'Color mode', def:'piet',
+      options:[
+        {value:'piet',    label:'Authentic Piet' },
+        {value:'palette', label:'Studio palette' },
+        {value:'tinted',  label:'Palette-tinted' },
+      ] },
+  ],
   
   //to be refactored
   boids: [
