@@ -368,6 +368,7 @@ select option{background:var(--ink)}
         <button class="mb" data-mode="magnetic" title="Smooth curves following a dipole field">Magnetic</button>
         <button class="mb" data-mode="hatch" title="Parallel line density varying by noise">Hatch</button>
         <button class="mb" data-mode="wireterrain" title="3D perspective noise landscape">Terrain</button>
+        <button class="mb" data-mode="folktale" title="Sliding folk‑art rectangles">Folk Tale</button>
       </div>
     </div>
     
@@ -1638,7 +1639,7 @@ let magneticPoles=[];
 let wtHeightmap=null,wtW=0,wtH=0;
 // Fractal Subdivision state
 let fsPolygons=[];
-// New mode state
+let folkBlocks = [];
 let rdGrid=null,rdW=0,rdH=0; // reaction-diffusion
 let voronoiSites=[];
 let myceliumBranches=[];
@@ -3156,6 +3157,106 @@ function drawWebster(p, t) {
     }
   });
 }
+
+
+
+// ── FolkTale 4/30/26 ───────────────────────────────────────────
+// inspired by Folk Tale album art from Christy Moore                                                                   
+function initFolkTale(W, H) {
+  folkBlocks = [];
+
+  // ── Parameters (with defaults) ──────────────────────────────────
+  let gridUnit   = S.folkGridUnit   ?? 60;
+  let count      = S.folkBlockCount ?? 20;
+  let palette    = S.folkPalette    ?? [
+    '#9A2A2A',   // Deep Madder Red
+    '#E3B23C',   // Mustard Yellow
+    '#2A7F7F',   // Teal
+    '#F5F0E6',   // Off‑White
+    '#1C3A5A',   // Navy Blue
+    '#2E5A2E'    // Forest Green
+  ];
+
+  for (let i = 0; i < count; i++) {
+    // Random size multiples of gridUnit (1x to 4x)
+    let wMult = 1 + Math.floor(Math.random() * 4);   // 1–4 units wide
+    let hMult = 1 + Math.floor(Math.random() * 4);   // 1–4 units high
+    let w = wMult * gridUnit;
+    let h = hMult * gridUnit;
+
+    // Random placement snapped to the unit grid
+    let cols = Math.floor(W / gridUnit);
+    let rows = Math.floor(H / gridUnit);
+    let startX = Math.floor(Math.random() * (cols - wMult + 1)) * gridUnit;
+    let startY = Math.floor(Math.random() * (rows - hMult + 1)) * gridUnit;
+
+    // Direction: 'H' (horizontal) or 'V' (vertical)
+    let dir = Math.random() < 0.5 ? 'H' : 'V';
+
+    // Base speed (±1 to ±3 units per second at default speed scaling)
+    let baseSpeed = 1 + Math.floor(Math.random() * 3);
+    // Random sign to give movement left/right or up/down
+    let sign = Math.random() < 0.5 ? 1 : -1;
+    let vx = dir === 'H' ? sign * baseSpeed : 0;
+    let vy = dir === 'V' ? sign * baseSpeed : 0;
+
+    // Random colour from the folk palette
+    let col = palette[Math.floor(Math.random() * palette.length)];
+
+    folkBlocks.push({ x: startX, y: startY, w, h, vx, vy, dir, col });
+  }
+}
+
+function drawFolkTale(p, t) {
+  let W = p.width, H = p.height;
+
+  // Reinitialise if canvas size has changed or no blocks exist
+  if (!folkBlocks.length || folkBlocks[0]._canvasW !== W || folkBlocks[0]._canvasH !== H) {
+    initFolkTale(W, H);
+  }
+
+  // ── Update positions (if playing) with wrapping ─────────────────
+  if (S.playing) {
+    let speedFactor = S.speed * 200;   // adjust so movement is visible at default speed
+
+    for (let block of folkBlocks) {
+      if (block.dir === 'H') {
+        block.x += block.vx * speedFactor;
+        // Wrap horizontally
+        if (block.vx > 0 && block.x > W) {
+          block.x = -block.w;
+        } else if (block.vx < 0 && block.x + block.w < 0) {
+          block.x = W;
+        }
+      } else { // Vertical
+        block.y += block.vy * speedFactor;
+        if (block.vy > 0 && block.y > H) {
+          block.y = -block.h;
+        } else if (block.vy < 0 && block.y + block.h < 0) {
+          block.y = H;
+        }
+      }
+    }
+  }
+
+  // ── Render with multiply blending ────────────────────────────────
+  let alpha = S.folkAlpha ?? 0.8;
+
+  CTX.save();
+  CTX.globalCompositeOperation = 'multiply';
+  CTX.globalAlpha = alpha;
+
+  for (let block of folkBlocks) {
+    CTX.fillStyle = block.col;
+    CTX.fillRect(block.x, block.y, block.w, block.h);
+  }
+
+  CTX.restore();   // resets compositeOperation and alpha
+  _lastFill = '';   // invalidate colour cache
+}
+  
+
+
   
 // ── MATRIX 2.0 Refactored 4/13/26 ───────────────────────────────────────────
   function initMatrix(W, H) {
@@ -14704,7 +14805,7 @@ function rd() {
       case 'numbpoem': drawNumbPoem(p, t); break;
       case 'piet': drawPiet(p, t); break;
       case 'poemfields': drawPoemFields(p, t); break;
-
+      case 'folktale': drawFolkTale(p, t); break;
         
     } // closes switch
 } // closes drawScene function
@@ -15026,6 +15127,13 @@ const PARAM_REGISTRY = {
     { id: 'websterSizeRangeMult',  label: 'Size range',      min: 0.1,   max: 1,    step: 0.05,  def: 0.35,  scale: 1 },
     { id: 'websterBlockWobFreq',   label: 'Block wobble freq', min: 0.001, max: 0.05, step: 0.001, def: 0.01,  scale: 1 },
     { id: 'websterBlockWobAmp',    label: 'Block wobble amp',  min: 0,     max: 0.3,  step: 0.01,  def: 0.08,  scale: 1 },
+  ],
+  folktale: [
+    { id:'folkGridUnit',   label:'Grid unit (px)',   min:20, max:120, step:5,  def:60,  scale:1,
+      extra:function(){ if(window._st) initFolkTale(window._st.w(), window._st.h()); } },
+    { id:'folkBlockCount', label:'Number of blocks', min:4,  max:60,  step:2,  def:20,  scale:1,
+      extra:function(){ if(window._st) initFolkTale(window._st.w(), window._st.h()); } },
+    { id:'folkAlpha',      label:'Block opacity',    min:0.2, max:1,    step:0.05, def:0.8, scale:1 },
   ],
   stripedrects: [
     { id:'srDensityGate',  label:'Density threshold',min:0, max:1, step:0.02, def:0.5, scale:1,
