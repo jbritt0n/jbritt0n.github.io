@@ -3,943 +3,2585 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>monoku v5 — the studio scroll</title>
+<title>monoku v6 — the living scroll</title>
 <style>
+/* ── RESET & TOKENS ─────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f7f3ea;--surface:#ece4d7;--panel:#e6dccf;--border:rgba(0,0,0,0.08);
-  --accent:#8b5a2b;--accent2:#5f7a6b;--accent3:#a45a5a;--text:#3a322e;--muted:#8a8278;
-  --err:#b84c4c;--ok:#4d7a5a;--canvas-bg:#ffffff;
-  --ink:#2c2416;
+  --bg:#f5f0e8;--surface:#ece5d6;--panel:#e4dccb;--panel2:#ddd4c2;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);
+  --accent:#8b5a2b;--accent2:#5f7a6b;--accent3:#a45a5a;--accent4:#6b72a0;
+  --text:#3a322e;--muted:#8a8278;--muted2:#b0a898;
+  --err:#b84c4c;--ok:#4d7a5a;--info:#5a6b9a;
+  --canvas-bg:#f9f6ef;
+  --ink:#1e1812;--ink2:#2c2416;
+  --shadow:0 1px 3px rgba(0,0,0,0.08);
 }
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif}
 
-header{height:46px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);gap:10px;flex-shrink:0;background:var(--panel)}
-.logo{font-style:italic;font-size:22px;letter-spacing:.08em;color:var(--ink)}
-.ver{font-size:9px;color:var(--muted);letter-spacing:.12em;align-self:flex-end;margin-bottom:7px}
-.tagline{font-size:10px;color:var(--muted);letter-spacing:.06em;flex:1;font-style:italic}
-.btn{font-family:'Crimson Text',Georgia,serif;font-size:13px;padding:4px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;letter-spacing:.03em;transition:.12s;white-space:nowrap}
-.btn:hover{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.2)}
-.btn-run{background:var(--ink);color:#f7f3ea;border-color:var(--ink);font-weight:700}
-.btn-run:hover{background:#4a3f30}
-.btn-anim{background:rgba(95,122,107,0.15);color:var(--accent2);border-color:rgba(95,122,107,0.3)}
-.btn-anim.on{background:rgba(95,122,107,0.35);border-color:var(--accent2)}
-.btn-anim:hover{background:rgba(95,122,107,0.25)}
-.btn-grain{background:rgba(164,90,90,0.1);color:var(--accent3);border-color:rgba(164,90,90,0.25)}
-.btn-grain.on{background:rgba(164,90,90,0.3);border-color:var(--accent3)}
+/* ── HEADER ─────────────────────────────────────────────────── */
+header{height:44px;display:flex;align-items:center;padding:0 12px;
+  border-bottom:1px solid var(--border2);gap:8px;flex-shrink:0;
+  background:var(--panel);box-shadow:var(--shadow)}
+.logo{font-style:italic;font-size:21px;letter-spacing:.06em;color:var(--ink);
+  font-weight:normal;flex-shrink:0}
+.ver{font-size:8.5px;color:var(--muted2);letter-spacing:.14em;align-self:flex-end;
+  margin-bottom:8px;flex-shrink:0;text-transform:uppercase}
+.tagline{font-size:10px;color:var(--muted);letter-spacing:.04em;flex:1;
+  font-style:italic;white-space:nowrap;overflow:hidden}
+.sep{width:1px;height:20px;background:var(--border2);flex-shrink:0}
+.btn{font-family:inherit;font-size:12px;padding:3px 10px;border-radius:2px;
+  border:1px solid var(--border2);background:transparent;color:var(--text);
+  cursor:pointer;letter-spacing:.02em;transition:.1s;white-space:nowrap;flex-shrink:0}
+.btn:hover{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.18)}
+.btn:active{transform:translateY(1px)}
+.btn-run{background:var(--ink);color:#f5f0e8;border-color:var(--ink);font-weight:700;
+  letter-spacing:.04em}
+.btn-run:hover{background:#3a2e20;color:#f9f6ef}
+.btn-anim{color:var(--accent2);border-color:rgba(95,122,107,0.3)}
+.btn-anim.on{background:rgba(95,122,107,0.2);border-color:var(--accent2);font-weight:600}
+.btn-grain{color:var(--accent3);border-color:rgba(164,90,90,0.28)}
+.btn-grain.on{background:rgba(164,90,90,0.15);border-color:var(--accent3)}
+.btn-breath{color:var(--accent4);border-color:rgba(107,114,160,0.3)}
+.btn-breath.on{background:rgba(107,114,160,0.18);border-color:var(--accent4);font-weight:600}
+.indicator{font-size:10px;color:var(--muted);letter-spacing:.04em;
+  padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.04);
+  border:1px solid var(--border);white-space:nowrap;flex-shrink:0}
+.indicator span{color:var(--ink);font-weight:600}
 
-.workspace{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 46px)}
-.left-col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;background:var(--surface)}
-.pane-bar{height:30px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);gap:8px;flex-shrink:0;background:var(--panel)}
+/* ── WORKSPACE LAYOUT ───────────────────────────────────────── */
+.workspace{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 44px)}
+.left-col{display:flex;flex-direction:column;border-right:1px solid var(--border2);
+  overflow:hidden;background:var(--surface)}
+.pane-bar{height:28px;display:flex;align-items:center;padding:0 10px;
+  border-bottom:1px solid var(--border);font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);gap:8px;flex-shrink:0;
+  background:var(--panel2)}
+.pane-bar .pbl{flex:1}
+
+/* ── EDITOR ─────────────────────────────────────────────────── */
 .editor-wrap{display:flex;flex:1;overflow:hidden}
-.line-nums{padding:10px 8px 10px 10px;font-family:'Courier New',monospace;font-size:13px;line-height:1.75;color:var(--muted);min-width:34px;text-align:right;user-select:none;overflow:hidden;border-right:1px solid var(--border);flex-shrink:0;white-space:pre;background:var(--panel)}
-textarea{flex:1;background:transparent;border:none;outline:none;resize:none;padding:10px 14px;font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:1.75;color:var(--text);caret-color:var(--accent);overflow-y:auto;overflow-x:hidden;white-space:pre}
-textarea::selection{background:rgba(139,90,43,0.12)}
+.line-nums{padding:10px 6px 10px 8px;font-family:'Courier New',monospace;
+  font-size:12.5px;line-height:1.72;color:var(--muted2);min-width:32px;
+  text-align:right;user-select:none;overflow:hidden;border-right:1px solid var(--border);
+  flex-shrink:0;white-space:pre;background:var(--panel2)}
+textarea#ed{flex:1;background:transparent;border:none;outline:none;resize:none;
+  padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;
+  font-size:15px;line-height:1.72;color:var(--text);caret-color:var(--accent);
+  overflow-y:auto;overflow-x:hidden;white-space:pre;tab-size:2}
+textarea#ed::selection{background:rgba(139,90,43,0.1)}
+textarea#ed:focus{background:rgba(255,255,255,0.18)}
 
-.ref-panel{border-top:1px solid var(--border);flex-shrink:0;height:130px;display:flex;flex-direction:column;background:var(--panel)}
-.ref-tabs{display:flex;border-bottom:1px solid var(--border)}
-.rtab{padding:5px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:1px solid transparent;margin-bottom:-1px;transition:.12s}
+/* ── REFERENCE PANEL ────────────────────────────────────────── */
+.ref-panel{border-top:1px solid var(--border2);flex-shrink:0;height:128px;
+  display:flex;flex-direction:column;background:var(--panel)}
+.ref-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.ref-tabs::-webkit-scrollbar{display:none}
+.rtab{padding:4px 11px;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;border:none;background:transparent;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:.1s;white-space:nowrap}
 .rtab:hover{color:var(--text)}
 .rtab.on{color:var(--ink);border-bottom-color:var(--ink)}
-.ref-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:7px 10px;display:flex;gap:5px;align-items:center;white-space:nowrap;scrollbar-width:thin}
-.chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-family:'Crimson Text',Georgia,serif;cursor:pointer;flex-shrink:0;transition:.12s;border:1px solid transparent}
-.chip:hover{opacity:.7}
-.chip-v{background:rgba(47,94,68,0.08);color:#2f5e44;border-color:rgba(47,94,68,0.2)}
-.chip-c{background:rgba(139,90,43,0.08);color:#8b5a2b;border-color:rgba(139,90,43,0.2)}
-.chip-m{background:rgba(95,122,107,0.08);color:#5f7a6b;border-color:rgba(95,122,107,0.2)}
-.chip-s{background:rgba(164,90,90,0.08);color:#a45a5a;border-color:rgba(164,90,90,0.2)}
-.swatch{width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0}
+.ref-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:6px 8px;
+  display:flex;gap:4px;align-items:center;white-space:nowrap;scrollbar-width:thin}
+.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;
+  font-size:11.5px;font-family:inherit;cursor:pointer;flex-shrink:0;
+  transition:.1s;border:1px solid transparent}
+.chip:hover{opacity:.65;transform:translateY(-1px)}
+.chip-v{background:rgba(47,94,68,0.08);color:#2f5e44;border-color:rgba(47,94,68,0.18)}
+.chip-c{background:rgba(139,90,43,0.07);color:#7a4e22;border-color:rgba(139,90,43,0.18)}
+.chip-m{background:rgba(95,122,107,0.07);color:#4d6b5e;border-color:rgba(95,122,107,0.18)}
+.chip-p{background:rgba(164,90,90,0.07);color:#7a4040;border-color:rgba(164,90,90,0.18)}
+.chip-n{background:rgba(107,114,160,0.07);color:#404870;border-color:rgba(107,114,160,0.18)}
+.swatch{width:7px;height:7px;border-radius:50%;margin-right:4px;flex-shrink:0}
 
+/* ── CANVAS SIDE ────────────────────────────────────────────── */
 .right-col{display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px;position:relative;background:var(--canvas-bg)}
-canvas{max-width:100%;max-height:100%;display:block}
-.frame-badge{position:absolute;bottom:16px;right:16px;font-family:'Courier New',monospace;font-size:10px;color:rgba(0,0,0,0.18);pointer-events:none}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:18px;position:relative;background:var(--canvas-bg)}
+canvas#art{max-width:100%;max-height:100%;display:block;
+  box-shadow:0 2px 20px rgba(0,0,0,0.1),0 0 0 1px rgba(0,0,0,0.05)}
+.frame-badge{position:absolute;bottom:14px;right:14px;
+  font-family:'Courier New',monospace;font-size:9px;color:rgba(0,0,0,0.14);
+  pointer-events:none;letter-spacing:.04em}
+.haiku-badge{position:absolute;top:14px;right:14px;
+  font-size:9.5px;color:var(--accent4);letter-spacing:.06em;
+  opacity:0;transition:.4s;font-style:italic}
+.haiku-badge.show{opacity:1}
 
-.status-bar{height:30px;display:flex;align-items:center;padding:0 12px;gap:12px;border-top:1px solid var(--border);font-size:11px;font-family:'Crimson Text',Georgia,serif;flex-shrink:0;background:var(--surface)}
+/* ── STATUS BAR ─────────────────────────────────────────────── */
+.status-bar{height:28px;display:flex;align-items:center;padding:0 10px;gap:10px;
+  border-top:1px solid var(--border2);font-size:11px;font-family:inherit;
+  flex-shrink:0;background:var(--panel)}
 .s-ok{color:var(--ok)}.s-err{color:var(--err)}.s-info{color:var(--muted)}
-.progress-bar{height:1px;background:var(--border);flex:1}
-.progress-fill{height:100%;background:var(--accent);transition:width .3s;width:0}
+.s-warn{color:#8a6a28}
+.s-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;
+  background:currentColor}
+.progress-bar{height:1px;background:var(--border2);flex:1;border-radius:1px}
+.progress-fill{height:100%;background:var(--accent);transition:width .4s;
+  width:0;border-radius:1px}
+.stat-pill{font-size:9.5px;color:var(--muted);letter-spacing:.04em;
+  background:rgba(0,0,0,0.04);padding:1px 6px;border-radius:10px;
+  border:1px solid var(--border);white-space:nowrap}
+
+/* ── MOOD RING ──────────────────────────────────────────────── */
+.mood-ring{width:8px;height:8px;border-radius:50%;flex-shrink:0;
+  background:var(--muted2);transition:background .6s;border:1px solid rgba(0,0,0,0.1)}
 </style>
 </head>
 <body>
 
 <header>
   <span class="logo">monoku</span>
-  <span class="ver">v5</span>
-  <span class="tagline">the studio scroll</span>
-  <button class="btn" onclick="loadExample()">sketch</button>
+  <span class="ver">v6</span>
+  <span class="tagline">the living scroll</span>
+  <div class="sep"></div>
+  <button class="btn" onclick="loadExample()">sketch ↺</button>
   <button class="btn" onclick="clearCanvas()">clear</button>
   <button class="btn" onclick="reseed()">reseed ⟳</button>
+  <div class="sep"></div>
+  <button class="btn btn-breath" id="breathBtn" onclick="toggleBreath()">≈ breath</button>
   <button class="btn btn-anim" id="animBtn" onclick="toggleAnim()">◎ animate</button>
   <button class="btn btn-grain" id="grainBtn" onclick="toggleGrain()">⌸ grain</button>
+  <div class="sep"></div>
+  <div class="indicator" id="moodInd">mood <span>—</span></div>
+  <div class="indicator" id="brushInd">brush <span>sable</span></div>
+  <div class="indicator" id="paperInd">paper <span>cold-press</span></div>
+  <div class="sep"></div>
   <button class="btn" onclick="saveImg()">save png</button>
   <button class="btn btn-run" onclick="runPoem()">render ⌘↵</button>
 </header>
 
 <div class="workspace">
   <div class="left-col">
-    <div class="pane-bar"><span>scroll</span><span id="lc">—</span></div>
+    <div class="pane-bar">
+      <span>scroll</span>
+      <span class="pbl"></span>
+      <span id="lc">—</span>
+      <span id="haikuMode" style="display:none;color:var(--accent4);font-size:9px">✦ haiku</span>
+    </div>
     <div class="editor-wrap">
       <div class="line-nums" id="ln">1</div>
-      <textarea id="ed" spellcheck="false"></textarea>
+      <textarea id="ed" spellcheck="false" autocomplete="off" autocorrect="off"></textarea>
     </div>
     <div class="ref-panel">
       <div class="ref-tabs">
-        <button class="rtab on" onclick="showTab('v',this)">verbs</button>
-        <button class="rtab" onclick="showTab('c',this)">colors</button>
-        <button class="rtab" onclick="showTab('m',this)">modifiers</button>
-        <button class="rtab" onclick="showTab('p',this)">placement</button>
-        <button class="rtab" onclick="showTab('s',this)">syntax</button>
+        <button class="rtab on"  onclick="showTab('v',this)">verbs</button>
+        <button class="rtab"     onclick="showTab('c',this)">colors</button>
+        <button class="rtab"     onclick="showTab('m',this)">modifiers</button>
+        <button class="rtab"     onclick="showTab('p',this)">placement</button>
+        <button class="rtab"     onclick="showTab('n',this)">nouns</button>
+        <button class="rtab"     onclick="showTab('g',this)">grammar</button>
+        <button class="rtab"     onclick="showTab('s',this)">syntax</button>
       </div>
       <div class="ref-scroll" id="ref"></div>
     </div>
   </div>
 
   <div class="right-col">
-    <div class="pane-bar"><span>canvas</span><span id="cdim">—</span></div>
+    <div class="pane-bar"><span>canvas</span><span class="pbl"></span><span id="cdim">—</span></div>
     <div class="canvas-wrap">
       <canvas id="art"></canvas>
       <div class="frame-badge" id="fbadge"></div>
+      <div class="haiku-badge" id="haikuBadge">✦ haiku mode</div>
     </div>
     <div class="status-bar">
-      <span id="st" class="s-ok">ready</span>
+      <div class="mood-ring" id="moodRing"></div>
+      <span id="st" class="s-ok">ready — the scroll awaits</span>
       <span id="rt" class="s-info"></span>
       <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
-      <span style="color:var(--muted)">ctrl+enter to render</span>
+      <span class="stat-pill" id="varCount"></span>
+      <span style="color:var(--muted2);font-size:10px">⌘↵ render</span>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-//  MONOKU v5 – The Studio Scroll
-//  A poetic, painterly language for generative art.
-//  All v4 features preserved + new verbs, adverbs, atmospheres.
-// ═══════════════════════════════════════════════════════════════════
+// ┌─────────────────────────────────────────────────────────────────────┐
+// │  MONOKU v6 — THE LIVING SCROLL                                      │
+// │  A poetic language for generative art. Words become marks.          │
+// │  Silence becomes light. The scroll breathes.                        │
+// │                                                                     │
+// │  Architecture:                                                      │
+// │    I.   Perlin Noise & Math Utilities                               │
+// │    II.  Color System — palette, mixing, ghost/memory modifiers      │
+// │    III. Lexicon — verbs, modifiers, nouns, moods, brushes, papers   │
+// │    IV.  State — the canvas's living memory                          │
+// │    V.   Grammar — parser, pre-pass, line interpretation             │
+// │    VI.  Mark-making — every verb, fully realized                    │
+// │    VII. Interpreter — the main reading loop                         │
+// │    VIII.Studio — UI, animation, breath mode, examples               │
+// └─────────────────────────────────────────────────────────────────────┘
 
-// ── COLOR PALETTE (extended with mineral pigments) ────────────────
+// ═══════════════════════════════════════════════════════════════════════
+//  I. PERLIN NOISE & MATH UTILITIES
+//  The mathematical ground beneath all organic mark-making.
+// ═══════════════════════════════════════════════════════════════════════
+
+const Perlin = (function() {
+  // Gradient table for 2D Perlin
+  const g2 = [
+    [1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1],
+    [1,0.5],[-1,0.5],[0.5,1],[-0.5,1]
+  ];
+  // Permutation table
+  const P = new Uint8Array(512);
+  const base = [];
+  for(let i=0;i<256;i++) base[i]=i;
+  // Deterministic Knuth shuffle
+  let s = 521295;
+  for(let i=255;i>0;i--){
+    s = (s*1664525+1013904223) & 0xFFFFFFFF;
+    const j = (Math.abs(s) % (i+1));
+    [base[i],base[j]] = [base[j],base[i]];
+  }
+  for(let i=0;i<512;i++) P[i] = base[i & 255];
+
+  function dot2(g, x, y){ return g[0]*x + g[1]*y; }
+  function fade(t){ return t*t*t*(t*(t*6-15)+10); }
+  function lerp(a, b, t){ return a + t*(b-a); }
+
+  return {
+    // 2D Perlin noise → returns value in roughly [-0.7, 0.7]
+    noise(x, y) {
+      const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+      const xf = x - Math.floor(x), yf = y - Math.floor(y);
+      const u = fade(xf), v = fade(yf);
+      const a  = P[X] + Y,   b  = P[X+1] + Y;
+      const aa = P[a] & 11,  ab = P[a+1] & 11;
+      const ba = P[b] & 11,  bb = P[b+1] & 11;
+      return lerp(
+        lerp(dot2(g2[aa], xf,   yf  ), dot2(g2[ba], xf-1, yf  ), u),
+        lerp(dot2(g2[ab], xf,   yf-1), dot2(g2[bb], xf-1, yf-1), u), v
+      );
+    },
+    // Fractional Brownian motion — layered noise for organic turbulence
+    fbm(x, y, octaves=4, lacunarity=2.0, gain=0.5) {
+      let val=0, amp=0.5, freq=1, max=0;
+      for(let i=0;i<octaves;i++){
+        val += this.noise(x*freq, y*freq) * amp;
+        max += amp; amp *= gain; freq *= lacunarity;
+      }
+      return val / max;
+    },
+    // Curl noise for fluid-like flow
+    curl(x, y, eps=0.01) {
+      const dx = (this.noise(x, y+eps) - this.noise(x, y-eps)) / (2*eps);
+      const dy = (this.noise(x+eps, y) - this.noise(x-eps, y)) / (2*eps);
+      return { x: -dy, y: dx };
+    }
+  };
+})();
+
+// Clamp to [0, 255]
+function clamp255(v){ return Math.min(255, Math.max(0, Math.round(v))); }
+// Linear interpolation
+function lerp(a, b, t){ return a + (b-a)*t; }
+// Map range
+function map(v, a, b, c, d){ return c + (v-a)/(b-a)*(d-c); }
+// Distance between two points
+function dist(x1,y1,x2,y2){ return Math.sqrt((x2-x1)**2+(y2-y1)**2); }
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  II. COLOR SYSTEM
+//  Pigments, mixing, and poetic color modifiers.
+// ═══════════════════════════════════════════════════════════════════════
+
 const COLORS = {
-  cerulean:[100,149,237],ochre:[204,119,34],vermillion:[220,60,50],
-  ash:[170,165,160],teal:[56,175,168],rose:[215,155,165],
-  indigo:[80,55,160],ember:[255,100,30],moss:[107,142,35],
-  ivory:[238,232,210],charcoal:[54,69,79],dusk:[138,118,175],
-  dawn:[240,200,138],blush:[235,155,138],slate:[112,128,144],
-  umber:[118,88,62],gold:[215,182,55],sage:[140,175,128],
-  mist:[198,208,218],ink:[16,16,30],crimson:[188,30,50],
-  sienna:[158,80,42],cobalt:[38,78,178],jade:[0,152,98],
-  sand:[192,175,125],violet:[138,88,195],coral:[220,100,80],
-  pine:[42,100,70],pewter:[140,138,130],snow:[240,240,248],
-  amber:[210,135,30],lapis:[30,60,175],oxblood:[118,24,34],
-  citrine:[220,195,60],absinthe:[100,155,70],graphite:[88,88,100],
-  cream:[238,228,196],midnight:[22,22,48],copper:[184,115,51],
-  lavender:[182,162,220],peach:[240,175,130],rust:[178,72,42],
-  // new mineral pigments
-  phthalo:[0,15,85],cadmium:[227,66,52],viridian:[64,130,109],
-  quinacridone:[142,18,55],gamboge:[228,155,15],
-  terreverte:[56,88,66],alizarin:[227,38,54],titanium:[255,255,250]
+  // ── Mineral pigments ──────────────────────────────────────────────
+  cerulean:[100,149,237], ochre:[204,119,34],   vermillion:[220,60,50],
+  ash:[170,165,160],      teal:[56,175,168],    rose:[215,155,165],
+  indigo:[80,55,160],     ember:[255,100,30],   moss:[107,142,35],
+  ivory:[238,232,210],    charcoal:[54,69,79],  dusk:[138,118,175],
+  dawn:[240,200,138],     blush:[235,155,138],  slate:[112,128,144],
+  umber:[118,88,62],      gold:[215,182,55],    sage:[140,175,128],
+  mist:[198,208,218],     ink:[16,16,30],       crimson:[188,30,50],
+  sienna:[158,80,42],     cobalt:[38,78,178],   jade:[0,152,98],
+  sand:[192,175,125],     violet:[138,88,195],  coral:[220,100,80],
+  pine:[42,100,70],       pewter:[140,138,130], snow:[240,240,248],
+  amber:[210,135,30],     lapis:[30,60,175],    oxblood:[118,24,34],
+  citrine:[220,195,60],   absinthe:[100,155,70],graphite:[88,88,100],
+  cream:[238,228,196],    midnight:[22,22,48],  copper:[184,115,51],
+  lavender:[182,162,220], peach:[240,175,130],  rust:[178,72,42],
+  // ── Earth pigments ────────────────────────────────────────────────
+  phthalo:[0,15,85],      cadmium:[227,66,52],  viridian:[64,130,109],
+  quinacridone:[142,18,55],gamboge:[228,155,15],terreverte:[56,88,66],
+  alizarin:[227,38,54],   titanium:[255,255,250],
+  // ── Extended palette ──────────────────────────────────────────────
+  bone:[228,218,196],     celeste:[178,218,230],aubergine:[62,28,68],
+  verdigris:[67,124,111], flax:[220,200,140],   bisque:[240,218,180],
+  feldgrau:[77,93,83],    puce:[160,80,100],    sepia:[115,66,34],
+  ecru:[232,222,196],     woad:[82,104,165],    weld:[218,192,52],
+  // ── Atmospheric ───────────────────────────────────────────────────
+  void:[8,8,14],          light:[250,248,240],  shadow:[30,26,40],
+  air:[220,228,238],      earth:[110,85,58],    water:[80,140,180],
+  fire:[240,80,20],       wood:[140,100,55]
 };
 
-const NAMED_NUMS = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
-  few:5,several:9,some:14,many:26,dense:52,sparse:3,handful:6,dozen:12,
-  pair:2,couple:2,single:1,tiny:2,myriad:100};
+// Season color tints applied globally
+const SEASON_TINTS = {
+  spring: [1.02,1.06,0.98], summer: [1.05,0.96,0.90],
+  autumn: [1.00,0.91,0.80], winter: [0.90,0.91,1.08], none:[1,1,1]
+};
 
-// ── ALL MODIFIERS (adverbs/adjectives) ────────────────────────────
+// Mood palettes — choosing a mood biases all color picks toward this feel
+const MOOD_PALETTES = {
+  melancholy:  { primary:'slate',   secondary:'violet',   accent:'mist',      tint:[0.88,0.88,0.98] },
+  joy:         { primary:'gold',    secondary:'coral',    accent:'citrine',    tint:[1.06,1.02,0.92] },
+  serenity:    { primary:'sage',    secondary:'mist',     accent:'teal',       tint:[0.96,1.02,0.98] },
+  tension:     { primary:'crimson', secondary:'charcoal', accent:'oxblood',    tint:[1.04,0.88,0.88] },
+  nostalgia:   { primary:'amber',   secondary:'sand',     accent:'sienna',     tint:[1.02,0.96,0.85] },
+  desolation:  { primary:'graphite',secondary:'ash',      accent:'pewter',     tint:[0.88,0.88,0.90] },
+  wonder:      { primary:'cobalt',  secondary:'gold',     accent:'lavender',   tint:[0.92,0.95,1.06] },
+  dread:       { primary:'void',    secondary:'oxblood',  accent:'graphite',   tint:[0.80,0.82,0.86] },
+  reverie:     { primary:'lavender',secondary:'rose',     accent:'dusk',       tint:[0.96,0.94,1.04] },
+  clarity:     { primary:'cerulean',secondary:'titanium', accent:'celeste',    tint:[0.95,0.98,1.04] },
+};
+
+// Apply season + temperature + mood tints to a raw color
+function applyTints(rgb, state) {
+  let [r,g,b] = rgb;
+  const st = SEASON_TINTS[state.season] || [1,1,1];
+  r *= st[0]; g *= st[1]; b *= st[2];
+  // Temperature
+  if(state.temperature === 'cold'){ r=r*0.84+12; g=g*0.90+8;  b=b*1.06+18; }
+  if(state.temperature === 'warm'){ r=r*1.06+10; g=g*0.94;    b=b*0.88; }
+  // Mood
+  const mood = MOOD_PALETTES[state.mood];
+  if(mood){ const mt=mood.tint; r*=mt[0]; g*=mt[1]; b*=mt[2]; }
+  return [clamp255(r), clamp255(g), clamp255(b)];
+}
+
+// Resolve a color name from state (including memory, mood bias)
+function getColor(name, state) {
+  if(!name) return null;
+  // Check variable store first
+  if(state.vars[name] && Array.isArray(state.vars[name])) return state.vars[name].slice();
+  // Check memory
+  if(state.memory[name] && Array.isArray(state.memory[name])) return applyTints(state.memory[name], state);
+  // Check palette
+  if(COLORS[name]) return applyTints(COLORS[name].slice(), state);
+  return null;
+}
+
+// Mix two colors with a ratio (0 = all a, 1 = all b)
+function mixColors(a, b, t=0.5) {
+  return [lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t)].map(Math.round);
+}
+
+// Lighten a color toward white
+function lighten(col, amount) {
+  return col.map(c => clamp255(c + (255-c)*amount));
+}
+
+// Darken a color toward black
+function darken(col, amount) {
+  return col.map(c => clamp255(c * (1-amount)));
+}
+
+// Desaturate (shift toward gray)
+function desaturate(col, amount) {
+  const avg = (col[0]+col[1]+col[2])/3;
+  return col.map(c => clamp255(lerp(c, avg, amount)));
+}
+
+// Parse poetic color modifiers: "a ghost of X", "a memory of X", "a whisper of X"
+// Returns {color, opacity_modifier} or null
+function parseColorPoetry(phrase) {
+  const p = phrase.toLowerCase().trim();
+  const ghostM  = p.match(/^a ghost of (\w+)$/);
+  const memM    = p.match(/^a memory of (\w+)$/);
+  const whisM   = p.match(/^a whisper of (\w+)$/);
+  const shadowM = p.match(/^the shadow of (\w+)$/);
+  const touchM  = p.match(/^a touch of (\w+) on (\w+)$/);
+  const mixM    = p.match(/^mix (\w+) with (\w+)$/);
+  const kissM   = p.match(/^a kiss of (\w+) on (\w+)$/);
+  if(ghostM  && COLORS[ghostM[1]])  return { color: lighten(COLORS[ghostM[1]].slice(),0.5), opacityMod: 0.15 };
+  if(memM    && COLORS[memM[1]])    return { color: desaturate(COLORS[memM[1]].slice(), 0.6), opacityMod: 0.28 };
+  if(whisM   && COLORS[whisM[1]])   return { color: lighten(COLORS[whisM[1]].slice(), 0.4), opacityMod: 0.09 };
+  if(shadowM && COLORS[shadowM[1]]) return { color: darken(COLORS[shadowM[1]].slice(), 0.5), opacityMod: 0.6 };
+  if(mixM    && COLORS[mixM[1]] && COLORS[mixM[2]]) return { color: mixColors(COLORS[mixM[1]], COLORS[mixM[2]]), opacityMod: 1.0 };
+  if(touchM  && COLORS[touchM[1]] && COLORS[touchM[2]]) return { color: mixColors(COLORS[touchM[1]], COLORS[touchM[2]], 0.25), opacityMod: 0.5 };
+  if(kissM   && COLORS[kissM[1]] && COLORS[kissM[2]])   return { color: mixColors(COLORS[kissM[1]], COLORS[kissM[2]], 0.18), opacityMod: 0.55 };
+  return null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  III. LEXICON
+//  All the words the language knows.
+// ═══════════════════════════════════════════════════════════════════════
+
+const NAMED_NUMS = {
+  one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10,
+  eleven:11, twelve:12, fifteen:15, twenty:20, thirty:30, fifty:50, hundred:100,
+  few:5, several:9, some:14, many:28, dense:55, sparse:4, handful:7, dozen:12,
+  pair:2, couple:2, single:1, myriad:100, score:20, plenty:40
+};
+
 const MODIFIERS = new Set([
-  // existing
-  'soft','hard','faint','whisper','pale','deep','bold',
-  'scattered','gathered','clustered','trembling','quiet','loud','slow','swift',
-  'light','dark','dim','bright','blurred','sharp','delicate','wet','dry',
-  // new adverbs (pace, texture, mood)
-  'slowly','quickly','rapidly','hastily','gently','patiently','frantic',
-  'brittle','fluid','hushed','aged','toothed','dusted','saturated','mottled',
-  'ghosted','weathered','viscous','lean','sfumato','chiaroscuro','global',
-  'drybrush','smudge','rake'
+  'soft','hard','faint','whisper','pale','deep','bold','scattered','gathered',
+  'clustered','trembling','quiet','loud','slow','swift','light','dark','dim',
+  'bright','blurred','sharp','delicate','wet','dry','slowly','quickly','rapidly',
+  'hastily','gently','patiently','frantic','brittle','fluid','hushed','aged',
+  'toothed','dusted','saturated','mottled','ghosted','weathered','viscous','lean',
+  'drybrush','smudge','rake','decisive','hesitant','firm','loose','heavy','feathered',
+  'loaded','spent','soaked','parched','impulsive','measured','wide','narrow','vast',
+  'tiny','small','large','rightward','leftward','upward','downward',
 ]);
 
-// ── PLACEMENT PATTERNS (unchanged) ────────────────────────────────
-const PLACEMENT_PATTERNS = {
-  'the heart of the canvas':()=>({cx:0.5,cy:0.5,sx:0.18,sy:0.18}),
-  'the center':()=>({cx:0.5,cy:0.5,sx:0.15,sy:0.15}),
-  'the upper left':()=>({cx:0.2,cy:0.2,sx:0.15,sy:0.15}),
-  'the upper right':()=>({cx:0.8,cy:0.2,sx:0.15,sy:0.15}),
-  'the lower left':()=>({cx:0.2,cy:0.8,sx:0.15,sy:0.15}),
-  'the lower right':()=>({cx:0.8,cy:0.8,sx:0.15,sy:0.15}),
-  'the horizon':()=>({cx:0.5,cy:0.55,sx:1.0,sy:0.1}),
-  'the upper edge':()=>({cx:0.5,cy:0.1,sx:1.0,sy:0.12}),
-  'the lower edge':()=>({cx:0.5,cy:0.9,sx:1.0,sy:0.12}),
-  'the left edge':()=>({cx:0.1,cy:0.5,sx:0.12,sy:1.0}),
-  'the right edge':()=>({cx:0.9,cy:0.5,sx:0.12,sy:1.0}),
-  'across the canvas':()=>({cx:0.5,cy:0.5,sx:1.0,sy:1.0}),
-  'a quiet corner':()=>({cx:0.15,cy:0.15,sx:0.15,sy:0.15}),
-  'the light':()=>({cx:0.5,cy:0.25,sx:0.4,sy:0.2}),
-  'the shadow':()=>({cx:0.5,cy:0.75,sx:0.4,sy:0.2}),
-};
-
-const SEASON_TINTS = {
-  spring: [1.02, 1.05, 1.00], summer: [1.04, 0.97, 0.92],
-  autumn: [1.00, 0.92, 0.82], winter: [0.92, 0.92, 1.06], none: [1,1,1]
-};
-
-function parsePlacement(phrase){
-  if(!phrase) return null;
-  phrase = phrase.trim().toLowerCase();
-  for(const[key, fn] of Object.entries(PLACEMENT_PATTERNS)){
-    if(phrase.includes(key)) return fn();
-  }
-  if(phrase.includes('upper')&&phrase.includes('left')) return PLACEMENT_PATTERNS['the upper left']();
-  if(phrase.includes('upper')&&phrase.includes('right')) return PLACEMENT_PATTERNS['the upper right']();
-  if(phrase.includes('lower')&&phrase.includes('left')) return PLACEMENT_PATTERNS['the lower left']();
-  if(phrase.includes('lower')&&phrase.includes('right')) return PLACEMENT_PATTERNS['the lower right']();
-  return {cx:0.5,cy:0.5,sx:1.0,sy:1.0};
-}
-
-// ── STATE ─────────────────────────────────────────────────────────
-let state = {
-  seed: Date.now(),
-  bg: [248,245,237],
-  last: [44,34,20],
-  placement: {cx:0.5,cy:0.5,sx:1.0,sy:1.0},
-  grainEnabled: false,
-  memory: {},
-  weather: 0,          // windiness 0..1
-  season: 'none',
-  lastShape: null,
-  // new global modifiers
-  globalPace: 1.0,       // default slower than v4 (applied as base multiplier)
-  globalHushed: false,
-  globalAged: false,
-  globalToothed: false,
-  humidity: false,       // "the air is humid"
-  temperature: 'none',   // "the room is cold" etc.
-  windRising: false,
-  allaPrima: false,
-  toothCanvas: null      // for "prime" texture
-};
-
-function sr(){
-  state.seed = (state.seed * 16807 + 0) % 2147483647;
-  return (state.seed - 1) / 2147483646;
-}
-
-function coord(W,H){
-  const p = state.placement;
-  const cx = W * p.cx, cy = H * p.cy;
-  const sx = W * p.sx, sy = H * p.sy;
-  const x = Math.min(W-1, Math.max(0, cx + (sr()-0.5) * sx));
-  const y = Math.min(H-1, Math.max(0, cy + (sr()-0.5) * sy));
-  return {x,y};
-}
-
-function getColor(name){
-  if(!name) return null;
-  if(state.memory[name] && Array.isArray(state.memory[name])) return state.memory[name].slice();
-  const base = COLORS[name];
-  if(!base) return null;
-  const tint = SEASON_TINTS[state.season] || [1,1,1];
-  let r = base[0]*tint[0], g = base[1]*tint[1], b = base[2]*tint[2];
-  if(state.temperature === 'cold'){
-    r = r*0.85 + 15; g = g*0.9 + 10; b = b*1.05 + 20;
-  } else if(state.temperature === 'warm'){
-    r = r*1.05 + 10; g = g*0.95; b = b*0.9;
-  }
-  return [
-    Math.min(255, Math.max(0, Math.round(r))),
-    Math.min(255, Math.max(0, Math.round(g))),
-    Math.min(255, Math.max(0, Math.round(b)))
-  ];
-}
-
-let grainCanvas = null;
-function makeGrainCanvas(w,h){
-  if(grainCanvas && grainCanvas.width === w && grainCanvas.height === h) return grainCanvas;
-  grainCanvas = document.createElement('canvas');
-  grainCanvas.width = w; grainCanvas.height = h;
-  const gctx = grainCanvas.getContext('2d');
-  const imgData = gctx.createImageData(w,h);
-  for(let i=0; i<imgData.data.length; i+=4){
-    const v = Math.floor(sr()*20+235);
-    imgData.data[i]=v; imgData.data[i+1]=v; imgData.data[i+2]=v;
-    imgData.data[i+3]=8;
-  }
-  gctx.putImageData(imgData,0,0);
-  return grainCanvas;
-}
-
-// ── MULTI-WORD VERB DETECTION ────────────────────────────────────
-const MULTI_VERBS = ['alla prima','chiaroscuro']; // sfumato already single
 const VERBS = [
-  // from v4
-  'breathe','bloom','impasto','stipple','glaze','scrape','wash','drift','flow',
-  'scatter','burn','weave','veil','crack','pulse','fade','silence','remember',
-  'branch','rain','dew','haze','splatter','stroke','petal','shadow','grain',
-  'sfumato','chiaroscuro','bleed','weather','season','echo','pause','blush',
-  // new painterly verbs
-  'dapple','erode','flick','etch','dissolve','tarnish','scumble','alla prima',
-  'tint','shade','prime','underpaint','varnish','drybrush','rake','smudge',
-  'global' // for global modifier settings
+  // ── Foundation ──────────────────────────────────────────────────
+  'breathe','bloom','silence','pause','remember',
+  // ── Wet media ───────────────────────────────────────────────────
+  'wash','glaze','bleed','dew','haze','veil','sfumato','rain','drip',
+  // ── Dry media ───────────────────────────────────────────────────
+  'impasto','stipple','scrape','stroke','drybrush','rake','smudge',
+  'scumble','etch','flick','scratch',
+  // ── Organic marks ───────────────────────────────────────────────
+  'bloom','scatter','drift','flow','branch','petal','weave','crack',
+  'splatter','burn','fade','pulse','chiaroscuro','blush',
+  // ── Atmospheric ─────────────────────────────────────────────────
+  'shadow','grain','echo','season','weather',
+  // ── New v6 verbs ─────────────────────────────────────────────────
+  'dapple','erode','dissolve','tarnish','tint','shade','prime',
+  'underpaint','varnish','alla prima','spiral','constellation',
+  'ripple','smoke','nebula','foxing','burnish','glyph','horizon',
+  'web','crumble','patina','linger','hurry',
+  // ── Global modifier ──────────────────────────────────────────────
+  'global',
 ];
 const VERB_SET = new Set(VERBS);
 
-// ── META LINE PARSING (atmospheric contexts) ──────────────────────
-function parseMetaLine(line){
-  const trimmed = line.trim().toLowerCase();
-  if(trimmed === 'the air is humid'){ state.humidity = true; return true; }
-  if(trimmed === 'the room is cold'){ state.temperature = 'cold'; return true; }
-  if(trimmed === 'the room is warm'){ state.temperature = 'warm'; return true; }
-  if(trimmed === 'the wind is rising'){ state.windRising = true; return true; }
-  if(trimmed.startsWith('the wind is rising')){ state.windRising = true; return true; }
-  // reset can be done with explicit commands
+// Multi-word verbs (order matters — longest first)
+const MULTI_VERBS = ['alla prima'];
+
+// ── NOUN DICTIONARY ───────────────────────────────────────────────────
+// Nouns resolve to visual commands. "the moon" → bloom ivory gathered
+const NOUN_DICT = {
+  moon:     (s)=>({verb:'bloom',   colorName:'ivory',    count:1,  sizeM:3.5,  opM:0.7,  mods:['gathered','soft']}),
+  sun:      (s)=>({verb:'bloom',   colorName:'gold',     count:1,  sizeM:4,    opM:0.8,  mods:['gathered','bright']}),
+  star:     (s)=>({verb:'constellation', colorName:'ivory', count:8, sizeM:0.4, opM:0.85, mods:[]}),
+  stars:    (s)=>({verb:'constellation', colorName:'ivory', count:22,sizeM:0.3, opM:0.7,  mods:['scattered']}),
+  petal:    (s)=>({verb:'petal',   colorName:null,       count:1,  sizeM:1.8,  opM:0.75, mods:[]}),
+  petals:   (s)=>({verb:'petal',   colorName:null,       count:7,  sizeM:1.2,  opM:0.65, mods:['scattered']}),
+  leaf:     (s)=>({verb:'petal',   colorName:'moss',     count:1,  sizeM:1.5,  opM:0.7,  mods:[]}),
+  leaves:   (s)=>({verb:'petal',   colorName:'moss',     count:12, sizeM:0.9,  opM:0.6,  mods:['scattered']}),
+  smoke:    (s)=>({verb:'smoke',   colorName:'charcoal', count:18, sizeM:1.8,  opM:0.22, mods:['soft']}),
+  flame:    (s)=>({verb:'burn',    colorName:'ember',    count:10, sizeM:2,    opM:0.7,  mods:['bright']}),
+  feather:  (s)=>({verb:'drybrush',colorName:null,       count:25, sizeM:0.5,  opM:0.28, mods:['soft','scattered']}),
+  rain:     (s)=>({verb:'rain',    colorName:'mist',     count:40, sizeM:0.8,  opM:0.4,  mods:[]}),
+  snow:     (s)=>({verb:'scatter', colorName:'snow',     count:55, sizeM:0.25, opM:0.75, mods:['scattered']}),
+  stone:    (s)=>({verb:'impasto', colorName:'slate',    count:1,  sizeM:3,    opM:0.9,  mods:['bold']}),
+  wave:     (s)=>({verb:'flow',    colorName:'cerulean', count:6,  sizeM:1.8,  opM:0.5,  mods:[]}),
+  cloud:    (s)=>({verb:'haze',    colorName:'snow',     count:5,  sizeM:2.5,  opM:0.35, mods:['soft']}),
+  fog:      (s)=>({verb:'haze',    colorName:'mist',     count:4,  sizeM:3,    opM:0.3,  mods:['soft']}),
+  blossom:  (s)=>({verb:'bloom',   colorName:'blush',    count:8,  sizeM:1.4,  opM:0.6,  mods:['gathered']}),
+  dust:     (s)=>({verb:'stipple', colorName:'sand',     count:40, sizeM:0.3,  opM:0.25, mods:['scattered']}),
+  ash:      (s)=>({verb:'scatter', colorName:'ash',      count:30, sizeM:0.3,  opM:0.3,  mods:['scattered']}),
+  ink:      (s)=>({verb:'bleed',   colorName:'ink',      count:8,  sizeM:1.5,  opM:0.9,  mods:['bold']}),
+  moss:     (s)=>({verb:'stipple', colorName:'moss',     count:35, sizeM:0.7,  opM:0.55, mods:['gathered']}),
+  dew:      (s)=>({verb:'dew',     colorName:'water',    count:12, sizeM:0.7,  opM:0.6,  mods:[]}),
+  mist:     (s)=>({verb:'haze',    colorName:'mist',     count:6,  sizeM:2,    opM:0.25, mods:['soft']}),
+  root:     (s)=>({verb:'branch',  colorName:'umber',    count:8,  sizeM:1.2,  opM:0.7,  mods:['dark']}),
+  cobweb:   (s)=>({verb:'web',     colorName:'mist',     count:12, sizeM:1,    opM:0.35, mods:['faint']}),
+  ember:    (s)=>({verb:'burn',    colorName:'amber',    count:6,  sizeM:1.5,  opM:0.6,  mods:[]}),
+  ripple:   (s)=>({verb:'ripple',  colorName:'water',    count:5,  sizeM:1.5,  opM:0.5,  mods:['soft']}),
+  galaxy:   (s)=>({verb:'nebula',  colorName:'midnight', count:8,  sizeM:3,    opM:0.6,  mods:['gathered']}),
+  glyph:    (s)=>({verb:'glyph',   colorName:null,       count:3,  sizeM:1.2,  opM:0.75, mods:[]}),
+};
+
+// ── BRUSH PROFILES ────────────────────────────────────────────────────
+// Affects stroke quality, edge softness, taper, jitter
+const BRUSH_PROFILES = {
+  sable:  { tipRadius:0.5, taperStart:0.1, taperEnd:0.08, edgeSoft:0.12, split:0,    jitter:0.04 },
+  bamboo: { tipRadius:1.4, taperStart:0.3, taperEnd:0.3,  edgeSoft:0.18, split:0.3,  jitter:0.14 },
+  hake:   { tipRadius:3.0, taperStart:0.5, taperEnd:0.6,  edgeSoft:0.4,  split:0.6,  jitter:0.22 },
+  rigger: { tipRadius:0.2, taperStart:0.05,taperEnd:0.02, edgeSoft:0.05, split:0,    jitter:0.02 },
+  flat:   { tipRadius:1.0, taperStart:0.0, taperEnd:0.0,  edgeSoft:0.06, split:0,    jitter:0.08 },
+  palette:{ tipRadius:2.0, taperStart:0.0, taperEnd:0.0,  edgeSoft:0.02, split:0,    jitter:0.2  },
+};
+
+// ── PAPER TEXTURES ────────────────────────────────────────────────────
+const PAPER_PROFILES = {
+  'cold-press': { tooth:0.4, absorbency:0.6, bg:[248,245,237], grain:0.12, bleed:0.3  },
+  'hot-press':  { tooth:0.05,absorbency:0.3, bg:[252,250,245], grain:0.04, bleed:0.1  },
+  'rough':      { tooth:0.9, absorbency:0.7, bg:[244,238,226], grain:0.25, bleed:0.4  },
+  'rice':       { tooth:0.2, absorbency:0.9, bg:[250,247,238], grain:0.06, bleed:0.65 },
+  'linen':      { tooth:0.6, absorbency:0.5, bg:[240,234,220], grain:0.18, bleed:0.25 },
+  'aged':       { tooth:0.5, absorbency:0.55,bg:[230,220,195], grain:0.2,  bleed:0.35, yellowed:true, foxed:true },
+  'velum':      { tooth:0.1, absorbency:0.2, bg:[248,244,230], grain:0.03, bleed:0.08 },
+  'canvas':     { tooth:0.7, absorbency:0.55,bg:[242,236,222], grain:0.22, bleed:0.2  },
+};
+
+// ── PLACEMENT PATTERNS ────────────────────────────────────────────────
+const PLACEMENT_PATTERNS = {
+  'the heart of the canvas': ()=>({cx:0.5, cy:0.5,  sx:0.18,sy:0.18}),
+  'the center':              ()=>({cx:0.5, cy:0.5,  sx:0.14,sy:0.14}),
+  'the upper left':          ()=>({cx:0.2, cy:0.2,  sx:0.16,sy:0.16}),
+  'the upper right':         ()=>({cx:0.8, cy:0.2,  sx:0.16,sy:0.16}),
+  'the lower left':          ()=>({cx:0.2, cy:0.8,  sx:0.16,sy:0.16}),
+  'the lower right':         ()=>({cx:0.8, cy:0.8,  sx:0.16,sy:0.16}),
+  'the horizon':             ()=>({cx:0.5, cy:0.55, sx:1.0, sy:0.08}),
+  'the upper edge':          ()=>({cx:0.5, cy:0.08, sx:1.0, sy:0.1 }),
+  'the lower edge':          ()=>({cx:0.5, cy:0.92, sx:1.0, sy:0.1 }),
+  'the left edge':           ()=>({cx:0.08,cy:0.5,  sx:0.1, sy:1.0 }),
+  'the right edge':          ()=>({cx:0.92,cy:0.5,  sx:0.1, sy:1.0 }),
+  'across the canvas':       ()=>({cx:0.5, cy:0.5,  sx:1.0, sy:1.0 }),
+  'a quiet corner':          ()=>({cx:0.12,cy:0.12, sx:0.14,sy:0.14}),
+  'the light':               ()=>({cx:0.5, cy:0.22, sx:0.4, sy:0.2 }),
+  'the shadow':              ()=>({cx:0.5, cy:0.78, sx:0.4, sy:0.2 }),
+  'the left half':           ()=>({cx:0.25,cy:0.5,  sx:0.5, sy:1.0 }),
+  'the right half':          ()=>({cx:0.75,cy:0.5,  sx:0.5, sy:1.0 }),
+  'the upper half':          ()=>({cx:0.5, cy:0.25, sx:1.0, sy:0.5 }),
+  'the lower half':          ()=>({cx:0.5, cy:0.75, sx:1.0, sy:0.5 }),
+  'the golden ratio':        ()=>({cx:0.618,cy:0.382,sx:0.2,sy:0.2 }),
+};
+
+function parsePlacement(phrase) {
+  if(!phrase) return null;
+  phrase = phrase.trim().toLowerCase().replace(/^at\s+/, '').replace(/^in\s+/, '');
+  for(const [key, fn] of Object.entries(PLACEMENT_PATTERNS)) {
+    if(phrase.includes(key)) return fn();
+  }
+  // Loose matching
+  if(phrase.includes('upper') && phrase.includes('left'))  return PLACEMENT_PATTERNS['the upper left']();
+  if(phrase.includes('upper') && phrase.includes('right')) return PLACEMENT_PATTERNS['the upper right']();
+  if(phrase.includes('lower') && phrase.includes('left'))  return PLACEMENT_PATTERNS['the lower left']();
+  if(phrase.includes('lower') && phrase.includes('right')) return PLACEMENT_PATTERNS['the lower right']();
+  if(phrase.includes('center') || phrase.includes('middle')) return PLACEMENT_PATTERNS['the center']();
+  if(phrase.includes('horizon')) return PLACEMENT_PATTERNS['the horizon']();
+  return {cx:0.5, cy:0.5, sx:1.0, sy:1.0};
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  IV. STATE
+//  The canvas's living memory — everything the poem knows about itself.
+// ═══════════════════════════════════════════════════════════════════════
+
+function makeState() {
+  return {
+    seed: Date.now(),
+    bg: [248,245,237],
+    last: [44,34,20],
+    placement: {cx:0.5, cy:0.5, sx:1.0, sy:1.0},
+    grainEnabled: false,
+    memory: {},        // named color/number bindings (remember X Y)
+    vars: {},          // variable store (let X be Y)
+    gestures: {},      // user-defined gesture macros
+    weather: 0,        // wind intensity 0..1
+    season: 'none',
+    mood: null,        // current mood palette
+    paper: 'cold-press',
+    brush: 'sable',
+    lastShape: null,
+    temperature: 'none',
+    windRising: false,
+    humidity: false,
+    allaPrima: false,
+    inkLoading: 0.8,   // 0=dry, 1=fully loaded
+    globalPace: 1.0,
+    globalHushed: false,
+    globalAged: false,
+    globalToothed: false,
+    mixedColor: null,  // from "mix X with Y" on its own line
+    breathLine: 0,     // for breath mode
+    haikuLines: [],    // syllable counts of active lines
+    errors: [],        // poetic error log
+  };
+}
+
+let STATE = makeState();
+
+// Seeded random using state.seed
+function sr() {
+  STATE.seed = (STATE.seed * 1664525 + 1013904223) & 0xFFFFFFFF;
+  return Math.abs(STATE.seed) / 2147483647;
+}
+
+// Seeded random with explicit seed (non-destructive to STATE.seed)
+function srSeed(seed) {
+  seed = (seed * 1664525 + 1013904223) & 0xFFFFFFFF;
+  return Math.abs(seed) / 2147483647;
+}
+
+// Get point within current placement zone
+function coord(W, H) {
+  const p = STATE.placement;
+  const cx = W * p.cx, cy = H * p.cy;
+  const sx = W * p.sx * 0.5, sy = H * p.sy * 0.5;
+  const nx = Perlin.noise(sr()*3, sr()*3) * 0.5 + 0.5;
+  const ny = Perlin.noise(sr()*3+10, sr()*3+10) * 0.5 + 0.5;
+  return {
+    x: Math.min(W-1, Math.max(0, cx + (nx - 0.5) * sx * 2)),
+    y: Math.min(H-1, Math.max(0, cy + (ny - 0.5) * sy * 2)),
+  };
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  V. GRAMMAR — PARSING
+//  Reading the scroll: syllables, variables, conditions, gestures.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Simple syllable counter (vowel groups, min 1)
+function syllables(word) {
+  word = word.toLowerCase().replace(/[^a-z]/g, '');
+  if(!word) return 0;
+  const count = (word.match(/[aeiouy]+/g) || []).length;
+  // Silent e at end
+  const trailE = word.match(/[^aeiou]e$/) ? 1 : 0;
+  return Math.max(1, count - trailE);
+}
+
+function lineSyllables(line) {
+  return line.trim().split(/\s+/).reduce((s, w) => s + syllables(w), 0);
+}
+
+// Detect haiku structure in non-comment, non-meta lines
+function detectHaiku(lines) {
+  const contentLines = lines.filter(l => {
+    const t = l.trim();
+    return t && !t.startsWith('—') && !t.startsWith('#') && !t.startsWith(';');
+  });
+  if(contentLines.length !== 3) return false;
+  const counts = contentLines.map(lineSyllables);
+  // Allow ±2 for each line
+  return Math.abs(counts[0]-5) <= 2 && Math.abs(counts[1]-7) <= 2 && Math.abs(counts[2]-5) <= 2;
+}
+
+// Poetic error messages — never show raw JS
+const POETIC_ERRORS = {
+  unknown_verb:   () => `the brush does not know this gesture`,
+  unknown_color:  () => `no pigment by that name in the box`,
+  bad_gesture:    (n) => `'${n}' was never defined — the scroll is silent`,
+  loop_overflow:  () => `the ink ran dry — too many repetitions`,
+  parse_failure:  () => `the line refused to be read`,
+  unknown:        () => `the brush slipped — the paper refused`,
+};
+
+// Parse "a single petal of rose" style noun phrases
+// Returns command string or null
+function tryParseNounPhrase(raw) {
+  const t = raw.toLowerCase().trim();
+  // "the X" or "a X of COLOR" or just noun "rain" "snow"
+  for(const [noun, fn] of Object.entries(NOUN_DICT)) {
+    const patterns = [
+      new RegExp(`(?:^|\\bthe\\s+|\\ba\\s+(?:single\\s+)?)${noun}(?:\\s+of\\s+(\\w+))?\\s*$`),
+      new RegExp(`^${noun}(?:\\s+of\\s+(\\w+))?$`),
+    ];
+    for(const pat of patterns) {
+      const m = t.match(pat);
+      if(m) {
+        const colorOverride = m[1] && COLORS[m[1]] ? m[1] : null;
+        const cmd = fn(STATE);
+        if(colorOverride) cmd.colorName = colorOverride;
+        return cmd; // returns parsed command object directly
+      }
+    }
+  }
+  return null;
+}
+
+// Resolve a token to a number (name, number, or variable)
+function resolveNum(tok) {
+  if(!tok) return null;
+  tok = tok.toLowerCase();
+  if(NAMED_NUMS[tok] !== undefined) return NAMED_NUMS[tok];
+  if(!isNaN(tok)) return Math.round(parseFloat(tok));
+  if(STATE.vars[tok] !== undefined && typeof STATE.vars[tok] === 'number') return STATE.vars[tok];
+  return null;
+}
+
+// Evaluate a condition string
+function evalCondition(cond) {
+  const c = cond.toLowerCase().trim();
+  if(c === 'the wind rises' || c === 'the wind is rising') return STATE.windRising;
+  if(c === 'the air is humid' || c === 'humid') return STATE.humidity;
+  if(c.startsWith('the mood is '))  return STATE.mood === c.slice(12).trim();
+  if(c.startsWith('the season is ')) return STATE.season === c.slice(14).trim();
+  if(c.startsWith('the paper is ')) return STATE.paper === c.slice(13).trim();
+  if(c.startsWith('the brush is ')) return STATE.brush === c.slice(13).trim();
+  if(c.startsWith('the room is cold')) return STATE.temperature === 'cold';
+  if(c.startsWith('the room is warm')) return STATE.temperature === 'warm';
+  // variable condition: "X is Y"
+  const varM = c.match(/^(\w+) is (\w+)$/);
+  if(varM) {
+    const val = STATE.vars[varM[1]];
+    if(val === undefined) return false;
+    const expected = resolveNum(varM[2]) ?? varM[2];
+    return val == expected;
+  }
   return false;
 }
 
-// ── COMMAND PARSING (with adverb scoping and pressure map) ────────
-function parseCommand(phrase, globalMods = {}){
+// Main command parser — takes a raw phrase string, returns {verb, ...params}
+function parseCommand(phrase) {
   if(!phrase) return null;
+
+  // Check for poetic color modifier
+  const poeticCol = parseColorPoetry(phrase);
+  if(poeticCol) {
+    // "a ghost of rose" on its own — sets mixed color
+    STATE.mixedColor = poeticCol.color;
+    return null;
+  }
+
   const tokens = phrase.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
-  // detect multi-word verb
-  let verb = null;
-  let remainingTokens = [...tokens];
-  for(const mv of MULTI_VERBS){
-    const mvTokens = mv.split(' ');
-    if(tokens.length >= mvTokens.length && tokens.slice(0, mvTokens.length).join(' ') === mv){
-      verb = mv;
-      remainingTokens = tokens.slice(mvTokens.length);
-      break;
+  if(!tokens.length) return null;
+
+  // Detect multi-word verb
+  let verb = null, remaining = [...tokens];
+  for(const mv of MULTI_VERBS) {
+    const mvt = mv.split(' ');
+    if(tokens.length >= mvt.length && tokens.slice(0, mvt.length).join(' ') === mv) {
+      verb = mv; remaining = tokens.slice(mvt.length); break;
     }
   }
-  if(!verb){
-    verb = tokens[0];
-    remainingTokens = tokens.slice(1);
-  }
-  if(!VERB_SET.has(verb) && verb !== 'remember') return null; // not a recognized verb
+  if(!verb) { verb = tokens[0]; remaining = tokens.slice(1); }
+  if(!VERB_SET.has(verb)) return null;
 
-  let color = null, count = null, size = null, opacity = null;
-  let modifiers = [];
-  let blendColor = null, blendBase = null;
+  // Parse remaining tokens for color, count, size, opacity, modifiers
+  let colorName = null, count = null, sizeM = 1, opacity = null;
+  const mods = [];
 
-  // longest word for pressure
-  let maxWordLen = 0;
-  for(const t of tokens){
-    if(/^[a-z]+$/i.test(t) && t.length > maxWordLen) maxWordLen = t.length;
-  }
-  const pressure = Math.min(2.2, 1 + (maxWordLen - 3) * 0.1);
-
-  if(phrase.includes(' a kiss of ')){
-    const match = phrase.match(/a kiss of (\w+) on (\w+)/);
-    if(match){ blendColor = match[1]; blendBase = match[2]; }
-  }
-
-  for(const tok of remainingTokens){
-    if(COLORS[tok]){ color = COLORS[tok].slice(); continue; }
-    if(NAMED_NUMS[tok] !== undefined){ count = NAMED_NUMS[tok]; continue; }
-    if(!isNaN(tok)){ const n = parseInt(tok); if(!count && n>0) count = Math.min(n,500); continue; }
-    if(MODIFIERS.has(tok)){ modifiers.push(tok); continue; }
-    // size
-    if(tok === 'vast') size = 3.5;
-    else if(tok === 'wide'||tok==='large') size = 2;
-    else if(tok === 'small') size = 0.55;
-    else if(tok === 'tiny'||tok==='narrow') size = 0.3;
-    // opacity
-    if(tok === 'faint') opacity = 0.12;
-    else if(tok === 'whisper') opacity = 0.08;
-    else if(tok === 'soft') opacity = 0.38;
-    else if(tok === 'pale') opacity = 0.28;
-    else if(tok === 'deep') opacity = 0.82;
-    else if(tok === 'bold'||tok==='hard') opacity = 1;
-    else if(tok === 'light') opacity = 0.3;
-    else if(tok === 'dim') opacity = 0.2;
-    else if(tok === 'bright') opacity = 0.9;
+  for(const tok of remaining) {
+    if(COLORS[tok] || STATE.memory[tok] || STATE.vars[tok]) { colorName = tok; continue; }
+    const n = resolveNum(tok);
+    if(n !== null && !count) { count = Math.min(n, 500); continue; }
+    if(MODIFIERS.has(tok)) { mods.push(tok); continue; }
+    // Size words
+    if(tok === 'vast')   sizeM = 3.8;
+    if(tok === 'wide' || tok === 'large') sizeM = 2.0;
+    if(tok === 'small')  sizeM = 0.55;
+    if(tok === 'tiny' || tok === 'narrow') sizeM = 0.28;
+    // Opacity words
+    if(tok === 'faint')   opacity = 0.12;
+    if(tok === 'whisper') opacity = 0.07;
+    if(tok === 'soft')    opacity = 0.35;
+    if(tok === 'pale')    opacity = 0.27;
+    if(tok === 'deep')    opacity = 0.80;
+    if(tok === 'bold' || tok === 'hard') opacity = 1.0;
+    if(tok === 'light')   opacity = 0.28;
+    if(tok === 'dim')     opacity = 0.18;
+    if(tok === 'bright')  opacity = 0.88;
+    if(tok === 'dark')    opacity = 0.75;
   }
 
-  if(!count) count = 18;
-  if(!size) size = 1;
+  // Pressure: longest word drives weight
+  const maxLen = Math.max(...tokens.map(t => t.length));
+  const pressure = Math.min(2.5, 1 + (maxLen - 4) * 0.12);
+  sizeM *= pressure;
+
+  if(!count)   count   = 18;
   if(!opacity) opacity = 0.55;
+  opacity = Math.min(1, opacity * (0.75 + pressure * 0.25));
 
-  // apply pressure
-  size *= pressure;
-  opacity = Math.min(1, opacity * (0.8 + pressure * 0.2));
-
-  // resolve adverbs that affect pace, etc.
-  let pace = globalMods.pace || state.globalPace || 1.0;
-  let hushed = globalMods.hushed || state.globalHushed;
-  let aged = globalMods.aged || state.globalAged;
-  let toothed = globalMods.toothed || state.globalToothed;
-
-  for(const m of modifiers){
-    if(m === 'slowly') pace *= 0.3;
-    if(m === 'quickly') pace *= 1.8;
-    if(m === 'rapidly' || m === 'hastily') pace *= 2.5;
-    if(m === 'patiently') pace *= 0.2;
-    if(m === 'gently') pace *= 0.6;
-    if(m === 'frantic') pace *= 3.0;
-    if(m === 'hushed') hushed = true;
-    if(m === 'aged') aged = true;
-    if(m === 'toothed') toothed = true;
+  // Adverb effects
+  let pace = STATE.globalPace;
+  for(const m of mods) {
+    if(m === 'slowly' || m === 'patiently') pace *= 0.3;
+    if(m === 'quickly')  pace *= 1.8;
+    if(m === 'rapidly' || m === 'hastily' || m === 'frantic') pace *= 2.8;
+    if(m === 'gently')   pace *= 0.55;
+    if(m === 'hushed')   { sizeM = Math.min(sizeM, 0.28); opacity = Math.min(opacity, 0.08); }
+    if(m === 'loaded')   { opacity = Math.min(1.0, opacity * 1.4); STATE.inkLoading = 0.95; }
+    if(m === 'spent' || m === 'parched') { opacity *= 0.4; STATE.inkLoading = 0.2; }
+    if(m === 'soaked')   { sizeM *= 1.6; STATE.inkLoading = 1.0; STATE.humidity = true; }
   }
 
-  if(hushed){
-    size = Math.min(size, 0.3);
-    opacity = Math.min(opacity, 0.1);
+  // Ink loading affects effective opacity
+  opacity *= (0.4 + STATE.inkLoading * 0.6);
+  STATE.inkLoading = Math.max(0.1, STATE.inkLoading - 0.04); // ink depletes slowly
+
+  // Use mixed color if no explicit color
+  let resolvedColor = null;
+  if(colorName) {
+    resolvedColor = getColor(colorName, STATE);
+  } else if(STATE.mixedColor) {
+    resolvedColor = STATE.mixedColor.slice();
+    STATE.mixedColor = null;
   }
 
-  // blend if any
-  if(blendColor && blendBase){
-    const c1 = COLORS[blendColor], c2 = COLORS[blendBase];
-    if(c1 && c2) color = [
-      Math.round(c1[0]*0.4 + c2[0]*0.6),
-      Math.round(c1[1]*0.4 + c2[1]*0.6),
-      Math.round(c1[2]*0.4 + c2[2]*0.6)
-    ];
-  }
-
-  return {verb, color, count, size, opacity, modifiers, pace, aged, toothed};
+  return { verb, colorName, color: resolvedColor, count, sizeM, opacity, mods, pace, pressure };
 }
 
-// ── INTERPRETER ───────────────────────────────────────────────────
-function interpret(canvas, code, frame=0){
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+// Pre-pass: extract gesture definitions and variables from lines
+function prePass(lines) {
+  const gestures = {};
+  const vars = {};
+  let inDefine = false, defName = '', defBody = [];
 
-  // reset state
-  state.placement = {cx:0.5,cy:0.5,sx:1.0,sy:1.0};
-  state.bg = [248,245,237]; state.last = [44,34,20];
-  state.memory = {}; state.weather = 0; state.season = 'none';
-  state.lastShape = null;
-  state.globalPace = 1.0; state.globalHushed = false; state.globalAged = false;
-  state.globalToothed = false; state.humidity = false; state.temperature = 'none';
-  state.windRising = false; state.allaPrima = false; state.toothCanvas = null;
+  for(const raw of lines) {
+    const t = raw.trim().toLowerCase();
+    // Gesture definition
+    const defM = t.match(/^define\s+(.+?)\s+as\s*:?\s*$/);
+    if(defM && !inDefine) { inDefine=true; defName=defM[1].trim(); defBody=[]; continue; }
+    if(t === 'end' && inDefine) { gestures[defName] = defBody.slice(); inDefine=false; continue; }
+    if(inDefine) { defBody.push(raw); continue; }
 
-  ctx.fillStyle = `rgb(${state.bg.join(',')})`;
+    // let X be Y  /  set X to Y  /  remember X Y
+    const letM = raw.trim().match(/^let\s+(\w+)\s+be\s+(.+)$/i);
+    if(letM) {
+      const val = resolveVarValue(letM[2].trim());
+      vars[letM[1].toLowerCase()] = val;
+      continue;
+    }
+    const setM = raw.trim().match(/^set\s+(\w+)\s+to\s+(.+)$/i);
+    if(setM) {
+      const val = resolveVarValue(setM[2].trim());
+      vars[setM[1].toLowerCase()] = val;
+      continue;
+    }
+    const remM = raw.trim().match(/^remember\s+(\w+)\s+(.+)$/i);
+    if(remM) {
+      const name = remM[1].toLowerCase();
+      const val  = remM[2].trim().toLowerCase();
+      if(COLORS[val]) vars[name] = COLORS[val].slice();
+      else { const n = resolveNum(val); if(n!==null) vars[name] = n; }
+    }
+  }
+  return { gestures, vars };
+}
+
+function resolveVarValue(str) {
+  const lower = str.toLowerCase();
+  if(COLORS[lower]) return COLORS[lower].slice();
+  const n = resolveNum(lower);
+  if(n !== null) return n;
+  return str; // string
+}
+
+// Classify meta lines — return type or null
+function classifyMeta(line) {
+  const t = line.trim().toLowerCase();
+  if(t === 'the air is humid')        return { type:'meta', key:'humidity',    val:true };
+  if(t === 'the room is cold')        return { type:'meta', key:'temperature', val:'cold' };
+  if(t === 'the room is warm')        return { type:'meta', key:'temperature', val:'warm' };
+  if(t === 'the wind is rising')      return { type:'meta', key:'windRising',  val:true };
+  if(t === 'alla prima')              return { type:'meta', key:'allaPrima',   val:true };
+  const moodM = t.match(/^the feeling is (\w+)$/);
+  if(moodM && MOOD_PALETTES[moodM[1]]) return { type:'meta', key:'mood', val:moodM[1] };
+  const paperM = t.match(/^the paper is (.+)$/);
+  if(paperM && PAPER_PROFILES[paperM[1]]) return { type:'meta', key:'paper', val:paperM[1] };
+  const brushM = t.match(/^(?:with\s+a\s+|the\s+brush\s+is\s+)(\w+)(?:\s+brush)?$/);
+  if(brushM && BRUSH_PROFILES[brushM[1]]) return { type:'meta', key:'brush', val:brushM[1] };
+  const seasonM = t.match(/^season\s+(\w+)$/);
+  if(seasonM && SEASON_TINTS[seasonM[1]]) return { type:'meta', key:'season', val:seasonM[1] };
+  const weatherM = t.match(/^weather\s+(.+)$/);
+  if(weatherM) {
+    const wv = resolveNum(weatherM[1]) ?? (weatherM[1]==='windy'?0.6:weatherM[1]==='calm'?0:0.3);
+    return { type:'meta', key:'weather', val:Math.min(1,wv/10||wv) };
+  }
+  return null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  VI. MARK-MAKING — VERB IMPLEMENTATIONS
+//  Every verb fully realized. The brush does not lie.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── DRAWING HELPERS ───────────────────────────────────────────────────
+
+function rgba(col, alpha) {
+  return `rgba(${col[0]},${col[1]},${col[2]},${alpha.toFixed(3)})`;
+}
+
+// Draw a tapered stroke between two points (respects brush profile)
+function taperedStroke(ctx, x1,y1, x2,y2, w1,w2, col, opacity, profile) {
+  const N = 20;
+  ctx.lineCap = 'round';
+  for(let i=0; i<N; i++) {
+    const t0 = i/N, t1 = (i+1)/N;
+    const x0s = lerp(x1,x2,t0), y0s = lerp(y1,y2,t0);
+    const x1s = lerp(x1,x2,t1), y1s = lerp(y1,y2,t1);
+    const jx = (sr()-0.5) * profile.jitter * w1;
+    const jy = (sr()-0.5) * profile.jitter * w1;
+    ctx.beginPath();
+    ctx.moveTo(x0s+jx, y0s+jy); ctx.lineTo(x1s+jx, y1s+jy);
+    ctx.lineWidth = lerp(w1,w2,t0);
+    ctx.strokeStyle = rgba(col, opacity * (0.7+sr()*0.3) * (profile.split>0 && sr()<profile.split ? 0.3 : 1));
+    ctx.stroke();
+  }
+}
+
+// Paper-aware stroke — bleeding on wet paper
+function paperBleed(ctx, x, y, radius, col, opacity, state) {
+  const paper = PAPER_PROFILES[state.paper] || PAPER_PROFILES['cold-press'];
+  const bleed = paper.bleed * (state.humidity ? 1.6 : 1.0) * radius;
+  if(bleed < 2) return;
+  const grd = ctx.createRadialGradient(x,y,0, x,y,radius+bleed);
+  grd.addColorStop(0, rgba(col, opacity));
+  grd.addColorStop(0.6, rgba(col, opacity*0.3));
+  grd.addColorStop(1, rgba(col, 0));
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x, y, radius+bleed, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// Grain overlay canvas (cached)
+let _grainCanvas = null;
+function makeGrain(w, h) {
+  if(_grainCanvas && _grainCanvas.width===w && _grainCanvas.height===h) return _grainCanvas;
+  _grainCanvas = document.createElement('canvas');
+  _grainCanvas.width=w; _grainCanvas.height=h;
+  const gc = _grainCanvas.getContext('2d');
+  const img = gc.createImageData(w,h);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = 200 + Math.floor(Math.random()*55);
+    img.data[i]=v; img.data[i+1]=v; img.data[i+2]=v;
+    img.data[i+3] = Math.floor(Math.random()*18);
+  }
+  gc.putImageData(img,0,0);
+  return _grainCanvas;
+}
+
+// Apply paper texture to canvas
+function applyPaperTexture(ctx, W, H, state) {
+  const paper = PAPER_PROFILES[state.paper] || PAPER_PROFILES['cold-press'];
+  if(paper.grain < 0.05) return;
+  const gc = makeGrain(W,H);
+  ctx.globalAlpha = paper.grain * 2;
+  ctx.drawImage(gc,0,0);
+  ctx.globalAlpha = 1;
+  // Aged paper — warm yellowing
+  if(paper.yellowed) {
+    ctx.fillStyle = 'rgba(180,140,60,0.05)';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+// ── ALL VERBS ─────────────────────────────────────────────────────────
+
+function V_breathe(ctx, W, H, col, opacity, mods, state) {
+  const c = col || [248,245,237];
+  state.bg = c.slice();
+  ctx.fillStyle = rgba(c, opacity);
+  ctx.fillRect(0,0,W,H);
+  // Apply paper base
+  applyPaperTexture(ctx, W, H, state);
+  state.last = c.slice();
+  state.lastShape = {type:'rect', x:W/2, y:H/2, size:Math.max(W,H), color:c};
+}
+
+function V_prime(ctx, W, H, col, opacity, mods, state) {
+  const c = col || [248,245,237];
+  state.bg = c.slice();
+  ctx.fillStyle = `rgb(${c.join(',')})`;
+  ctx.fillRect(0,0,W,H);
+  applyPaperTexture(ctx, W, H, state);
+  // Aged foxing on prime if paper is aged
+  const paper = PAPER_PROFILES[state.paper];
+  if(paper && paper.foxed) V_foxing(ctx, W, H, [180,140,80], 0.08, [], state, 30, 1);
+  state.last = c.slice(); state.bg = c.slice();
+}
+
+function V_bloom(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const gathered = mods.includes('gathered') || mods.includes('clustered');
+  for(let j=0; j<count; j++) {
+    let pos;
+    if(gathered) {
+      const a = sr()*Math.PI*2, d = sr()*Math.min(W,H)*0.18;
+      pos = {x: W*state.placement.cx + Math.cos(a)*d,
+             y: H*state.placement.cy + Math.sin(a)*d};
+    } else {
+      pos = coord(W,H);
+    }
+    const noiseScale = 0.008;
+    const nx = Perlin.noise(pos.x*noiseScale, pos.y*noiseScale);
+    const rx = (10 + sr()*30 + nx*20) * sizeM;
+    const ry = rx * (0.4 + sr()*0.9);
+    const angle = sr() * Math.PI;
+    // Paper bleed
+    const paper = PAPER_PROFILES[state.paper] || PAPER_PROFILES['cold-press'];
+    const bleedR = rx * paper.bleed * (state.humidity ? 1.8 : 1.0);
+    if(bleedR > 2) {
+      const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, rx+bleedR);
+      grd.addColorStop(0, rgba(col, opacity*(0.5+sr()*0.5)));
+      grd.addColorStop(0.7, rgba(col, opacity*0.2));
+      grd.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.ellipse(pos.x, pos.y, rx+bleedR, ry+bleedR, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.beginPath(); ctx.ellipse(pos.x, pos.y, rx, ry, angle, 0, Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*(0.4+sr()*0.6));
+    ctx.fill();
+  }
+  state.last = col.slice();
+  state.lastShape = {type:'ellipse', x:W*state.placement.cx, y:H*state.placement.cy, size:25*sizeM, color:col};
+}
+
+function V_impasto(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile = BRUSH_PROFILES[state.brush] || BRUSH_PROFILES.sable;
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const ang  = sr()*Math.PI*2;
+    const len  = (20+sr()*50)*sizeM;
+    const w    = (6+sr()*12)*sizeM*profile.tipRadius;
+    const x2   = pos.x + Math.cos(ang)*len;
+    const y2   = pos.y + Math.sin(ang)*len;
+    // Main thick body
+    taperedStroke(ctx, pos.x, pos.y, x2, y2, w, w*0.2, col, opacity, profile);
+    // Highlight (impasto catch light)
+    const lightCol = lighten(col, 0.4);
+    const hx = pos.x + Math.cos(ang-0.3)*(len*0.5) - Math.sin(ang)*w*0.3;
+    const hy = pos.y + Math.sin(ang-0.3)*(len*0.5) + Math.cos(ang)*w*0.3;
+    ctx.beginPath(); ctx.arc(hx, hy, w*0.15, 0, Math.PI*2);
+    ctx.fillStyle = rgba(lightCol, opacity*0.5);
+    ctx.fill();
+  }
+  state.last = col.slice();
+  state.lastShape = {type:'stroke', x:W*state.placement.cx, y:H*state.placement.cy, size:40*sizeM, color:col};
+}
+
+function V_stipple(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const scattered = mods.includes('scattered');
+  const gathered  = mods.includes('gathered');
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const r   = (1.5 + sr()*4) * sizeM;
+    ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*(0.4+sr()*0.6));
+    ctx.fill();
+  }
+  state.last = col.slice();
+}
+
+function V_glaze(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx = W*p.cx, cy = H*p.cy, rx = W*p.sx*0.6, ry = H*p.sy*0.6;
+  const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry));
+  grd.addColorStop(0, rgba(col, opacity));
+  grd.addColorStop(0.7, rgba(col, opacity*0.6));
+  grd.addColorStop(1, rgba(col, 0));
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  ctx.fill();
+  state.last = col.slice();
+}
+
+function V_scrape(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const bg = state.bg;
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const ang = sr()*Math.PI*2;
+    const len = (20+sr()*60)*sizeM;
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    const jitter = 4*sizeM;
+    for(let k=0;k<8;k++){
+      const t=k/8; const tx=pos.x+Math.cos(ang)*len*t; const ty=pos.y+Math.sin(ang)*len*t;
+      ctx.lineTo(tx+(sr()-0.5)*jitter, ty+(sr()-0.5)*jitter);
+    }
+    ctx.lineTo(pos.x+Math.cos(ang)*len, pos.y+Math.sin(ang)*len);
+    ctx.strokeStyle = rgba(bg, opacity*0.9);
+    ctx.lineWidth = (3+sr()*6)*sizeM;
+    ctx.lineCap='round'; ctx.stroke();
+  }
+  state.last = bg.slice();
+}
+
+function V_wash(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy, rx=W*p.sx*0.7*sizeM, ry=H*p.sy*0.7*sizeM;
+  const paper = PAPER_PROFILES[state.paper]||PAPER_PROFILES['cold-press'];
+  // Main wash body
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+  ctx.fillStyle = rgba(col, opacity*0.6);
+  ctx.fill();
+  // Soft outer edge (characteristic of watercolor)
+  for(let i=0;i<4;i++){
+    const f=1+i*0.3;
+    const g=ctx.createRadialGradient(cx,cy,rx*f*0.6,cx,cy,rx*f);
+    g.addColorStop(0, rgba(col, opacity*(0.25-i*0.06)));
+    g.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx*f,ry*f,(sr()-0.5)*0.3,0,Math.PI*2);
+    ctx.fill();
+  }
+  // Blooms if humid
+  if(state.humidity || paper.bleed > 0.5) {
+    for(let j=0;j<5;j++){
+      const bx=cx+(sr()-0.5)*rx*0.8, by=cy+(sr()-0.5)*ry*0.8;
+      const br=rx*0.1*(0.5+sr());
+      ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2);
+      ctx.fillStyle = rgba(lighten(col,0.2), opacity*0.15);
+      ctx.fill();
+    }
+  }
+  state.last = col.slice();
+  state.lastShape = {type:'ellipse', x:cx, y:cy, size:rx, color:col};
+}
+
+function V_drift(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const wind = state.weather + (state.windRising ? 0.3 : 0);
+  const windAngle = Math.PI * 0.1; // slight diagonal
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const steps = 8 + Math.floor(sr()*20);
+    const stepSize = (4+sr()*12)*sizeM;
+    let x=pos.x, y=pos.y;
+    ctx.beginPath(); ctx.moveTo(x,y);
+    let op = opacity;
+    for(let k=0;k<steps;k++){
+      const nv = Perlin.noise(x*0.02, y*0.02 + STATE.seed*0.001);
+      const angle = nv * Math.PI * 2 + windAngle * wind;
+      x += Math.cos(angle)*stepSize*(0.5+wind*0.5);
+      y += Math.sin(angle)*stepSize + wind*2;
+      y = Math.min(H-1, y);
+      ctx.lineTo(x, y);
+      op *= 0.88;
+    }
+    ctx.strokeStyle = rgba(col, opacity*(0.3+sr()*0.5));
+    ctx.lineWidth = (0.5+sr()*1.5)*sizeM;
+    ctx.lineCap='round'; ctx.stroke();
+  }
+  state.last = col.slice();
+}
+
+function V_flow(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile = BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  for(let j=0; j<count; j++) {
+    const s = coord(W,H);
+    const ang = Perlin.noise(s.x*0.01, s.y*0.01 + j*0.5) * Math.PI * 2;
+    const len = (30+sr()*80)*sizeM;
+    const cx1 = s.x + Math.cos(ang)*len*0.3 + (sr()-0.5)*len*0.4;
+    const cy1 = s.y + Math.sin(ang)*len*0.3 + (sr()-0.5)*len*0.4;
+    const ex  = s.x + Math.cos(ang)*len, ey = s.y + Math.sin(ang)*len;
+    const w   = (2+sr()*5)*sizeM*profile.tipRadius;
+    // Draw tapered bezier as series of circles
+    for(let k=0;k<=20;k++){
+      const t=k/20;
+      const x=lerp(lerp(s.x,cx1,t),lerp(cx1,ex,t),t);
+      const y=lerp(lerp(s.y,cy1,t),lerp(cy1,ey,t),t);
+      const r=w*(1-Math.abs(t-0.5)*2+0.1)*profile.tipRadius;
+      ctx.beginPath(); ctx.arc(x,y,Math.max(0.3,r),0,Math.PI*2);
+      ctx.fillStyle = rgba(col, opacity*(0.6+sr()*0.3)*(1-t*0.5));
+      ctx.fill();
+    }
+  }
+  state.last = col.slice();
+}
+
+function V_scatter(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const r = (0.8+sr()*3)*sizeM;
+    ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*(0.5+sr()*0.5));
+    ctx.fill();
+  }
+  state.last = col.slice();
+}
+
+function V_burn(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const dark = darken(col, 0.7);
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const r   = (6+sr()*20)*sizeM;
+    // Outer glow (embers)
+    const grd = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,r*2);
+    grd.addColorStop(0, rgba(col, opacity*0.6));
+    grd.addColorStop(0.4, rgba(darken(col,0.3), opacity*0.3));
+    grd.addColorStop(1, rgba(dark, 0));
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r*2,0,Math.PI*2); ctx.fill();
+    // Dark center (scorch)
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r*0.5,0,Math.PI*2);
+    ctx.fillStyle = rgba(dark, opacity);
+    ctx.fill();
+  }
+  state.last = col.slice();
+  state.lastShape = {type:'ellipse', x:W*state.placement.cx, y:H*state.placement.cy, size:20*sizeM, color:dark};
+}
+
+function V_weave(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy, rx=W*p.sx*0.5, ry=H*p.sy*0.5;
+  const spacing = Math.max(4, 20/count*10)*sizeM;
+  ctx.strokeStyle = rgba(col, opacity*0.7);
+  ctx.lineWidth = (0.8+sizeM*0.4);
+  // Horizontal threads
+  for(let y=cy-ry; y<=cy+ry; y+=spacing) {
+    ctx.beginPath(); ctx.moveTo(cx-rx, y+(sr()-0.5)*3);
+    for(let x=cx-rx; x<=cx+rx; x+=10) ctx.lineTo(x+(sr()-0.5)*2, y+(sr()-0.5)*2);
+    ctx.stroke();
+  }
+  // Vertical threads
+  for(let x=cx-rx; x<=cx+rx; x+=spacing) {
+    ctx.beginPath(); ctx.moveTo(x+(sr()-0.5)*3, cy-ry);
+    for(let y=cy-ry; y<=cy+ry; y+=10) ctx.lineTo(x+(sr()-0.5)*2, y+(sr()-0.5)*2);
+    ctx.stroke();
+  }
+  state.last = col.slice();
+}
+
+function V_veil(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  ctx.fillStyle = rgba(col, opacity * 0.35);
+  ctx.fillRect(0,0,W,H);
+  state.last = col.slice();
+}
+
+function V_crack(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  function drawCrack(x, y, angle, len, depth) {
+    if(depth <= 0 || len < 3) return;
+    const jitter = (sr()-0.5)*0.6;
+    const ex = x + Math.cos(angle+jitter)*len;
+    const ey = y + Math.sin(angle+jitter)*len;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(ex,ey);
+    ctx.strokeStyle = rgba(col, opacity*(depth/5)*0.8);
+    ctx.lineWidth = (depth*0.3)*sizeM;
+    ctx.stroke();
+    if(sr() > 0.4) drawCrack(ex,ey, angle+(sr()-0.5)*1.2, len*0.6, depth-1);
+    if(sr() > 0.6) drawCrack(ex,ey, angle-(sr()-0.5)*1.2, len*0.5, depth-1);
+  }
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    drawCrack(pos.x, pos.y, sr()*Math.PI*2, (20+sr()*40)*sizeM, 5);
+  }
+  state.last = col.slice();
+}
+
+function V_pulse(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  for(let j=0; j<count; j++) {
+    const r = (j+1) * (Math.min(W,H)*0.04) * sizeM;
+    const op = opacity * Math.max(0, 1 - j/count) * 0.7;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle = rgba(col, op);
+    ctx.lineWidth = (2-j/(count*1.5))*sizeM;
+    ctx.stroke();
+  }
+  state.last = col.slice();
+  state.lastShape = {type:'ellipse', x:cx, y:cy, size:count*8*sizeM, color:col};
+}
+
+function V_fade(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const bg = state.bg;
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy, rx=W*p.sx*0.6*sizeM, ry=H*p.sy*0.6*sizeM;
+  const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry));
+  grd.addColorStop(0, rgba(bg, opacity*0.8));
+  grd.addColorStop(1, rgba(bg, 0));
+  ctx.fillStyle=grd;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill();
+}
+
+function V_silence(ctx, W, H, col, sizeM, opacity, mods, state) {
+  const bg = col || state.bg;
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy, rx=W*p.sx*0.5*sizeM, ry=H*p.sy*0.5*sizeM;
+  ctx.fillStyle = `rgb(${bg.join(',')})`;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill();
+}
+
+function V_branch(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const wind = state.weather;
+  function grow(x,y, angle, len, depth, w) {
+    if(depth<=0 || len<2) return;
+    const jitter = Perlin.noise(x*0.03,y*0.03)*0.8 + wind*(sr()-0.3)*0.6;
+    const ex = x+Math.cos(angle+jitter)*len;
+    const ey = y+Math.sin(angle+jitter)*len;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(ex,ey);
+    ctx.strokeStyle = rgba(col, opacity*(depth/7));
+    ctx.lineWidth = w*sizeM; ctx.lineCap='round'; ctx.stroke();
+    if(sr()>0.2) grow(ex,ey, angle+(sr()*0.8+0.1), len*0.68, depth-1, w*0.65);
+    if(sr()>0.3) grow(ex,ey, angle-(sr()*0.8+0.1), len*0.62, depth-1, w*0.55);
+  }
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const ang = -Math.PI/2 + (sr()-0.5)*0.6 + wind*0.3;
+    grow(pos.x, pos.y, ang, (20+sr()*40)*sizeM, 7, 2.5);
+  }
+  state.last = col.slice();
+}
+
+function V_rain(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const wind = state.weather + (state.windRising ? 0.4 : 0);
+  const windAngle = wind * 0.5; // horizontal push
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const len = (8+sr()*20)*sizeM;
+    ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+    ctx.lineTo(pos.x + Math.sin(windAngle)*len, pos.y + Math.cos(windAngle)*len);
+    ctx.strokeStyle = rgba(col, opacity*(0.3+sr()*0.5));
+    ctx.lineWidth = 0.6*sizeM; ctx.lineCap='round'; ctx.stroke();
+  }
+  state.last = col.slice();
+}
+
+function V_dew(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const r   = (2+sr()*6)*sizeM;
+    // Body
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*0.55); ctx.fill();
+    // Highlight
+    ctx.beginPath(); ctx.arc(pos.x-r*0.25, pos.y-r*0.25, r*0.25, 0, Math.PI*2);
+    ctx.fillStyle = rgba(lighten(col,0.7), opacity*0.7); ctx.fill();
+    // Bleed
+    paperBleed(ctx, pos.x, pos.y, r, col, opacity*0.2, state);
+  }
+  state.last = col.slice();
+}
+
+function V_haze(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  const rad = Math.min(W,H)*0.4*sizeM;
+  try{ ctx.filter = `blur(${Math.min(rad*0.3, 40)}px)`; }catch(e){}
+  for(let j=0; j<count; j++) {
+    const dx=(sr()-0.5)*rad*0.5, dy=(sr()-0.5)*rad*0.5;
+    const grd=ctx.createRadialGradient(cx+dx,cy+dy,0,cx+dx,cy+dy,rad*(0.6+sr()*0.6));
+    grd.addColorStop(0, rgba(col, opacity*(0.3+sr()*0.3)));
+    grd.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(cx+dx,cy+dy,rad*(0.8+sr()*0.4),0,Math.PI*2); ctx.fill();
+  }
+  ctx.filter='none';
+  state.last = col.slice();
+}
+
+function V_splatter(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const r   = (0.5+sr()*sr()*8)*sizeM; // quadratic skew toward small
+    // Round drops
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*(0.6+sr()*0.4)); ctx.fill();
+    // Some elongated (velocity drops)
+    if(sr()<0.3){
+      const ang=sr()*Math.PI*2, ext=r*3*sizeM;
+      ctx.beginPath();
+      ctx.ellipse(pos.x+Math.cos(ang)*ext*0.5, pos.y+Math.sin(ang)*ext*0.5,
+                  ext, r*0.4, ang, 0, Math.PI*2);
+      ctx.fillStyle = rgba(col, opacity*0.5); ctx.fill();
+    }
+  }
+  state.last = col.slice();
+}
+
+function V_stroke(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile = BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  const decisive = mods.includes('decisive') || mods.includes('firm');
+  const hesitant = mods.includes('hesitant') || mods.includes('trembling');
+  for(let j=0; j<count; j++) {
+    const s = coord(W,H);
+    const e = coord(W,H);
+    const len = dist(s.x,s.y,e.x,e.y);
+    if(len<2) continue;
+    const maxW = (4+sr()*12)*sizeM*profile.tipRadius;
+    if(hesitant) {
+      // Broken, multiple sub-strokes
+      const segs = 4+Math.floor(sr()*6);
+      for(let k=0;k<segs;k++){
+        if(sr()<0.7){
+          const t1=k/segs, t2=(k+1)/segs;
+          const x1=lerp(s.x,e.x,t1), y1=lerp(s.y,e.y,t1);
+          const x2=lerp(s.x,e.x,t2), y2=lerp(s.y,e.y,t2);
+          taperedStroke(ctx,x1,y1,x2,y2, maxW*(t1<0.5?t1*2:(1-t1)*2+0.1),
+                        maxW*0.1, col, opacity*(0.5+sr()*0.4), profile);
+        }
+      }
+    } else {
+      taperedStroke(ctx, s.x,s.y,e.x,e.y, maxW*0.1,maxW, col, opacity, profile);
+    }
+  }
+  state.last = col.slice();
+}
+
+function V_petal(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0; j<count; j++) {
+    const pos = coord(W,H);
+    const len = (15+sr()*35)*sizeM;
+    const wid = len*(0.25+sr()*0.35);
+    const ang = sr()*Math.PI*2;
+    ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(wid,-len*0.3, wid,-len*0.7, 0,-len);
+    ctx.bezierCurveTo(-wid,-len*0.7, -wid,-len*0.3, 0,0);
+    ctx.fillStyle = rgba(col, opacity*(0.5+sr()*0.5));
+    ctx.fill();
+    // Vein
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-len);
+    ctx.strokeStyle = rgba(darken(col,0.2), opacity*0.3);
+    ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.restore();
+  }
+  state.last = col.slice();
+}
+
+function V_shadow(ctx, W, H, col, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx+20*sizeM, cy=H*p.cy+20*sizeM;
+  const rx=W*p.sx*0.5*sizeM, ry=H*p.sy*0.25*sizeM;
+  const dark = darken(col||state.bg, 0.5);
+  try{ ctx.filter=`blur(${Math.min(rx*0.4,30)}px)`; }catch(e){}
+  const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry)*1.5);
+  grd.addColorStop(0, rgba(dark, opacity*0.6));
+  grd.addColorStop(1, rgba(dark, 0));
+  ctx.fillStyle=grd;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry*0.6,0,0,Math.PI*2); ctx.fill();
+  ctx.filter='none';
+}
+
+function V_sfumato(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy, r=Math.min(W,H)*0.3*sizeM;
+  try{ ctx.filter=`blur(${Math.min(r*0.5,50)}px)`; }catch(e){}
+  for(let j=0;j<count;j++){
+    const dx=(sr()-0.5)*r, dy=(sr()-0.5)*r;
+    ctx.beginPath(); ctx.arc(cx+dx,cy+dy,r*(0.3+sr()*0.7),0,Math.PI*2);
+    ctx.fillStyle = rgba(col, opacity*(0.05+sr()*0.1));
+    ctx.fill();
+  }
+  ctx.filter='none';
+  state.last = col.slice();
+}
+
+function V_chiaroscuro(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  // Deep shadow overlay
+  const shadowCol = darken(col||[0,0,0], 0.6);
+  const grd = ctx.createRadialGradient(cx-W*0.2,cy,0, cx,cy,Math.min(W,H)*0.7*sizeM);
+  grd.addColorStop(0, rgba([250,248,238], opacity*0.5));
+  grd.addColorStop(0.4, rgba(col||state.bg, 0));
+  grd.addColorStop(1, rgba(shadowCol, opacity*0.8));
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+}
+
+function V_bleed(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const paper = PAPER_PROFILES[state.paper]||PAPER_PROFILES['cold-press'];
+  for(let j=0;j<count;j++){
+    const pos = coord(W,H);
+    const r   = (10+sr()*30)*sizeM*paper.bleed*(state.humidity?1.6:1);
+    const dark = darken(col, 0.1);
+    // Irregular bleed shape via many radial points
+    ctx.beginPath();
+    const pts = 12+Math.floor(sr()*10);
+    for(let k=0;k<=pts;k++){
+      const a = (k/pts)*Math.PI*2;
+      const nr= r*(0.6+Perlin.noise(Math.cos(a)*2+j,Math.sin(a)*2+j)*0.7);
+      const x = pos.x+Math.cos(a)*nr, y=pos.y+Math.sin(a)*nr;
+      k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(col, opacity*0.4); ctx.fill();
+    // Dark ink center
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r*0.15,0,Math.PI*2);
+    ctx.fillStyle = rgba(dark, opacity*0.9); ctx.fill();
+  }
+  state.last = col.slice();
+}
+
+function V_blush(ctx, W, H, col, opacity, mods, state) {
+  const blushCol = col || [235,155,138];
+  const p = state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  try{ ctx.filter=`blur(30px)`; }catch(e){}
+  const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.4);
+  grd.addColorStop(0, rgba(blushCol, opacity*0.3));
+  grd.addColorStop(1, rgba(blushCol, 0));
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  ctx.filter='none';
+  state.last = blushCol.slice();
+}
+
+// ── v6 NEW VERBS ─────────────────────────────────────────────────────
+
+function V_dapple(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0; j<count*2; j++) {
+    const pos = coord(W,H);
+    const r = (3+sr()*12)*sizeM;
+    const lit = sr() > 0.5;
+    const c = lit ? lighten(col,0.45) : darken(col,0.3);
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle = rgba(c, opacity*(0.4+sr()*0.6));
+    ctx.fill();
+  }
+  state.last = col.slice();
+}
+
+function V_erode(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const bg = state.bg;
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const r=(4+sr()*14)*sizeM;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle = rgba(bg, opacity); ctx.fill();
+  }
+}
+
+function V_flick(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile = BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const ang=sr()*Math.PI*2;
+    const len=(12+sr()*45)*sizeM;
+    // Flick: starts thick, tapers to nothing
+    taperedStroke(ctx, pos.x,pos.y,
+      pos.x+Math.cos(ang)*len, pos.y+Math.sin(ang)*len,
+      (2+sr()*4)*sizeM, 0, col, opacity, profile);
+  }
+  state.last=col.slice();
+}
+
+function V_etch(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  ctx.lineCap='butt';
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const ang=sr()*Math.PI*2;
+    const len=(6+sr()*25)*sizeM;
+    ctx.beginPath();
+    ctx.moveTo(pos.x,pos.y);
+    ctx.lineTo(pos.x+Math.cos(ang)*len, pos.y+Math.sin(ang)*len);
+    ctx.strokeStyle=rgba(col, opacity*(0.6+sr()*0.4));
+    ctx.lineWidth=0.4*sizeM; ctx.stroke();
+  }
+  state.last=col.slice();
+}
+
+function V_dissolve(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const ls=state.lastShape;
+  for(let j=0;j<count*5;j++){
+    let x,y;
+    if(ls){ x=ls.x+(sr()-0.5)*ls.size*2; y=ls.y+(sr()-0.5)*ls.size*2; }
+    else { const p=coord(W,H); x=p.x; y=p.y; }
+    const r=0.6+sr()*1.5;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=rgba(col,opacity*(0.3+sr()*0.5)*0.7); ctx.fill();
+  }
+  state.last=col.slice();
+}
+
+function V_tarnish(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const t = col.map((c,i)=> i===0?clamp255(c*0.75+25): i===1?clamp255(c*0.65+35):clamp255(c*0.85+15));
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const r=(3+sr()*10)*sizeM;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle=rgba(t,opacity*(0.5+sr()*0.5)); ctx.fill();
+  }
+  state.last=col.slice();
+}
+
+function V_scumble(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const light=lighten(col,0.55);
+  for(let j=0;j<count*2;j++){
+    const pos=coord(W,H);
+    const ang=sr()*Math.PI*2;
+    const len=(5+sr()*20)*sizeM;
+    ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(-len/2,0);
+    ctx.quadraticCurveTo(0,(sr()-0.5)*len*0.35,len/2,0);
+    ctx.lineWidth=1+sr()*2; ctx.lineCap='round';
+    ctx.strokeStyle=rgba(light,opacity*(0.25+sr()*0.4)); ctx.stroke();
+    ctx.restore();
+  }
+  state.last=col.slice();
+}
+
+function V_tint(ctx, W, H, col, opacity, mods, state) {
+  const t=col.map(c=>clamp255(c+75));
+  ctx.fillStyle=rgba(t,opacity*0.45); ctx.fillRect(0,0,W,H);
+  state.last=t.slice();
+}
+
+function V_shade(ctx, W, H, col, opacity, mods, state) {
+  const s=col.map(c=>clamp255(c*0.55));
+  ctx.fillStyle=rgba(s,opacity*0.4); ctx.fillRect(0,0,W,H);
+  state.last=s.slice();
+}
+
+function V_underpaint(ctx, W, H, col, opacity, mods, state) {
+  ctx.fillStyle=rgba(col,opacity*0.3); ctx.fillRect(0,0,W,H);
+  state.last=col.slice();
+}
+
+function V_varnish(ctx, W, H, col, opacity, mods, state) {
+  const v=col||lighten(state.bg,0.15);
+  ctx.fillStyle=rgba(v,0.06); ctx.fillRect(0,0,W,H);
+}
+
+function V_drybrush(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile=BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  for(let j=0;j<count*3;j++){
+    const pos=coord(W,H);
+    const ang=sr()*Math.PI*2;
+    const len=(4+sr()*18)*sizeM;
+    ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(-len/2,0); ctx.lineTo(len/2,0);
+    ctx.lineWidth=0.7+sr()*2;
+    ctx.strokeStyle=rgba(col,opacity*(0.3+sr()*0.45)*(STATE.inkLoading<0.4?0.4:1));
+    ctx.stroke(); ctx.restore();
+  }
+  state.last=col.slice();
+}
+
+function V_rake(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const tines=Math.max(3,Math.floor(count*0.5));
+  const pos=coord(W,H);
+  const ang=sr()*Math.PI*2;
+  const len=(30+sr()*60)*sizeM;
+  for(let j=0;j<tines;j++){
+    const off=(j-tines/2)*6*sizeM;
+    const ox=Math.sin(ang)*off, oy=-Math.cos(ang)*off;
+    ctx.beginPath();
+    ctx.moveTo(pos.x+ox,pos.y+oy);
+    ctx.lineTo(pos.x+ox+Math.cos(ang)*len, pos.y+oy+Math.sin(ang)*len);
+    ctx.strokeStyle=rgba(col,opacity*(0.5+sr()*0.4));
+    ctx.lineWidth=0.8+sr()*1.5; ctx.stroke();
+  }
+  state.last=col.slice();
+}
+
+function V_smudge(ctx, W, H, col, sizeM, opacity, mods, state) {
+  const pos=coord(W,H);
+  const r=22*sizeM;
+  try{ ctx.filter=`blur(${Math.min(r*0.6,28)}px)`; }catch(e){}
+  ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+  ctx.fillStyle=rgba(col,opacity*0.65); ctx.fill();
+  ctx.filter='none';
+  state.last=col.slice();
+}
+
+function V_spiral(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p=state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  const maxR=Math.min(W,H)*0.35*sizeM;
+  const turns=2+count*0.15;
+  const pts=Math.floor(turns*120);
+  ctx.beginPath();
+  for(let j=0;j<=pts;j++){
+    const t=j/pts;
+    const ang=t*turns*Math.PI*2;
+    const r=maxR*t;
+    const jit=(Perlin.noise(ang*0.3,t*4)*0.5+0.5)*4*sizeM;
+    const x=cx+Math.cos(ang)*(r+jit), y=cy+Math.sin(ang)*(r+jit);
+    j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=rgba(col,opacity);
+  ctx.lineWidth=(1+sizeM*0.6); ctx.lineCap='round'; ctx.stroke();
+  state.last=col.slice();
+  state.lastShape={type:'ellipse',x:cx,y:cy,size:maxR,color:col};
+}
+
+function V_constellation(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const pts=[];
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    pts.push(pos);
+    // Star dot
+    const r=(1+sr()*2)*sizeM;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2);
+    ctx.fillStyle=rgba(lighten(col,0.4),opacity*(0.7+sr()*0.3)); ctx.fill();
+  }
+  // Connect nearby points
+  ctx.strokeStyle=rgba(col,opacity*0.2);
+  ctx.lineWidth=0.4;
+  for(let a=0;a<pts.length;a++){
+    for(let b=a+1;b<pts.length;b++){
+      const d=dist(pts[a].x,pts[a].y,pts[b].x,pts[b].y);
+      if(d < Math.min(W,H)*0.25){
+        ctx.beginPath(); ctx.moveTo(pts[a].x,pts[a].y);
+        ctx.lineTo(pts[b].x,pts[b].y); ctx.stroke();
+      }
+    }
+  }
+  state.last=col.slice();
+}
+
+function V_ripple(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p=state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  const maxR=Math.min(W,H)*0.38*sizeM;
+  for(let j=0;j<count;j++){
+    const r=maxR*(j+1)/count;
+    const stretch=0.5+sr()*0.6; // elliptical wobble
+    const jit=Perlin.noise(j*2.1,STATE.seed*0.001)*8*sizeM;
+    const op=opacity*Math.max(0,1-(j/count)*0.85)*0.7;
+    ctx.beginPath();
+    ctx.ellipse(cx+(sr()-0.5)*jit, cy+(sr()-0.5)*jit*0.4,
+                r, r*stretch, (sr()-0.5)*0.4, 0, Math.PI*2);
+    ctx.strokeStyle=rgba(col,op);
+    ctx.lineWidth=(1.5-j/count)*sizeM; ctx.stroke();
+  }
+  state.last=col.slice();
+  state.lastShape={type:'ellipse',x:cx,y:cy,size:maxR,color:col};
+}
+
+function V_smoke(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p=state.placement;
+  const bx=W*p.cx, by=H*p.cy+H*p.sy*0.3;
+  try{ ctx.filter=`blur(${Math.min(18*sizeM,35)}px)`; }catch(e){}
+  for(let j=0;j<count;j++){
+    const t=j/count;
+    const x=bx+(Perlin.noise(t*3+0.5,STATE.seed*0.0001)*2-1)*40*sizeM*(1+t*0.5);
+    const y=by-j*(8+sr()*4)*sizeM;
+    const r=(6+t*20)*sizeM*(1+sr()*0.4);
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=rgba(col,opacity*(1-t*0.8)*(0.15+sr()*0.15)); ctx.fill();
+  }
+  ctx.filter='none';
+  state.last=col.slice();
+}
+
+function V_nebula(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p=state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  try{ ctx.filter=`blur(${Math.min(30*sizeM,50)}px)`; }catch(e){}
+  const colors=[col, lighten(col,0.3), darken(col,0.3), mixColors(col,COLORS.violet||col,0.4)];
+  for(let j=0;j<count*4;j++){
+    const c=colors[j%colors.length];
+    const dx=(sr()-0.5)*Math.min(W,H)*0.4*sizeM;
+    const dy=(sr()-0.5)*Math.min(W,H)*0.3*sizeM;
+    const r=(20+sr()*60)*sizeM;
+    const grd=ctx.createRadialGradient(cx+dx,cy+dy,0,cx+dx,cy+dy,r);
+    grd.addColorStop(0,rgba(c,opacity*(0.2+sr()*0.2)));
+    grd.addColorStop(1,rgba(c,0));
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(cx+dx,cy+dy,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.filter='none';
+  state.last=col.slice();
+}
+
+function V_foxing(ctx, W, H, col, opacity, mods, state, count=null, sM=null) {
+  const n=count||Math.floor((sr()+0.5)*30);
+  const sm=sM||1;
+  const foxCol=col||[165,120,60];
+  for(let j=0;j<n;j++){
+    // Foxing spots — irregular warm spots
+    const px=sr()*W, py=sr()*H;
+    const r=(2+sr()*8)*sm;
+    const pts=8+Math.floor(sr()*6);
+    ctx.beginPath();
+    for(let k=0;k<=pts;k++){
+      const a=(k/pts)*Math.PI*2;
+      const nr=r*(0.7+Perlin.noise(Math.cos(a)+j,Math.sin(a)+j)*0.5);
+      const x=px+Math.cos(a)*nr, y=py+Math.sin(a)*nr;
+      k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle=rgba(foxCol,opacity*(0.3+sr()*0.4)); ctx.fill();
+  }
+}
+
+function V_burnish(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const r=(5+sr()*15)*sizeM;
+    const lit=lighten(col,0.65);
+    const grd=ctx.createRadialGradient(pos.x-r*0.2,pos.y-r*0.2,0,pos.x,pos.y,r);
+    grd.addColorStop(0,rgba(lit,opacity));
+    grd.addColorStop(0.3,rgba(lighten(col,0.4),opacity*0.6));
+    grd.addColorStop(1,rgba(col,0));
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,r,0,Math.PI*2); ctx.fill();
+  }
+  state.last=col.slice();
+}
+
+function V_glyph(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  // Abstract calligraphic mark — not letters, but gestural symbols
+  const shapes=[
+    (cx,cy,r)=>{ // circle with break
+      ctx.beginPath(); ctx.arc(cx,cy,r,0.3,Math.PI*2-0.3); ctx.stroke();
+    },
+    (cx,cy,r)=>{ // vertical with horizontal
+      ctx.beginPath(); ctx.moveTo(cx,cy-r); ctx.lineTo(cx,cy+r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-r*0.5,cy-r*0.3); ctx.lineTo(cx+r*0.5,cy-r*0.3); ctx.stroke();
+    },
+    (cx,cy,r)=>{ // diagonal marks
+      ctx.beginPath(); ctx.moveTo(cx-r*0.7,cy-r); ctx.lineTo(cx+r*0.3,cy+r); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+r*0.7,cy-r*0.5); ctx.lineTo(cx-r*0.2,cy+r*0.5); ctx.stroke();
+    },
+    (cx,cy,r)=>{ // tear/drop
+      ctx.beginPath(); ctx.moveTo(cx,cy-r);
+      ctx.quadraticCurveTo(cx+r*0.8,cy+r*0.2,cx,cy+r);
+      ctx.quadraticCurveTo(cx-r*0.8,cy+r*0.2,cx,cy-r);
+      ctx.stroke();
+    },
+  ];
+  const profile=BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  ctx.lineWidth=(1.5+sizeM*0.8)*profile.tipRadius;
+  ctx.strokeStyle=rgba(col,opacity); ctx.lineCap='round';
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const r=(12+sr()*28)*sizeM;
+    ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate((sr()-0.5)*0.8);
+    shapes[j%shapes.length](0,0,r);
+    ctx.restore();
+  }
+  state.last=col.slice();
+}
+
+function V_horizon(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const profile=BRUSH_PROFILES[state.brush]||BRUSH_PROFILES.sable;
+  const y0=H*state.placement.cy;
+  for(let j=0;j<count;j++){
+    const y=y0+(j-(count/2))*(2+sr()*3)*sizeM;
+    ctx.beginPath(); ctx.moveTo(0,y);
+    for(let x=0;x<=W;x+=4){
+      const ny=y+(Perlin.noise(x*0.01+j*0.3, STATE.seed*0.0001)*2-1)*3*sizeM*(state.weather+0.2);
+      ctx.lineTo(x,ny);
+    }
+    ctx.strokeStyle=rgba(col,opacity*(0.5+sr()*0.4));
+    ctx.lineWidth=(0.6+sizeM*0.4)*profile.tipRadius; ctx.stroke();
+  }
+  state.last=col.slice();
+}
+
+function V_web(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const p=state.placement;
+  const cx=W*p.cx, cy=H*p.cy;
+  const maxR=Math.min(W,H)*0.35*sizeM;
+  const spokes=count||8;
+  // Spokes
+  ctx.strokeStyle=rgba(col,opacity*0.35); ctx.lineWidth=0.5*sizeM;
+  for(let j=0;j<spokes;j++){
+    const ang=(j/spokes)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(ang)*maxR, cy+Math.sin(ang)*maxR);
+    ctx.stroke();
+  }
+  // Concentric rings
+  const rings=Math.floor(spokes*0.4)+3;
+  for(let r=0;r<rings;r++){
+    const rad=maxR*(r+1)/rings;
+    ctx.beginPath();
+    for(let j=0;j<=spokes;j++){
+      const ang=(j/spokes)*Math.PI*2;
+      const jit=(Perlin.noise(Math.cos(ang)+r,Math.sin(ang)+r)*0.5+0.5)*4*sizeM;
+      const x=cx+Math.cos(ang)*(rad+jit), y=cy+Math.sin(ang)*(rad+jit);
+      j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=rgba(col,opacity*0.3*(1-r/rings*0.5)); ctx.stroke();
+  }
+  state.last=col.slice();
+  state.lastShape={type:'ellipse',x:cx,y:cy,size:maxR,color:col};
+}
+
+function V_crumble(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const bg=state.bg;
+  // Fragments — small polygons in background color near edges
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const r=(3+sr()*10)*sizeM;
+    const sides=3+Math.floor(sr()*4);
+    ctx.beginPath();
+    for(let k=0;k<=sides;k++){
+      const a=(k/sides)*Math.PI*2+(sr()-0.5)*0.5;
+      const x=pos.x+Math.cos(a)*r*(0.6+sr()*0.6);
+      const y=pos.y+Math.sin(a)*r*(0.6+sr()*0.6);
+      k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle=rgba(bg,opacity*0.8);
+    ctx.fill();
+    ctx.strokeStyle=rgba(darken(bg,0.15),opacity*0.3);
+    ctx.lineWidth=0.5; ctx.stroke();
+  }
+}
+
+function V_patina(ctx, W, H, col, opacity, mods, state) {
+  // Green-bronze overlay reminiscent of aged metal
+  const patinaCol=col||[67,124,111];
+  ctx.fillStyle=rgba(patinaCol,opacity*0.12); ctx.fillRect(0,0,W,H);
+  // Streaks
+  for(let j=0;j<8;j++){
+    const x=sr()*W;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+(sr()-0.5)*30,H);
+    ctx.strokeStyle=rgba(patinaCol,opacity*0.08+(sr()-0.5)*0.04);
+    ctx.lineWidth=5+sr()*20; ctx.stroke();
+  }
+  state.last=patinaCol.slice();
+}
+
+function V_scratch(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  const bg=state.bg;
+  ctx.lineCap='butt';
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    const ang=sr()*Math.PI*2;
+    const len=(10+sr()*40)*sizeM;
+    ctx.beginPath();
+    ctx.moveTo(pos.x,pos.y);
+    ctx.lineTo(pos.x+Math.cos(ang)*len,pos.y+Math.sin(ang)*len);
+    ctx.strokeStyle=rgba(lighten(bg,0.5),opacity*(0.5+sr()*0.4));
+    ctx.lineWidth=0.5+sr()*1.5; ctx.stroke();
+    // Dark edge
+    ctx.strokeStyle=rgba(darken(bg,0.1),opacity*0.2);
+    ctx.lineWidth=0.8+sr()*2; ctx.stroke();
+  }
+}
+
+function V_drip(ctx, W, H, col, count, sizeM, opacity, mods, state) {
+  for(let j=0;j<count;j++){
+    const pos=coord(W,H);
+    // Drip body
+    const len=(20+sr()*60)*sizeM;
+    const w=(2+sr()*5)*sizeM;
+    ctx.beginPath();
+    ctx.moveTo(pos.x-w/2,pos.y);
+    ctx.bezierCurveTo(pos.x-w*0.8,pos.y+len*0.5,
+                      pos.x-w*0.3,pos.y+len*0.8, pos.x,pos.y+len);
+    ctx.bezierCurveTo(pos.x+w*0.3,pos.y+len*0.8,
+                      pos.x+w*0.8,pos.y+len*0.5, pos.x+w/2,pos.y);
+    ctx.fillStyle=rgba(col,opacity*(0.6+sr()*0.3)); ctx.fill();
+    // Droplet tip
+    ctx.beginPath(); ctx.arc(pos.x,pos.y+len,w*0.8,0,Math.PI*2);
+    ctx.fillStyle=rgba(col,opacity*0.8); ctx.fill();
+  }
+  state.last=col.slice();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  VII. INTERPRETER
+//  The main reading loop — where poetry becomes light.
+// ═══════════════════════════════════════════════════════════════════════
+
+// Execute a single resolved command object on the canvas
+function executeCmd(ctx, W, H, cmd) {
+  if(!cmd || !cmd.verb) return;
+  const col  = cmd.color || getColor(cmd.colorName, STATE) || STATE.last;
+  const c    = cmd.count;
+  const s    = cmd.sizeM;
+  const op   = Math.min(1, Math.max(0, cmd.opacity));
+  const m    = cmd.mods || [];
+
+  try {
+    switch(cmd.verb) {
+      case 'breathe':    V_breathe(ctx,W,H,col,op,m,STATE);     break;
+      case 'prime':      V_prime(ctx,W,H,col,op,m,STATE);       break;
+      case 'bloom':      V_bloom(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'impasto':    V_impasto(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'stipple':    V_stipple(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'glaze':      V_glaze(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'scrape':     V_scrape(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'wash':       V_wash(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'drift':      V_drift(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'flow':       V_flow(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'scatter':    V_scatter(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'burn':       V_burn(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'weave':      V_weave(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'veil':       V_veil(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'crack':      V_crack(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'pulse':      V_pulse(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'fade':       V_fade(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'silence':    V_silence(ctx,W,H,col,s,op,m,STATE);   break;
+      case 'branch':     V_branch(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'rain':       V_rain(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'dew':        V_dew(ctx,W,H,col,c,s,op,m,STATE);     break;
+      case 'haze':       V_haze(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'splatter':   V_splatter(ctx,W,H,col,c,s,op,m,STATE);break;
+      case 'stroke':     V_stroke(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'petal':      V_petal(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'shadow':     V_shadow(ctx,W,H,col,s,op,m,STATE);    break;
+      case 'sfumato':    V_sfumato(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'chiaroscuro':V_chiaroscuro(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'bleed':      V_bleed(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'blush':      V_blush(ctx,W,H,col,op,m,STATE);       break;
+      case 'dapple':     V_dapple(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'erode':      V_erode(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'flick':      V_flick(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'etch':       V_etch(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'dissolve':   V_dissolve(ctx,W,H,col,c,s,op,m,STATE);break;
+      case 'tarnish':    V_tarnish(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'scumble':    V_scumble(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'tint':       V_tint(ctx,W,H,col,op,m,STATE);        break;
+      case 'shade':      V_shade(ctx,W,H,col,op,m,STATE);       break;
+      case 'underpaint': V_underpaint(ctx,W,H,col,op,m,STATE);  break;
+      case 'varnish':    V_varnish(ctx,W,H,col,op,m,STATE);     break;
+      case 'drybrush':   V_drybrush(ctx,W,H,col,c,s,op,m,STATE);break;
+      case 'rake':       V_rake(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'smudge':     V_smudge(ctx,W,H,col,s,op,m,STATE);    break;
+      case 'spiral':     V_spiral(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'constellation':V_constellation(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'ripple':     V_ripple(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'smoke':      V_smoke(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'nebula':     V_nebula(ctx,W,H,col,c,s,op,m,STATE);  break;
+      case 'foxing':     V_foxing(ctx,W,H,col,op,m,STATE,c,s);  break;
+      case 'burnish':    V_burnish(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'glyph':      V_glyph(ctx,W,H,col,c,s,op,m,STATE);   break;
+      case 'horizon':    V_horizon(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'web':        V_web(ctx,W,H,col,c,s,op,m,STATE);     break;
+      case 'crumble':    V_crumble(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'patina':     V_patina(ctx,W,H,col,op,m,STATE);      break;
+      case 'scratch':    V_scratch(ctx,W,H,col,c,s,op,m,STATE); break;
+      case 'drip':       V_drip(ctx,W,H,col,c,s,op,m,STATE);    break;
+      case 'alla prima': STATE.allaPrima=true; STATE.inkLoading=1.0; break;
+      case 'grain': if(STATE.grainEnabled){const g=makeGrain(W,H);ctx.drawImage(g,0,0);} break;
+      case 'linger': STATE.globalPace=0.1; break;
+      case 'hurry':  STATE.globalPace=2.5; break;
+      case 'remember': case 'echo': case 'pause': case 'season':
+      case 'weather': case 'global': break; // handled elsewhere
+      default:
+        STATE.errors.push(POETIC_ERRORS.unknown_verb());
+    }
+  } catch(e) {
+    STATE.errors.push(POETIC_ERRORS.unknown());
+  }
+}
+
+// Process a single line string (may contain placement, sub-commands, loops, etc.)
+function executeLine(ctx, W, H, raw) {
+  // Strip inline comment
+  const ci=raw.indexOf(';'); if(ci>-1) raw=raw.slice(0,ci);
+  raw=raw.trim();
+  if(!raw || raw.startsWith('—') || raw.startsWith('#')) return;
+
+  // skip meta (already processed in pre-pass or global state)
+  const meta=classifyMeta(raw);
+  if(meta){
+    STATE[meta.key]=meta.val;
+    updateUI();
+    return;
+  }
+
+  // define/end — skip (pre-processed)
+  if(/^define\s+/i.test(raw) || /^end\s*$/i.test(raw)) return;
+
+  // let / set / remember — skip (pre-processed)
+  if(/^let\s+/i.test(raw)||/^set\s+/i.test(raw)) return;
+  const remM=raw.match(/^remember\s+(\w+)\s+(.+)$/i);
+  if(remM){ /* already done in prepass */ return; }
+
+  // invoke a gesture
+  const invM=raw.match(/^invoke\s+(.+)$/i);
+  if(invM){
+    const gname=invM[1].trim().toLowerCase();
+    const gest=STATE.gestures[gname];
+    if(gest){ for(const gl of gest) executeLine(ctx,W,H,gl); }
+    else STATE.errors.push(POETIC_ERRORS.bad_gesture(gname));
+    return;
+  }
+
+  // for N times, command
+  const forM=raw.match(/^for\s+(\w+)\s+times?,\s*(.+)$/i);
+  if(forM){
+    let n=resolveNum(forM[1]);
+    if(n===null) n=STATE.vars[forM[1].toLowerCase()]||5;
+    n=Math.min(Math.abs(n||5), 60);
+    for(let k=0;k<n;k++){
+      STATE.seed+=137;
+      executeLine(ctx,W,H,forM[2]);
+    }
+    return;
+  }
+
+  // if / when condition, command
+  const ifM=raw.match(/^(?:if|when)\s+(.+?),\s*(.+)$/i);
+  if(ifM){
+    if(evalCondition(ifM[1])) executeLine(ctx,W,H,ifM[2]);
+    return;
+  }
+
+  // unless condition, command
+  const unlessM=raw.match(/^unless\s+(.+?),\s*(.+)$/i);
+  if(unlessM){
+    if(!evalCondition(unlessM[1])) executeLine(ctx,W,H,unlessM[2]);
+    return;
+  }
+
+  // echo/refrain N <command>
+  const echoM=raw.match(/^(?:echo|refrain)\s+(\d+)\s+(.+)$/i);
+  if(echoM){
+    const n=Math.min(parseInt(echoM[1])||1,25);
+    for(let k=0;k<n;k++){ STATE.seed+=137; executeLine(ctx,W,H,echoM[2]); }
+    return;
+  }
+
+  // global modifier
+  if(/^global\s+/i.test(raw)){
+    const toks=raw.toLowerCase().split(/\s+/).slice(1);
+    for(const t of toks){
+      if(t==='slowly'||t==='patiently') STATE.globalPace=0.25;
+      if(t==='quickly') STATE.globalPace=1.8;
+      if(t==='frantic') STATE.globalPace=3.0;
+      if(t==='hushed')  STATE.globalHushed=true;
+      if(t==='aged')    STATE.globalAged=true;
+      if(t==='linger')  STATE.globalPace=0.1;
+    }
+    return;
+  }
+
+  // mix X with Y on its own line → store mixed color
+  const mixM=raw.match(/^mix\s+(\w+)\s+with\s+(\w+)$/i);
+  if(mixM){
+    const c1=COLORS[mixM[1].toLowerCase()], c2=COLORS[mixM[2].toLowerCase()];
+    if(c1&&c2) STATE.mixedColor=mixColors(c1,c2);
+    return;
+  }
+
+  // Check for poetic color phrase
+  const pcp=parseColorPoetry(raw);
+  if(pcp){ STATE.mixedColor=pcp.color; return; }
+
+  // Check noun-as-command
+  const noun=tryParseNounPhrase(raw);
+  if(noun){
+    const col=getColor(noun.colorName,STATE)||STATE.last;
+    executeCmd(ctx,W,H,{...noun, color:col, count:noun.count||12,
+      sizeM:noun.sizeM||1, opacity:noun.opM||0.6, mods:noun.mods||[]});
+    if(col) STATE.last=col.slice();
+    return;
+  }
+
+  // Split by em-dash  (multiple gestures on one line)
+  const subCmds=raw.split(/\s+—\s+/).filter(s=>s.trim());
+
+  let firstPlacement=null;
+  let firstSub=subCmds[0]||'';
+  // Check for "placement, command" pattern
+  const commaIdx=firstSub.indexOf(',');
+  if(commaIdx>-1){
+    const maybe=firstSub.substring(0,commaIdx).trim();
+    if(Object.keys(PLACEMENT_PATTERNS).some(k=>maybe.toLowerCase().includes(k.split(' ').slice(-1)[0]))
+       || /^(?:at|in)\s+/i.test(maybe)){
+      firstPlacement=maybe;
+      subCmds[0]=firstSub.substring(commaIdx+1).trim();
+    }
+  }
+
+  for(let sc=0;sc<subCmds.length;sc++){
+    let s=subCmds[sc].trim();
+    if(!s) continue;
+
+    // Placement for this sub-command
+    if(sc===0 && firstPlacement){
+      const np=parsePlacement(firstPlacement);
+      if(np) STATE.placement=np;
+    } else if(sc>0){
+      const ci2=s.indexOf(',');
+      if(ci2>-1){
+        const p2=s.substring(0,ci2).trim();
+        if(Object.keys(PLACEMENT_PATTERNS).some(k=>p2.toLowerCase().includes(k.split(' ').slice(-1)[0]))){
+          const np=parsePlacement(p2);
+          if(np) STATE.placement=np;
+          s=s.substring(ci2+1).trim();
+        }
+      }
+    }
+
+    const cmd=parseCommand(s);
+    if(cmd) executeCmd(ctx,W,H,cmd);
+    else STATE.errors.push(`unknown: "${s.slice(0,30)}"`);
+  }
+}
+
+// Main interpret — takes canvas and full code string
+function interpret(canvas, code, frame=0) {
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+
+  // Build fresh state (preserving grain setting)
+  const savedGrain=STATE.grainEnabled;
+  STATE=makeState();
+  STATE.grainEnabled=savedGrain;
+  STATE.seed=STATE.seed+frame*37;
+
+  // Fill with paper color
+  const defaultPaper=PAPER_PROFILES['cold-press'];
+  ctx.fillStyle=`rgb(${defaultPaper.bg.join(',')})`;
   ctx.fillRect(0,0,W,H);
 
-  const lines = code.split('\n');
-  const errs = [];
+  const lines=code.split('\n');
 
-  // pre-pass: remember and meta lines
-  for(const raw of lines){
-    let line = raw.trim();
-    if(!line || line.startsWith('—') || line.startsWith(';') || line.startsWith('#')) continue;
-    const parts = line.split(';')[0].trim();
-    if(!parts) continue;
-    // meta line detection
-    if(parseMetaLine(parts)) continue;
-    const tokens = parts.split(/\s+/);
-    if(tokens[0] === 'remember' && tokens.length >= 3){
-      if(COLORS[tokens[2]]) state.memory[tokens[1]] = COLORS[tokens[2]].slice();
-      else if(!isNaN(tokens[2])) state.memory[tokens[1]] = parseInt(tokens[2]);
-      else if(NAMED_NUMS[tokens[2]]) state.memory[tokens[1]] = NAMED_NUMS[tokens[2]];
+  // Haiku detection
+  const isHaiku=detectHaiku(lines);
+  document.getElementById('haikuMode').style.display=isHaiku?'inline':'none';
+  document.getElementById('haikuBadge').classList.toggle('show',isHaiku);
+  STATE.haikuLines=isHaiku?lines.filter(l=>l.trim()&&!l.trim().startsWith('—')&&!l.trim().startsWith('#')):[];
+
+  // Pre-pass: gestures and variables
+  const {gestures,vars}=prePass(lines);
+  STATE.gestures=gestures;
+  STATE.vars=vars;
+  STATE.memory=vars; // memory is unified with vars in v6
+
+  // Haiku mode — 3-line special rendering
+  if(isHaiku){
+    for(let i=0;i<STATE.haikuLines.length;i++){
+      if(i===0) { // Setting — light touch
+        const oldSeed=STATE.seed;
+        executeLine(ctx,W,H,STATE.haikuLines[i]);
+        if(ctx.globalAlpha===1) ctx.globalAlpha=0.6;
+        ctx.globalAlpha=1;
+      } else if(i===1) { // Subject — full strength
+        executeLine(ctx,W,H,STATE.haikuLines[i]);
+      } else { // Coda — fade
+        try{ ctx.filter='blur(0.5px)'; }catch(e){}
+        executeLine(ctx,W,H,STATE.haikuLines[i]);
+        ctx.filter='none';
+      }
+    }
+  } else {
+    // Normal multi-line execution
+    for(const line of lines) {
+      executeLine(ctx,W,H,line);
     }
   }
 
-  // global modifier accumulator (from 'global' verb)
-  let globalMods = {pace: state.globalPace, hushed: false, aged: false, toothed: false};
-
-  for(let i=0; i<lines.length; i++){
-    let raw = lines[i];
-    const ci = raw.indexOf(';');
-    if(ci > -1) raw = raw.slice(0, ci);
-    raw = raw.trim();
-    if(!raw || raw.startsWith('—') || raw.startsWith('#')) continue;
-    if(parseMetaLine(raw)) continue; // skip meta lines already processed
-
-    // handle echo/refrain
-    let echoCount = 1;
-    const echoMatch = raw.match(/^(echo|refrain)\s+(\d+)\s+(.*)/i);
-    if(echoMatch){
-      echoCount = Math.min(parseInt(echoMatch[2]), 20);
-      raw = echoMatch[3];
-    }
-
-    // split line into sub-commands
-    const subCommands = raw.split(/ — /).filter(s => s.trim());
-    let firstPlacement = null;
-    if(subCommands.length > 0){
-      const firstSub = subCommands[0];
-      const commaIdx = firstSub.indexOf(',');
-      if(commaIdx > -1){
-        firstPlacement = firstSub.substring(0, commaIdx).trim();
-        subCommands[0] = firstSub.substring(commaIdx+1).trim();
-      }
-    }
-
-    for(let sc = 0; sc < subCommands.length; sc++){
-      let commandStr = subCommands[sc].trim();
-      if(!commandStr) continue;
-
-      if(sc === 0 && firstPlacement){
-        const np = parsePlacement(firstPlacement);
-        if(np) state.placement = np;
-      } else if(sc > 0 && commandStr.includes(',')){
-        const ci2 = commandStr.indexOf(',');
-        const p2 = commandStr.substring(0, ci2).trim();
-        commandStr = commandStr.substring(ci2+1).trim();
-        const np = parsePlacement(p2);
-        if(np) state.placement = np;
-      }
-
-      // check for 'global' verb to set global modifiers
-      if(commandStr.startsWith('global ')){
-        const globalLine = commandStr.replace('global','').trim();
-        const modTokens = globalLine.split(/\s+/);
-        // update globalMods based on tokens
-        for(const m2 of modTokens){
-          if(MODIFIERS.has(m2)){
-            if(m2 === 'slowly') globalMods.pace = 0.3;
-            else if(m2 === 'quickly') globalMods.pace = 1.8;
-            else if(m2 === 'rapidly') globalMods.pace = 2.5;
-            else if(m2 === 'patiently') globalMods.pace = 0.2;
-            else if(m2 === 'gently') globalMods.pace = 0.6;
-            else if(m2 === 'frantic') globalMods.pace = 3.0;
-            else if(m2 === 'hushed') globalMods.hushed = true;
-            else if(m2 === 'aged') globalMods.aged = true;
-            else if(m2 === 'toothed') globalMods.toothed = true;
-          }
-        }
-        state.globalPace = globalMods.pace;
-        state.globalHushed = globalMods.hushed;
-        state.globalAged = globalMods.aged;
-        state.globalToothed = globalMods.toothed;
-        continue; // no rendering for global itself
-      }
-
-      for(let rep = 0; rep < echoCount; rep++){
-        if(rep > 0) state.seed += 137;
-        const cmd = parseCommand(commandStr, globalMods);
-        if(!cmd || !cmd.verb) continue;
-
-        const col = cmd.color || state.last;
-        const count = cmd.count;
-        const size = cmd.size;
-        const opacity = cmd.opacity;
-        const mods = cmd.modifiers;
-        const pace = cmd.pace;
-
-        // weather and windRising influence drift
-        const effectiveWind = state.weather + (state.windRising ? 0.3 : 0);
-
-        // helper for aged effect (draw multiple offset copies)
-        function drawAged(fn, x, y, sz){
-          if(!cmd.aged) return fn();
-          for(let k=0; k<3; k++){
-            const ox = (sr()-0.5)*sz*0.4;
-            const oy = (sr()-0.5)*sz*0.4;
-            fn(ox, oy);
-          }
-        }
-
-        try{
-        switch(cmd.verb){
-          // ─── v4 verbs preserved exactly (only extended) ────────
-          case 'breathe':{
-            const c = col; state.bg = c.slice(); state.last = c.slice();
-            ctx.fillStyle = `rgba(${c.join(',')},${opacity})`;
-            ctx.fillRect(0,0,W,H);
-            state.lastShape = {type:'rect',x:W/2,y:H/2,size:Math.max(W,H),color:c};
-            break;
-          }
-          case 'bloom':{
-            const gathered = mods.includes('gathered')||mods.includes('clustered');
-            for(let j=0;j<count;j++){
-              const pos = gathered ? (()=>{
-                const a = sr()*Math.PI*2, d = sr()*Math.min(W,H)*0.22;
-                return {x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d};
-              })() : coord(W,H);
-              const rx = (sr()*28+8)*size, ry = rx*(0.45+sr()*0.9);
-              ctx.beginPath(); ctx.ellipse(pos.x,pos.y,rx,ry,sr()*Math.PI,0,Math.PI*2);
-              ctx.fillStyle = `rgba(${col.join(',')},${opacity*(0.3+sr()*0.7)})`;
-              ctx.fill();
-            }
-            state.last = col.slice();
-            state.lastShape = {type:'ellipse',x:W/2,y:H/2,size:30*size,color:col};
-            break;
-          }
-          // ... (all other v4 verbs remain exactly the same, omitted for brevity but present in final file)
-          // We'll include them in the actual file, but for this excerpt we focus on new verbs.
-          case 'impasto': { /* ... same as before */ break; }
-          case 'stipple': { /* ... */ break; }
-          case 'glaze':{ /* ... */ break; }
-          case 'scrape':{ /* ... */ break; }
-          case 'wash':{ /* ... */ break; }
-          case 'drift':{ /* ... with effectiveWind */ break; }
-          case 'flow':{ /* ... with pace scaling */ break; }
-          case 'scatter':{ /* ... */ break; }
-          case 'burn':{ /* ... */ break; }
-          case 'weave':{ /* ... */ break; }
-          case 'veil':{ /* ... */ break; }
-          case 'crack':{ /* ... */ break; }
-          case 'pulse':{ /* ... with pace */ break; }
-          case 'fade':{ /* ... */ break; }
-          case 'silence':{ /* ... */ break; }
-          case 'branch':{ /* ... */ break; }
-          case 'rain':{ /* ... */ break; }
-          case 'dew':{ /* ... */ break; }
-          case 'haze':{ /* ... */ break; }
-          case 'splatter':{ /* ... */ break; }
-          case 'stroke':{ /* ... */ break; }
-          case 'petal':{ /* ... */ break; }
-          case 'shadow':{ /* ... */ break; }
-          case 'sfumato':{ /* ... */ break; }
-          case 'chiaroscuro':{ /* ... */ break; }
-          case 'bleed':{ /* ... */ break; }
-          case 'weather':{ /* ... */ break; }
-          case 'season':{ /* ... */ break; }
-          case 'echo': case 'refrain': break;
-          case 'pause': break;
-          case 'grain':{ if(state.grainEnabled){ const gc = makeGrainCanvas(W,H); ctx.drawImage(gc,0,0); } break; }
-          case 'remember': break;
-
-          // ─── NEW PAINTERLY VERBS ───────────────────────────────
-          case 'dapple': {
-            const n = count * 2;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              const rad = (4+sr()*10)*size;
-              ctx.beginPath(); ctx.arc(pos.x, pos.y, rad, 0, Math.PI*2);
-              const lightFactor = sr() > 0.5 ? 1.4 : 0.6;
-              const lc = [Math.min(255,col[0]*lightFactor), Math.min(255,col[1]*lightFactor), Math.min(255,col[2]*lightFactor)];
-              ctx.fillStyle = `rgba(${lc.map(v=>v|0).join(',')},${opacity*(0.5+sr()*0.5)})`;
-              ctx.fill();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'erode': {
-            // subtractive mark: draw with the background color to eat away
-            const bgc = state.bg;
-            const n = count;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              const rad = (5+sr()*12)*size;
-              ctx.beginPath(); ctx.arc(pos.x, pos.y, rad, 0, Math.PI*2);
-              ctx.fillStyle = `rgba(${bgc.join(',')},${opacity})`;
-              ctx.fill();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'flick': {
-            const n = count;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              const ang = sr()*Math.PI*2;
-              const len = (15+sr()*40)*size;
-              const endX = pos.x + Math.cos(ang)*len;
-              const endY = pos.y + Math.sin(ang)*len;
-              ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
-              ctx.lineTo(endX, endY);
-              ctx.lineWidth = (1+sr()*2.5)*size;
-              ctx.strokeStyle = `rgba(${col.join(',')},${opacity})`;
-              ctx.stroke();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'etch': {
-            // thin sharp lines with high contrast
-            const n = count;
-            ctx.strokeStyle = `rgba(${col.join(',')},${opacity})`;
-            ctx.lineWidth = 0.5*size;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
-              ctx.lineTo(pos.x+(sr()-0.5)*30*size, pos.y+(sr()-0.5)*30*size);
-              ctx.stroke();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'dissolve': {
-            // scatter fine particles from last shape's area
-            const ls = state.lastShape;
-            const n = count*4;
-            for(let j=0; j<n; j++){
-              let dx, dy;
-              if(ls){
-                dx = ls.x + (sr()-0.5)*ls.size*2;
-                dy = ls.y + (sr()-0.5)*ls.size*2;
-              } else {
-                const pos = coord(W,H); dx = pos.x; dy = pos.y;
-              }
-              ctx.beginPath(); ctx.arc(dx, dy, 1+sr(), 0, Math.PI*2);
-              ctx.fillStyle = `rgba(${col.join(',')},${opacity*0.7})`;
-              ctx.fill();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'tarnish': {
-            // shift colour toward metallic oxides
-            const tarnishColor = col.map((c,i)=> i===0? c*0.8+20 : (i===1? c*0.7+30 : c*0.9+10));
-            const n = count;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              ctx.beginPath(); ctx.arc(pos.x, pos.y, (4+sr()*8)*size, 0, Math.PI*2);
-              ctx.fillStyle = `rgba(${tarnishColor.map(v=>Math.min(255,v|0)).join(',')},${opacity})`;
-              ctx.fill();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'scumble': {
-            const lightColor = col.map(c=>Math.min(255,c+60));
-            const n = count*2;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              const ang = sr()*Math.PI*2;
-              const len = (6+sr()*18)*size;
-              ctx.save(); ctx.translate(pos.x, pos.y); ctx.rotate(ang);
-              ctx.beginPath();
-              ctx.moveTo(-len/2,0);
-              ctx.quadraticCurveTo(0,(sr()-.5)*len*0.4, len/2,0);
-              ctx.lineWidth = 1+sr()*2; ctx.lineCap='round';
-              ctx.strokeStyle = `rgba(${lightColor.join(',')},${opacity*(0.3+sr()*0.5)})`;
-              ctx.stroke();
-              ctx.restore();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'alla prima': {
-            state.allaPrima = true; break;
-          }
-          case 'tint': {
-            const tintCol = col ? col.map(c=>Math.min(255,c+80)) : state.last.map(c=>Math.min(255,c+80));
-            ctx.fillStyle = `rgba(${tintCol.join(',')},${opacity*0.5})`;
-            ctx.fillRect(0,0,W,H);
-            state.last = tintCol.slice();
-            break;
-          }
-          case 'shade': {
-            const shadeCol = col ? col.map(c=>Math.max(0,c-80)) : state.last.map(c=>Math.max(0,c-80));
-            ctx.fillStyle = `rgba(${shadeCol.join(',')},${opacity*0.5})`;
-            ctx.fillRect(0,0,W,H);
-            state.last = shadeCol.slice();
-            break;
-          }
-          case 'prime': {
-            const c = col; state.bg = c.slice(); state.last = c.slice();
-            ctx.fillStyle = `rgb(${c.join(',')})`;
-            ctx.fillRect(0,0,W,H);
-            // create tooth canvas for later use
-            state.toothCanvas = makeGrainCanvas(W,H);
-            // fill tooth with background color grain
-            // but already grain is separate; we might blend
-            break;
-          }
-          case 'underpaint': {
-            const c = col;
-            ctx.fillStyle = `rgba(${c.join(',')},${opacity*0.35})`;
-            ctx.fillRect(0,0,W,H);
-            state.last = c.slice();
-            break;
-          }
-          case 'varnish': {
-            const c = col;
-            ctx.fillStyle = `rgba(${c.join(',')},0.08)`;
-            ctx.fillRect(0,0,W,H);
-            break;
-          }
-          case 'drybrush': {
-            const n = count*3;
-            for(let j=0; j<n; j++){
-              const pos = coord(W,H);
-              const ang = sr()*Math.PI*2;
-              const len = (4+sr()*14)*size;
-              ctx.save(); ctx.translate(pos.x, pos.y); ctx.rotate(ang);
-              ctx.beginPath(); ctx.moveTo(-len/2,0); ctx.lineTo(len/2,0);
-              ctx.lineWidth = 0.8+sr()*2;
-              ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.4+sr()*0.4)})`;
-              ctx.stroke();
-              ctx.restore();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'rake': {
-            const n = count;
-            const dir = mods.includes('rightward')?0:(mods.includes('leftward')?Math.PI:Math.PI/2);
-            for(let j=0; j<n; j++){
-              const start = coord(W,H);
-              const spacing = 6*size;
-              const offX = Math.cos(dir)*spacing*(j - n/2);
-              const offY = Math.sin(dir)*spacing*(j - n/2);
-              ctx.beginPath(); ctx.moveTo(start.x+offX, start.y+offY);
-              ctx.lineTo(start.x+offX+Math.cos(dir)*40*size, start.y+offY+Math.sin(dir)*40*size);
-              ctx.strokeStyle = `rgba(${col.join(',')},${opacity})`;
-              ctx.lineWidth = 1.2*size;
-              ctx.stroke();
-            }
-            state.last = col.slice();
-            break;
-          }
-          case 'smudge': {
-            const pos = coord(W,H);
-            const rad = 30*size;
-            // apply blur filter
-            try{ ctx.filter = `blur(${Math.min(rad/4,15)}px)`; }catch(e){}
-            ctx.beginPath(); ctx.arc(pos.x, pos.y, rad, 0, Math.PI*2);
-            ctx.fillStyle = `rgba(${col.join(',')},${opacity*0.7})`;
-            ctx.fill();
-            ctx.filter = 'none';
-            state.last = col.slice();
-            break;
-          }
-        }
-        }catch(e){ errs.push(e.message); }
-      }
-    }
+  // Final grain if enabled
+  if(STATE.grainEnabled){
+    const g=makeGrain(W,H);
+    ctx.globalAlpha=0.5; ctx.drawImage(g,0,0); ctx.globalAlpha=1;
   }
 
-  // final grain overlay if enabled
-  if(state.grainEnabled){
-    const gc = makeGrainCanvas(W,H);
-    ctx.drawImage(gc,0,0);
-  }
-  return errs;
+  return STATE.errors.slice();
 }
 
-// ── UI & ANIMATION (identical structure) ──────────────────────────
-let animating = false, animFrame = null, frameCount = 0;
+
+// ═══════════════════════════════════════════════════════════════════════
+//  VIII. STUDIO — UI, ANIMATION, BREATH MODE
+// ═══════════════════════════════════════════════════════════════════════
+
+let animating=false, breathing=false, animFrame=null, frameCount=0, breathTimer=null;
+
+function updateUI(){
+  const m=STATE.mood||'—';
+  document.getElementById('moodInd').innerHTML=`mood <span>${m}</span>`;
+  document.getElementById('brushInd').innerHTML=`brush <span>${STATE.brush}</span>`;
+  document.getElementById('paperInd').innerHTML=`paper <span>${STATE.paper}</span>`;
+  const moodP=MOOD_PALETTES[STATE.mood];
+  if(moodP){
+    const c=COLORS[moodP.primary]||[140,130,120];
+    document.getElementById('moodRing').style.background=`rgb(${c.join(',')})`;
+  } else {
+    document.getElementById('moodRing').style.background='var(--muted2)';
+  }
+  const vCount=Object.keys(STATE.vars).length;
+  document.getElementById('varCount').textContent=vCount>0?`${vCount} var${vCount===1?'':'s'}`:'';
+}
 
 function toggleAnim(){
-  animating = !animating;
-  const btn = document.getElementById('animBtn');
-  btn.classList.toggle('on', animating);
-  btn.textContent = animating ? '◉ animating' : '◎ animate';
-  if(animating){ frameCount=0; animLoop(); } else cancelAnimationFrame(animFrame);
+  if(breathing) toggleBreath();
+  animating=!animating;
+  const btn=document.getElementById('animBtn');
+  btn.classList.toggle('on',animating);
+  btn.textContent=animating?'◉ animating':'◎ animate';
+  if(animating){ frameCount=0; animLoop(); }
+  else cancelAnimationFrame(animFrame);
 }
-function toggleGrain(){
-  state.grainEnabled = !state.grainEnabled;
-  const btn = document.getElementById('grainBtn');
-  btn.classList.toggle('on', state.grainEnabled);
-  btn.textContent = state.grainEnabled ? '⌸ grain on' : '⌸ grain';
-  if(!animating) runPoem();
-}
+
 function animLoop(){
   if(!animating) return;
   frameCount++;
-  const canvas = document.getElementById('art');
-  // slower default animation: pace already reduces change, but we also pass frame*0.5
-  interpret(canvas, document.getElementById('ed').value, frameCount * 0.5);
-  document.getElementById('fbadge').textContent = 'f'+frameCount;
-  animFrame = requestAnimationFrame(animLoop);
+  const canvas=document.getElementById('art');
+  interpret(canvas, document.getElementById('ed').value, frameCount);
+  document.getElementById('fbadge').textContent='f'+String(frameCount).padStart(4,'0');
+  animFrame=requestAnimationFrame(animLoop);
 }
 
-const EXAMPLES = [
-`— studio study no. 1 —
-the air is humid
-prime ivory
-underpaint umber lean
-alla prima
-scumble snow wide
-glaze cobalt 0.1
-sfumato bloom rose gathered
-varnish dusk 0.05
-grain`,
-
-`— winter sumi —
-season winter
-weather windy
-the room is cold
-breathe bone
-at the shadow, branch twelve deep — stroke indigo soft
-splatter snow sparse
-veil milk 0.14
-grain`,
-
-`— autumn flick —
-season autumn
-breathe ochre
-at the light, dapple gold many
-flick crimson rapid
-smudge ash softly
-etch charcoal sparse
-grain`
-];
-let exIdx = 0;
-function loadExample(){
-  document.getElementById('ed').value = EXAMPLES[exIdx%EXAMPLES.length];
-  exIdx++; updateLN();
-  if(!animating) runPoem();
+// Breath mode: render one significant line at a time with delay
+function toggleBreath(){
+  if(animating) toggleAnim();
+  breathing=!breathing;
+  const btn=document.getElementById('breathBtn');
+  btn.classList.toggle('on',breathing);
+  btn.textContent=breathing?'≈ breathing':'≈ breath';
+  if(breathing) startBreath(); else stopBreath();
 }
-function runPoem(){
-  if(animating){ toggleAnim(); toggleAnim(); return; }
-  const t0 = performance.now();
-  const canvas = document.getElementById('art');
-  const errs = interpret(canvas, document.getElementById('ed').value, 0);
-  const dt = (performance.now()-t0).toFixed(1);
-  document.getElementById('rt').textContent = dt+'ms';
-  document.getElementById('prog').style.width = errs.length===0?'100%':'30%';
-  if(errs.length===0){
-    document.getElementById('st').textContent = 'rendered'; document.getElementById('st').className = 's-ok';
-  }else{
-    document.getElementById('st').textContent = errs[0]; document.getElementById('st').className = 's-err';
+
+function stopBreath(){ clearTimeout(breathTimer); }
+
+function startBreath(){
+  const canvas=document.getElementById('art');
+  const code=document.getElementById('ed').value;
+  const lines=code.split('\n').filter(l=>{
+    const t=l.trim();
+    return t && !t.startsWith('—') && !t.startsWith('#');
+  });
+  let lineIdx=0;
+
+  // Clear
+  const ctx=canvas.getContext('2d');
+  const p=PAPER_PROFILES['cold-press'];
+  ctx.fillStyle=`rgb(${p.bg.join(',')})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  function nextLine(){
+    if(!breathing || lineIdx>=lines.length) return;
+    executeLine(ctx,canvas.width,canvas.height,lines[lineIdx]);
+    document.getElementById('fbadge').textContent=`line ${lineIdx+1}/${lines.length}`;
+    document.getElementById('st').textContent=`breathing — ${lines[lineIdx].trim().slice(0,40)}`;
+    lineIdx++;
+    breathTimer=setTimeout(nextLine, 600 + sr()*800);
   }
+  nextLine();
 }
+
+function toggleGrain(){
+  STATE.grainEnabled=!STATE.grainEnabled;
+  const btn=document.getElementById('grainBtn');
+  btn.classList.toggle('on',STATE.grainEnabled);
+  btn.textContent=STATE.grainEnabled?'⌸ grain on':'⌸ grain';
+  if(!animating && !breathing) runPoem();
+}
+
+function runPoem(){
+  if(animating){ toggleAnim(); setTimeout(()=>{ toggleAnim(); },50); return; }
+  if(breathing){ stopBreath(); breathing=false; document.getElementById('breathBtn').classList.remove('on');
+    document.getElementById('breathBtn').textContent='≈ breath'; }
+
+  const t0=performance.now();
+  STATE.errors=[];
+  const canvas=document.getElementById('art');
+  const errs=interpret(canvas, document.getElementById('ed').value, 0);
+  const dt=(performance.now()-t0).toFixed(1);
+
+  document.getElementById('rt').textContent=dt+'ms';
+  document.getElementById('prog').style.width=errs.length===0?'100%':'40%';
+
+  if(errs.length===0){
+    document.getElementById('st').textContent='rendered';
+    document.getElementById('st').className='s-ok';
+  } else {
+    document.getElementById('st').textContent=errs[errs.length-1];
+    document.getElementById('st').className='s-err';
+  }
+  updateUI();
+}
+
 function clearCanvas(){
   if(animating) toggleAnim();
-  const c = document.getElementById('art');
-  c.getContext('2d').fillStyle='rgb(248,245,237)'; c.getContext('2d').fillRect(0,0,c.width,c.height);
-  document.getElementById('st').textContent='cleared'; document.getElementById('st').className='s-info';
+  if(breathing) toggleBreath();
+  const c=document.getElementById('art');
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='rgb(248,245,237)'; ctx.fillRect(0,0,c.width,c.height);
+  document.getElementById('st').textContent='the canvas rests';
+  document.getElementById('st').className='s-info';
   document.getElementById('prog').style.width='0';
-}
-function reseed(){
-  state.seed = Date.now()+Math.floor(Math.random()*9999999);
-  if(!animating) runPoem();
-}
-function saveImg(){
-  const c = document.getElementById('art'); const a = document.createElement('a');
-  a.href=c.toDataURL('image/png'); a.download='monoku-'+Date.now()+'.png'; a.click();
+  document.getElementById('fbadge').textContent='';
 }
 
-// Tab system
-const TABS_DATA = {
-  v:()=>VERBS.map(v=>`<span class="chip chip-v" onclick="ins('${v}')">${v}</span>`).join(''),
+function reseed(){
+  STATE.seed=Date.now()+Math.floor(Math.random()*99999999);
+  if(!animating && !breathing) runPoem();
+}
+
+function saveImg(){
+  const c=document.getElementById('art');
+  const a=document.createElement('a');
+  a.href=c.toDataURL('image/png');
+  a.download='monoku-'+Date.now()+'.png';
+  a.click();
+}
+
+function sizeCanvas(){
+  const wrap=document.querySelector('.canvas-wrap');
+  const w=wrap.clientWidth-24, h=wrap.clientHeight-24;
+  const sz=Math.min(w,h,800);
+  const c=document.getElementById('art');
+  c.width=sz; c.height=sz;
+  document.getElementById('cdim').textContent=sz+'×'+sz;
+  if(!animating && !breathing) runPoem();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  IX. REFERENCE TABS
+// ═══════════════════════════════════════════════════════════════════════
+
+const ALL_VERBS=[
+  'breathe','prime','bloom','impasto','stipple','glaze','scrape','wash',
+  'drift','flow','scatter','burn','weave','veil','crack','pulse','fade',
+  'silence','branch','rain','drip','dew','haze','splatter','stroke','petal',
+  'shadow','sfumato','chiaroscuro','bleed','blush','grain',
+  'dapple','erode','flick','etch','dissolve','tarnish','scumble',
+  'alla prima','tint','shade','underpaint','varnish','drybrush','rake','smudge',
+  'spiral','constellation','ripple','smoke','nebula','foxing','burnish',
+  'glyph','horizon','web','crumble','patina','scratch','linger','hurry','echo','pause',
+];
+
+const TABS_DATA={
+  v:()=>ALL_VERBS.map(v=>`<span class="chip chip-v" onclick="ins('${v}')">${v}</span>`).join(''),
   c:()=>Object.entries(COLORS).map(([n,rgb])=>`<span class="chip chip-c" onclick="ins('${n}')"><span class="swatch" style="background:rgb(${rgb.join(',')})"></span>${n}</span>`).join(''),
   m:()=>[...MODIFIERS].map(m=>`<span class="chip chip-m" onclick="ins('${m}')">${m}</span>`).join(''),
-  p:()=>Object.keys(PLACEMENT_PATTERNS).map(p=>`<span class="chip chip-s" onclick="ins('${p}')">${p}</span>`).join(''),
-  s:()=>`<span style="font-size:12px;line-height:1.65;color:var(--muted);white-space:normal;display:block;font-family:Crimson Text,Georgia;padding:3px 6px">
-    <b>,</b> placement · <b>—</b> multiple gestures · <b>echo N</b> repeat<br>
-    <b>global slowly|hushed|aged|toothed</b> applies to all lines<br>
+  p:()=>Object.keys(PLACEMENT_PATTERNS).map(p=>`<span class="chip chip-p" onclick="ins('${p}')">${p}</span>`).join(''),
+  n:()=>Object.keys(NOUN_DICT).map(n=>`<span class="chip chip-n" onclick="ins('${n}')">${n}</span>`).join(''),
+  g:()=>`<span style="font-size:11.5px;line-height:1.7;color:var(--muted);white-space:normal;display:block;font-family:inherit;padding:4px 6px">
+    <b>let sky be cerulean</b> · <b>set depth to 5</b> · <b>for depth times, scatter leaves</b><br>
+    <b>if the mood is melancholy, veil violet</b> · <b>when the wind rises, drift ash</b><br>
+    <b>define sunrise as:</b> … <b>end</b> · <b>invoke sunrise</b><br>
+    <b>mix cerulean with snow</b> · <b>a ghost of rose</b> · <b>a memory of gold</b> · <b>a whisper of violet</b><br>
+    <b>the feeling is melancholy/joy/serenity/tension/nostalgia/wonder/dread/reverie</b>
+  </span>`,
+  s:()=>`<span style="font-size:11.5px;line-height:1.7;color:var(--muted);white-space:normal;display:block;font-family:inherit;padding:4px 6px">
+    <b>,</b> placement · <b> — </b> multiple gestures · <b>echo N</b> repeat · <b>;</b> inline comment<br>
+    <b>the paper is</b> cold-press / hot-press / rough / rice / linen / aged / canvas / velum<br>
+    <b>with a bamboo/sable/hake/rigger/flat/palette brush</b><br>
     <b>the air is humid</b> · <b>the room is cold/warm</b> · <b>the wind is rising</b><br>
-    <b>alla prima, smudge, rake, drybrush, tint, shade, varnish…</b> and more.
+    <b>season</b> spring/summer/autumn/winter · <b>weather</b> 0.8<br>
+    <b>alla prima</b> (wet-into-wet) · noun phrases: <em>the moon</em> · <em>smoke</em> · <em>a petal of rose</em>
   </span>`
 };
+
 function showTab(k,btn){
   document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
   btn.classList.add('on');
-  document.getElementById('ref').innerHTML = TABS_DATA[k]();
+  document.getElementById('ref').innerHTML=TABS_DATA[k]();
 }
+
 function ins(word){
-  const ed = document.getElementById('ed'); const s = ed.selectionStart, txt = ed.value;
-  const needSp = s>0 && txt[s-1]!==' ' && txt[s-1]!=='\n';
-  const str = (needSp?' ':'')+word;
-  ed.value = txt.slice(0,s)+str+txt.slice(s);
-  ed.selectionStart = ed.selectionEnd = s+str.length;
+  const ed=document.getElementById('ed');
+  const s=ed.selectionStart, txt=ed.value;
+  const needSp=s>0 && txt[s-1]!==' ' && txt[s-1]!=='\n';
+  const str=(needSp?' ':'')+word;
+  ed.value=txt.slice(0,s)+str+txt.slice(s);
+  ed.selectionStart=ed.selectionEnd=s+str.length;
   ed.focus(); updateLN();
 }
+
 function updateLN(){
-  const ed = document.getElementById('ed');
-  const lines = ed.value.split('\n');
-  document.getElementById('ln').textContent = lines.map((_,i)=>i+1).join('\n');
-  document.getElementById('lc').textContent = lines.length+' lines';
+  const ed=document.getElementById('ed');
+  const lines=ed.value.split('\n');
+  document.getElementById('ln').textContent=lines.map((_,i)=>i+1).join('\n');
+  document.getElementById('lc').textContent=lines.length+' lines';
 }
-document.getElementById('ed').addEventListener('scroll',function(){ document.getElementById('ln').scrollTop = this.scrollTop; });
+
+document.getElementById('ed').addEventListener('scroll',function(){
+  document.getElementById('ln').scrollTop=this.scrollTop;
+});
 document.getElementById('ed').addEventListener('input',updateLN);
-document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); runPoem(); } });
-function sizeCanvas(){
-  const wrap = document.querySelector('.canvas-wrap');
-  const w = wrap.clientWidth-20, h = wrap.clientHeight-20;
-  const sz = Math.min(w,h,700);
-  const c = document.getElementById('art');
-  c.width = sz; c.height = sz;
-  document.getElementById('cdim').textContent = sz+'×'+sz;
-  if(!animating) runPoem();
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); runPoem(); }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  X. EXAMPLES
+//  The living poems — showing what the language can do.
+// ═══════════════════════════════════════════════════════════════════════
+
+const EXAMPLES=[
+
+// ── 1. Haiku: Three Lines ─────────────────────────────────────────────
+`— ink on cold paper —
+season winter
+the room is cold
+the paper is cold-press
+breathe midnight
+the horizon glyph ivory soft
+rain ash sparse faint`,
+
+// ── 2. Autumn Studio ──────────────────────────────────────────────────
+`— autumn studio —
+the feeling is nostalgia
+the paper is aged
+with a bamboo brush
+season autumn
+prime bone
+underpaint umber
+the horizon, horizon ochre many
+at the light, dapple gold many soft
+at the shadow, smoke ash gathered
+scatter sienna sparse
+foxing
+varnish amber`,
+
+// ── 3. Variable Loop Poem ─────────────────────────────────────────────
+`— tidal memory —
+the feeling is serenity
+the paper is rice
+the air is humid
+let depth be 8
+let surface be cerulean
+breathe celeste
+at the horizon, wash surface soft
+for depth times, ripple surface soft
+mix cerulean with mist
+bloom few gathered faint
+at the lower edge, drip water faint
+veil mist faint`,
+
+// ── 4. Conditional Mood Painting ──────────────────────────────────────
+`— the feeling decides —
+the feeling is tension
+season autumn
+the paper is rough
+let heat be 6
+breathe charcoal
+underpaint crimson
+chiaroscuro
+if the mood is tension, crack oxblood many sharp
+if the mood is tension, burn ember scattered
+for heat times, flick alizarin rapidly
+when the wind rises, scatter ash sparse
+veil midnight faint
+etch ivory faint`,
+
+// ── 5. Gesture Macro Poem ────────────────────────────────────────────
+`— define the dawn —
+define zenith as:
+  at the light, bloom gold gathered soft
+  dapple amber many soft
+  burnish ivory sparse
+end
+
+define dusk as:
+  at the shadow, wash oxblood soft
+  veil midnight faint
+  scatter ash sparse
+end
+
+the feeling is reverie
+the paper is velum
+season spring
+breathe midnight
+invoke zenith
+at the horizon, horizon cobalt soft
+invoke dusk
+constellation ivory sparse faint
+varnish dusk`,
+
+// ── 6. Full Painterly Study ──────────────────────────────────────────
+`— nocturne in three layers —
+the paper is linen
+the air is humid
+the feeling is wonder
+season winter
+alla prima
+prime midnight
+underpaint cobalt deep
+at the upper half, nebula violet many
+at the light, bloom snow gathered soft — burnish ivory few
+the horizon, horizon slate soft
+at the lower edge, wash void
+scatter snow sparse
+constellation ivory faint
+veil midnight faint
+foxing
+grain`,
+];
+
+let exIdx=0;
+function loadExample(){
+  document.getElementById('ed').value=EXAMPLES[exIdx%EXAMPLES.length];
+  exIdx++; updateLN();
+  if(!animating&&!breathing) runPoem();
 }
-document.getElementById('ed').value = EXAMPLES[0];
-updateLN(); showTab('v', document.querySelector('.rtab'));
-setTimeout(sizeCanvas,80);
-window.addEventListener('resize',()=>{ clearTimeout(window._rt); window._rt = setTimeout(sizeCanvas,200); });
+
+// ── INIT ──────────────────────────────────────────────────────────────
+document.getElementById('ed').value=EXAMPLES[0];
+updateLN();
+showTab('v',document.querySelector('.rtab'));
+setTimeout(sizeCanvas,100);
+window.addEventListener('resize',()=>{ clearTimeout(window._rt); window._rt=setTimeout(sizeCanvas,200); });
 </script>
 </body>
 </html>
