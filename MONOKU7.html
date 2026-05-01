@@ -119,12 +119,12 @@ header{height:44px;display:flex;align-items:center;padding:0 12px;
   resize: none;
 }
 
-/* selection colour for the actual textarea (visible on highlight layer) */
+/* selection color for the actual textarea (visible on highlight layer) */
 #ed::selection { background: rgba(139,90,43,0.1); }
 
-/* ── SYNTAX HIGHLIGHTING COLOURS ───────────────────────────── */
+/* ── SYNTAX HIGHLIGHTING colorS ───────────────────────────── */
 .h-v { color: #2f5e44; font-weight: 600; }            /* verbs */
-.h-c { color: #7a4e22; }                               /* colours */
+.h-c { color: #7a4e22; }                               /* colors */
 .h-m { color: #4d6b5e; font-style: italic; }           /* modifiers */
 .h-s { color: #b8860b; font-style: italic; }           /* strings */
 .h-cmt { color: #a09888; font-style: italic; }         /* comments */
@@ -418,7 +418,7 @@ canvas#art{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 20px rg
   <div class="ency-backdrop" onclick="toggleEncy()"></div>
   <div class="ency-panel">
     <button class="ency-close" onclick="toggleEncy()">✕</button>
-    <input id="ency-search" type="text" placeholder="search verbs, colours, syntax, moods…" oninput="searchEncy()">
+    <input id="ency-search" type="text" placeholder="search verbs, colors, syntax, moods…" oninput="searchEncy()">
     <div class="ency-tabs" id="ency-tabs"></div>
     <div class="ency-content" id="ency-content"></div>
   </div>
@@ -546,10 +546,10 @@ function applyTints(rgb,state){
 }
 function getColor(name, state) {
   if (!name) return null;
-  // 1. Variable store – may hold an array or a colour‑name string
+  // 1. Variable store – may hold an array or a color‑name string
   if (state.vars[name] !== undefined) {
     if (Array.isArray(state.vars[name])) return state.vars[name].slice();
-    // If it's a string, treat it as a colour name and look it up
+    // If it's a string, treat it as a color name and look it up
     if (typeof state.vars[name] === 'string' && COLORS[state.vars[name]]) {
       return applyTints(COLORS[state.vars[name]].slice(), state);
     }
@@ -989,7 +989,7 @@ document.getElementById('ed').addEventListener('scroll',function(){document.getE
 // ── TOOLTIPS ──────────────────────────────────────────────────
 const TIP_DICT={};
 VERBS.forEach(v=>TIP_DICT[v]=`${v} — verb · painterly gesture`);
-Object.entries(COLORS).forEach(([n,rgb])=>TIP_DICT[n]=`${n} — colour · pigment`);
+Object.entries(COLORS).forEach(([n,rgb])=>TIP_DICT[n]=`${n} — color · pigment`);
 MODIFIERS.forEach(m=>TIP_DICT[m]=`${m} — modifier`);
 Object.keys(NOUN_DICT).forEach(n=>TIP_DICT[n]=`${n} — noun · painted as ${n}`);
 Object.keys(PLACEMENT_PATTERNS).forEach(p=>TIP_DICT[p.split(' ').slice(-1)[0]]=`${p} — placement`);
@@ -1055,7 +1055,7 @@ function showExpl(cx,cy,pos){
   const txt=document.getElementById('ed').value;const lines=txt.split('\n');
   const lineIdx=Math.floor(pos/(document.getElementById('ed').clientHeight/20));const line=lines[Math.min(lineIdx,lines.length-1)]||'';
   const cmd=parseCommand(line.trim());let html='';
-  if(cmd&&cmd.verb){html=`<div class="expl-row"><span class="expl-label">Verb:</span> ${cmd.verb}</div><div class="expl-row"><span class="expl-label">Colour:</span> ${cmd.colorName||'(none)'}</div><div class="expl-row"><span class="expl-label">Count:</span> ${cmd.count}</div><div class="expl-row"><span class="expl-label">Size:</span> ${cmd.sizeM}</div><div class="expl-row"><span class="expl-label">Opacity:</span> ${cmd.opacity}</div><div class="expl-row"><span class="expl-label">Mods:</span> ${(cmd.mods||[]).join(', ')||'none'}</div>`}else{const meta=classifyMeta(line.trim());if(meta){html=`<div class="expl-row"><span class="expl-label">Meta:</span> sets ${meta.key} to ${meta.val}</div>`}else{html='<div class="expl-row">Comment or empty line</div>'}}
+  if(cmd&&cmd.verb){html=`<div class="expl-row"><span class="expl-label">Verb:</span> ${cmd.verb}</div><div class="expl-row"><span class="expl-label">Color:</span> ${cmd.colorName||'(none)'}</div><div class="expl-row"><span class="expl-label">Count:</span> ${cmd.count}</div><div class="expl-row"><span class="expl-label">Size:</span> ${cmd.sizeM}</div><div class="expl-row"><span class="expl-label">Opacity:</span> ${cmd.opacity}</div><div class="expl-row"><span class="expl-label">Mods:</span> ${(cmd.mods||[]).join(', ')||'none'}</div>`}else{const meta=classifyMeta(line.trim());if(meta){html=`<div class="expl-row"><span class="expl-label">Meta:</span> sets ${meta.key} to ${meta.val}</div>`}else{html='<div class="expl-row">Comment or empty line</div>'}}
   document.getElementById('expl-content').innerHTML=html;expl.style.left=Math.min(cx,window.innerWidth-350)+'px';expl.style.top=Math.min(cy,window.innerHeight-200)+'px';expl.style.display='block';setTimeout(()=>expl.style.display='none',3500)
 }
 document.getElementById('ed').addEventListener('contextmenu',e=>{const pos=e.target.selectionStart;showExpl(e.clientX,e.clientY,pos);e.preventDefault()});
@@ -1064,7 +1064,7 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='?'){const ed=docu
 // ── LANGUAGE GARDEN ──────────────────────────────────────────
 const GARDEN_DATA=[
   {tab:'Verbs',cats:{'Canvas':['breathe','prime','silence','fade'],'Wet Media':['wash','glaze','bleed','dew','rain','haze','veil','sfumato','drip'],'Dry Media':['stipple','scumble','drybrush','etch','scratch','rake'],'Oil & Impasto':['impasto','scrape','smudge','alla prima'],'Organic':['bloom','scatter','petal','branch','dapple','spiral','constellation','ripple','smoke','nebula','web','glyph','pulse','crack','splatter','drift','flow','weave','stroke','flick'],'Transform':['burn','dissolve','erode','tarnish','tint','shade','underpaint','varnish','patina','foxing','burnish','crumble','blush','chiaroscuro','shadow'],'Typography':['print','scrawl','scribble','chicken-scratch','shout','whisper'],'New v7':['stir','poison','lacquer','quench','satisfy','codex','avern','fuligin'],'Structure':['echo','refrain','pause','linger','hurry','global','remember']}},
-  {tab:'Colours',cats:{
+  {tab:'Colors',cats:{
   'Mineral':['cerulean','lapis','cobalt','phthalo','ultramarine','viridian','vermilion','malachite','azurite','prussian','zinc','titanium'],
   'Earth':['ochre','obsidian','umber','onyx','sienna','sepia','terreverte','rust','clay','sand','walnut','bark','loam'],
   'Extended':['rose','mauve','gold','ivory','midnight','violet','crimson','teal','cyan','saffron','pearl','dusk','dawn','amber','slate','silver','orchid','magenta','emerald','turquoise','coral','plum','jade','bronze','copper','bone','bisque','ecru','flax','weld','woad'],
@@ -1104,7 +1104,7 @@ function buildGarden(){
 }
 function renderGardenTab(g){
   const scroll=document.getElementById('garden-scroll');scroll.innerHTML='';
-  if(g.cats){Object.entries(g.cats).forEach(([fam,words])=>{const sec=document.createElement('div');sec.className='garden-section';const famBtn=document.createElement('span');famBtn.className='garden-fam';famBtn.textContent=fam;const cloud=document.createElement('div');cloud.className='garden-cloud';words.forEach(w=>{const chip=document.createElement('span');chip.className='chip chip-v';chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});famBtn.onclick=()=>{famBtn.classList.toggle('open');cloud.classList.toggle('show');const panel=document.getElementById('garden');if(famBtn.classList.contains('open'))panel.classList.add('expanded');else{const anyOpen=document.querySelectorAll('.garden-fam.open').length>0;if(!anyOpen)panel.classList.remove('expanded')}};sec.appendChild(famBtn);sec.appendChild(cloud);scroll.appendChild(sec)})}else if(g.items){const cloud=document.createElement('div');cloud.className='garden-cloud show';let chipCls='chip-v';if(g.tab==='Colours')chipCls='chip-c';if(g.tab==='Modifiers')chipCls='chip-m';if(g.tab==='Nouns')chipCls='chip-n';if(g.tab==='Papers'||g.tab==='Brushes')chipCls='chip-p';g.items.forEach(w=>{const chip=document.createElement('span');chip.className='chip '+chipCls;if(COLORS[w]){const rgb=COLORS[w];chip.style.cssText=`padding-left:12px;position:relative`;const sw=document.createElement('span');sw.className='swatch';sw.style.background=`rgb(${rgb.join(',')})`;chip.prepend(sw)}chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});scroll.appendChild(cloud)}}
+  if(g.cats){Object.entries(g.cats).forEach(([fam,words])=>{const sec=document.createElement('div');sec.className='garden-section';const famBtn=document.createElement('span');famBtn.className='garden-fam';famBtn.textContent=fam;const cloud=document.createElement('div');cloud.className='garden-cloud';words.forEach(w=>{const chip=document.createElement('span');chip.className='chip chip-v';chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});famBtn.onclick=()=>{famBtn.classList.toggle('open');cloud.classList.toggle('show');const panel=document.getElementById('garden');if(famBtn.classList.contains('open'))panel.classList.add('expanded');else{const anyOpen=document.querySelectorAll('.garden-fam.open').length>0;if(!anyOpen)panel.classList.remove('expanded')}};sec.appendChild(famBtn);sec.appendChild(cloud);scroll.appendChild(sec)})}else if(g.items){const cloud=document.createElement('div');cloud.className='garden-cloud show';let chipCls='chip-v';if(g.tab==='Colors')chipCls='chip-c';if(g.tab==='Modifiers')chipCls='chip-m';if(g.tab==='Nouns')chipCls='chip-n';if(g.tab==='Papers'||g.tab==='Brushes')chipCls='chip-p';g.items.forEach(w=>{const chip=document.createElement('span');chip.className='chip '+chipCls;if(COLORS[w]){const rgb=COLORS[w];chip.style.cssText=`padding-left:12px;position:relative`;const sw=document.createElement('span');sw.className='swatch';sw.style.background=`rgb(${rgb.join(',')})`;chip.prepend(sw)}chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});scroll.appendChild(cloud)}}
 buildGarden();
 
   
@@ -1121,14 +1121,14 @@ const ENCY_DATA = {
           <p>The canvas listens. You don't command; you whisper. A Monoku poem has three breath‑phases:</p>
           <ol>
             <li><strong>Atmosphere</strong>: Set paper, mood, season, brush.</li>
-            <li><strong>Gesture</strong>: Draw with verbs, colours, modifiers.</li>
+            <li><strong>Gesture</strong>: Draw with verbs, colors, modifiers.</li>
             <li><strong>Coda</strong>: Veil, grain, varnish, fade—let the canvas settle.</li>
           </ol>
         </div>
         <div class="ency-card">
           <h3>✦ How It Works</h3>
-          <p>Each line is parsed into a command object. The interpreter executes gestures on a 2D canvas using seeded Perlin noise, mood‑based colour tinting, and paper‑texture overlays.</p>
-          <p><code>verb colour [count] [modifiers…]</code> is the core grammar. Placement uses commas. Loops, conditionals, variables, and macros extend expressiveness.</p>
+          <p>Each line is parsed into a command object. The interpreter executes gestures on a 2D canvas using seeded Perlin noise, mood‑based color tinting, and paper‑texture overlays.</p>
+          <p><code>verb color [count] [modifiers…]</code> is the core grammar. Placement uses commas. Loops, conditionals, variables, and macros extend expressiveness.</p>
         </div>
         <div class="ency-card">
           <h3>✦ Quick Controls</h3>
@@ -1160,7 +1160,7 @@ const ENCY_DATA = {
       <div class="tutorial-steps">
         <div class="step">
           <h3>Step 1: Set the Atmosphere</h3>
-          <p>Begin by choosing your paper, mood, and season. These affect texture, colour tint, and overall feeling.</p>
+          <p>Begin by choosing your paper, mood, and season. These affect texture, color tint, and overall feeling.</p>
           <pre><code>the paper is rice
 the feeling is serenity
 season spring</code></pre>
@@ -1169,9 +1169,9 @@ season spring</code></pre>
         
         <div class="step">
           <h3>Step 2: Draw a Simple Gesture</h3>
-          <p>Use a verb + colour to make a mark. Add modifiers for character.</p>
+          <p>Use a verb + color to make a mark. Add modifiers for character.</p>
           <pre><code>bloom rose gathered soft</code></pre>
-          <p><em>Result</em>: A soft, gathered rose‑coloured bloom at the canvas center.</p>
+          <p><em>Result</em>: A soft, gathered rose‑colored bloom at the canvas center.</p>
           <button class="try-btn" onclick="ins('bloom rose gathered soft')">Insert Gesture</button>
         </div>
         
@@ -1238,8 +1238,8 @@ season spring</code></pre>
           <summary><strong>Wet Media</strong> — fluid, bleeding, atmospheric</summary>
           <div class="verb-list">
             <div class="verb-item"><code>wash</code> <span>Apply a translucent layer that pools and settles.</span></div>
-            <div class="verb-item"><code>glaze</code> <span>Layer a transparent colour over existing marks.</span></div>
-            <div class="verb-item"><code>bleed</code> <span>Let colours flow into one another organically.</span></div>
+            <div class="verb-item"><code>glaze</code> <span>Layer a transparent color over existing marks.</span></div>
+            <div class="verb-item"><code>bleed</code> <span>Let colors flow into one another organically.</span></div>
             <div class="verb-item"><code>dew</code> <span>Scatter tiny, glistening droplets.</span></div>
             <div class="verb-item"><code>rain</code> <span>Vertical streaks with varying opacity.</span></div>
             <div class="verb-item"><code>haze</code> <span>Soft, diffused atmospheric veil.</span></div>
@@ -1249,7 +1249,7 @@ season spring</code></pre>
             <div class="verb-item"><code>blush</code> <span>Subtle warm tint that blooms from center.</span></div>
             <div class="verb-item"><code>drip</code> <span>Vertical runs with irregular edges.</span></div>
             <div class="verb-item"><code>stir</code> <span>Swirl wet media to create organic turbulence.</span></div>
-            <div class="verb-item"><code>poison</code> <span>Introduce a contrasting colour that spreads unpredictably.</span></div>
+            <div class="verb-item"><code>poison</code> <span>Introduce a contrasting color that spreads unpredictably.</span></div>
           </div>
         </details>
         
@@ -1275,7 +1275,7 @@ season spring</code></pre>
             <div class="verb-item"><code>impasto</code> <span>Apply thick, textured paint that catches light.</span></div>
             <div class="verb-item"><code>scrape</code> <span>Remove or drag wet paint to reveal layers beneath.</span></div>
             <div class="verb-item"><code>smudge</code> <span>Blend edges with finger or tool for soft transitions.</span></div>
-            <div class="verb-item"><code>alla prima</code> <span>Wet‑on‑wet painting; colours blend organically.</span></div>
+            <div class="verb-item"><code>alla prima</code> <span>Wet‑on‑wet painting; colors blend organically.</span></div>
             <div class="verb-item"><code>quench</code> <span>Rapidly dry wet areas to fix composition.</span></div>
             <div class="verb-item"><code>satisfy</code> <span>Balance compositional weight; auto‑adjusts nearby marks.</span></div>
             <div class="verb-item"><code>burnish</code> <span>Polish surface to a subtle sheen.</span></div>
@@ -1313,7 +1313,7 @@ season spring</code></pre>
           <div class="verb-list">
             <div class="verb-item"><code>burn</code> <span>Darken with heat‑like gradient.</span></div>
             <div class="verb-item"><code>dissolve</code> <span>Break marks into particles that drift away.</span></div>
-            <div class="verb-item"><code>tint</code> <span>Apply a uniform colour overlay.</span></div>
+            <div class="verb-item"><code>tint</code> <span>Apply a uniform color overlay.</span></div>
             <div class="verb-item"><code>shade</code> <span>Add depth with darker tones.</span></div>
             <div class="verb-item"><code>underpaint</code> <span>Lay groundwork for subsequent layers.</span></div>
             <div class="verb-item"><code>varnish</code> <span>Protective glossy topcoat.</span></div>
@@ -1334,7 +1334,7 @@ season spring</code></pre>
       </div>
       
       <h3>✦ Using Verbs</h3>
-      <p>Basic syntax: <code>verb colour [count] [modifiers…]</code></p>
+      <p>Basic syntax: <code>verb color [count] [modifiers…]</code></p>
       <pre><code>bloom rose gathered soft          // single soft rose bloom
 scatter leaves 5 clustered          // five clustered leaf marks
 at the heart, nebula violet faint   // positioned nebula</code></pre>
@@ -1343,79 +1343,79 @@ at the heart, nebula violet faint   // positioned nebula</code></pre>
     </section>
   `,
   
-  colours: `
-    <section class="ency-section" id="ency-colours">
-      <h2>🎨 Colour Glossary</h2>
-      <p class="lead">Colours are pigments. Each belongs to a family that suggests its origin and character.</p>
+  colors: `
+    <section class="ency-section" id="ency-colors">
+      <h2>🎨 color Glossary</h2>
+      <p class="lead">colors are pigments. Each belongs to a family that suggests its origin and character.</p>
       
-      <div class="colour-families">
+      <div class="color-families">
         <details open>
           <summary><strong>Mineral Pigments</strong> — ground stones, intense and lightfast</summary>
-          <div class="colour-grid">
-            <div class="colour-item" style="--c:#007ba7"><code>cerulean</code> <span>the blue of a clear sky</span></div>
-            <div class="colour-item" style="--c:#26619c"><code>lapis</code> <span>deep ultramarine with gold flecks</span></div>
-            <div class="colour-item" style="--c:#006994"><code>azurite</code> <span>cool blue‑green mineral</span></div>
-            <div class="colour-item" style="--c:#0bda51"><code>malachite</code> <span>vibrant green copper carbonate</span></div>
-            <div class="colour-item" style="--c:#cc7722"><code>ochre</code> <span>golden yellow earth pigment</span></div>
-            <div class="colour-item" style="--c:#e34234"><code>vermilion</code> <span>brilliant red mercury sulfide</span></div>
-            <div class="colour-item" style="--c:#3f00ff"><code>ultramarine</code> <span>deep, luminous blue</span></div>
-            <div class="colour-item" style="--c:#0047ab"><code>cobalt</code> <span>stable, intense blue</span></div>
+          <div class="color-grid">
+            <div class="color-item" style="--c:#007ba7"><code>cerulean</code> <span>the blue of a clear sky</span></div>
+            <div class="color-item" style="--c:#26619c"><code>lapis</code> <span>deep ultramarine with gold flecks</span></div>
+            <div class="color-item" style="--c:#006994"><code>azurite</code> <span>cool blue‑green mineral</span></div>
+            <div class="color-item" style="--c:#0bda51"><code>malachite</code> <span>vibrant green copper carbonate</span></div>
+            <div class="color-item" style="--c:#cc7722"><code>ochre</code> <span>golden yellow earth pigment</span></div>
+            <div class="color-item" style="--c:#e34234"><code>vermilion</code> <span>brilliant red mercury sulfide</span></div>
+            <div class="color-item" style="--c:#3f00ff"><code>ultramarine</code> <span>deep, luminous blue</span></div>
+            <div class="color-item" style="--c:#0047ab"><code>cobalt</code> <span>stable, intense blue</span></div>
           </div>
         </details>
         
         <details>
           <summary><strong>Earth Pigments</strong> — soils, clays, organic tones</summary>
-          <div class="colour-grid">
-            <div class="colour-item" style="--c:#635147"><code>umber</code> <span>rich brown with green undertone</span></div>
-            <div class="colour-item" style="--c:#882d17"><code>sienna</code> <span>warm reddish‑brown</span></div>
-            <div class="colour-item" style="--c:#704214"><code>sepia</code> <span>deep brown from cuttlefish ink</span></div>
-            <div class="colour-item" style="--c:#e2725b"><code>terracotta</code> <span>baked clay orange‑red</span></div>
-            <div class="colour-item" style="--c:#708238"><code>olive</code> <span>muted green‑yellow</span></div>
-            <div class="colour-item" style="--c:#b7410e"><code>rust</code> <span>oxidized iron red‑orange</span></div>
-            <div class="colour-item" style="--c:#36454f"><code>charcoal</code> <span>deep neutral black‑grey</span></div>
+          <div class="color-grid">
+            <div class="color-item" style="--c:#635147"><code>umber</code> <span>rich brown with green undertone</span></div>
+            <div class="color-item" style="--c:#882d17"><code>sienna</code> <span>warm reddish‑brown</span></div>
+            <div class="color-item" style="--c:#704214"><code>sepia</code> <span>deep brown from cuttlefish ink</span></div>
+            <div class="color-item" style="--c:#e2725b"><code>terracotta</code> <span>baked clay orange‑red</span></div>
+            <div class="color-item" style="--c:#708238"><code>olive</code> <span>muted green‑yellow</span></div>
+            <div class="color-item" style="--c:#b7410e"><code>rust</code> <span>oxidized iron red‑orange</span></div>
+            <div class="color-item" style="--c:#36454f"><code>charcoal</code> <span>deep neutral black‑grey</span></div>
           </div>
         </details>
         
         <details>
           <summary><strong>Extended Palette</strong> — poetic, atmospheric, symbolic</summary>
-          <div class="colour-grid">
-            <div class="colour-item" style="--c:#e0115f"><code>rose</code> <span>soft romantic pink‑red</span></div>
-            <div class="colour-item" style="--c:#ffd700"><code>gold</code> <span>luminous metallic yellow</span></div>
-            <div class="colour-item" style="--c:#fffff0"><code>ivory</code> <span>warm off‑white</span></div>
-            <div class="colour-item" style="--c:#191970"><code>midnight</code> <span>deep blue‑black night sky</span></div>
-            <div class="colour-item" style="--c:#7f00ff"><code>violet</code> <span>spiritual purple</span></div>
-            <div class="colour-item" style="--c:#dc143c"><code>crimson</code> <span>deep, passionate red</span></div>
-            <div class="colour-item" style="--c:#008080"><code>teal</code> <span>blue‑green like tropical water</span></div>
-            <div class="colour-item" style="--c:#f4c430"><code>saffron</code> <span>warm golden spice tone</span></div>
-            <div class="colour-item" style="--c:#4b3621"><code>dusk</code> <span>twilight brown‑purple</span></div>
-            <div class="colour-item" style="--c:#f0e68c"><code>dawn</code> <span>soft yellow‑pink morning light</span></div>
+          <div class="color-grid">
+            <div class="color-item" style="--c:#e0115f"><code>rose</code> <span>soft romantic pink‑red</span></div>
+            <div class="color-item" style="--c:#ffd700"><code>gold</code> <span>luminous metallic yellow</span></div>
+            <div class="color-item" style="--c:#fffff0"><code>ivory</code> <span>warm off‑white</span></div>
+            <div class="color-item" style="--c:#191970"><code>midnight</code> <span>deep blue‑black night sky</span></div>
+            <div class="color-item" style="--c:#7f00ff"><code>violet</code> <span>spiritual purple</span></div>
+            <div class="color-item" style="--c:#dc143c"><code>crimson</code> <span>deep, passionate red</span></div>
+            <div class="color-item" style="--c:#008080"><code>teal</code> <span>blue‑green like tropical water</span></div>
+            <div class="color-item" style="--c:#f4c430"><code>saffron</code> <span>warm golden spice tone</span></div>
+            <div class="color-item" style="--c:#4b3621"><code>dusk</code> <span>twilight brown‑purple</span></div>
+            <div class="color-item" style="--c:#f0e68c"><code>dawn</code> <span>soft yellow‑pink morning light</span></div>
           </div>
         </details>
         
         <details>
           <summary><strong>Atmospheric</strong> — elements, weather, light</summary>
-          <div class="colour-grid">
-            <div class="colour-item" style="--c:#87ceeb"><code>sky</code> <span>daytime azure</span></div>
-            <div class="colour-item" style="--c:#b0e0e6"><code>water</code> <span>transparent blue‑green</span></div>
-            <div class="colour-item" style="--c:#9d9d9d"><code>stone</code> <span>neutral grey mineral</span></div>
-            <div class="colour-item" style="--c:#4f7942"><code>leaf</code> <span>fresh green foliage</span></div>
-            <div class="colour-item" style="--c:#8a0303"><code>blood</code> <span>deep organic red</span></div>
-            <div class="colour-item" style="--c:#cf3800"><code>fire</code> <span>glowing orange‑red</span></div>
-            <div class="colour-item" style="--c:#f5f5f5"><code>snow</code> <span>pure white with cool tint</span></div>
-            <div class="colour-item" style="--c:#1a1a1a"><code>shadow</code> <span>deep neutral dark</span></div>
-            <div class="colour-item" style="--c:#4a4e69"><code>gloom</code> <span>moody blue‑grey</span></div>
-            <div class="colour-item" style="--c:#fffacd"><code>glow</code> <span>warm luminous yellow</span></div>
+          <div class="color-grid">
+            <div class="color-item" style="--c:#87ceeb"><code>sky</code> <span>daytime azure</span></div>
+            <div class="color-item" style="--c:#b0e0e6"><code>water</code> <span>transparent blue‑green</span></div>
+            <div class="color-item" style="--c:#9d9d9d"><code>stone</code> <span>neutral grey mineral</span></div>
+            <div class="color-item" style="--c:#4f7942"><code>leaf</code> <span>fresh green foliage</span></div>
+            <div class="color-item" style="--c:#8a0303"><code>blood</code> <span>deep organic red</span></div>
+            <div class="color-item" style="--c:#cf3800"><code>fire</code> <span>glowing orange‑red</span></div>
+            <div class="color-item" style="--c:#f5f5f5"><code>snow</code> <span>pure white with cool tint</span></div>
+            <div class="color-item" style="--c:#1a1a1a"><code>shadow</code> <span>deep neutral dark</span></div>
+            <div class="color-item" style="--c:#4a4e69"><code>gloom</code> <span>moody blue‑grey</span></div>
+            <div class="color-item" style="--c:#fffacd"><code>glow</code> <span>warm luminous yellow</span></div>
           </div>
         </details>
       </div>
       
-      <h3>✦ Using Colours</h3>
-      <p>Colours follow the verb. They can be modified by mood, season, or poetic mixing:</p>
+      <h3>✦ Using colors</h3>
+      <p>colors follow the verb. They can be modified by mood, season, or poetic mixing:</p>
       <pre><code>bloom rose                     // simple rose bloom
 mix cerulean with snow          // pale blue result
 a ghost of gold                 // gold with high transparency
 a memory of vermilion           // vermilion tinted with aged sepia
-the feeling is melancholy       // all colours shift toward cool, muted tones</code></pre>
+the feeling is melancholy       // all colors shift toward cool, muted tones</code></pre>
     </section>
   `,
   
@@ -1486,7 +1486,7 @@ the feeling is melancholy       // all colours shift toward cool, muted tones</c
             <div class="mod-item"><code>fluid</code> <span>smooth, flowing transitions</span></div>
             <div class="mod-item"><code>aged</code> <span>weathered, time‑worn appearance</span></div>
             <div class="mod-item"><code>toothed</code> <span>rough, textured surface interaction</span></div>
-            <div class="mod-item"><code>saturated</code> <span>intense, pure colour</span></div>
+            <div class="mod-item"><code>saturated</code> <span>intense, pure color</span></div>
             <div class="mod-item"><code>mottled</code> <span>irregular speckled texture</span></div>
             <div class="mod-item"><code>ghosted</code> <span>faint duplicate offset slightly</span></div>
             <div class="mod-item"><code>weathered</code> <span>eroded, sun‑bleached effect</span></div>
@@ -1535,7 +1535,7 @@ the feeling is melancholy       // all colours shift toward cool, muted tones</c
       </div>
       
       <h3>✦ Using Modifiers</h3>
-      <p>Modifiers follow colour and count. Chain multiple for nuanced effects:</p>
+      <p>Modifiers follow color and count. Chain multiple for nuanced effects:</p>
       <pre><code>bloom rose 3 gathered soft slowly
 at the heart, scatter gold 5 clustered bold
 print "haiku" gold embossed fontsize 24</code></pre>
@@ -1549,10 +1549,10 @@ print "haiku" gold embossed fontsize 24</code></pre>
       
       <h3>✦ Core Grammar</h3>
       <pre><code>line       ::= [placement ','] gesture [— gesture]*
-gesture    ::= verb colour [count] [modifier]*
+gesture    ::= verb color [count] [modifier]*
 placement  ::= 'at the heart' | 'along the horizon' | 'in the light' | ...
 verb       ::= one of 90+ painting/typography verbs
-colour     ::= one of 100+ named colours or variables
+color     ::= one of 100+ named colors or variables
 count      ::= integer (default: 1)
 modifier   ::= one of 60+ opacity/pace/texture/character terms</code></pre>
       
@@ -1563,7 +1563,7 @@ modifier   ::= one of 60+ opacity/pace/texture/character terms</code></pre>
         <li><strong>Tokenization</strong>: Split line on whitespace, preserve quoted strings</li>
         <li><strong>Placement extraction</strong>: If comma present, text before comma is placement</li>
         <li><strong>Verb identification</strong>: First token must match known verb</li>
-        <li><strong>Colour/noun resolution</strong>: Scan tokens for known colour or noun</li>
+        <li><strong>color/noun resolution</strong>: Scan tokens for known color or noun</li>
         <li><strong>Modifier collection</strong>: Gather remaining known modifiers</li>
         <li><strong>Number extraction</strong>: Parse integers as count or fontsize</li>
         <li><strong>Execution</strong>: Build command object and render on canvas</li>
@@ -1581,7 +1581,7 @@ when condition, gesture
 unless condition, gesture
 
 // Variables
-let name be value          // value: string, number, colour
+let name be value          // value: string, number, color
 set name to number
 deepen name by number      // increment
 fade name by number        // decrement
@@ -1656,7 +1656,7 @@ print greeting gold                // render stored string</code></pre>
 is the center bright?          // true/false based on luminance
 measure the light at the heart // 0‑255 average luminance
 count blooms                   // number of bloom marks drawn
-the colour of the last shape   // hex colour of last rendered mark
+the color of the last shape   // hex color of last rendered mark
 the size of the last bloom     // radius in pixels
 
 // Use in conditionals
@@ -1694,13 +1694,13 @@ workshop garden     // verdant, organic palette</code></pre>
       <div class="e-grid">
         <div class="e-card">
           <h3>🎯 Start Small</h3>
-          <p>One verb, one colour. Render. Then add a modifier. Then placement. Build complexity gradually.</p>
+          <p>One verb, one color. Render. Then add a modifier. Then placement. Build complexity gradually.</p>
           <code>bloom rose<br>bloom rose soft<br>at the heart, bloom rose soft</code>
         </div>
         
         <div class="e-card">
-          <h3>🎨 Let Mood Guide Colour</h3>
-          <p><code>the feeling is melancholy</code> subtly shifts all colours toward cool, muted tones. Use mood as a global filter.</p>
+          <h3>🎨 Let Mood Guide color</h3>
+          <p><code>the feeling is melancholy</code> subtly shifts all colors toward cool, muted tones. Use mood as a global filter.</p>
         </div>
         
         <div class="e-card">
@@ -1721,7 +1721,7 @@ workshop garden     // verdant, organic palette</code></pre>
         
         <div class="e-card">
           <h3>🔍 Debug with Line Explainer</h3>
-          <p>Right‑click any line or press <code>Ctrl+?</code> to see how it was parsed: verb, colour, count, modifiers, placement.</p>
+          <p>Right‑click any line or press <code>Ctrl+?</code> to see how it was parsed: verb, color, count, modifiers, placement.</p>
         </div>
         
         <div class="e-card">
@@ -1754,7 +1754,7 @@ if count blooms exceeds 5, append "veil silver faint" to the scroll
 measure the light at the heart
 if center_light > 200, veil midnight soft
 
-// Poetic colour mixing
+// Poetic color mixing
 mix cerulean with snow        // pale blue
 a ghost of rose               // transparent rose
 a memory of gold              // gold tinted with sepia
@@ -1777,13 +1777,13 @@ a kiss of crimson on gold     // crimson-gold blend</code></pre>
 function buildEncy() {
   const tabs = document.getElementById('ency-tabs');
   tabs.innerHTML = '';
-  const tabOrder = ['about', 'quick-start', 'verbs', 'colours', 'modifiers', 'syntax', 'tips'];
+  const tabOrder = ['about', 'quick-start', 'verbs', 'colors', 'modifiers', 'syntax', 'tips'];
   
   tabOrder.forEach((key, idx) => {
     const btn = document.createElement('button');
     btn.className = 'etab' + (idx === 0 ? ' on' : '');
     btn.textContent = key === 'quick-start' ? 'Quick Start' : 
-                     key === 'colours' ? 'Colours' :
+                     key === 'colors' ? 'colors' :
                      key.charAt(0).toUpperCase() + key.slice(1);
     btn.onclick = (e) => {
       e.stopPropagation();
@@ -1816,8 +1816,8 @@ function initEncyInteractions() {
     };
   });
   
-  // Colour swatch tooltips
-  document.querySelectorAll('#ency-content .colour-item').forEach(item => {
+  // color swatch tooltips
+  document.querySelectorAll('#ency-content .color-item').forEach(item => {
     item.title = item.querySelector('code').textContent + ': ' + item.querySelector('span').textContent;
   });
 }
@@ -1934,11 +1934,11 @@ gathered light
 varnish dusk`,
 
 `— chant & cast —
-chant flower with petals and colour:
-  for petals times, bloom colour soft
+chant flower with petals and color:
+  for petals times, bloom color soft
 end
-cast flower with petals 5 and colour rose
-cast flower with petals 3 and colour gold`,
+cast flower with petals 5 and color rose
+cast flower with petals 3 and color gold`,
 
 `— typographic study —
 the font is cursive
@@ -2051,7 +2051,7 @@ workshop default
 
 `— error recovery attempt —
 attempt,
-  bloom unknown‑colour gathered
+  bloom unknown‑color gathered
 if the brush falters, wash calm faint
 breathe bone
 `,
