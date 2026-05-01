@@ -775,6 +775,7 @@ function makeState() {
     mixedColor: null,  // from "mix X with Y" on its own line
     breathLine: 0,     // for breath mode
     haikuLines: [],    // syllable counts of active lines
+    renderRequested: false,
     errors: [],        // poetic error log
   };
 }
@@ -936,6 +937,9 @@ function parseCommand(phrase) {
     const match = phrase.match(/"([^"]*)"/);
     if (match) textContent = match[1].toLowerCase();
   }
+  if (textContent) {
+  remaining = remaining.filter(tok => tok !== textContent);
+  }  
   
   // Parse remaining tokens for color, count, size, opacity, modifiers
   let colorName = null, count = null, sizeM = 1, opacity = null;
@@ -1060,7 +1064,7 @@ function classifyMeta(line) {
   if(moodM && MOOD_PALETTES[moodM[1]]) return { type:'meta', key:'mood', val:moodM[1] };
   const paperM = t.match(/^the paper is (.+)$/);
   if(paperM && PAPER_PROFILES[paperM[1]]) return { type:'meta', key:'paper', val:paperM[1] };
-  const brushM = t.match(/^(?:with\s+a\s+|the\s+brush\s+is\s+)(\w+)(?:\s+brush)?$/);
+  const brushM = t.match(/^(?:with\s+(?:a|the)\s+|the\s+brush\s+is\s+)(\w+)(?:\s+brush)?$/);
   if(brushM && BRUSH_PROFILES[brushM[1]]) return { type:'meta', key:'brush', val:brushM[1] };
   const seasonM = t.match(/^season\s+(\w+)$/);
   if(seasonM && SEASON_TINTS[seasonM[1]]) return { type:'meta', key:'season', val:seasonM[1] };
@@ -2561,15 +2565,16 @@ function interpret(canvas, code, frame=0) {
     const wm = t.match(/^workshop\s+(\w+)$/);
     if (wm) {
       applyWorkshopTheme(wm[1]);
-    } else {
-      filteredLines.push(raw);
+      continue;
     }
+    // NEW: detect render command
+    if (t === 'render') {
+      STATE.renderRequested = true;
+      continue;
+    }
+    filteredLines.push(raw);
   }
-  // Now use filteredLines instead of lines for the rest of the interpreter
-  // We'll replace the `lines` variable with filteredLines.
-  // Hence, modify the subsequent loops to use `filteredLines`.
   lines = filteredLines;
-
   
   // Haiku detection
   const isHaiku=detectHaiku(lines);
@@ -2725,6 +2730,16 @@ function runPoem(){
     document.getElementById('st').className='s-err';
   }
   updateUI();
+  if (STATE.renderRequested) {
+  STATE.renderRequested = false;
+  const ed = document.getElementById('ed');
+  // Remove all lines that are exactly 'render'
+  ed.value = ed.value.split('\n').filter(l => l.trim().toLowerCase() !== 'render').join('\n');
+  updateLN();
+  // Re‑render the now clean poem
+  runPoem();
+  return;
+}
 }
 
 function clearCanvas(){
