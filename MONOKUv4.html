@@ -129,6 +129,130 @@ canvas#art{max-width:100%;max-height:100%;display:block;
 .mood-ring{width:8px;height:8px;border-radius:50%;flex-shrink:0;
   background:var(--muted2);transition:background .6s;border:1px solid rgba(0,0,0,0.1)}
 
+/* ── WORKSHOP THEMES ──────────────────────────────────────────── */
+/*  applied by adding a class to <html> e.g. <html class="theme-cabin">  */
+
+/* Cabin — wooden panels */
+.theme-cabin {
+  --bg:#e6d3b8; --surface:#d9bf9c; --panel:#c7aa86; --panel2:#b8956e;
+  --border:rgba(0,0,0,0.12);
+  --text:#3a2818; --muted:#6b5a45; --muted2:#9c886c;
+  --ink:#4a2f15; --ink2:#4a2f15;
+  --canvas-bg:#f7edd5;
+  --accent:#8b5a2b; --accent2:#4d7a4e; --accent3:#9a5050;
+}
+.theme-cabin body {
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 8px),
+                    linear-gradient(90deg, rgba(0,0,0,0.02) 0%, transparent 1px);
+  font-family: 'Crimson Text', Georgia, serif;
+}
+.theme-cabin textarea#ed { font-family: 'Crimson Text', Georgia, serif; }
+
+/* Factory — steel & metal */
+.theme-factory {
+  --bg:#2a2d34; --surface:#1f2127; --panel:#181a1d; --panel2:#121316;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.12);
+  --text:#d0d2d4; --muted:#818488; --muted2:#595b5e;
+  --ink:#e0e2e4; --ink2:#e0e2e4;
+  --canvas-bg:#24272c;
+  --accent:#c78c46; --accent2:#7a9e9f; --accent3:#c96b6b;
+  --err:#d47070; --ok:#7aaa88;
+}
+.theme-factory body {
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px),
+                    repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 50px);
+  font-family: 'Courier New', monospace;
+}
+.theme-factory textarea#ed { font-family: 'Courier New', monospace; }
+
+/* Quarry — marble */
+.theme-quarry {
+  --bg:#f4f1ec; --surface:#eae3d8; --panel:#e2d9cc; --panel2:#d5c9b9;
+  --border:rgba(0,0,0,0.10);
+  --text:#3a3630; --muted:#7a7368; --muted2:#a9a096;
+  --ink:#2c261e; --ink2:#2c261e;
+  --canvas-bg:#faf8f2;
+  --accent:#9b7653; --accent2:#557a60; --accent3:#9b5b5b;
+}
+.theme-quarry body {
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(0,0,0,0.03) 0%, transparent 70%),
+    radial-gradient(ellipse at 70% 80%, rgba(0,0,0,0.02) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%);
+  font-family: 'Cinzel', Georgia, serif;
+}
+.theme-quarry textarea#ed { font-family: 'Cinzel', Georgia, serif; }
+
+/* Apocalypse — charred & cracked */
+.theme-apocalypse {
+  --bg:#1a1410; --surface:#140f0c; --panel:#0f0a07; --panel2:#0a0604;
+  --border:rgba(120,60,20,0.4); --border2:rgba(120,60,20,0.6);
+  --text:#e0c8b0; --muted:#8a7060; --muted2:#5a4a3a;
+  --ink:#f0d8c0; --ink2:#f0d8c0;
+  --canvas-bg:#1c1610;
+  --accent:#c96b2a; --accent2:#5c7a4a; --accent3:#aa4040;
+}
+.theme-apocalypse body {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(200,100,30,0.08) 0%, transparent 50%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.3) 0px, rgba(0,0,0,0.3) 1px, transparent 1px, transparent 3px);
+  font-family: 'Special Elite', 'Courier New', monospace;
+}
+.theme-apocalypse textarea#ed { font-family: 'Special Elite', 'Courier New', monospace; }
+
+/* Terminal — CRT green */
+.theme-terminal {
+  --bg:#000; --surface:#000; --panel:#000; --panel2:#000;
+  --border:#0f0; --border2:#0f0;
+  --text:#0f0; --muted:#0a0; --muted2:#060;
+  --ink:#0f0; --ink2:#0f0;
+  --canvas-bg:#000;
+  --accent:#0f0; --accent2:#0f0; --accent3:#0f0;
+  --err:#f00; --ok:#0f0;
+}
+.theme-terminal body {
+  font-family: 'VT323', 'Courier New', monospace;
+  background-color: #000;
+  background-image: repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 2px, transparent 2px, transparent 4px);
+}
+.theme-terminal textarea#ed { font-family: 'VT323', 'Courier New', monospace; }
+.theme-terminal .btn { background:rgba(0,255,0,0.1); border-color:#0f0; color:#0f0; }
+.theme-terminal .btn:hover { background:rgba(0,255,0,0.2); }
+
+/* Newspaper — vintage print */
+.theme-newspaper {
+  --bg:#f9f6f0; --surface:#f4ede3; --panel:#e8dfd1; --panel2:#d9cfc0;
+  --border:rgba(0,0,0,0.12);
+  --text:#2c2416; --muted:#6b5e4a; --muted2:#b0a28d;
+  --ink:#1a120a; --ink2:#1a120a;
+  --canvas-bg:#fcfaf5;
+  --accent:#8b5a2b; --accent2:#4d6b5e; --accent3:#9e4a4a;
+}
+.theme-newspaper body {
+  background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 12px);
+  font-family: 'Playfair Display', Georgia, serif;
+}
+.theme-newspaper textarea#ed { font-family: 'Playfair Display', Georgia, serif; }
+
+/* Gradient — smooth modern */
+.theme-gradient {
+  --bg:linear-gradient(135deg, #f5e6d3, #e0c7e8); /* only works in background shorthand, so we set body bg directly */
+  --surface:rgba(255,255,255,0.5); --panel:rgba(255,255,255,0.4); --panel2:rgba(255,255,255,0.3);
+  --border:rgba(0,0,0,0.1);
+  --text:#3a2a2a; --muted:#7a6a6a;
+  --ink:#2a1a1a;
+}
+.theme-gradient body {
+  background: linear-gradient(135deg, #f5e6d3, #e0c7e8);
+  font-family: 'Crimson Text', Georgia, serif;
+}
+.theme-gradient textarea#ed { font-family: 'Crimson Text', Georgia, serif; }
+
+/* Default / reset */
+.theme-default {
+  /* resets to initial :root values — just remove any theme class */
+}
+  
 
 /* ── ENCYCLOPEDIA OVERLAY ──────────────────────────────────── */
 #encyclopedia-overlay {
@@ -2260,6 +2384,23 @@ function interpret(canvas, code, frame=0) {
 
   const lines=code.split('\n');
 
+  // Filter out workshop lines and apply theme
+  const filteredLines = [];
+  for (const raw of lines) {
+    const t = raw.trim().toLowerCase();
+    const wm = t.match(/^workshop\s+(\w+)$/);
+    if (wm) {
+      applyWorkshopTheme(wm[1]);
+    } else {
+      filteredLines.push(raw);
+    }
+  }
+  // Now use filteredLines instead of lines for the rest of the interpreter
+  // We'll replace the `lines` variable with filteredLines.
+  // Hence, modify the subsequent loops to use `filteredLines`.
+  lines = filteredLines;
+
+  
   // Haiku detection
   const isHaiku=detectHaiku(lines);
   document.getElementById('haikuMode').style.display=isHaiku?'inline':'none';
@@ -2521,6 +2662,10 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); runPoem(); }
 });
 
+document.getElementById('ed').addEventListener('input', function() {
+  checkWorkshopOnInput();
+  updateLN();
+});
 
 // ═══════════════════════════════════════════════════════════════════════
 //  X. EXAMPLES
@@ -2676,7 +2821,39 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// ── WORKSHOP THEME ENGINE ──────────────────────────────────────
+const WORKSHOP_THEMES = [
+  'cabin','factory','quarry','apocalypse','terminal','newspaper','gradient','default'
+];
 
+function applyWorkshopTheme(name) {
+  // Remove all theme classes
+  WORKSHOP_THEMES.forEach(t => document.documentElement.classList.remove(`theme-${t}`));
+  // Add the requested one
+  if (name === 'default') {
+    // no class needed; already reset
+  } else {
+    document.documentElement.classList.add(`theme-${name}`);
+  }
+}
+
+// Scan for workshop command in textarea and apply instantly
+function checkWorkshopOnInput() {
+  const val = document.getElementById('ed').value;
+  const lines = val.split('\n');
+  for (const line of lines) {
+    const t = line.trim().toLowerCase();
+    const m = t.match(/^workshop\s+(\w+)$/);
+    if (m) {
+      applyWorkshopTheme(m[1]);
+      return; // only first workshop line counts
+    }
+  }
+  // If no workshop line found, do nothing
+}
+
+// Modify the runPoem/interpret flow to also catch workshop lines and skip them
+// We'll integrate into the existing interpret function by filtering out workshop lines early.
   
 </script>
 
