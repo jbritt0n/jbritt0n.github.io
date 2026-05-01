@@ -544,11 +544,21 @@ function applyTints(rgb,state){
   if(mood){const mt=mood.tint;r*=mt[0];g*=mt[1];b*=mt[2]}
   return[clamp255(r),clamp255(g),clamp255(b)];
 }
-function getColor(name,state){
-  if(!name)return null;
-  if(state.vars[name]&&Array.isArray(state.vars[name]))return state.vars[name].slice();
-  if(state.memory[name]&&Array.isArray(state.memory[name]))return applyTints(state.memory[name],state);
-  if(COLORS[name])return applyTints(COLORS[name].slice(),state);
+function getColor(name, state) {
+  if (!name) return null;
+  // 1. Variable store – may hold an array or a colour‑name string
+  if (state.vars[name] !== undefined) {
+    if (Array.isArray(state.vars[name])) return state.vars[name].slice();
+    // If it's a string, treat it as a colour name and look it up
+    if (typeof state.vars[name] === 'string' && COLORS[state.vars[name]]) {
+      return applyTints(COLORS[state.vars[name]].slice(), state);
+    }
+  }
+  // 2. Memory (remember / let)
+  if (state.memory[name] && Array.isArray(state.memory[name]))
+    return applyTints(state.memory[name], state);
+  // 3. Built‑in palette
+  if (COLORS[name]) return applyTints(COLORS[name].slice(), state);
   return null;
 }
 function mixColors(a,b,t=0.5){return[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)].map(Math.round)}
