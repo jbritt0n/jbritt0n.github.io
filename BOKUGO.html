@@ -1,0 +1,686 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.bw{position:relative;padding-bottom:2px}
+.br{font-family:var(--font-sans);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+.bh{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);flex-wrap:wrap}
+.bh-logo{font-family:var(--font-serif);font-size:21px;letter-spacing:.12em;color:var(--color-text-primary);line-height:1}
+.bh-sub{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);letter-spacing:.2em;margin-left:4px}
+.bh-tabs{display:flex;gap:2px;margin:0 auto}
+.bt{font-size:11px;padding:4px 11px;border-radius:var(--border-radius-md);border:0.5px solid transparent;color:var(--color-text-tertiary);cursor:pointer;background:transparent;font-family:var(--font-mono);letter-spacing:.07em;transition:all .12s}
+.bt.on{border-color:var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-primary)}
+.bt:hover:not(.on){color:var(--color-text-secondary)}
+.brun{font-size:11px;padding:4px 13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);cursor:pointer;background:var(--color-background-primary);font-family:var(--font-mono);transition:background .12s}
+.brun:hover{background:var(--color-background-secondary)}
+.bp{display:none;flex-direction:column}
+.bp.on{display:flex}
+.bb{display:flex;height:500px}
+.bl{width:52%;border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column}
+.bet{flex:1;display:flex;overflow:hidden}
+.bln{width:34px;padding:11px 5px 0;font-size:11px;line-height:22px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:right;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);overflow:hidden;flex-shrink:0;user-select:none}
+.bsh{width:20px;padding:11px 0 0;font-size:9px;line-height:22px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:center;overflow:hidden;flex-shrink:0;user-select:none}
+.bew{flex:1;position:relative;overflow:hidden}
+.bhl{position:absolute;top:0;left:0;right:0;padding:11px 10px;font-size:13px;line-height:22px;font-family:var(--font-mono);white-space:pre-wrap;word-break:break-all;pointer-events:none;color:var(--color-text-primary);tab-size:2;overflow:hidden}
+.bta{position:absolute;top:0;left:0;width:100%;height:100%;padding:11px 10px;font-size:13px;line-height:22px;font-family:var(--font-mono);background:transparent;border:none;outline:none;color:transparent;caret-color:var(--color-text-primary);resize:none;white-space:pre-wrap;word-break:break-all;overflow:auto;tab-size:2;-webkit-text-fill-color:transparent}
+.bec{height:128px;border-top:0.5px solid var(--color-border-tertiary);overflow-y:auto;padding:8px 10px;background:var(--color-background-secondary)}
+.beh{font-size:10px;letter-spacing:.2em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.bect{font-size:10px;background:var(--color-background-danger);color:var(--color-text-danger);border-radius:3px;padding:1px 6px;display:none}
+.bei{font-size:12px;line-height:1.5;margin-bottom:4px;padding:5px 8px;border-radius:var(--border-radius-md);border-left:2px solid}
+.bei.e{border-color:var(--color-border-danger);background:var(--color-background-danger);color:var(--color-text-danger)}
+.bei.w{border-color:var(--color-border-warning);background:var(--color-background-warning);color:var(--color-text-warning)}
+.bei.n{border-color:var(--color-border-tertiary);background:var(--color-background-tertiary);color:var(--color-text-secondary)}
+.bei-loc{font-family:var(--font-mono);font-size:10px;opacity:.7;margin-right:5px}
+.brp{flex:1;display:flex;flex-direction:column}
+.bcv{flex:1;position:relative;overflow:hidden;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center}
+.bmd{height:26px;display:flex;align-items:center;gap:8px;padding:0 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);flex-shrink:0}
+.bmt{flex:1;height:2px;background:var(--color-border-tertiary);border-radius:2px;overflow:hidden}
+.bmf{height:100%;width:20%;background:var(--color-text-secondary);border-radius:2px;transition:width 1.2s ease}
+.tv{color:var(--color-text-danger)}
+.tn{color:var(--color-text-success)}
+.tk{color:var(--color-text-info)}
+.tm{color:var(--color-text-warning)}
+.tc{color:var(--color-text-tertiary);font-style:italic}
+.ts{color:var(--color-text-secondary)}
+.te{text-decoration:underline wavy var(--color-border-danger);text-decoration-skip-ink:none;text-underline-offset:3px}
+.tw2{text-decoration:underline wavy var(--color-border-warning);text-decoration-skip-ink:none;text-underline-offset:3px}
+.btt{position:absolute;z-index:60;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:12px;line-height:1.55;max-width:210px;pointer-events:none;opacity:0;transition:opacity .12s;min-width:140px;box-shadow:none}
+.btt.show{opacity:1}
+.tt-tp{font-size:10px;letter-spacing:.15em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:3px}
+.tt-nm{font-size:13px;font-weight:500;margin-bottom:4px;font-family:var(--font-mono);color:var(--color-text-primary)}
+.tt-fx{color:var(--color-text-secondary);font-size:11px;line-height:1.5}
+.mb{padding:18px 22px;font-size:14px;line-height:1.75;color:var(--color-text-primary);overflow-y:auto;height:calc(100vh - 60px);max-height:540px}
+.mh2{font-size:15px;font-weight:500;margin:0 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.mh3{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:16px 0 6px;letter-spacing:.15em;font-family:var(--font-mono);text-transform:uppercase}
+.mp{margin-bottom:8px;color:var(--color-text-secondary);font-size:13px;line-height:1.7}
+.ms{margin-bottom:22px}
+.mt{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.mt th{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;color:var(--color-text-tertiary);text-align:left;padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.mt td{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;vertical-align:top}
+.mt td:first-child{font-family:var(--font-mono);color:var(--color-text-primary);white-space:nowrap}
+.px{border-left:2px solid var(--color-border-tertiary);padding:7px 12px;font-style:italic;font-size:13px;line-height:2.1;margin:8px 0;background:var(--color-background-secondary);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;color:var(--color-text-primary)}
+.tc2{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px;background:var(--color-background-primary)}
+.tn2{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;color:var(--color-text-tertiary);margin-bottom:4px}
+.tt2{font-size:14px;font-weight:500;margin-bottom:8px}
+.tp{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.65}
+.tpo{font-style:italic;font-size:13px;line-height:2;font-family:var(--font-mono);background:var(--color-background-secondary);padding:8px 12px;border-radius:var(--border-radius-md);margin:8px 0;color:var(--color-text-primary)}
+.trb{font-size:12px;padding:4px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);cursor:pointer;font-family:var(--font-mono);color:var(--color-text-primary);transition:background .12s}
+.trb:hover{background:var(--color-background-primary);border-color:var(--color-border-secondary)}
+.syl-g{display:block}
+.syl-5{color:var(--color-text-success)}
+.syl-7{color:var(--color-text-info)}
+.syl-x{color:var(--color-text-warning)}
+</style>
+
+<div class="bw">
+<div class="br">
+
+<div class="bh">
+  <span class="bh-logo">墨語</span>
+  <span class="bh-sub">bokugō</span>
+  <div class="bh-tabs">
+    <button class="bt on" onclick="switchTab('editor')">editor</button>
+    <button class="bt" onclick="switchTab('manual')">manual</button>
+    <button class="bt" onclick="switchTab('tutorial')">tutorial</button>
+  </div>
+  <button class="brun" id="runbtn" onclick="runPoem()">▶ render</button>
+</div>
+
+<div id="panel-editor" class="bp on">
+  <div class="bb">
+    <div class="bl">
+      <div class="bet">
+        <div class="bln" id="lnums">1</div>
+        <div class="bsh" id="shints"></div>
+        <div class="bew" id="edwrap">
+          <div class="bhl" id="hl"></div>
+          <textarea class="bta" id="ta" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="begin here — let the brush find the form..."></textarea>
+        </div>
+      </div>
+      <div class="bec">
+        <div class="beh">
+          <span>residue console</span>
+          <span class="bect" id="erct"></span>
+        </div>
+        <div id="erlist"></div>
+      </div>
+    </div>
+    <div class="brp">
+      <div class="bcv">
+        <svg id="cvs" viewBox="0 0 380 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"></svg>
+      </div>
+      <div class="bmd">
+        <span>mood</span>
+        <div class="bmt"><div class="bmf" id="mfill"></div></div>
+        <span id="mval">0.20</span>
+        <span style="margin-left:8px;opacity:.6">seed</span>
+        <span id="sval" style="color:var(--color-text-secondary);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-manual" class="bp">
+  <div class="mb" id="manbody"></div>
+</div>
+
+<div id="panel-tutorial" class="bp">
+  <div class="mb" id="tutbody"></div>
+</div>
+
+</div>
+<div class="btt" id="btt">
+  <div class="tt-tp" id="tttp"></div>
+  <div class="tt-nm" id="ttnm"></div>
+  <div class="tt-fx" id="ttfx"></div>
+</div>
+</div>
+
+<script>
+const VB={
+  falls:{fx:'gravity ↓ · ink pools at base · dir 270°',t:0.0},
+  fall:{fx:'gravity ↓ · ink pools at base',t:0.0},
+  sinks:{fx:'slow descent · full wet brush',t:0.0},
+  sink:{fx:'slow descent · full wet brush',t:0.0},
+  drips:{fx:'vertical trace · high ink concentration',t:0.05},
+  settles:{fx:'deceleration · bloom at terminus',t:-0.1},
+  rises:{fx:'upward stroke · alpha fades at tip',t:0.1},
+  rise:{fx:'upward stroke · alpha fades at tip',t:0.1},
+  drifts:{fx:'lateral float · low pressure',t:0.0},
+  drift:{fx:'lateral float · low pressure',t:0.0},
+  lifts:{fx:'ascending line · thinning width',t:0.1},
+  floats:{fx:'suspended trace · minimal contact',t:0.05},
+  scatters:{fx:'N sub-strokes · variance σ=0.4 · blur ↑',t:0.35},
+  scatter:{fx:'N sub-strokes · variance σ=0.4',t:0.35},
+  breaks:{fx:'path fracture · splinter at terminus',t:0.3},
+  frays:{fx:'bristle separation · dry edge',t:0.2},
+  gathers:{fx:'diffusion bloom · contained soft edge',t:-0.15},
+  gather:{fx:'diffusion bloom · contained edge',t:-0.15},
+  pools:{fx:'ink concentration · radius expands slowly',t:-0.1},
+  collects:{fx:'terminal bloom · slow accumulation',t:-0.1},
+  stills:{fx:'animation halt · ma activated',t:-0.25},
+  sweeps:{fx:'long stroke · minimal deposit · dry brush',t:0.05},
+  sweep:{fx:'long stroke · dry brush texture',t:0.05},
+  brushes:{fx:'light contact · partial coverage',t:0.0},
+  holds:{fx:'pause 200ms × mood · no mark · ma',t:-0.3},
+  hold:{fx:'pause · no mark · ma activated',t:-0.3},
+  rests:{fx:'extended pause · canvas breathes',t:-0.25},
+  waits:{fx:'suspension · mood stabilises',t:-0.2},
+  trembles:{fx:'jitter σ=0.15 · sinusoidal ease',t:0.25},
+  tremble:{fx:'jitter σ=0.15 · sinusoidal ease',t:0.25},
+  shakes:{fx:'high-amplitude jitter · loose stroke',t:0.3},
+  wavers:{fx:'gentle oscillation · variable width',t:0.15},
+  flickers:{fx:'opacity pulse · rapid variation',t:0.2},
+  dissolves:{fx:'alpha 1→0 over 800ms · blur ↑↑',t:-0.2},
+  dissolve:{fx:'alpha 1→0 over 800ms · blur ↑↑',t:-0.2},
+  fades:{fx:'gradual alpha reduction · soft blur',t:-0.15},
+  fade:{fx:'gradual alpha reduction',t:-0.15},
+  vanishes:{fx:'rapid alpha collapse · no residue left',t:-0.05},
+  becomes:{fx:'morphic transition · shape shift',t:0.0},
+  leaps:{fx:'parabolic arc · ink trail · splatter',t:0.2},
+  leap:{fx:'parabolic arc · ink trail',t:0.2},
+  returns:{fx:'loop: stanza repeats with alpha decay',t:0.05},
+  again:{fx:'iteration marker · alpha decays each pass',t:0.05},
+  until:{fx:'conditional loop · exits at mood threshold',t:0.0},
+  crosses:{fx:'diagonal stroke · full canvas traverse',t:0.1},
+  passes:{fx:'transit stroke · brief contact',t:0.05},
+};
+const NN={
+  pond:{c:'WATER',r:'lower-centre',s:'horizontal wash · bleed edges'},
+  stone:{c:'EARTH',r:'anchor',s:'dense rounded mass'},
+  mountain:{c:'EARTH',r:'lower canvas',s:'heavy horizontal strokes'},
+  root:{c:'EARTH',r:'below centre',s:'branching downward'},
+  soil:{c:'EARTH',r:'lower edge',s:'coarse horizontal texture'},
+  river:{c:'WATER',r:'mid-canvas',s:'fluid curve · variable width'},
+  tide:{c:'WATER',r:'lower edge',s:'rhythmic horizontal sweep'},
+  rain:{c:'WATER',r:'distributed',s:'vertical fine strokes'},
+  pool:{c:'WATER',r:'contained',s:'circular ink bloom'},
+  mist:{c:'WATER',r:'mid-canvas',s:'diffuse horizontal wash'},
+  fog:{c:'WATER',r:'mid-canvas',s:'diffuse wash · heavy blur'},
+  wave:{c:'WATER',r:'horizontal band',s:'fluid arc · foam at edge'},
+  water:{c:'WATER',r:'lower',s:'flat horizontal · bleed edges'},
+  sky:{c:'VOID',r:'upper canvas',s:'negative space preserved'},
+  silence:{c:'VOID',r:'any',s:'no mark · intentional void'},
+  night:{c:'VOID',r:'upper field',s:'deep field · minimal marks'},
+  shadow:{c:'VOID',r:'implied zone',s:'alpha gradient suggestion'},
+  absence:{c:'VOID',r:'any',s:'deliberate emptiness'},
+  nothing:{c:'VOID',r:'any',s:'no mark — only the paper speaks'},
+  reed:{c:'LIVING',r:'lower third',s:'thin vertical · nodded tip'},
+  pine:{c:'LIVING',r:'mid-left',s:'layered horizontal · dark'},
+  bamboo:{c:'LIVING',r:'distributed',s:'vertical segmented stroke'},
+  crane:{c:'LIVING',r:'rule of thirds',s:'gestural arc · elongated form'},
+  fish:{c:'LIVING',r:'below waterline',s:'comma stroke · quick gesture'},
+  frog:{c:'LIVING',r:'near pond',s:'compact mass · quick strokes'},
+  branch:{c:'LIVING',r:'upper left',s:'angular line · decreasing width'},
+  leaf:{c:'LIVING',r:'mid fall',s:'small oval · light pressure'},
+  leaves:{c:'LIVING',r:'scattered',s:'multiple ovals · varied scale'},
+  moon:{c:'CELESTIAL',r:'upper right',s:'circular arc suggestion'},
+  sun:{c:'CELESTIAL',r:'upper centre',s:'diffuse circle · halo blur'},
+  star:{c:'CELESTIAL',r:'upper field',s:'small point · scattered'},
+  cloud:{c:'WATER',r:'upper mid',s:'soft horizontal bloom'},
+  clouds:{c:'WATER',r:'upper mid',s:'multiple soft blooms'},
+  snow:{c:'VOID',r:'distributed',s:'fine dots · minimal weight'},
+  wind:{c:'WATER',r:'diagonal',s:'sweep strokes · directional'},
+  itself:{c:'RECURSE',r:'prior noun region',s:'echo of prior element · diminished'},
+  echo:{c:'RECURSE',r:'offset from prior',s:'diminished repeat of prior'},
+};
+const KG={
+  blossom:{s:'春 haru',p:'blush · sage · warm mist',m:0.0,d:'spring cherry blossom · soft scatter'},
+  cherry:{s:'春 haru',p:'blush rose · sage green',m:0.0,d:'kigo marker for spring season'},
+  warbler:{s:'春 haru',p:'spring green · pale ivory',m:0.05,d:'spring bird · rising calls · gentle'},
+  haze:{s:'春 haru',p:'diffuse mist · warm ivory',m:-0.1,d:'spring atmospheric blur · soft forms'},
+  plum:{s:'春 haru',p:'pale rose · branch black',m:0.0,d:'early spring · blossom on bare branch'},
+  spring:{s:'春 haru',p:'blush · sage · ivory warm',m:0.0,d:'haru season marker'},
+  cicada:{s:'夏 natsu',p:'indigo · amber · bright white',m:0.3,d:'summer insect · dry heat texture · noise'},
+  lightning:{s:'夏 natsu',p:'stark white · deep indigo',m:0.5,d:'summer storm · extreme contrast'},
+  summer:{s:'夏 natsu',p:'saturated · indigo ground',m:0.25,d:'natsu season marker'},
+  thunderhead:{s:'夏 natsu',p:'deep indigo · white edge',m:0.4,d:'summer storm cloud · dramatic form'},
+  dew:{s:'秋 aki',p:'rust · gold · aged sepia',m:-0.1,d:'autumn moisture · delicate drops'},
+  maple:{s:'秋 aki',p:'rust · amber · warm sepia',m:-0.05,d:'autumn leaf · warm fall palette'},
+  cricket:{s:'秋 aki',p:'aged sepia · rust ground',m:-0.15,d:'autumn insect · melancholy texture'},
+  autumn:{s:'秋 aki',p:'rust · gold · aged parchment',m:-0.1,d:'aki season marker'},
+  harvest:{s:'秋 aki',p:'amber gold · warm brown',m:-0.05,d:'harvest moon · autumn culmination'},
+  frost:{s:'冬 fuyu',p:'cold blue · near-white · steel',m:-0.2,d:'winter frost · sparse marks · stillness'},
+  snow:{s:'冬 fuyu',p:'white · pale steel · mist blue',m:-0.3,d:'winter snowfall · minimal marks'},
+  winter:{s:'冬 fuyu',p:'cold white · steel grey',m:-0.25,d:'fuyu season marker'},
+  bare:{s:'冬 fuyu',p:'neutral · cold · sparse',m:-0.2,d:'winter bareness · stripped form'},
+};
+const MD={
+  heavy:{fx:'opacity ×1.4 · width ×1.3 · pacing slows'},
+  deep:{fx:'ink density HIGH · dark palette pull'},
+  dark:{fx:'sumi MAX · shadow zone · low key'},
+  thick:{fx:'width ×1.5 · wet brush · bleed ↑'},
+  old:{fx:'texture coarse · sepia wash · slow pacing'},
+  pale:{fx:'opacity ×0.5 · width ×0.6 · blur ×1.3'},
+  thin:{fx:'narrow stroke · minimal deposit'},
+  faint:{fx:'opacity LOW · ghost suggestion'},
+  light:{fx:'reduced weight · airy brush contact'},
+  swift:{fx:'duration ×0.4 · dry brush ↑ · drag LOW'},
+  sudden:{fx:'instant stroke · no approach phase'},
+  quick:{fx:'speed HIGH · minimal dwell time'},
+  sharp:{fx:'crisp edge · full pressure · foreground'},
+  still:{fx:'pause +600ms · no jitter · full wet ink'},
+  silent:{fx:'ma extended · no mark suggestion'},
+  ancient:{fx:'texture MAX · extreme sepia · very slow'},
+  slow:{fx:'duration ×2.5 · full wet brush'},
+  far:{fx:'scale ×0.3 · upper third · mist overlay'},
+  distant:{fx:'scale ×0.3 · placed upper canvas'},
+  close:{fx:'scale ×1.4 · opacity MAX · foreground'},
+  soft:{fx:'blur ×1.4 · reduced pressure throughout'},
+  gentle:{fx:'light touch · gradual deceleration'},
+  hollow:{fx:'unfilled path · outline stroke only'},
+  empty:{fx:'no mark · intentional negative space'},
+  quiet:{fx:'all params ×0.6 · subdued expression'},
+  white:{fx:'paper-coloured mark · near invisible'},
+  grey:{fx:'diluted ink · mid-value tone'},
+  gray:{fx:'diluted ink · mid-value tone'},
+};
+
+function syl(w){
+  w=w.toLowerCase().replace(/[^a-z]/g,'');
+  if(!w)return 0;
+  if(w.length<=3)return 1;
+  w=w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,'');
+  w=w.replace(/^y/,'');
+  const m=w.match(/[aeiouy]{1,2}/g);
+  return m?Math.max(1,m.length):1;
+}
+function lineSyl(line){
+  return line.trim().split(/\s+/).reduce((s,w)=>s+syl(w),0);
+}
+function esc(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlight(text,errors){
+  const errMap={};
+  errors.forEach(e=>{if(e.k)errMap[e.k]=e.type});
+  return text.split('\n').map((line,li)=>{
+    if(!line)return '';
+    const tr=line.trim();
+    if(tr.startsWith('//')){return`<span class="tc">${esc(line)}</span>`}
+    if(tr.startsWith('seed:')){return`<span class="ts">${esc(line)}</span>`}
+    let wc=-1;
+    return line.split(/(\s+)/).map(tok=>{
+      if(!tok.trim())return esc(tok);
+      wc++;
+      const cl=tok.toLowerCase().replace(/[.,!?—\[\]()\u2026\u2014]/g,'');
+      let cls='';
+      if(VB[cl])cls='tv';
+      else if(NN[cl])cls='tn';
+      else if(KG[cl])cls='tk';
+      else if(MD[cl])cls='tm';
+      else if(tok.match(/^[.,!?—\[\]()\u2026\u2014…]+$/))cls='ts';
+      const ek=li+'-'+wc;
+      const ec=errMap[ek]==='error'?' te':errMap[ek]==='warning'?' tw2':'';
+      if(cls||ec)return`<span class="${cls}${ec}" data-w="${cl}" data-li="${li}" data-wi="${wc}">${esc(tok)}</span>`;
+      return esc(tok);
+    }).join('');
+  }).join('\n');
+}
+
+function checkErrors(text){
+  const errs=[];
+  let bk=0,pk=0;
+  text.split('\n').forEach((line,li)=>{
+    const tr=line.trim();
+    if(!tr||tr.startsWith('//')||tr.startsWith('seed:'))return;
+    const words=line.toLowerCase().split(/\s+/);
+    const ws=words.map(w=>w.replace(/[.,!?—\[\]()\u2026\u2014]/g,''));
+    const vs=ws.filter(w=>VB[w]);
+    const hasScatter=vs.some(v=>['scatters','scatter','breaks','frays','breaks'].includes(v));
+    const hasHold=vs.some(v=>['holds','hold','rests','waits','stills'].includes(v));
+    if(hasScatter&&hasHold){
+      errs.push({k:null,line:li+1,type:'error',
+        msg:`Line ${li+1} — <em>scatter</em> and <em>hold</em> oppose one another. A stroke cannot fracture and remain still. Choose the moment before, or the moment after.`});
+    }
+    ws.forEach((w,wi)=>{
+      if(w.length<4)return;
+      if(VB[w]||NN[w]||KG[w]||MD[w])return;
+      const stopwords=new Set(['the','and','into','onto','with','from','that','this','a','an','in','of','on','at','by','for','as','is','are','was','were','its','upon','when','then','yet','nor','but','so','if','or','it','to','be','do','my','our','your','his','her','their','across','through','under','over','within','without','between','among','along','around','behind','before','after','during','beyond','down','up','out','off','even','only','just','not','no','all','both','each','few','more','most','other','such','own','same','than','too','very','can','will','would','could','should','may','might','shall','must','have','has','had','am','here','there','where','how','who','what','which','whose']);
+      if(stopwords.has(w))return;
+      errs.push({k:li+'-'+wi,line:li+1,type:'notice',
+        msg:`Line ${li+1} — "<em>${w}</em>" is not in the saijiki. The metaphor resolver holds it as void — which may be exactly right.`});
+    });
+    const s=lineSyl(line);
+    if(s>10){
+      errs.push({k:null,line:li+1,type:'warning',
+        msg:`Line ${li+1} — ${s} syllables registered. Yūgen penalty ×0.70 applied. The excess weight is held, not discarded. Does the line earn its length?`});
+    }
+    for(const ch of line){
+      if(ch==='[')bk++;
+      else if(ch===']'){bk--;if(bk<0){errs.push({k:li+'-0',line:li+1,type:'error',msg:`Line ${li+1} — a closing echo ] without an opening. The ripple has no source to return to.`});bk=0;}}
+      else if(ch==='(')pk++;
+      else if(ch===')'){pk--;if(pk<0){errs.push({k:li+'-0',line:li+1,type:'error',msg:`Line ${li+1} — a closing whisper ) before it was opened. The breath was never held.`});pk=0;}}
+    }
+  });
+  if(bk>0)errs.push({k:null,line:'end',type:'error',msg:`Manuscript end — ${bk} echo bracket[s] remain open. The resonance continues past the poem's edge. Add ] to release it.`});
+  return errs;
+}
+
+function updateGutter(text){
+  const lines=text.split('\n');
+  let ln='',sh='';
+  lines.forEach((line,i)=>{
+    ln+=(i+1)+'\n';
+    const tr=line.trim();
+    const s=tr&&!tr.startsWith('//')&&!tr.startsWith('seed:')?lineSyl(line):0;
+    if(!s){sh+=`<span class="syl-g"> </span>`;return;}
+    const c=s===5?'syl-5':s===7?'syl-7':'syl-x';
+    sh+=`<span class="syl-g ${c}">${s}</span>`;
+  });
+  document.getElementById('lnums').textContent=ln;
+  document.getElementById('shints').innerHTML=sh;
+}
+
+function renderErrors(errs){
+  const el=document.getElementById('erlist');
+  const ct=document.getElementById('erct');
+  const ec=errs.filter(e=>e.type==='error').length;
+  if(!errs.length){
+    ct.style.display='none';
+    el.innerHTML=`<div style="font-size:12px;color:var(--color-text-tertiary);font-style:italic;padding:4px 0">the manuscript is clear — no disturbances in the residue.</div>`;
+    return;
+  }
+  ct.style.display='inline';
+  ct.textContent=ec+' error'+(ec!==1?'s':'');
+  el.innerHTML=errs.slice(0,5).map(e=>{
+    const cls=e.type==='error'?'e':e.type==='warning'?'w':'n';
+    return`<div class="bei ${cls}"><span class="bei-loc">line ${e.line}</span>${e.msg}</div>`;
+  }).join('');
+}
+
+let rc=0;
+function updateCanvas(text){
+  const svg=document.getElementById('cvs');
+  const toks=text.toLowerCase().split(/\s+/);
+  let season='aki';
+  let pal={bg:'#f2ebe0',ink:'#16100a',wa:'#b08050',ac:'#884020'};
+  let mood=0.2;
+  toks.forEach(t=>{
+    const k=t.replace(/[.,!?]/g,'');
+    if(KG[k]){
+      const s=KG[k].s;
+      mood+=KG[k].m||0;
+      if(s.includes('haru')){season='haru';pal={bg:'#f1eae6',ink:'#160e0c',wa:'#c4a8a0',ac:'#b07878'};}
+      else if(s.includes('natsu')){season='natsu';pal={bg:'#eef0f4',ink:'#080c18',wa:'#7080a0',ac:'#304880'};}
+      else if(s.includes('fuyu')){season='fuyu';pal={bg:'#eef0f2',ink:'#141820',wa:'#8090a8',ac:'#506080'};}
+    }
+    if(VB[t.replace(/[.,!?]/g,'')]){mood+=VB[t.replace(/[.,!?]/g,'')].t||0;}
+  });
+  mood=Math.min(1,Math.max(0,mood));
+  document.getElementById('mfill').style.width=Math.round(mood*100)+'%';
+  document.getElementById('mval').textContent=mood.toFixed(2);
+  const sm=text.match(/seed:\s*["'](.+?)["']/);
+  document.getElementById('sval').textContent=sm?sm[1]:'—';
+  rc++;
+  const hv=t=>toks.some(w=>w.replace(/[.,!?]/g,'')==t);
+  const hvArr=arr=>arr.some(v=>hv(v));
+  const hasPond=hvArr(['pond','water','pool','river','tide']);
+  const hasMoon=hvArr(['moon','sun','star']);
+  const hasBamboo=hvArr(['bamboo','reed','pine','branch']);
+  const hasMist=hvArr(['mist','fog','cloud','clouds','haze']);
+  const hasFall=hvArr(['falls','fall','sinks','sink','drips','settles']);
+  const hasRise=hvArr(['rises','rise','drifts','drift','lifts','floats']);
+  const hasGather=hvArr(['gathers','gather','pools','collects']);
+  const hasLeap=hvArr(['leaps','leap']);
+  const hasTremble=hvArr(['trembles','tremble','shakes','wavers']);
+  const hasDissolve=hvArr(['dissolves','dissolve','fades','fade','vanishes']);
+  const hasSweep=hvArr(['sweeps','sweep','brushes','crosses','passes']);
+  const iw=2+(mood*1.5);
+  const ia=0.5+(mood*0.45);
+  const sx=50+(rc*31%100),sx2=200+(rc*47%80);
+  let inner=`<rect width="380" height="320" fill="${pal.bg}"/>`;
+  if(season==='haru'){inner+=`<ellipse cx="190" cy="150" rx="170" ry="110" fill="${pal.wa}" opacity="0.10"/><circle cx="${40+rc%60}" cy="${50+rc%40}" r="3" fill="${pal.ac}" opacity="0.35"/><circle cx="${60+rc%40}" cy="${35+rc%30}" r="2" fill="${pal.ac}" opacity="0.25"/><circle cx="${30+rc%50}" cy="${70+rc%35}" r="2.5" fill="${pal.ac}" opacity="0.3"/>`;}
+  else if(season==='natsu'){inner+=`<rect x="0" y="0" width="380" height="160" fill="${pal.ac}" opacity="0.05"/>`;}
+  else if(season==='fuyu'){inner+=`<rect x="0" y="0" width="380" height="320" fill="${pal.ac}" opacity="0.04"/><circle cx="${80+rc%100}" cy="${40+rc%60}" r="1.5" fill="${pal.ink}" opacity="0.2"/><circle cx="${200+rc%80}" cy="${20+rc%50}" r="1" fill="${pal.ink}" opacity="0.15"/><circle cx="${300+rc%60}" cy="${60+rc%40}" r="1.5" fill="${pal.ink}" opacity="0.18"/>`;}
+  else{inner+=`<rect x="0" y="220" width="380" height="100" fill="${pal.ac}" opacity="0.08"/>`;}
+  if(hasPond){inner+=`<ellipse cx="190" cy="285" rx="110" ry="18" fill="${pal.ink}" opacity="0.84"><animate attributeName="rx" values="108;114;108" dur="4.5s" repeatCount="indefinite"/></ellipse><ellipse cx="190" cy="285" rx="130" ry="24" fill="${pal.ink}" opacity="0.10"/>`;}
+  if(hasMoon){inner+=`<circle cx="310" cy="55" r="26" fill="${pal.bg}" stroke="${pal.ink}" stroke-width="1.5" opacity="0"><animate attributeName="opacity" values="0;0.92" dur="2s" fill="freeze"/></circle><circle cx="310" cy="55" r="34" fill="${pal.wa}" opacity="0.08"/>`;}
+  if(hasBamboo){const bx=70+(rc*17%60);inner+=`<line x1="${bx}" y1="315" x2="${bx-4}" y2="70" stroke="${pal.ink}" stroke-width="${hasTremble?3:2}" stroke-linecap="round" opacity="0.90">${hasTremble?`<animateTransform attributeName="transform" type="translate" values="0,0;2,0;-1,0;1,0;0,0" dur="1s" repeatCount="indefinite"/>`:''}${!hasTremble?`<animate attributeName="opacity" values="0;0.9" dur="1.5s" fill="freeze"/>`:''}
+</line><line x1="${bx+22}" y1="315" x2="${bx+18}" y2="110" stroke="${pal.ink}" stroke-width="1.5" stroke-linecap="round" opacity="0.65"/><line x1="${bx+8}" y1="180" x2="${bx+36}" y2="165" stroke="${pal.ink}" stroke-width="1" stroke-linecap="round" opacity="0.5"/>`;}
+  if(hasMist){inner+=`<ellipse cx="150" cy="190" rx="170" ry="38" fill="${pal.wa}" opacity="0.20"><animate attributeName="cx" values="150;175;150" dur="7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.20;0.28;0.20" dur="7s" repeatCount="indefinite"/></ellipse>`;}
+  if(hasLeap&&hasPond){inner+=`<path d="M ${140} 280 Q ${180} ${140} ${240} 280" stroke="${pal.ink}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0" stroke-dasharray="180" stroke-dashoffset="180"><animate attributeName="stroke-dashoffset" from="180" to="0" dur="1.8s" fill="freeze"/><animate attributeName="opacity" values="0;0.75;0.75" keyTimes="0;0.1;1" dur="1.8s" fill="freeze"/></path><circle cx="240" cy="277" r="2" fill="${pal.ink}" opacity="0"><animate attributeName="opacity" values="0;0.8" begin="1.6s" dur="0.3s" fill="freeze"/></circle><circle cx="248" cy="272" r="1.5" fill="${pal.ink}" opacity="0"><animate attributeName="opacity" values="0;0.6" begin="1.7s" dur="0.3s" fill="freeze"/></circle>`;}
+  else if(hasFall){inner+=`<line x1="${sx}" y1="10" x2="${sx+5}" y2="290" stroke="${pal.ink}" stroke-width="${iw}" stroke-linecap="round" opacity="0" stroke-dasharray="290" stroke-dashoffset="290"><animate attributeName="stroke-dashoffset" from="290" to="0" dur="2.2s" fill="freeze"/><animate attributeName="opacity" values="0;${ia}" keyTimes="0;0.05" dur="0.2s" fill="freeze"/></line>`;}
+  if(hasRise&&!hasBamboo){inner+=`<path d="M ${sx} 300 Q ${sx+50} ${180} ${sx+100} 80" stroke="${pal.ink}" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0" stroke-dasharray="240" stroke-dashoffset="240"><animate attributeName="stroke-dashoffset" from="240" to="0" dur="2s" fill="freeze"/><animate attributeName="opacity" values="0;0.75" begin="0s" dur="0.3s" fill="freeze"/></path>`;}
+  if(hasGather){inner+=`<circle cx="190" cy="200" r="4" fill="${pal.ink}" opacity="0"><animate attributeName="r" values="4;45;38" keyTimes="0;0.6;1" dur="3s" fill="freeze"/><animate attributeName="opacity" values="0.9;0.10;0.07" dur="3s" fill="freeze"/></circle>`;}
+  if(hasSweep){inner+=`<line x1="10" y1="${155+rc%30}" x2="370" y2="${145+rc%30}" stroke="${pal.ink}" stroke-width="1" stroke-linecap="round" opacity="0" stroke-dasharray="370" stroke-dashoffset="370"><animate attributeName="opacity" values="0;0.55" dur="0.5s" fill="freeze"/><animate attributeName="stroke-dashoffset" from="370" to="0" dur="1.4s" fill="freeze"/></line>`;}
+  if(hasDissolve){inner+=`<ellipse cx="${sx2}" cy="160" rx="30" ry="8" fill="${pal.ink}" opacity="0"><animate attributeName="rx" values="30;70;90" dur="2.5s" fill="freeze"/><animate attributeName="opacity" values="0.6;0.08;0" dur="2.5s" fill="freeze"/></ellipse>`;}
+  if(!hasPond&&!hasFall&&!hasMoon&&!hasBamboo&&!hasMist&&!hasRise&&!hasGather&&!hasSweep&&!hasLeap&&!hasDissolve){inner+=`<path d="M 70 270 Q 190 ${110+mood*90} 310 ${150+mood*50}" stroke="${pal.ink}" stroke-width="${iw}" fill="none" stroke-linecap="round" opacity="${0.4+mood*0.45}" stroke-dasharray="290" stroke-dashoffset="290"><animate attributeName="stroke-dashoffset" from="290" to="0" dur="2.2s" fill="freeze"/></path>`;}
+  inner+=`<text x="372" y="314" text-anchor="end" font-family="serif" font-size="9" fill="${pal.ink}" opacity="0.3" font-style="italic">墨語</text>`;
+  svg.innerHTML=inner;
+}
+
+let dt=null;
+function onInput(){
+  const ta=document.getElementById('ta');
+  const text=ta.value;
+  updateGutter(text);
+  syncScroll();
+  clearTimeout(dt);
+  dt=setTimeout(()=>{
+    const errs=checkErrors(text);
+    document.getElementById('hl').innerHTML=highlight(text,errs);
+    renderErrors(errs);
+    updateCanvas(text);
+  },200);
+}
+function syncScroll(){
+  const ta=document.getElementById('ta');
+  const hl=document.getElementById('hl');
+  const ln=document.getElementById('lnums');
+  const sh=document.getElementById('shints');
+  hl.scrollTop=ta.scrollTop;
+  hl.scrollLeft=ta.scrollLeft;
+  ln.scrollTop=ta.scrollTop;
+  sh.scrollTop=ta.scrollTop;
+}
+
+let tto=null;
+function showTT(x,y,tp,nm,fx){
+  const tt=document.getElementById('btt');
+  const wr=document.querySelector('.bw');
+  const wr2=wr.getBoundingClientRect();
+  document.getElementById('tttp').textContent=tp;
+  document.getElementById('ttnm').textContent=nm;
+  document.getElementById('ttfx').innerHTML=fx;
+  let lx=x-wr2.left+14;
+  let ly=y-wr2.top+12;
+  if(lx+220>wr2.width)lx=x-wr2.left-230;
+  tt.style.left=Math.max(4,lx)+'px';
+  tt.style.top=Math.max(4,ly)+'px';
+  tt.classList.add('show');
+}
+function hideTT(){clearTimeout(tto);document.getElementById('btt').classList.remove('show');}
+
+document.getElementById('ta').addEventListener('mousemove',e=>{
+  clearTimeout(tto);
+  const ta=document.getElementById('ta');
+  const r=ta.getBoundingClientRect();
+  const x=e.clientX-r.left+ta.scrollLeft-10;
+  const y=e.clientY-r.top+ta.scrollTop-11;
+  const li=Math.floor(y/22);
+  const ci=Math.floor(x/7.7);
+  const lines=ta.value.split('\n');
+  if(li<0||li>=lines.length){hideTT();return;}
+  const line=lines[li];
+  let pos=0,found=null;
+  for(const chunk of line.split(/(\s+)/)){
+    if(!chunk.trim()){pos+=chunk.length;continue;}
+    if(ci>=pos&&ci<pos+chunk.length){found=chunk.replace(/[.,!?—\[\]()\u2026\u2014…!]/g,'').toLowerCase();break;}
+    pos+=chunk.length;
+  }
+  if(!found){hideTT();return;}
+  let tp='',nm=found,fx='';
+  if(VB[found]){tp='verb';fx=VB[found].fx+(VB[found].t!==undefined?`<br><span style="opacity:.65">tension ${VB[found].t>=0?'+':''}${VB[found].t}</span>`:'');}
+  else if(NN[found]){tp=`noun · ${NN[found].c}`;fx=`region: ${NN[found].r}<br>shape: ${NN[found].s}`;}
+  else if(KG[found]){tp=`kigo · ${KG[found].s}`;fx=`palette: ${KG[found].p}<br>${KG[found].d}`;}
+  else if(MD[found]){tp='modifier';fx=MD[found].fx;}
+  else{hideTT();return;}
+  tto=setTimeout(()=>showTT(e.clientX,e.clientY,tp,nm,fx),180);
+});
+document.getElementById('ta').addEventListener('mouseleave',hideTT);
+document.getElementById('ta').addEventListener('scroll',syncScroll);
+
+function switchTab(n){
+  document.querySelectorAll('.bt').forEach((b,i)=>b.classList.toggle('on',['editor','manual','tutorial'][i]===n));
+  document.querySelectorAll('.bp').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel-'+n).classList.add('on');
+}
+function runPoem(){
+  const ta=document.getElementById('ta');
+  if(!ta.value.trim())return;
+  const btn=document.getElementById('runbtn');
+  btn.textContent='● rendering';
+  updateCanvas(ta.value);
+  setTimeout(()=>{btn.textContent='▶ render';},1300);
+}
+function loadPoem(p){
+  document.getElementById('ta').value=p;
+  switchTab('editor');
+  onInput();
+}
+
+document.getElementById('manbody').innerHTML=`
+<div class="ms"><h2 class="mh2">墨語 · language reference</h2>
+<p class="mp">Bokugō is read left to right, one breath at a time. Every word carries weight. Every pause is instruction. Hover any coloured word in the editor to see its canvas meaning. The gutter counts syllables: <span style="color:var(--color-text-success)">green = 5</span>, <span style="color:var(--color-text-info)">blue = 7</span>, <span style="color:var(--color-text-warning)">amber = other</span>.</p></div>
+<div class="ms"><h3 class="mh3">verbs — the motion of ink</h3>
+<p class="mp">Verbs describe how the brush moves. Each carries a tension value that accumulates into mood across stanzas.</p>
+<table class="mt"><tr><th>verb</th><th>canvas motion</th><th>tension</th></tr>
+<tr><td>falls / sinks</td><td>gravity stroke ↓ · ink pools at base</td><td>±0.0</td></tr>
+<tr><td>rises / drifts</td><td>upward path · alpha fades at tip</td><td>+0.1</td></tr>
+<tr><td>trembles / wavers</td><td>path jitter σ=0.15 · sinusoidal ease</td><td>+0.25</td></tr>
+<tr><td>scatters / frays</td><td>N sub-strokes · high variance · blur ↑</td><td>+0.35</td></tr>
+<tr><td>gathers / pools</td><td>diffusion bloom · contained soft edge</td><td>−0.15</td></tr>
+<tr><td>holds / rests / waits</td><td>pause 200ms × mood · no mark · ma</td><td>−0.30</td></tr>
+<tr><td>sweeps / brushes</td><td>long stroke · minimal deposit · dry</td><td>+0.05</td></tr>
+<tr><td>dissolves / fades</td><td>alpha 1→0 over 800ms · blur ↑↑</td><td>−0.20</td></tr>
+<tr><td>leaps / crosses</td><td>parabolic arc · trail · splatter</td><td>+0.20</td></tr>
+<tr><td>again / until</td><td>loop markers · stanza repeats with decay</td><td>+0.05</td></tr>
+</table></div>
+<div class="ms"><h3 class="mh3">nouns — what the brush names</h3>
+<table class="mt"><tr><th>class</th><th>examples</th><th>placement</th></tr>
+<tr><td>EARTH</td><td>stone, mountain, root</td><td>lower canvas · heavy horizontal</td></tr>
+<tr><td>WATER</td><td>pond, river, mist, rain, wave</td><td>mid-canvas · fluid curves</td></tr>
+<tr><td>VOID</td><td>sky, silence, shadow, nothing</td><td>upper canvas · negative space</td></tr>
+<tr><td>LIVING</td><td>bamboo, crane, frog, reed, leaf</td><td>rule of thirds · organic asymmetry</td></tr>
+<tr><td>CELESTIAL</td><td>moon, sun, star</td><td>upper quadrant · single focal</td></tr>
+<tr><td>RECURSE</td><td>itself, echo</td><td>prior element region · diminished</td></tr>
+</table></div>
+<div class="ms"><h3 class="mh3">kigo — seasonal words</h3>
+<p class="mp">One kigo anchors the palette, paper tone, and atmospheric layer for the entire manuscript. Multiple kigo accumulate their mood values.</p>
+<table class="mt"><tr><th>season</th><th>kigo words</th><th>palette character</th></tr>
+<tr><td>春 haru</td><td>blossom, warbler, haze, plum, spring</td><td>blush · sage · warm mist</td></tr>
+<tr><td>夏 natsu</td><td>cicada, lightning, summer, thunderhead</td><td>indigo · amber · bright contrast</td></tr>
+<tr><td>秋 aki</td><td>dew, maple, cricket, harvest, autumn</td><td>rust · gold · aged sepia</td></tr>
+<tr><td>冬 fuyu</td><td>frost, snow, winter, bare</td><td>cold blue · near-white · steel</td></tr>
+</table></div>
+<div class="ms"><h3 class="mh3">modifiers — the weight of the hand</h3>
+<table class="mt"><tr><th>modifier</th><th>canvas effect</th></tr>
+<tr><td>heavy / deep / dark</td><td>opacity ×1.4 · width ×1.3 · pacing slows</td></tr>
+<tr><td>pale / thin / faint</td><td>opacity ×0.5 · blur ×1.3 · ghost stroke</td></tr>
+<tr><td>swift / sudden / quick</td><td>duration ×0.4 · dry brush ↑</td></tr>
+<tr><td>still / ancient / slow</td><td>duration ×2.5 · ma extended · full wet</td></tr>
+<tr><td>far / distant</td><td>scale ×0.3 · upper third · mist overlay</td></tr>
+<tr><td>close / sharp</td><td>scale ×1.4 · opacity MAX · foreground</td></tr>
+<tr><td>soft / gentle / quiet</td><td>reduced pressure · blur softened</td></tr>
+</table></div>
+<div class="ms"><h3 class="mh3">punctuation — control flow</h3>
+<table class="mt"><tr><th>mark</th><th>meaning</th><th>canvas effect</th></tr>
+<tr><td>.</td><td>stroke end · commit</td><td>ink settles · path finalised</td></tr>
+<tr><td>,</td><td>breath pause</td><td>+600ms delay · slight bleed</td></tr>
+<tr><td>—</td><td>continuation</td><td>no pen-lift between lines</td></tr>
+<tr><td>?</td><td>conditional branch</td><td>tests mood threshold</td></tr>
+<tr><td>!</td><td>emphasis ×1.6</td><td>heavier ink on nearest verb</td></tr>
+<tr><td>...</td><td>dissolution · loop exit</td><td>alpha fades toward zero</td></tr>
+<tr><td>[ ]</td><td>echo bracket</td><td>repeats enclosed with decay</td></tr>
+<tr><td>( )</td><td>whisper</td><td>all params ×0.4 inside</td></tr>
+</table></div>
+<div class="ms"><h3 class="mh3">seed declaration</h3>
+<p class="mp">Place before the first stanza. Anchors all stochastic parameters for reproducibility.</p>
+<div class="px">seed: "frost on still water"</div>
+<p class="mp">Omit the seed and the runtime derives it from the manuscript's timestamp — each reading is unique, like a live performance.</p></div>
+<div class="ms"><h3 class="mh3">loops, conditionals, recursion</h3>
+<div class="px">leaves fall, [leaves fall again.]<br>the pond holds silence until still.<br>mountain holds mountain.</div>
+<p class="mp">The echo bracket [ ] repeats with alpha decay. <em>until</em> exits when mood crosses a threshold. <em>itself</em> and <em>echo</em> create recursive descent, limited by the seed's depth parameter. Base case: noun = stone, or mood = serene.</p></div>
+<div class="ms"><h3 class="mh3">error messages</h3>
+<p class="mp">The residue console speaks in the language of the manuscript. Errors are observations, not rejections. Red wavy underlines mark tokens with conflicts. Amber underlines mark unknown words that will be resolved as void. The brush may still move — the renderer notes what the poem has chosen.</p></div>
+`;
+
+document.getElementById('tutbody').innerHTML=`
+<div class="ms"><h2 class="mh2">First lessons in ink</h2>
+<p class="mp">Each lesson below is a complete Bokugō poem. Load it, observe how the canvas responds, then change a word and notice what shifts. That alteration is your first mark.</p></div>
+<div class="tc2"><div class="tn2">LESSON 一 · the first stroke</div>
+<div class="tt2">A single stanza. One season. No complexity.</div>
+<p class="tp">Begin with autumn. Write three lines. Let the pond hold everything. Notice the syllable count in the gutter — the green 5, blue 7, green 5. This is haiku form. Hover over any coloured word to read its canvas meaning.</p>
+<div class="tpo">old pond, still—
+a frog leaps into shadow
+the water holds it.</div>
+<p class="tp" style="margin-top:8px">After loading: change <em>leaps</em> to <em>falls</em> and watch the arc become a gravity drop. Change <em>old</em> to <em>pale</em> and watch the ink lighten.</p>
+<button class="trb" onclick="loadPoem('old pond, still—\na frog leaps into shadow\nthe water holds it.')">↗ load into editor</button></div>
+
+<div class="tc2"><div class="tn2">LESSON 二 · the season speaks</div>
+<div class="tt2">Adding a kigo. Watching the palette shift.</div>
+<p class="tp">A kigo changes everything — the paper tone, the ink weight, the atmosphere. This poem uses two stanzas separated by a blank line. That gap is <em>ma</em> — a breath between scenes. The second stanza's mood inherits residue from the first.</p>
+<div class="tpo">seed: "winter morning"
+
+bare branch, frost—
+the crow holds still, silent.
+snow gathers below.
+
+pale moon rises slow,
+mist drifts across the valley...
+the cold holds its breath.</div>
+<p class="tp" style="margin-top:8px">After loading: change <em>frost</em> to <em>blossom</em> and watch the palette shift from cold steel to warm blush. The same poem. A different season. A different world.</p>
+<button class="trb" onclick="loadPoem('seed: &quot;winter morning&quot;\n\nbare branch, frost—\nthe crow holds still, silent.\nsnow gathers below.\n\npale moon rises slow,\nmist drifts across the valley...\nthe cold holds its breath.')">↗ load into editor</button></div>
+
+<div class="tc2"><div class="tn2">LESSON 三 · echo and dissolution</div>
+<div class="tt2">Loops, recursion, and the bracket.</div>
+<p class="tp">The echo bracket <strong style="font-family:var(--font-mono);font-weight:500">[ ]</strong> repeats the enclosed mark with decaying opacity. The <strong style="font-family:var(--font-mono);font-weight:500">?</strong> conditional branches on mood. And <strong style="font-family:var(--font-mono);font-weight:500">...</strong> dissolves the loop when alpha falls below threshold. Watch the error console — it will note if any bracket is left unclosed.</p>
+<div class="tpo">seed: "stone in deep water"
+
+[the stone sinks, slow.]
+deep water holds itself.
+silence gathers still.
+
+the moon trembles?
+pale mist rises, dissolves...
+nothing remains.</div>
+<p class="tp" style="margin-top:8px">Try removing one ] bracket and observe the error message that appears. Then add <strong style="font-family:var(--font-mono);font-weight:500">!</strong> after <em>trembles</em> and watch the emphasis multiplier activate.</p>
+<button class="trb" onclick="loadPoem('seed: &quot;stone in deep water&quot;\n\n[the stone sinks, slow.]\ndeep water holds itself.\nsilence gathers still.\n\nthe moon trembles?\npale mist rises, dissolves...\nnothing remains.')">↗ load into editor</button></div>
+
+<div class="tc2"><div class="tn2">LESSON 四 · errors and their voices</div>
+<div class="tt2">Understanding the residue console.</div>
+<p class="tp">The console below the editor does not reject your poem. It observes it. This poem contains intentional tensions — a conflict between <em>scatters</em> and <em>holds</em>, an unknown word, and a line over the syllable threshold. Load it and read what the console says. Each message is written in the register of the manuscript.</p>
+<div class="tpo">old stone scatters and holds,
+the river flows beyond memory —
+bamboo trembles, ancient, still, quiet, soft.</div>
+<p class="tp" style="margin-top:8px">Notice: the <span style="text-decoration:underline wavy var(--color-border-danger);text-underline-offset:2px">red wavy underline</span> on conflicting tokens. The <span style="text-decoration:underline wavy var(--color-border-warning);text-underline-offset:2px">amber underline</span> on words the saijiki does not know. Both are invitations, not prohibitions.</p>
+<button class="trb" onclick="loadPoem('old stone scatters and holds,\nthe river flows beyond memory —\nbamboo trembles, ancient, still, quiet, soft.')">↗ load into editor</button></div>
+
+<div class="tc2"><div class="tn2">LESSON 五 · free composition</div>
+<div class="tt2">No form. Only intention.</div>
+<p class="tp">Write your own poem. Begin with a season word. Let one verb carry the weight. Let punctuation breathe. The editor accepts any text — unknown words will be held as void, which may be exactly right. The canvas will respond to whatever intention it finds.</p>
+<div class="tpo">// your poem begins here
+// hover any word to see its canvas meaning
+// syllable counts appear in the left gutter</div>
+<button class="trb" onclick="loadPoem('// your poem begins here\n\n')">↗ open blank scroll</button></div>
+`;
+
+const defaultPoem=`seed: "autumn evening"
+
+// hover any coloured word to see its canvas meaning
+// syllable counts appear in the left gutter (green=5, blue=7)
+
+old pond, still—
+a frog leaps into shadow
+the water holds it.
+
+pale mist gathers, slow,
+bamboo trembles in the wind...
+the moon holds its breath.`;
+
+const ta=document.getElementById('ta');
+ta.value=defaultPoem;
+ta.addEventListener('input',onInput);
+onInput();
+</script>
