@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>monoku v4 — the breathing scroll</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f3ea;--surface:#ece4d7;--panel:#e6dccf;--border:rgba(0,0,0,0.08);
+  --accent:#8b5a2b;--accent2:#5f7a6b;--accent3:#a45a5a;--text:#3a322e;--muted:#8a8278;
+  --err:#b84c4c;--ok:#4d7a5a;--canvas-bg:#ffffff;
+  --ink:#2c2416;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif}
+
+header{height:46px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);gap:10px;flex-shrink:0;background:var(--panel)}
+.logo{font-style:italic;font-size:22px;letter-spacing:.08em;color:var(--ink)}
+.ver{font-size:9px;color:var(--muted);letter-spacing:.12em;align-self:flex-end;margin-bottom:7px}
+.tagline{font-size:10px;color:var(--muted);letter-spacing:.06em;flex:1;font-style:italic}
+.btn{font-family:'Crimson Text',Georgia,serif;font-size:13px;padding:4px 12px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;letter-spacing:.03em;transition:.12s;white-space:nowrap}
+.btn:hover{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.2)}
+.btn-run{background:var(--ink);color:#f7f3ea;border-color:var(--ink);font-weight:700}
+.btn-run:hover{background:#4a3f30}
+.btn-anim{background:rgba(95,122,107,0.15);color:var(--accent2);border-color:rgba(95,122,107,0.3)}
+.btn-anim.on{background:rgba(95,122,107,0.35);border-color:var(--accent2)}
+.btn-anim:hover{background:rgba(95,122,107,0.25)}
+.btn-grain{background:rgba(164,90,90,0.1);color:var(--accent3);border-color:rgba(164,90,90,0.25)}
+.btn-grain.on{background:rgba(164,90,90,0.3);border-color:var(--accent3)}
+
+.workspace{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 46px)}
+.left-col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;background:var(--surface)}
+.pane-bar{height:30px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);gap:8px;flex-shrink:0;background:var(--panel)}
+.editor-wrap{display:flex;flex:1;overflow:hidden}
+.line-nums{padding:10px 8px 10px 10px;font-family:'Courier New',monospace;font-size:13px;line-height:1.75;color:var(--muted);min-width:34px;text-align:right;user-select:none;overflow:hidden;border-right:1px solid var(--border);flex-shrink:0;white-space:pre;background:var(--panel)}
+textarea{flex:1;background:transparent;border:none;outline:none;resize:none;padding:10px 14px;font-family:'Crimson Text',Georgia,serif;font-size:16px;line-height:1.75;color:var(--text);caret-color:var(--accent);overflow-y:auto;overflow-x:hidden;white-space:pre}
+textarea::selection{background:rgba(139,90,43,0.12)}
+
+.ref-panel{border-top:1px solid var(--border);flex-shrink:0;height:130px;display:flex;flex-direction:column;background:var(--panel)}
+.ref-tabs{display:flex;border-bottom:1px solid var(--border)}
+.rtab{padding:5px 12px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:1px solid transparent;margin-bottom:-1px;transition:.12s}
+.rtab:hover{color:var(--text)}
+.rtab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.ref-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:7px 10px;display:flex;gap:5px;align-items:center;white-space:nowrap;scrollbar-width:thin}
+.chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:12px;font-family:'Crimson Text',Georgia,serif;cursor:pointer;flex-shrink:0;transition:.12s;border:1px solid transparent}
+.chip:hover{opacity:.7}
+.chip-v{background:rgba(47,94,68,0.08);color:#2f5e44;border-color:rgba(47,94,68,0.2)}
+.chip-c{background:rgba(139,90,43,0.08);color:#8b5a2b;border-color:rgba(139,90,43,0.2)}
+.chip-m{background:rgba(95,122,107,0.08);color:#5f7a6b;border-color:rgba(95,122,107,0.2)}
+.chip-s{background:rgba(164,90,90,0.08);color:#a45a5a;border-color:rgba(164,90,90,0.2)}
+.swatch{width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0}
+
+.right-col{display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px;position:relative;background:var(--canvas-bg)}
+canvas{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.frame-badge{position:absolute;bottom:16px;right:16px;font-family:'Courier New',monospace;font-size:10px;color:rgba(0,0,0,0.18);pointer-events:none}
+
+.status-bar{height:30px;display:flex;align-items:center;padding:0 12px;gap:12px;border-top:1px solid var(--border);font-size:11px;font-family:'Crimson Text',Georgia,serif;flex-shrink:0;background:var(--surface)}
+.s-ok{color:var(--ok)}.s-err{color:var(--err)}.s-info{color:var(--muted)}
+.progress-bar{height:1px;background:var(--border);flex:1}
+.progress-fill{height:100%;background:var(--accent);transition:width .3s;width:0}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">monoku</span>
+  <span class="ver">v4</span>
+  <span class="tagline">the breathing scroll</span>
+  <button class="btn" onclick="loadExample()">haiku</button>
+  <button class="btn" onclick="clearCanvas()">clear</button>
+  <button class="btn" onclick="reseed()">reseed ⟳</button>
+  <button class="btn btn-anim" id="animBtn" onclick="toggleAnim()">◎ animate</button>
+  <button class="btn btn-grain" id="grainBtn" onclick="toggleGrain()">⌸ grain</button>
+  <button class="btn" onclick="saveImg()">save png</button>
+  <button class="btn btn-run" onclick="runPoem()">render ⌘↵</button>
+</header>
+
+<div class="workspace">
+  <div class="left-col">
+    <div class="pane-bar"><span>scroll</span><span id="lc">—</span></div>
+    <div class="editor-wrap">
+      <div class="line-nums" id="ln">1</div>
+      <textarea id="ed" spellcheck="false"></textarea>
+    </div>
+    <div class="ref-panel">
+      <div class="ref-tabs">
+        <button class="rtab on" onclick="showTab('v',this)">verbs</button>
+        <button class="rtab" onclick="showTab('c',this)">colors</button>
+        <button class="rtab" onclick="showTab('m',this)">modifiers</button>
+        <button class="rtab" onclick="showTab('p',this)">placement</button>
+        <button class="rtab" onclick="showTab('s',this)">syntax</button>
+      </div>
+      <div class="ref-scroll" id="ref"></div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="pane-bar"><span>canvas</span><span id="cdim">—</span></div>
+    <div class="canvas-wrap">
+      <canvas id="art"></canvas>
+      <div class="frame-badge" id="fbadge"></div>
+    </div>
+    <div class="status-bar">
+      <span id="st" class="s-ok">ready</span>
+      <span id="rt" class="s-info"></span>
+      <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+      <span style="color:var(--muted)">ctrl+enter to render</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── LEXICON ───────────────────────────────────────────────────────
+const COLORS = {
+  cerulean:[100,149,237],ochre:[204,119,34],vermillion:[220,60,50],
+  ash:[170,165,160],teal:[56,175,168],rose:[215,155,165],
+  indigo:[80,55,160],ember:[255,100,30],moss:[107,142,35],
+  ivory:[238,232,210],charcoal:[54,69,79],dusk:[138,118,175],
+  dawn:[240,200,138],blush:[235,155,138],slate:[112,128,144],
+  umber:[118,88,62],gold:[215,182,55],sage:[140,175,128],
+  mist:[198,208,218],ink:[16,16,30],crimson:[188,30,50],
+  sienna:[158,80,42],cobalt:[38,78,178],jade:[0,152,98],
+  sand:[192,175,125],violet:[138,88,195],coral:[220,100,80],
+  pine:[42,100,70],pewter:[140,138,130],snow:[240,240,248],
+  amber:[210,135,30],lapis:[30,60,175],oxblood:[118,24,34],
+  citrine:[220,195,60],absinthe:[100,155,70],graphite:[88,88,100],
+  cream:[238,228,196],midnight:[22,22,48],copper:[184,115,51],
+  lavender:[182,162,220],peach:[240,175,130],rust:[178,72,42],
+};
+
+const NAMED_NUMS = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+  few:5,several:9,some:14,many:26,dense:52,sparse:3,handful:6,dozen:12,
+  pair:2,couple:2,single:1,tiny:2,myriad:100};
+
+const MODIFIERS = new Set(['soft','hard','faint','whisper','pale','deep','bold',
+  'scattered','gathered','clustered','trembling','quiet','loud','slow','swift',
+  'light','dark','dim','bright','blurred','sharp','delicate','wet','dry']);
+
+const PLACEMENT_PATTERNS = {
+  'the heart of the canvas':()=>({cx:0.5,cy:0.5,sx:0.18,sy:0.18}),
+  'the center':()=>({cx:0.5,cy:0.5,sx:0.15,sy:0.15}),
+  'the upper left':()=>({cx:0.2,cy:0.2,sx:0.15,sy:0.15}),
+  'the upper right':()=>({cx:0.8,cy:0.2,sx:0.15,sy:0.15}),
+  'the lower left':()=>({cx:0.2,cy:0.8,sx:0.15,sy:0.15}),
+  'the lower right':()=>({cx:0.8,cy:0.8,sx:0.15,sy:0.15}),
+  'the horizon':()=>({cx:0.5,cy:0.55,sx:1.0,sy:0.1}),
+  'the upper edge':()=>({cx:0.5,cy:0.1,sx:1.0,sy:0.12}),
+  'the lower edge':()=>({cx:0.5,cy:0.9,sx:1.0,sy:0.12}),
+  'the left edge':()=>({cx:0.1,cy:0.5,sx:0.12,sy:1.0}),
+  'the right edge':()=>({cx:0.9,cy:0.5,sx:0.12,sy:1.0}),
+  'across the canvas':()=>({cx:0.5,cy:0.5,sx:1.0,sy:1.0}),
+  'a quiet corner':()=>({cx:0.15,cy:0.15,sx:0.15,sy:0.15}),
+  'the light':()=>({cx:0.5,cy:0.25,sx:0.4,sy:0.2}),
+  'the shadow':()=>({cx:0.5,cy:0.75,sx:0.4,sy:0.2}),
+};
+
+const SEASON_TINTS = {
+  spring: [1.02, 1.05, 1.00], summer: [1.04, 0.97, 0.92],
+  autumn: [1.00, 0.92, 0.82], winter: [0.92, 0.92, 1.06], none: [1,1,1]
+};
+
+function parsePlacement(phrase){
+  if(!phrase) return null;
+  phrase = phrase.trim().toLowerCase();
+  for(const[key, fn] of Object.entries(PLACEMENT_PATTERNS)){
+    if(phrase.includes(key)) return fn();
+  }
+  if(phrase.includes('upper')&&phrase.includes('left')) return PLACEMENT_PATTERNS['the upper left']();
+  if(phrase.includes('upper')&&phrase.includes('right')) return PLACEMENT_PATTERNS['the upper right']();
+  if(phrase.includes('lower')&&phrase.includes('left')) return PLACEMENT_PATTERNS['the lower left']();
+  if(phrase.includes('lower')&&phrase.includes('right')) return PLACEMENT_PATTERNS['the lower right']();
+  return {cx:0.5,cy:0.5,sx:1.0,sy:1.0};
+}
+
+// ─── STATE ─────────────────────────────────────────────────────────
+let state = {
+  seed: Date.now(),
+  bg: [248,245,237],
+  last: [44,34,20],
+  placement: {cx:0.5,cy:0.5,sx:1.0,sy:1.0},
+  grainEnabled: false,
+  memory: {},
+  weather: 0,          // windiness 0..1
+  season: 'none',
+  lastShape: null      // { type, x, y, size, color }
+};
+
+function sr(){
+  state.seed = (state.seed * 16807 + 0) % 2147483647;
+  return (state.seed - 1) / 2147483646;
+}
+
+function coord(W,H){
+  const p = state.placement;
+  const cx = W * p.cx, cy = H * p.cy;
+  const sx = W * p.sx, sy = H * p.sy;
+  const x = Math.min(W-1, Math.max(0, cx + (sr()-0.5) * sx));
+  const y = Math.min(H-1, Math.max(0, cy + (sr()-0.5) * sy));
+  return {x,y};
+}
+
+function getColor(name){
+  if(!name) return null;
+  if(state.memory[name] && Array.isArray(state.memory[name])) return state.memory[name].slice();
+  const base = COLORS[name];
+  if(!base) return null;
+  const tint = SEASON_TINTS[state.season] || [1,1,1];
+  return [
+    Math.min(255, Math.max(0, Math.round(base[0] * tint[0]))),
+    Math.min(255, Math.max(0, Math.round(base[1] * tint[1]))),
+    Math.min(255, Math.max(0, Math.round(base[2] * tint[2])))
+  ];
+}
+
+// grain canvas helper
+let grainCanvas = null;
+function makeGrainCanvas(w,h){
+  if(grainCanvas && grainCanvas.width === w && grainCanvas.height === h) return grainCanvas;
+  grainCanvas = document.createElement('canvas');
+  grainCanvas.width = w; grainCanvas.height = h;
+  const gctx = grainCanvas.getContext('2d');
+  const imgData = gctx.createImageData(w,h);
+  for(let i=0; i<imgData.data.length; i+=4){
+    const v = Math.floor(sr()*20+235);
+    imgData.data[i]=v; imgData.data[i+1]=v; imgData.data[i+2]=v;
+    imgData.data[i+3]=8;
+  }
+  gctx.putImageData(imgData,0,0);
+  return grainCanvas;
+}
+
+// ─── COMMAND PARSING (with pressure map) ──────────────────────────
+function parseCommand(phrase){
+  if(!phrase) return null;
+  const tokens = phrase.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+  let verb = null, color = null, count = null, size = null, opacity = null;
+  let modifiers = [];
+  let blendColor = null, blendBase = null;
+  
+  // longest word for pressure
+  let maxWordLen = 0;
+  for(const t of tokens){
+    if(/^[a-z]+$/i.test(t) && t.length > maxWordLen) maxWordLen = t.length;
+  }
+  const pressure = Math.min(2.2, 1 + (maxWordLen - 3) * 0.1); // from 1 to ~2.2
+
+  if(phrase.includes(' a kiss of ')){
+    const match = phrase.match(/a kiss of (\w+) on (\w+)/);
+    if(match){ blendColor = match[1]; blendBase = match[2]; }
+  }
+
+  for(const tok of tokens){
+    if(!verb && VERB_SET.has(tok)){ verb = tok; continue; }
+    if(COLORS[tok]){ color = COLORS[tok].slice(); continue; }
+    if(NAMED_NUMS[tok] !== undefined){ count = NAMED_NUMS[tok]; continue; }
+    if(!isNaN(tok)){ const n = parseInt(tok); if(!count && n>0) count = Math.min(n,500); continue; }
+    if(MODIFIERS.has(tok)){ modifiers.push(tok); continue; }
+    if(tok === 'vast') size = 3.5;
+    else if(tok === 'wide'||tok==='large') size = 2;
+    else if(tok === 'small') size = 0.55;
+    else if(tok === 'tiny'||tok==='narrow') size = 0.3;
+    if(tok === 'faint') opacity = 0.12;
+    else if(tok === 'whisper') opacity = 0.08;
+    else if(tok === 'soft') opacity = 0.38;
+    else if(tok === 'pale') opacity = 0.28;
+    else if(tok === 'deep') opacity = 0.82;
+    else if(tok === 'bold'||tok==='hard') opacity = 1;
+    else if(tok === 'light') opacity = 0.3;
+    else if(tok === 'dim') opacity = 0.2;
+    else if(tok === 'bright') opacity = 0.9;
+  }
+  
+  if(!count) count = 18;
+  if(!size) size = 1;
+  if(!opacity) opacity = 0.55;
+  
+  // apply pressure map to size and opacity (multiply)
+  size *= pressure;
+  opacity = Math.min(1, opacity * (0.8 + pressure * 0.2));
+  
+  if(blendColor && blendBase){
+    const c1 = COLORS[blendColor], c2 = COLORS[blendBase];
+    if(c1 && c2) color = [
+      Math.round(c1[0]*0.4 + c2[0]*0.6),
+      Math.round(c1[1]*0.4 + c2[1]*0.6),
+      Math.round(c1[2]*0.4 + c2[2]*0.6)
+    ];
+  }
+  
+  return {verb, color, count, size, opacity, modifiers};
+}
+
+const VERBS = ['breathe','bloom','impasto','stipple','glaze','scrape','wash','drift','flow',
+  'scatter','burn','weave','veil','crack','pulse','fade','silence','remember',
+  'branch','rain','dew','haze','splatter','stroke','petal','shadow','grain',
+  'sfumato','chiaroscuro','bleed','weather','season','echo','pause','blush'];
+const VERB_SET = new Set(VERBS);
+
+// ─── INTERPRETER ─────────────────────────────────────────────────
+function interpret(canvas, code, frame=0){
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  
+  state.placement = {cx:0.5,cy:0.5,sx:1.0,sy:1.0};
+  state.bg = [248,245,237]; state.last = [44,34,20];
+  state.memory = {}; state.weather = 0; state.season = 'none';
+  state.lastShape = null;
+  
+  ctx.fillStyle = `rgb(${state.bg.join(',')})`;
+  ctx.fillRect(0,0,W,H);
+  
+  const lines = code.split('\n');
+  const errs = [];
+  
+  // pre-pass: remember
+  for(const raw of lines){
+    let line = raw.trim();
+    if(!line || line.startsWith('—') || line.startsWith(';') || line.startsWith('#')) continue;
+    const parts = line.split(';')[0].trim();
+    if(!parts) continue;
+    const tokens = parts.split(/\s+/);
+    if(tokens[0] === 'remember' && tokens.length >= 3){
+      if(COLORS[tokens[2]]) state.memory[tokens[1]] = COLORS[tokens[2]].slice();
+      else if(!isNaN(tokens[2])) state.memory[tokens[1]] = parseInt(tokens[2]);
+      else if(NAMED_NUMS[tokens[2]]) state.memory[tokens[1]] = NAMED_NUMS[tokens[2]];
+    }
+  }
+  
+  for(let i=0; i<lines.length; i++){
+    let raw = lines[i];
+    const ci = raw.indexOf(';');
+    if(ci > -1) raw = raw.slice(0, ci);
+    raw = raw.trim();
+    if(!raw || raw.startsWith('—') || raw.startsWith('#')) continue;
+    
+    // handle echo/refrain prefix: "echo 3 rest of line"
+    let echoCount = 1;
+    const echoMatch = raw.match(/^(echo|refrain)\s+(\d+)\s+(.*)/i);
+    if(echoMatch){
+      echoCount = Math.min(parseInt(echoMatch[2]), 20);
+      raw = echoMatch[3];
+    }
+    
+    // split line into multiple sub‑commands by ' — '
+    const subCommands = raw.split(/ — /).filter(s => s.trim());
+    let firstPlacement = null;
+    if(subCommands.length > 0){
+      const firstSub = subCommands[0];
+      const commaIdx = firstSub.indexOf(',');
+      if(commaIdx > -1){
+        firstPlacement = firstSub.substring(0, commaIdx).trim();
+        subCommands[0] = firstSub.substring(commaIdx+1).trim();
+      }
+    }
+    
+    for(let sc = 0; sc < subCommands.length; sc++){
+      let commandStr = subCommands[sc].trim();
+      if(!commandStr) continue;
+      
+      // placement from the first comma if present
+      if(sc === 0 && firstPlacement){
+        const newPlace = parsePlacement(firstPlacement);
+        if(newPlace) state.placement = newPlace;
+      } else if(sc > 0 && commandStr.includes(',')){
+        // allow subsequent commands to also have placement
+        const ci2 = commandStr.indexOf(',');
+        const p2 = commandStr.substring(0, ci2).trim();
+        commandStr = commandStr.substring(ci2+1).trim();
+        const np = parsePlacement(p2);
+        if(np) state.placement = np;
+      }
+      
+      for(let rep = 0; rep < echoCount; rep++){
+        if(rep > 0){ // small seed variation for echo
+          state.seed += 137;
+        }
+        const cmd = parseCommand(commandStr);
+        if(!cmd || !cmd.verb) continue;
+        
+        const col = cmd.color || state.last;
+        const count = cmd.count;
+        const size = cmd.size;
+        const opacity = cmd.opacity;
+        const mods = cmd.modifiers;
+        
+        try{
+          switch(cmd.verb){
+            case 'breathe':{
+              const c = col;
+              state.bg = c.slice(); state.last = c.slice();
+              ctx.fillStyle = `rgba(${c.join(',')},${opacity})`;
+              ctx.fillRect(0,0,W,H);
+              state.lastShape = {type:'rect',x:W/2,y:H/2,size:Math.max(W,H),color:c};
+              break;
+            }
+            case 'bloom':{
+              const gathered = mods.includes('gathered')||mods.includes('clustered');
+              for(let j=0;j<count;j++){
+                const pos = gathered ? (()=>{
+                  const a = sr()*Math.PI*2, d = sr()*Math.min(W,H)*0.22;
+                  return {x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d};
+                })() : coord(W,H);
+                const rx = (sr()*28+8)*size, ry = rx*(0.45+sr()*0.9);
+                ctx.beginPath(); ctx.ellipse(pos.x,pos.y,rx,ry,sr()*Math.PI,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${opacity*(0.3+sr()*0.7)})`;
+                ctx.fill();
+              }
+              state.last = col.slice();
+              state.lastShape = {type:'ellipse',x:W/2,y:H/2,size:30*size,color:col};
+              break;
+            }
+            case 'impasto':{
+              const n = Math.floor(8+size*8);
+              for(let j=0;j<n;j++){
+                const pos = coord(W,H);
+                const len = (40+sr()*130)*size;
+                const ang = sr()*Math.PI*2;
+                const thick = (8+sr()*22)*size;
+                ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+                for(let k=0;k<3;k++){
+                  const kc = k/3;
+                  const lc2 = [Math.min(255,col[0]+kc*20),Math.min(255,col[1]+kc*20),Math.min(255,col[2]+kc*20)];
+                  ctx.beginPath();
+                  ctx.moveTo(-len/2+(sr()-.5)*6,(k-1)*thick*.28);
+                  ctx.bezierCurveTo(-len*.2+(sr()-.5)*14,(k-1)*thick*.28+(sr()-.5)*8, len*.2+(sr()-.5)*14,(k-1)*thick*.28+(sr()-.5)*8, len/2+(sr()-.5)*6,(k-1)*thick*.28);
+                  ctx.lineWidth = thick*(1-kc*.4); ctx.lineCap='round';
+                  ctx.strokeStyle = `rgba(${lc2.join(',')},${opacity*(0.6+sr()*0.4)})`;
+                  ctx.stroke();
+                }
+                ctx.restore();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'stipple':{
+              const n = count*3;
+              for(let j=0;j<n;j++){
+                const pos = coord(W,H);
+                const rad = (sr()*2.8+0.4)*size;
+                ctx.beginPath(); ctx.arc(pos.x,pos.y,rad,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${opacity*(0.2+sr()*0.8)})`;
+                ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'glaze':{
+              for(let l=0;l<3;l++){
+                const lc2 = [Math.min(255,col[0]+l*15),Math.min(255,col[1]+l*15),Math.min(255,col[2]+l*15)];
+                ctx.fillStyle = `rgba(${lc2.join(',')},${opacity/3})`;
+                ctx.fillRect(0,0,W,H);
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'scrape':{
+              const dirAng = mods.includes('rightward')?0:(mods.includes('downward')?Math.PI/2:(mods.includes('leftward')?Math.PI:(mods.includes('upward')?-Math.PI/2:null)));
+              const n = Math.floor(6+size*6);
+              for(let j=0;j<n;j++){
+                const pos = coord(W,H);
+                const ang = dirAng!==null ? dirAng+sr()*.3 : sr()*Math.PI*2;
+                const len = (W*.25+sr()*W*.45)*size;
+                const thick = (1.5+sr()*6)*size;
+                ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+                ctx.beginPath();
+                let py=(sr()-.5)*thick; ctx.moveTo(0,py);
+                for(let k=1;k<=8;k++){ py+=(sr()-.5)*thick*.5; ctx.lineTo(len*(k/8),py); }
+                ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.5+sr()*0.5)})`;
+                ctx.lineWidth = thick; ctx.lineCap='butt'; ctx.stroke();
+                ctx.restore();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'wash':{
+              for(let j=0;j<8;j++){
+                const pos = coord(W,H);
+                const rx=(60+sr()*120)*size, ry=(40+sr()*90)*size;
+                const g = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,Math.max(rx,ry));
+                g.addColorStop(0,`rgba(${col.join(',')},${opacity*(0.8+sr()*0.2)})`);
+                g.addColorStop(0.5+sr()*.3,`rgba(${col.join(',')},${opacity*.3})`);
+                g.addColorStop(1,`rgba(${col.join(',')},0)`);
+                ctx.beginPath(); ctx.ellipse(pos.x,pos.y,rx,ry,sr()*Math.PI,0,Math.PI*2);
+                ctx.fillStyle = g; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'drift':{
+              const vert = mods.includes('upward')||mods.includes('downward');
+              const n = Math.floor(5+size*6);
+              const windEffect = state.weather; // 0..1
+              for(let j=0;j<n;j++){
+                const pos = coord(W,H);
+                const len = (55+sr()*145)*size;
+                ctx.beginPath();
+                if(vert){
+                  ctx.moveTo(pos.x+(sr()-.5)*14*(1+windEffect), pos.y);
+                  ctx.bezierCurveTo(
+                    pos.x+(sr()-.5)*38*(1+windEffect), pos.y+len*.33,
+                    pos.x+(sr()-.5)*38*(1+windEffect), pos.y+len*.66,
+                    pos.x+(sr()-.5)*14*(1+windEffect), pos.y+len);
+                } else {
+                  ctx.moveTo(pos.x, pos.y+(sr()-.5)*14);
+                  ctx.bezierCurveTo(
+                    pos.x+len*.33, pos.y+(sr()-.5)*38*(1+windEffect),
+                    pos.x+len*.66, pos.y+(sr()-.5)*38*(1+windEffect),
+                    pos.x+len, pos.y+(sr()-.5)*14*(1+windEffect));
+                }
+                ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.28+sr()*0.72)})`;
+                ctx.lineWidth = (1.5+sr()*12)*size; ctx.lineCap='round'; ctx.stroke();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'flow':{
+              const n = Math.floor(5+size*5);
+              const windEffect = state.weather;
+              for(let j=0;j<n;j++){
+                let pos = coord(W,H);
+                ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
+                for(let k=0;k<7;k++){
+                  const angle = sr()*Math.PI*2 + windEffect * 0.5 * (sr()>0.5?1:-1);
+                  pos = {x:pos.x+Math.cos(angle)*55*size, y:pos.y+Math.sin(angle)*55*size};
+                  ctx.lineTo(pos.x, pos.y);
+                }
+                ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.28+sr()*0.72)})`;
+                ctx.lineWidth = (0.5+sr()*2.2)*size; ctx.lineCap='round'; ctx.stroke();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'scatter':{
+              for(let j=0;j<count*4;j++){
+                const pos = coord(W,H);
+                ctx.beginPath(); ctx.arc(pos.x,pos.y,(sr()*2+0.3)*size,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${opacity*sr()})`; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'burn':{
+              for(let j=0;j<count;j++){
+                const pos = coord(W,H);
+                const rad = (8+sr()*22)*size;
+                const g = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,rad);
+                g.addColorStop(0,'rgba(255,252,238,0.95)');
+                g.addColorStop(.22,`rgba(${col.join(',')},0.88)`);
+                g.addColorStop(1,`rgba(${col.join(',')},0)`);
+                ctx.beginPath(); ctx.arc(pos.x,pos.y,rad,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'weave':{
+              const c2Token = tokens[1]?getColor(tokens[1]):null;
+              const c2 = c2Token || [220,220,200];
+              for(let j=0;j<20;j++){
+                const pos = coord(W,H);
+                const c = j%2===0?col:c2;
+                const rx=18+sr()*68, ry=12+sr()*52;
+                ctx.beginPath(); ctx.ellipse(pos.x,pos.y,rx,ry,sr()*Math.PI,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${c.join(',')},${opacity*(0.38+sr()*0.62)})`; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'veil':{
+              ctx.fillStyle = `rgba(${col.join(',')},${opacity})`;
+              ctx.fillRect(0,0,W,H);
+              state.last = col.slice();
+              break;
+            }
+            case 'crack':{
+              const n = count;
+              for(let j=0;j<n;j++){
+                let pos = coord(W,H);
+                ctx.beginPath(); ctx.moveTo(pos.x,pos.y);
+                for(let k=0;k<4;k++){
+                  pos={x:pos.x+(sr()-.5)*90*size, y:pos.y+(sr()-.5)*90*size};
+                  ctx.lineTo(pos.x,pos.y);
+                }
+                ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.5+sr()*0.5)})`;
+                ctx.lineWidth = (0.5+sr())*size; ctx.lineCap='square'; ctx.stroke();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'pulse':{
+              const dynOp = opacity*(0.5+0.5*Math.sin(frame*0.08));
+              for(let j=0;j<count;j++){
+                const pos=coord(W,H);
+                ctx.beginPath(); ctx.arc(pos.x,pos.y,8+sr()*28,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${dynOp*sr()})`; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'fade':{
+              ctx.fillStyle = `rgba(${state.bg.join(',')},${opacity})`;
+              ctx.fillRect(0,0,W,H);
+              break;
+            }
+            case 'silence':{
+              ctx.fillStyle = `rgb(${state.bg.join(',')})`;
+              ctx.fillRect(0,0,W,H);
+              break;
+            }
+            // ─── NEW VERBS ──────────────────────────
+            case 'branch':{
+              const depth = count>20?5:Math.floor(count/3);
+              function branchRec(x,y,dn,ang,len){
+                if(dn<=0) return;
+                const spread = 0.7;
+                for(let b=0;b<3;b++){
+                  const a = ang + (b-1)*spread + sr()*0.4 - 0.2;
+                  const nx = x+Math.cos(a)*len, ny = y+Math.sin(a)*len;
+                  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(nx,ny);
+                  ctx.strokeStyle = `rgba(${col.join(',')},${opacity*0.9})`;
+                  ctx.lineWidth = dn*1.2; ctx.lineCap='round'; ctx.stroke();
+                  branchRec(nx,ny,dn-1,a,len*0.7);
+                }
+              }
+              const start = coord(W,H);
+              branchRec(start.x, start.y, depth, -Math.PI/2, Math.min(W,H)*0.2*size);
+              state.last = col.slice();
+              break;
+            }
+            case 'rain':{
+              const n = count*3;
+              for(let j=0;j<n;j++){
+                const pos = coord(W,H);
+                const dropLen = (12+sr()*24)*size;
+                ctx.beginPath(); ctx.moveTo(pos.x,pos.y);
+                ctx.lineTo(pos.x+(sr()-.5)*2*size, pos.y+dropLen);
+                ctx.strokeStyle = `rgba(${col.join(',')},${opacity*(0.4+sr()*0.6)})`;
+                ctx.lineWidth = 1+sr(); ctx.lineCap='round'; ctx.stroke();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'dew':{
+              const center = coord(W,H);
+              const n = count*2;
+              for(let j=0;j<n;j++){
+                const angle = sr()*Math.PI*2, dist = sr()*25*size;
+                const dx = center.x+Math.cos(angle)*dist, dy = center.y+Math.sin(angle)*dist;
+                ctx.beginPath(); ctx.arc(dx,dy,1.5+sr()*2.5,0,Math.PI*2);
+                ctx.fillStyle = `rgba(255,255,255,${opacity*(0.5+sr()*0.5)})`; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'haze':{
+              for(let j=0;j<6;j++){
+                const pos = coord(W,H);
+                const rad = Math.min(W,H)*0.3*size;
+                const g = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,rad);
+                g.addColorStop(0,`rgba(${col.join(',')},${opacity*0.7})`);
+                g.addColorStop(1,`rgba(${col.join(',')},0)`);
+                ctx.beginPath(); ctx.arc(pos.x,pos.y,rad,0,Math.PI*2);
+                ctx.fillStyle = g; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'splatter':{
+              const center = coord(W,H);
+              const n = count*5;
+              for(let j=0;j<n;j++){
+                const angle = sr()*Math.PI*2, dist = (sr()*0.7+0.1)*60*size;
+                const dx = center.x+Math.cos(angle)*dist, dy = center.y+Math.sin(angle)*dist;
+                ctx.beginPath(); ctx.arc(dx,dy,(0.5+sr()*2.5)*size,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${opacity*(0.3+sr()*0.7)})`; ctx.fill();
+              }
+              state.last = col.slice();
+              break;
+            }
+            case 'stroke':{
+              const pos = coord(W,H);
+              const len = (60+sr()*130)*size;
+              const ang = sr()*Math.PI*2;
+              ctx.save(); ctx.translate(pos.x,pos.y); ctx.rotate(ang);
+              ctx.beginPath();
+              ctx.moveTo(-len/2,0);
+              ctx.quadraticCurveTo(0,(sr()-.5)*len*0.4, len/2,0);
+              ctx.lineWidth = (3+sr()*9)*size; ctx.lineCap='round';
+              ctx.strokeStyle = `rgba(${col.join(',')},${opacity})`;
+              ctx.stroke();
+              ctx.restore();
+              state.last = col.slice();
+              state.lastShape = {type:'stroke',x:pos.x,y:pos.y,size:len/2,color:col};
+              break;
+            }
+            case 'petal':{
+              const center = coord(W,H);
+              const n = count;
+              const petSize = 15*size;
+              for(let j=0;j<n;j++){
+                const angle = (j/n)*Math.PI*2 + sr()*0.2;
+                const dist = petSize*0.4;
+                const px = center.x+Math.cos(angle)*dist, py = center.y+Math.sin(angle)*dist;
+                ctx.beginPath(); ctx.ellipse(px,py,petSize*0.8,petSize*0.3,angle,0,Math.PI*2);
+                ctx.fillStyle = `rgba(${col.join(',')},${opacity})`; ctx.fill();
+              }
+              state.last = col.slice();
+              state.lastShape = {type:'ellipse',x:center.x,y:center.y,size:petSize,color:col};
+              break;
+            }
+            case 'shadow':{
+              const center = coord(W,H);
+              const rad = (15+sr()*40)*size;
+              ctx.beginPath(); ctx.ellipse(center.x+5,center.y+5,rad,rad*0.8,0,0,Math.PI*2);
+              ctx.fillStyle = `rgba(0,0,0,${opacity*0.5})`; ctx.fill();
+              state.last = col.slice();
+              break;
+            }
+            // ─── 4 BRAND NEW VERBS ────────────────────
+            case 'sfumato':{
+              if(!state.lastShape) break;
+              const ls = state.lastShape;
+              const blurCount = count || 6;
+              const blurColor = col;
+              const base = ls.color || col;
+              for(let p=0;p<blurCount;p++){
+                const ox = (sr()-0.5)*ls.size*0.4;
+                const oy = (sr()-0.5)*ls.size*0.4;
+                const alpha = opacity*(1-p/blurCount)*0.6;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                if(ls.type==='ellipse'||ls.type==='stroke'){
+                  ctx.beginPath();
+                  ctx.ellipse(ls.x+ox, ls.y+oy, ls.size*0.7+sr()*ls.size*0.3, ls.size*0.5, 0,0,Math.PI*2);
+                  ctx.fillStyle = `rgba(${blurColor.join(',')},1)`;
+                  ctx.fill();
+                } else {
+                  ctx.beginPath();
+                  ctx.arc(ls.x+ox, ls.y+oy, ls.size*0.6,0,Math.PI*2);
+                  ctx.fillStyle = `rgba(${blurColor.join(',')},1)`;
+                  ctx.fill();
+                }
+                ctx.restore();
+              }
+              break;
+            }
+            case 'chiaroscuro':{
+              const center = coord(W,H);
+              const rad = 30*size;
+              const lightColor = [255,255,255];
+              const shadowColor = [10,10,10];
+              const base = col;
+              // draw base
+              ctx.beginPath(); ctx.arc(center.x, center.y, rad,0,Math.PI*2);
+              ctx.fillStyle = `rgb(${base.join(',')})`; ctx.fill();
+              // highlight
+              const hlGrad = ctx.createRadialGradient(center.x - rad*0.25, center.y - rad*0.25, 0, center.x, center.y, rad);
+              hlGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+              hlGrad.addColorStop(0.4, `rgba(${base.join(',')},0.8)`);
+              hlGrad.addColorStop(1, `rgba(${base.join(',')},0)`);
+              ctx.beginPath(); ctx.arc(center.x, center.y, rad,0,Math.PI*2);
+              ctx.fillStyle = hlGrad; ctx.fill();
+              // shadow side
+              ctx.beginPath(); ctx.arc(center.x+rad*0.1, center.y+rad*0.1, rad,0,Math.PI*2);
+              ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fill();
+              state.last = col.slice();
+              state.lastShape = {type:'ellipse',x:center.x,y:center.y,size:rad,color:col};
+              break;
+            }
+            case 'bleed':{
+              // bleed takes two colors: "bleed of indigo into snow"
+              const parts = commandStr.match(/bleed\s+of\s+(\w+)\s+into\s+(\w+)/);
+              if(parts){
+                const c1 = getColor(parts[1]) || col;
+                const c2 = getColor(parts[2]) || state.last;
+                const grad = ctx.createLinearGradient(0,0,W*0.7,H*0.7);
+                grad.addColorStop(0, `rgba(${c1.join(',')},${opacity})`);
+                grad.addColorStop(1, `rgba(${c2.join(',')},0)`);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0,W,H);
+              }
+              break;
+            }
+            case 'weather':{
+              if(mods.includes('windy')) state.weather = 0.8;
+              else if(mods.includes('still')) state.weather = 0.05;
+              else if(mods.includes('stormy')) state.weather = 1.0;
+              else state.weather = 0.3;
+              break;
+            }
+            case 'season':{
+              const s = commandStr.replace('season','').trim();
+              if(s.startsWith('spring')) state.season = 'spring';
+              else if(s.startsWith('summer')) state.season = 'summer';
+              else if(s.startsWith('autumn')) state.season = 'autumn';
+              else if(s.startsWith('winter')) state.season = 'winter';
+              else state.season = 'none';
+              break;
+            }
+            case 'echo': case 'refrain': break; // handled earlier
+            case 'pause': break; // no-op in static render
+            case 'grain':{
+              if(state.grainEnabled){
+                const gc = makeGrainCanvas(W,H);
+                ctx.drawImage(gc,0,0);
+              }
+              break;
+            }
+            case 'remember': break;
+          }
+        } catch(e){ errs.push(e.message); }
+      }
+    }
+  }
+  
+  if(state.grainEnabled){
+    const gc = makeGrainCanvas(W,H);
+    ctx.drawImage(gc,0,0);
+  }
+  return errs;
+}
+
+// ─── UI LOGIC ────────────────────────────────────────────────────
+let animating = false, animFrame = null, frameCount = 0;
+
+function toggleAnim(){
+  animating = !animating;
+  const btn = document.getElementById('animBtn');
+  btn.classList.toggle('on', animating);
+  btn.textContent = animating ? '◉ animating' : '◎ animate';
+  if(animating){ frameCount=0; animLoop(); }
+  else cancelAnimationFrame(animFrame);
+}
+function toggleGrain(){
+  state.grainEnabled = !state.grainEnabled;
+  const btn = document.getElementById('grainBtn');
+  btn.classList.toggle('on', state.grainEnabled);
+  btn.textContent = state.grainEnabled ? '⌸ grain on' : '⌸ grain';
+  if(!animating) runPoem();
+}
+function animLoop(){
+  if(!animating) return;
+  frameCount++;
+  const canvas = document.getElementById('art');
+  interpret(canvas, document.getElementById('ed').value, frameCount);
+  document.getElementById('fbadge').textContent = 'f'+frameCount;
+  animFrame = requestAnimationFrame(animLoop);
+}
+
+const EXAMPLES = [
+`— haiku of light and weather —
+
+weather windy
+season spring
+at the heart of the canvas, breathe cream
+at the upper edge, a quiet wash of dawn
+along the horizon, drift charcoal soft
+echo 2 at the center, bloom a handful of gold gathered
+sfumato gold 5
+chiaroscuro lapis
+bleed of crimson into snow
+grain`,
+
+`— winter sumi —
+
+season winter
+breathe bone
+at the shadow, branch twelve deep — stroke indigo soft
+splatter snow sparse
+veil milk 0.14
+grain`,
+
+`— bleeding dusk —
+
+weather stormy
+season autumn
+breathe ochre
+at the light, haze gold soft
+bleed of crimson into ochre
+echo 3 scatter a few whispers of umber
+sfumato umber 4
+grain`
+];
+let exIdx = 0;
+function loadExample(){
+  document.getElementById('ed').value = EXAMPLES[exIdx%EXAMPLES.length];
+  exIdx++; updateLN();
+  if(!animating) runPoem();
+}
+function runPoem(){
+  if(animating){ toggleAnim(); toggleAnim(); return; }
+  const t0=performance.now();
+  const canvas = document.getElementById('art');
+  const errs = interpret(canvas, document.getElementById('ed').value, 0);
+  const dt = (performance.now()-t0).toFixed(1);
+  document.getElementById('rt').textContent = dt+'ms';
+  document.getElementById('prog').style.width = errs.length===0?'100%':'30%';
+  if(errs.length===0){
+    document.getElementById('st').textContent = 'rendered'; document.getElementById('st').className = 's-ok';
+  } else {
+    document.getElementById('st').textContent = errs[0]; document.getElementById('st').className = 's-err';
+  }
+}
+function clearCanvas(){
+  if(animating) toggleAnim();
+  const c=document.getElementById('art');
+  c.getContext('2d').fillStyle='rgb(248,245,237)'; c.getContext('2d').fillRect(0,0,c.width,c.height);
+  document.getElementById('st').textContent='cleared'; document.getElementById('st').className='s-info';
+  document.getElementById('prog').style.width='0';
+}
+function reseed(){
+  state.seed = Date.now()+Math.floor(Math.random()*9999999);
+  if(!animating) runPoem();
+}
+function saveImg(){
+  const c=document.getElementById('art'); const a=document.createElement('a');
+  a.href=c.toDataURL('image/png'); a.download='monoku-'+Date.now()+'.png'; a.click();
+}
+
+// Reference tabs
+const TABS_DATA = {
+  v:()=>VERBS.map(v=>`<span class="chip chip-v" onclick="ins('${v}')">${v}</span>`).join(''),
+  c:()=>Object.entries(COLORS).map(([n,rgb])=>`<span class="chip chip-c" onclick="ins('${n}')"><span class="swatch" style="background:rgb(${rgb.join(',')})"></span>${n}</span>`).join(''),
+  m:()=>[...MODIFIERS].map(m=>`<span class="chip chip-m" onclick="ins('${m}')">${m}</span>`).join(''),
+  p:()=>Object.keys(PLACEMENT_PATTERNS).map(p=>`<span class="chip chip-s" onclick="ins('${p}')">${p}</span>`).join(''),
+  s:()=>`<span style="font-size:12px;line-height:1.65;color:var(--muted);white-space:normal;display:block;font-family:Crimson Text,Georgia;padding:3px 6px">
+    <b>,</b> placement · <b>—</b> multiple gestures · <b>echo N</b> repeat with variation<br>
+    <b>bleed of X into Y</b> · <b>chiaroscuro</b> · <b>sfumato</b> · <b>weather windy/still</b><br>
+    <b>season spring|summer|autumn|winter</b> shifts palette light<br>
+    long words carry more weight—<i>glistening</i> is thicker than <i>ash</i>.
+  </span>`
+};
+function showTab(k,btn){
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ref').innerHTML = TABS_DATA[k]();
+}
+function ins(word){
+  const ed = document.getElementById('ed'); const s = ed.selectionStart, txt = ed.value;
+  const needSp = s>0 && txt[s-1]!==' ' && txt[s-1]!=='\n';
+  const str = (needSp?' ':'')+word;
+  ed.value = txt.slice(0,s)+str+txt.slice(s);
+  ed.selectionStart = ed.selectionEnd = s+str.length;
+  ed.focus(); updateLN();
+}
+function updateLN(){
+  const ed = document.getElementById('ed');
+  const lines = ed.value.split('\n');
+  document.getElementById('ln').textContent = lines.map((_,i)=>i+1).join('\n');
+  document.getElementById('lc').textContent = lines.length+' lines';
+}
+document.getElementById('ed').addEventListener('scroll',function(){ document.getElementById('ln').scrollTop = this.scrollTop; });
+document.getElementById('ed').addEventListener('input',updateLN);
+document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); runPoem(); } });
+function sizeCanvas(){
+  const wrap = document.querySelector('.canvas-wrap');
+  const w = wrap.clientWidth-20, h = wrap.clientHeight-20;
+  const sz = Math.min(w,h,700);
+  const c = document.getElementById('art');
+  c.width = sz; c.height = sz;
+  document.getElementById('cdim').textContent = sz+'×'+sz;
+  if(!animating) runPoem();
+}
+document.getElementById('ed').value = EXAMPLES[0];
+updateLN(); showTab('v', document.querySelector('.rtab'));
+setTimeout(sizeCanvas,80);
+window.addEventListener('resize',()=>{ clearTimeout(window._rt); window._rt = setTimeout(sizeCanvas,200); });
+</script>
+</body>
+</html>
