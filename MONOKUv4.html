@@ -128,6 +128,64 @@ canvas#art{max-width:100%;max-height:100%;display:block;
 /* ── MOOD RING ──────────────────────────────────────────────── */
 .mood-ring{width:8px;height:8px;border-radius:50%;flex-shrink:0;
   background:var(--muted2);transition:background .6s;border:1px solid rgba(0,0,0,0.1)}
+
+
+/* ── ENCYCLOPEDIA OVERLAY ──────────────────────────────────── */
+#encyclopedia-overlay {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  z-index:1000; display:flex; align-items:center; justify-content:center;
+}
+.encyclopedia-backdrop {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.45); cursor:pointer;
+}
+.encyclopedia-panel {
+  position:relative; width:min(720px, 90vw); max-height:85vh;
+  background:var(--panel); border-radius:3px; box-shadow:0 8px 30px rgba(0,0,0,0.25);
+  display:flex; flex-direction:column; overflow:hidden;
+  border:1px solid var(--border2);
+}
+.encyclopedia-close {
+  position:absolute; top:10px; right:12px; background:none; border:none;
+  font-size:18px; color:var(--muted); cursor:pointer; z-index:10;
+}
+.encyclopedia-close:hover { color:var(--ink); }
+
+.encyclopedia-tabs {
+  display:flex; border-bottom:1px solid var(--border2);
+  background:var(--panel2); flex-shrink:0;
+}
+.etab {
+  padding:7px 16px; font-size:13px; letter-spacing:.04em;
+  background:transparent; border:none; border-bottom:2px solid transparent;
+  cursor:pointer; color:var(--muted); font-family:inherit;
+  transition:.1s;
+}
+.etab:hover { color:var(--text); }
+.etab.on {
+  color:var(--ink); border-bottom-color:var(--ink); font-weight:600;
+}
+
+.etab-content {
+  padding:20px 24px; overflow-y:auto; flex:1;
+  font-size:14px; line-height:1.7; color:var(--text);
+}
+.etab-content h2 { font-size:19px; margin-bottom:10px; color:var(--ink); font-weight:normal; }
+.etab-content h3 { font-size:15px; margin-top:18px; margin-bottom:6px; color:var(--accent); }
+.etab-content p { margin:8px 0; }
+.etab-content ul { padding-left:18px; margin:6px 0; }
+.etab-content li { margin:3px 0; }
+.etab-content code {
+  background:rgba(0,0,0,0.05); padding:1px 5px; border-radius:3px;
+  font-family:'Courier New',monospace; font-size:13px;
+}
+.etab-content pre {
+  background:rgba(0,0,0,0.04); padding:10px; border-radius:3px;
+  font-family:'Courier New',monospace; font-size:13px; line-height:1.6;
+  overflow-x:auto; margin:6px 0;
+}
+.etab-content strong { color:var(--ink); }
+  
 </style>
 </head>
 <body>
@@ -144,6 +202,7 @@ canvas#art{max-width:100%;max-height:100%;display:block;
   <button class="btn btn-breath" id="breathBtn" onclick="toggleBreath()">≈ breath</button>
   <button class="btn btn-anim" id="animBtn" onclick="toggleAnim()">◎ animate</button>
   <button class="btn btn-grain" id="grainBtn" onclick="toggleGrain()">⌸ grain</button>
+  <button class="btn" onclick="openEncyclopedia()">🕮 encyclopedia</button>
   <div class="sep"></div>
   <div class="indicator" id="moodInd">mood <span>—</span></div>
   <div class="indicator" id="brushInd">brush <span>sable</span></div>
@@ -2582,6 +2641,181 @@ updateLN();
 showTab('v',document.querySelector('.rtab'));
 setTimeout(sizeCanvas,100);
 window.addEventListener('resize',()=>{ clearTimeout(window._rt); window._rt=setTimeout(sizeCanvas,200); });
+
+
+
+// ── ENCYCLOPEDIA ──────────────────────────────────────────────
+function openEncyclopedia() {
+  document.getElementById('encyclopedia-overlay').style.display = 'flex';
+  // Reset to first tab
+  document.querySelectorAll('.etab').forEach((t,i) => {
+    t.classList.toggle('on', i===0);
+  });
+  document.querySelectorAll('.etab-content').forEach((c,i) => {
+    c.style.display = i===0 ? 'block' : 'none';
+  });
+}
+
+function closeEncyclopedia() {
+  document.getElementById('encyclopedia-overlay').style.display = 'none';
+}
+
+function switchEncycTab(tabName, btn) {
+  // Update active tab button
+  document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  // Show selected content, hide others
+  document.querySelectorAll('.etab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('etab-'+tabName).style.display = 'block';
+}
+
+// Close with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeEncyclopedia();
+  }
+});
+
+
+  
 </script>
+
+<!-- ─────────────────────────────────────────────────────────────── -->
+<!--  ENCYCLOPEDIA OVERLAY                                          -->
+<!-- ─────────────────────────────────────────────────────────────── -->
+<div id="encyclopedia-overlay" style="display:none;">
+  <div class="encyclopedia-backdrop" onclick="closeEncyclopedia()"></div>
+  <div class="encyclopedia-panel">
+    <button class="encyclopedia-close" onclick="closeEncyclopedia()">✕</button>
+
+    <div class="encyclopedia-tabs">
+      <button class="etab on" onclick="switchEncycTab('about',this)">About</button>
+      <button class="etab" onclick="switchEncycTab('glossary',this)">Glossary</button>
+      <button class="etab" onclick="switchEncycTab('syntax',this)">Syntax</button>
+      <button class="etab" onclick="switchEncycTab('tips',this)">Tips</button>
+    </div>
+
+    <div class="etab-content" id="etab-about">
+      <h2>🌸 What is Monoku?</h2>
+      <p>
+        <strong>Monoku</strong> is a poetic language for generative art.
+        It lives inside a single HTML page and turns haiku into canvas strokes,
+        weather into turbulence, and the length of a word into the weight of a mark.
+      </p>
+      <p>
+        Born from sumi‑e ink painting, haiku, and the generative art of Mark Webster,
+        Monoku treats the online canvas as your private paper. Every line you write
+        is a gesture; every verb, a loaded brush; every modifier, a breath of wind
+        or a shift of light.
+      </p>
+      <p>
+        <strong>Philosophy:</strong> The canvas listens. You don't command; you whisper.
+        A poem in Monoku has three breath‑phases: atmosphere (setting the paper, mood, season),
+        gesture (the actual drawing verbs), and coda (a final veil, grain, or varnish).
+      </p>
+      <p><em>Press ⌘↵ to render. Click ◎ to animate. Click ≈ to let the poem breathe line by line.</em></p>
+    </div>
+
+    <div class="etab-content" id="etab-glossary" style="display:none;">
+      <h2>🎨 Glossary of Verbs</h2>
+      <p>Over 80 painting verbs are available. Here are the families:</p>
+      <ul>
+        <li><strong>Canvas:</strong> <code>breathe</code>, <code>prime</code>, <code>silence</code>, <code>fade</code></li>
+        <li><strong>Wet media:</strong> <code>wash</code>, <code>glaze</code>, <code>bleed</code>, <code>dew</code>, <code>rain</code>, <code>haze</code>, <code>veil</code>, <code>sfumato</code>, <code>chiaroscuro</code>, <code>blush</code>, <code>drip</code></li>
+        <li><strong>Dry media:</strong> <code>stipple</code>, <code>scumble</code>, <code>drybrush</code>, <code>etch</code>, <code>scratch</code>, <code>rake</code></li>
+        <li><strong>Oil &amp; impasto:</strong> <code>impasto</code>, <code>scrape</code>, <code>smudge</code>, <code>alla prima</code></li>
+        <li><strong>Organic marks:</strong> <code>bloom</code>, <code>scatter</code>, <code>petal</code>, <code>branch</code>, <code>dapple</code>, <code>spiral</code>, <code>constellation</code>, <code>ripple</code>, <code>smoke</code>, <code>nebula</code>, <code>web</code>, <code>glyph</code></li>
+        <li><strong>Transformative:</strong> <code>burn</code>, <code>dissolve</code>, <code>erode</code>, <code>tarnish</code>, <code>tint</code>, <code>shade</code>, <code>underpaint</code>, <code>varnish</code>, <code>patina</code>, <code>foxing</code>, <code>burnish</code>, <code>crumble</code>, <code>crack</code>, <code>flick</code>, <code>pulse</code></li>
+        <li><strong>Structure:</strong> <code>echo</code>, <code>refrain</code>, <code>pause</code>, <code>linger</code>, <code>hurry</code>, <code>global</code>, <code>remember</code></li>
+      </ul>
+      <p>Full list in the Verbs tab of the reference panel.</p>
+
+      <h2>🎨 Glossary of Modifiers</h2>
+      <p>Modifiers follow the colour and number in a command. Examples:</p>
+      <ul>
+        <li><strong>Opacity:</strong> <code>soft</code>, <code>faint</code>, <code>dim</code>, <code>bold</code>, <code>hard</code>, <code>deep</code>, <code>bright</code>, <code>dark</code>, <code>light</code>, <code>pale</code></li>
+        <li><strong>Distribution:</strong> <code>gathered</code>, <code>clustered</code>, <code>scattered</code></li>
+        <li><strong>Pace:</strong> <code>slowly</code>, <code>patiently</code>, <code>gently</code>, <code>quickly</code>, <code>rapidly</code>, <code>frantic</code></li>
+        <li><strong>Character:</strong> <code>hushed</code>, <code>trembling</code>, <code>decisive</code>, <code>hesitant</code>, <code>firm</code>, <code>loose</code>, <code>brittle</code>, <code>fluid</code>, <code>aged</code>, <code>toothed</code>, <code>saturated</code>, <code>mottled</code>, <code>ghosted</code>, <code>weathered</code>, <code>viscous</code>, <code>lean</code></li>
+        <li><strong>Ink load:</strong> <code>loaded</code>, <code>spent</code>, <code>soaked</code>, <code>parched</code></li>
+      </ul>
+
+      <h2>🎨 Glossary of Nouns</h2>
+      <p>You can paint objects by simply writing their name:</p>
+      <p><code>the moon</code> · <code>the sun</code> · <code>stars</code> · <code>petals</code> · <code>leaves</code> · <code>smoke</code> · <code>flame</code> · <code>feather</code> · <code>rain</code> · <code>snow</code> · <code>stone</code> · <code>wave</code> · <code>cloud</code> · <code>fog</code> · <code>blossom</code> · <code>dust</code> · <code>ash</code> · <code>moss</code> · <code>dew</code> · <code>mist</code> · <code>root</code> · <code>cobweb</code> · <code>ember</code> · <code>ripple</code> · <code>galaxy</code> · <code>glyph</code></p>
+    </div>
+
+    <div class="etab-content" id="etab-syntax" style="display:none;">
+      <h2>📜 Syntax Rules</h2>
+      <p>A Monoku line is a breath. It is read from top to bottom.</p>
+      <h3>Basic Line Structure</h3>
+      <p><code>verb colour [count] [modifiers…]</code></p>
+      <p>Example: <code>bloom rose gathered soft</code></p>
+
+      <h3>Placement</h3>
+      <p>Use a comma to set where the command happens:</p>
+      <p><code>at the heart, bloom gold</code></p>
+      <p>Common placements: <em>the heart, the horizon, the upper edge, in the light, a quiet corner, across the canvas.</em></p>
+
+      <h3>Multiple gestures</h3>
+      <p>Use <strong> — </strong> (em‑dash) to put several commands on one line:</p>
+      <p><code>bloom rose gathered — stroke gold soft</code></p>
+
+      <h3>Loop and Condition</h3>
+      <p><code>for 7 times, scatter leaves</code></p>
+      <p><code>if the mood is melancholy, veil violet</code></p>
+      <p><code>when the wind rises, drift ash</code></p>
+
+      <h3>Variables</h3>
+      <p><code>let sky be cerulean</code></p>
+      <p><code>set depth to 5</code></p>
+      <p>Then use them: <code>for depth times, bloom sky</code></p>
+
+      <h3>Gesture macros</h3>
+      <pre>define sunrise as:
+  wash dawn
+  bloom gold gathered
+end
+
+invoke sunrise</pre>
+
+      <h3>Global commands</h3>
+      <p><code>global slowly</code> (applies to all following lines)</p>
+      <p><code>the air is humid</code>, <code>the room is cold</code>, <code>the wind is rising</code>, <code>season winter</code>, <code>the feeling is wonder</code></p>
+
+      <h3>Echo &amp; Refrain</h3>
+      <p><code>echo 3 bloom ivory</code></p>
+
+      <h3>Poetic colour mixing</h3>
+      <p><code>mix cerulean with snow</code></p>
+      <p><code>a ghost of rose</code></p>
+      <p><code>a memory of gold</code></p>
+      <p><code>a whisper of violet</code></p>
+      <p><code>a kiss of crimson on gold</code></p>
+
+      <h3>Comments</h3>
+      <p>Lines starting with <code>—</code> are titles.</p>
+      <p>Inline comments use <code>;</code> – everything after is ignored.</p>
+      <p>Blank lines are breaths.</p>
+    </div>
+
+    <div class="etab-content" id="etab-tips" style="display:none;">
+      <h2>✨ Tips for New Users</h2>
+      <ul>
+        <li><strong>Start small.</strong> One verb, one colour. Render. Then add another.</li>
+        <li><strong>Use the chips.</strong> Click any verb, colour, or modifier in the reference panel to insert it into your scroll.</li>
+        <li><strong>Experiment with paper.</strong> Try <code>the paper is rice</code> or <code>the paper is aged</code> to change how marks feel.</li>
+        <li><strong>Let the mood help.</strong> <code>the feeling is serenity</code> gently shifts all colours toward calm tones.</li>
+        <li><strong>Activate ≈ breath mode</strong> to watch your poem being painted line by line, as if recited.</li>
+        <li><strong>Use <code>echo</code> liberally.</strong> <code>echo 5 scatter gold</code> creates beautiful, organic repetition.</li>
+        <li><strong>Define your own gestures.</strong> If a certain combination of verbs feels right, wrap it in a <code>define</code> block and reuse it.</li>
+        <li><strong>Haiku mode activates automatically</strong> when your poem has three active lines that roughly follow 5‑7‑5 syllables. The first line draws softly, the second boldly, the third fades.</li>
+        <li><strong>If the canvas stumbles,</strong> the error message will appear as a soft studio critique, not a scary red box.</li>
+        <li><strong>Save your work.</strong> Click <code>save png</code> to keep the moment.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+  
 </body>
 </html>
