@@ -268,164 +268,60 @@ canvas#art{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 20px rg
   pointer-events: none; transition: opacity 0.3s ease;
 }
 #ency-overlay.show { opacity: 1; pointer-events: all; }
+
 .ency-backdrop {
   position: absolute; inset: 0; cursor: pointer;
 }
-#ency-panel {
+
+.ency-panel {
   width: 92%; max-width: 1000px; height: 88%;
-  background: var(--paper); border-radius: 12px;
+  background: var(--canvas-bg); border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   display: flex; flex-direction: column; overflow: hidden;
-  border: 1px solid var(--brd);
+  border: 1px solid var(--border2);
 }
-#ency-header {
-  padding: 14px 20px; border-bottom: 1px solid var(--brd);
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--paper-d);
+.ency-close {
+  position: absolute; top: 10px; right: 14px; background: none;
+  border: none; font-size: 18px; color: var(--muted); cursor: pointer; z-index: 10;
 }
-#ency-header h2 { margin: 0; font-size: 1.2rem; font-weight: 500; }
-#ency-search {
-  width: 60%; padding: 8px 12px; border: 1px solid var(--brd);
-  border-radius: 6px; font-family: inherit; font-size: 0.9rem;
-  background: #fff; transition: border-color 0.2s;
+.ency-close:hover { color: var(--ink); }
+
+.ency-tabs {
+  display: flex; border-bottom: 1px solid var(--border2);
+  background: var(--panel2); flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
 }
-#ency-search:focus { outline: none; border-color: var(--acc); }
-#ency-close {
-  background: none; border: none; font-size: 1.4rem;
-  cursor: pointer; color: var(--muted); padding: 4px 8px;
-  border-radius: 4px; transition: 0.2s;
-}
-#ency-close:hover { background: var(--bg); color: var(--ink); }
-#ency-tabs {
-  display: flex; gap: 2px; padding: 8px 20px 0;
-  border-bottom: 1px solid var(--brd); overflow-x: auto;
-  background: var(--paper);
-}
+.ency-tabs::-webkit-scrollbar { display: none; }
 .etab {
-  background: var(--paper-d); border: 1px solid var(--brd);
-  padding: 8px 14px; cursor: pointer; border-radius: 6px 6px 0 0;
-  font-size: 0.85rem; transition: 0.2s; white-space: nowrap;
-  color: var(--muted);
+  padding: 7px 14px; font-size: 12px; letter-spacing: .04em;
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; color: var(--muted); font-family: inherit; transition: .1s; white-space: nowrap;
 }
-.etab:hover { background: var(--bg); color: var(--ink); }
-.etab.on {
-  background: #fff; border-bottom-color: #fff; color: var(--ink);
-  font-weight: 500; box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
-}
-#ency-content {
-  flex: 1; overflow-y: auto; padding: 20px;
-  background: #fff; line-height: 1.6;
-}
-#ency-content h2 {
-  margin: 0 0 16px; font-size: 1.4rem; border-bottom: 2px solid var(--acc);
-  padding-bottom: 8px; color: var(--ink);
-}
-#ency-content h3 {
-  margin: 24px 0 12px; font-size: 1.1rem; color: var(--v);
-}
-#ency-content p.lead {
-  font-size: 1.05rem; color: var(--muted); margin-bottom: 20px;
-  font-style: italic;
-}
-#ency-content code {
-  background: var(--bg); padding: 2px 6px; border-radius: 4px;
-  font-family: var(--font-mono); font-size: 0.9em; color: var(--c);
-}
-#ency-content pre {
-  background: var(--bg); padding: 12px; border-radius: 6px;
-  overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem;
-  border-left: 3px solid var(--acc); margin: 12px 0;
-}
-/* Grid layouts */
-.ency-grid, .e-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px; margin: 20px 0;
-}
-.ency-card, .e-card {
-  background: var(--bg); padding: 16px; border-radius: 8px;
-  border: 1px solid var(--brd); transition: 0.2s;
-}
-.ency-card:hover, .e-card:hover {
-  border-color: var(--acc); box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.ency-card h3, .e-card h4 {
-  margin: 0 0 8px; font-size: 1rem; color: var(--ink);
-}
-.ency-card p, .e-card p {
-  margin: 0 0 12px; font-size: 0.9rem; color: var(--muted);
-}
-.try-btn {
-  background: var(--v); color: #fff; border: none;
-  padding: 4px 10px; border-radius: 4px; font-size: 0.75rem;
-  cursor: pointer; transition: 0.2s;
-}
-.try-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-/* Tutorial steps */
-.tutorial-steps { margin: 20px 0; }
-.step {
-  background: var(--bg); padding: 16px; border-radius: 8px;
-  border-left: 4px solid var(--acc); margin-bottom: 16px;
-}
-.step h3 { margin: 0 0 8px; font-size: 1.05rem; }
-.step pre { margin: 12px 0; }
-.step .try-btn { margin-top: 8px; }
-/* Verb/Colour/Modifier lists */
-details {
-  margin: 16px 0; border: 1px solid var(--brd);
-  border-radius: 8px; overflow: hidden;
-}
-summary {
-  padding: 12px 16px; background: var(--paper-d);
-  cursor: pointer; font-weight: 500; list-style: none;
-  display: flex; justify-content: space-between; align-items: center;
-}
-summary::after { content: '▾'; transition: transform 0.2s; }
-details[open] summary::after { transform: rotate(180deg); }
-.verb-list, .mod-list {
-  padding: 12px 16px; display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px; background: #fff;
-}
-.verb-item, .mod-item {
-  display: flex; align-items: baseline; gap: 8px;
-  font-size: 0.85rem;
-}
-.verb-item code, .mod-item code {
-  flex-shrink: 0; font-weight: 500;
-}
-.verb-item span, .mod-item span {
-  color: var(--muted); font-size: 0.8rem;
-}
-.colour-grid {
-  padding: 12px 16px; display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px; background: #fff;
-}
-.colour-item {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.85rem;
-}
-.colour-item .swatch {
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 1px solid var(--brd); flex-shrink: 0;
-}
-.colour-item code { font-weight: 500; }
-.colour-item span { color: var(--muted); font-size: 0.75rem; }
-/* Search results */
-.no-results {
-  text-align: center; padding: 40px; color: var(--muted);
-  font-style: italic;
+.etab:hover { color: var(--text); }
+.etab.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+
+#ency-search {
+  width: 100%; padding: 7px 12px; border: none; border-bottom: 1px solid var(--border);
+  font-family: inherit; font-size: 13px; background: var(--bg); color: var(--text);
+  outline: none; flex-shrink: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  #ency-panel { width: 96%; height: 92%; }
-  #ency-header { flex-direction: column; gap: 10px; }
-  #ency-search { width: 100%; }
-  #ency-tabs { padding: 8px 12px 0; }
-  .etab { padding: 6px 10px; font-size: 0.8rem; }
-  .ency-grid, .e-grid { grid-template-columns: 1fr; }
+.ency-content {
+  padding: 16px 20px; overflow-y: auto; flex: 1;
+  font-size: 13px; line-height: 1.7; color: var(--text); background: var(--canvas-bg);
 }
+.ency-content h2 { font-size: 18px; margin-bottom: 8px; color: var(--ink); font-weight: normal; }
+.ency-content h3 { font-size: 14px; margin-top: 14px; margin-bottom: 4px; color: var(--accent); }
+.ency-content p { margin: 6px 0; }
+.ency-content ul { padding-left: 16px; margin: 4px 0; }
+.ency-content li { margin: 2px 0; }
+.ency-content code { background: rgba(0,0,0,0.05); padding: 1px 5px; border-radius: 3px; font-family: var(--mono); font-size: 12px; }
+.ency-content pre { background: rgba(0,0,0,0.04); padding: 8px; border-radius: 3px; font-family: var(--mono); font-size: 12px; line-height: 1.5; overflow-x: auto; margin: 4px 0; }
+.ency-content .try-btn { background: var(--accent2); color: #fff; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 10px; margin-left: 6px; }
+.ency-content .try-btn:hover { opacity: .85; }
+
+.e-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 8px; }
+.e-card { background: var(--bg); padding: 10px; border-radius: 4px; border: 1px solid var(--border); }
+.e-card h4 { margin: 0 0 3px; font-size: 12px; color: var(--ink); }
 
 /* ── WORKSHOP THEMES ────────────────────────────────────────── */
 .theme-cabin{--bg:#e6d3b8;--surface:#d9bf9c;--panel:#c7aa86;--panel2:#b8956e;--border:rgba(0,0,0,0.12);--text:#3a2818;--muted:#6b5a45;--muted2:#9c886c;--ink:#4a2f15;--ink2:#4a2f15;--canvas-bg:#f7edd5;--accent:#8b5a2b;--accent2:#4d7a4e;--accent3:#9a5050}
@@ -1923,11 +1819,11 @@ document.getElementById('ed').addEventListener('scroll',function(){document.getE
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();runPoem()}});
 
 // ── EXAMPLES ─────────────────────────────────────────────────
-const EXAMPLES=[
+const EXAMPLES = [
 `— ink on cold paper —
 season winter
 the room is cold
-the paper is cold-press
+the paper is cold‑press
 breathe midnight
 the horizon glyph ivory soft
 rain ash sparse faint`,
@@ -1960,15 +1856,15 @@ veil mist faint`,
 kenning "slow fire" as dusk
 kenning "gathered light" as bloom gold gathered soft
 breathe midnight
-invoke gathered light
+gathered light
 varnish dusk`,
 
 `— chant & cast —
-chant flower with count and hue:
-  for count times, bloom hue soft
+chant flower with petals and colour:
+  for petals times, bloom colour soft
 end
-cast flower with count 5 and hue rose
-cast flower with count 3 and hue gold`,
+cast flower with petals 5 and colour rose
+cast flower with petals 3 and colour gold`,
 
 `— typographic study —
 the font is cursive
@@ -1978,13 +1874,131 @@ at the lower edge, scrawl "the sentient scroll" midnight soft
 scribble "whisper" cobalt faint
 grain`,
 
-`— self-modifying —
-let depth be 5
-breathe bone
-if depth exceeds 0, bloom rose gathered
-the canvas whispers "petals fallen"
+`— haiku (auto‑detected) —
+breathe celeste
+bloom ivory gathered soft
+veil mist faint`,
+
+`— mood‑driven painting —
+the feeling is joy
+breathe cream
+if the mood is joy, scatter gold many bright
+unless the room is cold, bloom rose gathered soft
+varnish amber`,
+
+`— define a sunrise —
+define sunrise as:
+  breathe dawn
+  bloom gold gathered soft
+end
+invoke sunrise
+varnish mist`,
+
+`— string magic —
+let greeting be "hello"
+print greeting gold bold
+shout greeting
+whisper greeting`,
+
+`— self‑modifying poem —
+bloom rose
+the canvas whispers "the garden grows"
 veil ivory faint`,
 
+`— weather & wind —
+weather windy
+the wind is rising
+breathe slate
+drift charcoal many soft
+scatter ash sparse
+`,
+
+`— wet rice paper —
+the paper is rice
+the air is humid
+breathe cream
+wash cerulean soft
+bleed of cobalt into mist
+`,
+
+`— thirsty brush —
+the brush is rigger
+the paper is cold‑press
+breathe bone
+stroke umber thirty parched hesitant
+flick sienna dozen spent
+`,
+
+`— letterpress dream —
+the font is serif
+the font size is 32
+breathe ivory
+print "monoku" gold bold embossed
+at the lower edge, scrawl "the living scroll" midnight soft
+`,
+
+`— recursion chant —
+chant spiral depth with turns:
+  if turns exceeds 0,
+    spiral violet faint
+    fade turns by 1
+    cast spiral depth with turns turns
+  end
+end
+cast spiral depth with turns six
+veil mist faint
+`,
+
+`— canvas introspection —
+let bloom count be 3
+for bloom count times, bloom rose gathered soft
+measure bloom count
+if bloom count exceeds 2, veil gold faint
+`,
+
+`— alla prima wet blend —
+alla prima
+the paper is rough
+the air is humid
+breathe cream
+underpaint rose
+wash gold soft
+smudge amber quick
+`,
+
+`— workshop transformation —
+workshop terminal
+the font is monospace
+breathe ink
+print "scroll.exe" lime bold
+scrawl "awaiting input" green faint
+workshop default
+`,
+
+`— error recovery attempt —
+attempt,
+  bloom unknown‑colour gathered
+if the brush falters, wash calm faint
+breathe bone
+`,
+
+`— the fox at dusk —
+the paper is aged
+season autumn
+breathe dusk
+at the shadow, the fox
+scatter rust sparse
+veil ivory faint
+`,
+
+`— celestial kenning —
+kenning "morning star" as bloom gold gathered bright
+breathe midnight
+constellation ivory sparse
+morning star
+veil mist faint
+`,
+  
 `— meditation —
 workshop shrine
 the feeling is reverie
@@ -1994,7 +2008,9 @@ at the heart, bloom gold gathered soft
 stir amber gently
 lacquer dawn
 veil mist faint`
+  
 ];
+  
 let exIdx=0;
 function loadExample(){document.getElementById('ed').value=EXAMPLES[exIdx%EXAMPLES.length];exIdx++;updateLN();updateHL();if(!animating&&!breathing)runPoem()}
 
