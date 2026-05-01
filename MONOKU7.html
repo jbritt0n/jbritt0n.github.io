@@ -53,6 +53,19 @@ header{height:44px;display:flex;align-items:center;padding:0 12px;
 .pane-bar .pbl{flex:1}
 
 /* ── EDITOR ─────────────────────────────────────────────────── */
+#ed, #hl {
+  font-family: var(--mono);
+  font-size: 14px;
+  /* Absolute sync: use a pixel value for line-height, not a multiplier */
+  line-height: 22px !important; 
+  padding: 20px !important;
+  margin: 0;
+  border: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box; /* Ensures padding doesn't push the textarea out */
+}
+
 textarea#ed {
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
@@ -64,85 +77,75 @@ textarea#ed {
   height: 100%;
   z-index: 2;
   resize: none;
-  caret-color: var(--accent) !important; 
+  caret-color: var(--accent);
+  outline: none;
 }
-textarea#ed::selection {
-  background: rgba(var(--accent-rgb, 100, 100, 100), 0.2);
-  -webkit-text-fill-color: transparent; 
-}
+
 #hl {
   position: relative;
   z-index: 1;
-  pointer-events: none; /* Crucial: clicks must pass through to #ed */
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  color: var(--text);
+  pointer-events: none;
+  min-height: 100%; /* Keeps the background layer from collapsing */ 
 }
 
 /* ── LANGUAGE GARDEN ────────────────────────────────────────── */
 .garden-panel {
   border-top: 1px solid var(--border2);
   background: var(--panel);
-  height: auto;
-  min-height: 250px;
+  /* Reverting to a fixed, shorter height to save screen space */
+  height: 180px; 
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
-.garden-fam {
-  font-family: "EB Garamond", serif; /* Elegant, artistic serif */
+
+/* THE ONLY PART WITH THE "ARTISTIC" STYLE: The Word Families */
+.garden-tabs, .garden-fam {
+  font-family: "EB Garamond", serif; 
   font-style: italic;
-  font-size: 14px;
+  font-size: 15px;
+  letter-spacing: 0.03em;
   color: var(--ink);
-  padding: 10px 5px 5px 15px;
-  display: block;
-  letter-spacing: 0.02em;
-  opacity: 0.8;
-  border-bottom: 1px double var(--border2);
-  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border2);
+  background: rgba(0,0,0,0.02);
 }
+
+.garden-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
 .garden-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 15px 30px 15px;
+  gap: 6px;
   align-items: center;
-}
-.chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: lowercase;
-  cursor: pointer;
-  background: #ffffff; /* Clean paper white */
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 3px; /* Slightly rounded, like cut paper */
-  box-shadow: 
-    0 1px 2px rgba(0,0,0,0.05),
-    inset 0 0 0 1px rgba(255,255,255,0.8);
-  transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
-  color: #444;
-}
-.chip:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  border-color: var(--accent);
-  z-index: 5;
-}
-.chip-v { 
-  border-left: 3px solid #2f5e44; /* Verb: Deep Forest */
-  background: linear-gradient(to right, rgba(47,94,68,0.03), #fff);
-}
-.chip-c { 
-  border-left: 3px solid #7a4e22; /* Colour: Umber/Rust */
-  background: linear-gradient(to right, rgba(122,78,34,0.03), #fff);
-}
-.chip-m { 
-  border-left: 3px solid #5f7a6b; /* Modifier: Sage/Sage-Ash */
-  background: linear-gradient(to right, rgba(95,122,107,0.03), #fff);
 }
 
+/* Reverting chips to the previous practical style */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--mono);
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  transition: .1s;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+/* Category Tints (Keeping them subtle) */
+.chip-v { background: rgba(47,94,68,0.05); color: #2f5e44; }
+.chip-c { background: rgba(139,90,43,0.05); color: #7a4e22; }
+.chip-m { background: rgba(95,122,107,0.05); color: #4d6b5e; }
 /* ── CANVAS SIDE ────────────────────────────────────────────── */
 .right-col{display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
 .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:18px;position:relative;background:var(--canvas-bg)}
