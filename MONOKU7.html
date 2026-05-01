@@ -172,32 +172,183 @@ canvas#art{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 20px rg
 #expl .expl-label{color:var(--muted);min-width:60px}
 
 /* ── ENCYCLOPEDIA OVERLAY ───────────────────────────────────── */
-#ency-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-#ency-overlay.show{opacity:1;pointer-events:all}
-.ency-backdrop{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);cursor:pointer}
-.ency-panel{position:relative;width:min(760px,92vw);max-height:84vh;background:var(--panel);border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border2)}
-.ency-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;z-index:10}
-.ency-close:hover{color:var(--ink)}
-.ency-tabs{display:flex;border-bottom:1px solid var(--border2);background:var(--panel2);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
-.ency-tabs::-webkit-scrollbar{display:none}
-.etab{padding:7px 14px;font-size:12px;letter-spacing:.04em;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--muted);font-family:inherit;transition:.1s;white-space:nowrap}
-.etab:hover{color:var(--text)}
-.etab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
-#ency-search{width:100%;padding:7px 12px;border:none;border-bottom:1px solid var(--border);font-family:inherit;font-size:13px;background:var(--bg);color:var(--text);outline:none;flex-shrink:0}
-.ency-content{padding:16px 20px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--text)}
-.ency-content h2{font-size:18px;margin-bottom:8px;color:var(--ink);font-weight:normal}
-.ency-content h3{font-size:14px;margin-top:14px;margin-bottom:4px;color:var(--accent)}
-.ency-content p{margin:6px 0}
-.ency-content ul{padding-left:16px;margin:4px 0}
-.ency-content li{margin:2px 0}
-.ency-content code{background:rgba(0,0,0,0.05);padding:1px 5px;border-radius:3px;font-family:'Courier New',monospace;font-size:12px}
-.ency-content pre{background:rgba(0,0,0,0.04);padding:8px;border-radius:3px;font-family:'Courier New',monospace;font-size:12px;line-height:1.5;overflow-x:auto;margin:4px 0}
-.ency-content .try-btn{background:var(--accent2);color:#fff;border:none;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:10px;margin-left:6px}
-.ency-content .try-btn:hover{opacity:.85}
-.e-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}
-.e-card{background:var(--bg);padding:10px;border-radius:4px;border:1px solid var(--border)}
-.e-card h4{margin:0 0 3px;font-size:12px;color:var(--ink)}
-.e-card p{font-size:11px;color:var(--muted);margin:0 0 4px;line-height:1.3}
+/* ── ENCYCLOPEDIA STYLING — POETIC, POLISHED, PAPER‑AESTHETIC ─────────── */
+#ency-overlay {
+  position: fixed; inset: 0; background: rgba(244, 241, 234, 0.96);
+  backdrop-filter: blur(6px); z-index: 3000; display: flex;
+  align-items: center; justify-content: center; opacity: 0;
+  pointer-events: none; transition: opacity 0.3s ease;
+}
+#ency-overlay.show { opacity: 1; pointer-events: all; }
+
+.ency-backdrop {
+  position: absolute; inset: 0; cursor: pointer;
+}
+
+#ency-panel {
+  width: 92%; max-width: 1000px; height: 88%;
+  background: var(--paper); border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--brd);
+}
+
+#ency-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--brd);
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--paper-d);
+}
+#ency-header h2 { margin: 0; font-size: 1.2rem; font-weight: 500; }
+#ency-search {
+  width: 60%; padding: 8px 12px; border: 1px solid var(--brd);
+  border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+  background: #fff; transition: border-color 0.2s;
+}
+#ency-search:focus { outline: none; border-color: var(--acc); }
+#ency-close {
+  background: none; border: none; font-size: 1.4rem;
+  cursor: pointer; color: var(--muted); padding: 4px 8px;
+  border-radius: 4px; transition: 0.2s;
+}
+#ency-close:hover { background: var(--bg); color: var(--ink); }
+
+#ency-tabs {
+  display: flex; gap: 2px; padding: 8px 20px 0;
+  border-bottom: 1px solid var(--brd); overflow-x: auto;
+  background: var(--paper);
+}
+.etab {
+  background: var(--paper-d); border: 1px solid var(--brd);
+  padding: 8px 14px; cursor: pointer; border-radius: 6px 6px 0 0;
+  font-size: 0.85rem; transition: 0.2s; white-space: nowrap;
+  color: var(--muted);
+}
+.etab:hover { background: var(--bg); color: var(--ink); }
+.etab.on {
+  background: #fff; border-bottom-color: #fff; color: var(--ink);
+  font-weight: 500; box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+}
+
+#ency-content {
+  flex: 1; overflow-y: auto; padding: 20px;
+  background: #fff; line-height: 1.6;
+}
+#ency-content h2 {
+  margin: 0 0 16px; font-size: 1.4rem; border-bottom: 2px solid var(--acc);
+  padding-bottom: 8px; color: var(--ink);
+}
+#ency-content h3 {
+  margin: 24px 0 12px; font-size: 1.1rem; color: var(--v);
+}
+#ency-content p.lead {
+  font-size: 1.05rem; color: var(--muted); margin-bottom: 20px;
+  font-style: italic;
+}
+#ency-content code {
+  background: var(--bg); padding: 2px 6px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 0.9em; color: var(--c);
+}
+#ency-content pre {
+  background: var(--bg); padding: 12px; border-radius: 6px;
+  overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem;
+  border-left: 3px solid var(--acc); margin: 12px 0;
+}
+
+/* Grid layouts */
+.ency-grid, .e-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px; margin: 20px 0;
+}
+.ency-card, .e-card {
+  background: var(--bg); padding: 16px; border-radius: 8px;
+  border: 1px solid var(--brd); transition: 0.2s;
+}
+.ency-card:hover, .e-card:hover {
+  border-color: var(--acc); box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.ency-card h3, .e-card h4 {
+  margin: 0 0 8px; font-size: 1rem; color: var(--ink);
+}
+.ency-card p, .e-card p {
+  margin: 0 0 12px; font-size: 0.9rem; color: var(--muted);
+}
+.try-btn {
+  background: var(--v); color: #fff; border: none;
+  padding: 4px 10px; border-radius: 4px; font-size: 0.75rem;
+  cursor: pointer; transition: 0.2s;
+}
+.try-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Tutorial steps */
+.tutorial-steps { margin: 20px 0; }
+.step {
+  background: var(--bg); padding: 16px; border-radius: 8px;
+  border-left: 4px solid var(--acc); margin-bottom: 16px;
+}
+.step h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.step pre { margin: 12px 0; }
+.step .try-btn { margin-top: 8px; }
+
+/* Verb/Colour/Modifier lists */
+details {
+  margin: 16px 0; border: 1px solid var(--brd);
+  border-radius: 8px; overflow: hidden;
+}
+summary {
+  padding: 12px 16px; background: var(--paper-d);
+  cursor: pointer; font-weight: 500; list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+summary::after { content: '▾'; transition: transform 0.2s; }
+details[open] summary::after { transform: rotate(180deg); }
+
+.verb-list, .mod-list {
+  padding: 12px 16px; display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px; background: #fff;
+}
+.verb-item, .mod-item {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 0.85rem;
+}
+.verb-item code, .mod-item code {
+  flex-shrink: 0; font-weight: 500;
+}
+.verb-item span, .mod-item span {
+  color: var(--muted); font-size: 0.8rem;
+}
+
+.colour-grid {
+  padding: 12px 16px; display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px; background: #fff;
+}
+.colour-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem;
+}
+.colour-item .swatch {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1px solid var(--brd); flex-shrink: 0;
+}
+.colour-item code { font-weight: 500; }
+.colour-item span { color: var(--muted); font-size: 0.75rem; }
+
+/* Search results */
+.no-results {
+  text-align: center; padding: 40px; color: var(--muted);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #ency-panel { width: 96%; height: 92%; }
+  #ency-header { flex-direction: column; gap: 10px; }
+  #ency-search { width: 100%; }
+  #ency-tabs { padding: 8px 12px 0; }
+  .etab { padding: 6px 10px; font-size: 0.8rem; }
+  .ency-grid, .e-grid { grid-template-columns: 1fr; }
+}
 
 /* ── WORKSHOP THEMES ────────────────────────────────────────── */
 .theme-cabin{--bg:#e6d3b8;--surface:#d9bf9c;--panel:#c7aa86;--panel2:#b8956e;--border:rgba(0,0,0,0.12);--text:#3a2818;--muted:#6b5a45;--muted2:#9c886c;--ink:#4a2f15;--ink2:#4a2f15;--canvas-bg:#f7edd5;--accent:#8b5a2b;--accent2:#4d7a4e;--accent3:#9a5050}
@@ -882,59 +1033,769 @@ buildGarden();
   
 // ── ENCYCLOPEDIA ─────────────────────────────────────────────
 const ENCY_DATA = {
-  about: `<h2>🌸 What is Monoku?</h2>
-          <p><strong>Monoku</strong> is a poetic language for generative art. Every line you write is a gesture; every verb, a loaded brush; every modifier, a breath of wind or a shift of light.</p>
-          <p>Born from sumi‑e ink painting, haiku, and generative logic, Monoku treats the canvas as a physical medium that reacts to linguistic pressure. A poem follows three phases: <em>Atmosphere</em>, <em>Gesture</em>, and <em>Coda</em>.</p>`,
-  recipes: `<h2>🧪 Generative Recipes</h2>
-            <div class="e-grid">
-              <div class="e-card">
-                <h4>Wet Cyanotype</h4>
-                <p>Simulates chemical pooling and winter sunlight.</p>
-                <code>breathe iron<br>wash cerulean pooled salt<br>stipple ivory crystallized</code>
-                <button class="try-btn" onclick="ins('breathe iron\\nwash cerulean pooled salt\\nstipple ivory crystallized')">Mix</button>
-              </div>
-              <div class="e-card">
-                <h4>Cosmic Lattice</h4>
-                <p>Explores error-correcting codes and structural geometry.</p>
-                <code>the feeling is entropy<br>trace gold recursive<br>weave void holographic</code>
-                <button class="try-btn" onclick="ins('the feeling is entropy\\ntrace gold recursive\\nweave void holographic')">Build</button>
-              </div>
-              <div class="e-card">
-                <h4>Nebula Rust</h4>
-                <p>For industrial-scale sci-fi atmospheres.</p>
-                <code>the paper is charcoal<br>bloom copper oxidized<br>veil smoke metallic</code>
-                <button class="try-btn" onclick="ins('the paper is charcoal\\nbloom copper oxidized\\nveil smoke metallic')">Forge</button>
-              </div>
-            </div>`,
-  syntax: `<h2>📜 Syntax</h2>
-           <p>A Monoku line follows this structure: <code>verb colour [count] [modifiers…]</code></p>
-           <h3>Advanced Directives</h3>
-           <ul>
-             <li><strong>Kennings:</strong> <code>kenning "sky jewel" as sun</code> creates a metaphoric alias.</li>
-             <li><strong>Chants:</strong> <code>chant bloomer with count: ... end</code> defines a reusable function.</li>
-             <li><strong>Modifiers:</strong> Use <em>recursive</em> for fractals, <em>pooled</em> for fluid dynamics, or <em>crystallized</em> for hard edges.</li>
-           </ul>`,
-  verbs: Object.entries(VERBS).length > 0 ? `<h2>Verbs</h2>` + VERBS.map(v => `<span class="chip chip-v" onclick="ins('${v}')">${v}</span>`).join(' ') : '',
-  colours: `<h2>Colours</h2>` + Object.entries(COLORS).map(([n, rgb]) => 
-    `<span class="chip chip-c" onclick="ins('${n}')"><span class="swatch" style="background:rgb(${rgb.join(',')})"></span>${n}</span>`).join(' '),
-  modifiers: `<h2>Modifiers</h2>` + [...MODIFIERS].map(m => `<span class="chip chip-m" onclick="ins('${m}')">${m}</span>`).join(' '),
-  tips: `<h2>✨ Creative Tips</h2>
-         <ul>
-           <li><strong>Negative Space:</strong> Use <code>wash void</code> to "carve" through existing layers.</li>
-           <li><strong>Physics:</strong> Add <code>heavy</code> or <code>weighted</code> to modifiers to affect particle velocity.</li>
-           <li><strong>Haiku Mode:</strong> Three lines with 5, 7, and 5 syllables (or word counts) will trigger a distinct "Season" filter.</li>
-           <li><strong>Obsidian Integration:</strong> Paste your poem into your vault with the <code>#monoku</code> tag to track your generative iterations.</li>
-         </ul>`
+  about: `
+    <section class="ency-section active" id="ency-about">
+      <h2>🌸 What is Monoku?</h2>
+      <p class="lead"><strong>Monoku</strong> is a poetic, Turing‑complete language for generative art. It lives in a single HTML file and turns language into visual gesture—haiku into canvas strokes, weather into turbulence, the length of a word into the weight of a mark.</p>
+      
+      <div class="ency-grid">
+        <div class="ency-card">
+          <h3>✦ Philosophy</h3>
+          <p>The canvas listens. You don't command; you whisper. A Monoku poem has three breath‑phases:</p>
+          <ol>
+            <li><strong>Atmosphere</strong>: Set paper, mood, season, brush.</li>
+            <li><strong>Gesture</strong>: Draw with verbs, colours, modifiers.</li>
+            <li><strong>Coda</strong>: Veil, grain, varnish, fade—let the canvas settle.</li>
+          </ol>
+        </div>
+        <div class="ency-card">
+          <h3>✦ How It Works</h3>
+          <p>Each line is parsed into a command object. The interpreter executes gestures on a 2D canvas using seeded Perlin noise, mood‑based colour tinting, and paper‑texture overlays.</p>
+          <p><code>verb colour [count] [modifiers…]</code> is the core grammar. Placement uses commas. Loops, conditionals, variables, and macros extend expressiveness.</p>
+        </div>
+        <div class="ency-card">
+          <h3>✦ Quick Controls</h3>
+          <ul>
+            <li><code>⌘↵</code> or <strong>render</strong>: Paint the poem</li>
+            <li><strong>◎ animate</strong>: Watch marks appear with pauses</li>
+            <li><strong>≈ breath</strong>: Line‑by‑line recital mode</li>
+            <li><strong>🕮 guide</strong>: Open this Encyclopedia</li>
+            <li><strong>seal png</strong>: Save your artwork</li>
+          </ul>
+        </div>
+      </div>
+      
+      <h3>✦ The Three Disciplines</h3>
+      <p>Monoku weaves three perspectives:</p>
+      <ul>
+        <li><strong>Poet‑Artist</strong>: Commands feel like whispered incantations. Art extends natural language and sentiment.</li>
+        <li><strong>Linguist</strong>: Grammar, semantics, metaphor, and kenning systems create a living language that breathes and composes.</li>
+        <li><strong>Engineer</strong>: A recursive‑descent parser, state machine, and generative engine make the language Turing‑complete while keeping syntax poetic.</li>
+      </ul>
+    </section>
+  `,
+  
+  'quick-start': `
+    <section class="ency-section" id="ency-start">
+      <h2>🎯 Quick Start Tutorial</h2>
+      <p class="lead">Follow these steps to write your first Monoku poem. Click <strong>Try it</strong> to insert code into your scroll.</p>
+      
+      <div class="tutorial-steps">
+        <div class="step">
+          <h3>Step 1: Set the Atmosphere</h3>
+          <p>Begin by choosing your paper, mood, and season. These affect texture, colour tint, and overall feeling.</p>
+          <pre><code>the paper is rice
+the feeling is serenity
+season spring</code></pre>
+          <button class="try-btn" onclick="ins('the paper is rice\\nthe feeling is serenity\\nseason spring')">Insert Atmosphere</button>
+        </div>
+        
+        <div class="step">
+          <h3>Step 2: Draw a Simple Gesture</h3>
+          <p>Use a verb + colour to make a mark. Add modifiers for character.</p>
+          <pre><code>bloom rose gathered soft</code></pre>
+          <p><em>Result</em>: A soft, gathered rose‑coloured bloom at the canvas center.</p>
+          <button class="try-btn" onclick="ins('bloom rose gathered soft')">Insert Gesture</button>
+        </div>
+        
+        <div class="step">
+          <h3>Step 3: Add Placement</h3>
+          <p>Use a comma to position your gesture.</p>
+          <pre><code>at the heart, bloom gold bold</code></pre>
+          <p><em>Result</em>: A bold gold bloom at the canvas center.</p>
+          <button class="try-btn" onclick="ins('at the heart, bloom gold bold')">Insert Placement</button>
+        </div>
+        
+        <div class="step">
+          <h3>Step 4: Finish with a Coda</h3>
+          <p>Veil, fade, or varnish to complete the poem.</p>
+          <pre><code>veil ivory faint</code></pre>
+          <button class="try-btn" onclick="ins('veil ivory faint')">Insert Coda</button>
+        </div>
+        
+        <div class="step">
+          <h3>Step 5: Render</h3>
+          <p>Press <strong>⌘↵</strong> or click <strong>render</strong> to paint your poem.</p>
+          <p>✨ <em>Tip</em>: If your poem has three lines with ~5‑7‑5 syllables, Haiku Mode activates automatically with three‑phase rendering.</p>
+        </div>
+      </div>
+      
+      <h3>🧪 Try These Mini‑Poems</h3>
+      <div class="e-grid">
+        <div class="e-card">
+          <h4>Dawn Whisper</h4>
+          <code>wash dawn<br>bloom rose soft<br>veil ivory</code>
+          <button class="try-btn" onclick="ins('wash dawn\\nbloom rose soft\\nveil ivory')">Load</button>
+        </div>
+        <div class="e-card">
+          <h4>Autumn Memory</h4>
+          <code>season autumn<br>scatter leaves gathered<br>varnish amber faint</code>
+          <button class="try-btn" onclick="ins('season autumn\\nscatter leaves gathered\\nvarnish amber faint')">Load</button>
+        </div>
+        <div class="e-card">
+          <h4>Cosmic Haiku</h4>
+          <code>the feeling is wonder<br>nebula violet scattered<br>fade slowly</code>
+          <button class="try-btn" onclick="ins('the feeling is wonder\\nnebula violet scattered\\nfade slowly')">Load</button>
+        </div>
+      </div>
+    </section>
+  `,
+  
+  verbs: `
+    <section class="ency-section" id="ency-verbs">
+      <h2>🎨 Verb Glossary</h2>
+      <p class="lead">Verbs are your brushes. Each belongs to a family that suggests its visual character.</p>
+      
+      <div class="verb-families">
+        <details open>
+          <summary><strong>Canvas & Background</strong> — prepare the surface</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>breathe</code> <span>Initialize the canvas with a soft, ambient base layer.</span></div>
+            <div class="verb-item"><code>prime</code> <span>Apply a preparatory ground; sets base tone.</span></div>
+            <div class="verb-item"><code>silence</code> <span>Clear subtle noise; creates calm negative space.</span></div>
+            <div class="verb-item"><code>fade</code> <span>Gradually reduce opacity of recent marks.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Wet Media</strong> — fluid, bleeding, atmospheric</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>wash</code> <span>Apply a translucent layer that pools and settles.</span></div>
+            <div class="verb-item"><code>glaze</code> <span>Layer a transparent colour over existing marks.</span></div>
+            <div class="verb-item"><code>bleed</code> <span>Let colours flow into one another organically.</span></div>
+            <div class="verb-item"><code>dew</code> <span>Scatter tiny, glistening droplets.</span></div>
+            <div class="verb-item"><code>rain</code> <span>Vertical streaks with varying opacity.</span></div>
+            <div class="verb-item"><code>haze</code> <span>Soft, diffused atmospheric veil.</span></div>
+            <div class="verb-item"><code>veil</code> <span>Final translucent layer to unify the composition.</span></div>
+            <div class="verb-item"><code>sfumato</code> <span>Blur edges for smoky, dreamlike transitions.</span></div>
+            <div class="verb-item"><code>chiaroscuro</code> <span>Strong light/dark contrast for dramatic volume.</span></div>
+            <div class="verb-item"><code>blush</code> <span>Subtle warm tint that blooms from center.</span></div>
+            <div class="verb-item"><code>drip</code> <span>Vertical runs with irregular edges.</span></div>
+            <div class="verb-item"><code>stir</code> <span>Swirl wet media to create organic turbulence.</span></div>
+            <div class="verb-item"><code>poison</code> <span>Introduce a contrasting colour that spreads unpredictably.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Dry Media</strong> — textured, granular, precise</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>stipple</code> <span>Build tone with dense dots.</span></div>
+            <div class="verb-item"><code>scumble</code> <span>Dry‑brush a broken, textured layer.</span></div>
+            <div class="verb-item"><code>drybrush</code> <span>Light, scratchy marks with minimal pigment.</span></div>
+            <div class="verb-item"><code>etch</code> <span>Incise fine lines into the surface.</span></div>
+            <div class="verb-item"><code>scratch</code> <span>Rough, expressive linear marks.</span></div>
+            <div class="verb-item"><code>rake</code> <span>Parallel textured strokes like a garden rake.</span></div>
+            <div class="verb-item"><code>codex</code> <span>Imprint structured, manuscript‑like glyphs.</span></div>
+            <div class="verb-item"><code>aver</code> <span>Assert a mark with confident, clean edges.</span></div>
+            <div class="verb-item"><code>fuligin</code> <span>Apply a sooty, smudged dark tone.</span></div>
+            <div class="verb-item"><code>lacquer</code> <span>Seal with a hard, glossy finish.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Oil & Impasto</strong> — thick, tactile, dimensional</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>impasto</code> <span>Apply thick, textured paint that catches light.</span></div>
+            <div class="verb-item"><code>scrape</code> <span>Remove or drag wet paint to reveal layers beneath.</span></div>
+            <div class="verb-item"><code>smudge</code> <span>Blend edges with finger or tool for soft transitions.</span></div>
+            <div class="verb-item"><code>alla prima</code> <span>Wet‑on‑wet painting; colours blend organically.</span></div>
+            <div class="verb-item"><code>quench</code> <span>Rapidly dry wet areas to fix composition.</span></div>
+            <div class="verb-item"><code>satisfy</code> <span>Balance compositional weight; auto‑adjusts nearby marks.</span></div>
+            <div class="verb-item"><code>burnish</code> <span>Polish surface to a subtle sheen.</span></div>
+            <div class="verb-item"><code>tarnish</code> <span>Apply an aged, oxidized patina.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Organic Marks</strong> — natural, flowing, living forms</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>bloom</code> <span>Gathered ellipses like flower petals.</span></div>
+            <div class="verb-item"><code>scatter</code> <span>Distribute marks with organic randomness.</span></div>
+            <div class="verb-item"><code>petal</code> <span>Single, delicate petal‑shaped mark.</span></div>
+            <div class="verb-item"><code>branch</code> <span>Fractal, tree‑like branching structure.</span></div>
+            <div class="verb-item"><code>dapple</code> <span>Irregular spots like light through leaves.</span></div>
+            <div class="verb-item"><code>spiral</code> <span>Logarithmic spiral with growing radius.</span></div>
+            <div class="verb-item"><code>constellation</code> <span>Connected points like star patterns.</span></div>
+            <div class="verb-item"><code>ripple</code> <span>Concentric waves from a central point.</span></div>
+            <div class="verb-item"><code>smoke</code> <span>Wispy, rising organic forms.</span></div>
+            <div class="verb-item"><code>nebula</code> <span>Cloud‑like cluster with soft edges and internal glow.</span></div>
+            <div class="verb-item"><code>web</code> <span>Interconnected filament network.</span></div>
+            <div class="verb-item"><code>glyph</code> <span>Abstract symbolic mark with cultural resonance.</span></div>
+            <div class="verb-item"><code>crumble</code> <span>Fragmented, eroded texture.</span></div>
+            <div class="verb-item"><code>crack</code> <span>Linear fractures with branching sub‑cracks.</span></div>
+            <div class="verb-item"><code>flick</code> <span>Quick, light gesture with tapered end.</span></div>
+            <div class="verb-item"><code>pulse</code> <span>Rhythmic expansion/contraction of marks.</span></div>
+            <div class="verb-item"><code>erode</code> <span>Gradually wear away existing marks.</span></div>
+            <div class="verb-item"><code>foxing</code> <span>Age‑spot texture; brownish organic speckles.</span></div>
+            <div class="verb-item"><code>patina</code> <span>Surface oxidation; green‑blue aged metal effect.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Transformative</strong> — alter, combine, evolve</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>burn</code> <span>Darken with heat‑like gradient.</span></div>
+            <div class="verb-item"><code>dissolve</code> <span>Break marks into particles that drift away.</span></div>
+            <div class="verb-item"><code>tint</code> <span>Apply a uniform colour overlay.</span></div>
+            <div class="verb-item"><code>shade</code> <span>Add depth with darker tones.</span></div>
+            <div class="verb-item"><code>underpaint</code> <span>Lay groundwork for subsequent layers.</span></div>
+            <div class="verb-item"><code>varnish</code> <span>Protective glossy topcoat.</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Typography</strong> — render text as visual gesture</summary>
+          <div class="verb-list">
+            <div class="verb-item"><code>print</code> <span>Clear, legible text with optional embossing.</span></div>
+            <div class="verb-item"><code>scrawl</code> <span>Handwritten, expressive text.</span></div>
+            <div class="verb-item"><code>scribble</code> <span>Loose, energetic text marks.</span></div>
+            <div class="verb-item"><code>chicken-scratch</code> <span>Chaotic, textured text gesture.</span></div>
+            <div class="verb-item"><code>shout</code> <span>Uppercase, bold text with strong presence.</span></div>
+            <div class="verb-item"><code>whisper</code> <span>Faint, delicate text that barely appears.</span></div>
+          </div>
+        </details>
+      </div>
+      
+      <h3>✦ Using Verbs</h3>
+      <p>Basic syntax: <code>verb colour [count] [modifiers…]</code></p>
+      <pre><code>bloom rose gathered soft          // single soft rose bloom
+scatter leaves 5 clustered          // five clustered leaf marks
+at the heart, nebula violet faint   // positioned nebula</code></pre>
+      <p>Combine multiple gestures on one line with <code>—</code> (em‑dash):</p>
+      <pre><code>bloom rose gathered — stroke gold soft — veil ivory</code></pre>
+    </section>
+  `,
+  
+  colours: `
+    <section class="ency-section" id="ency-colours">
+      <h2>🎨 Colour Glossary</h2>
+      <p class="lead">Colours are pigments. Each belongs to a family that suggests its origin and character.</p>
+      
+      <div class="colour-families">
+        <details open>
+          <summary><strong>Mineral Pigments</strong> — ground stones, intense and lightfast</summary>
+          <div class="colour-grid">
+            <div class="colour-item" style="--c:#007ba7"><code>cerulean</code> <span>the blue of a clear sky</span></div>
+            <div class="colour-item" style="--c:#26619c"><code>lapis</code> <span>deep ultramarine with gold flecks</span></div>
+            <div class="colour-item" style="--c:#006994"><code>azurite</code> <span>cool blue‑green mineral</span></div>
+            <div class="colour-item" style="--c:#0bda51"><code>malachite</code> <span>vibrant green copper carbonate</span></div>
+            <div class="colour-item" style="--c:#cc7722"><code>ochre</code> <span>golden yellow earth pigment</span></div>
+            <div class="colour-item" style="--c:#e34234"><code>vermilion</code> <span>brilliant red mercury sulfide</span></div>
+            <div class="colour-item" style="--c:#3f00ff"><code>ultramarine</code> <span>deep, luminous blue</span></div>
+            <div class="colour-item" style="--c:#0047ab"><code>cobalt</code> <span>stable, intense blue</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Earth Pigments</strong> — soils, clays, organic tones</summary>
+          <div class="colour-grid">
+            <div class="colour-item" style="--c:#635147"><code>umber</code> <span>rich brown with green undertone</span></div>
+            <div class="colour-item" style="--c:#882d17"><code>sienna</code> <span>warm reddish‑brown</span></div>
+            <div class="colour-item" style="--c:#704214"><code>sepia</code> <span>deep brown from cuttlefish ink</span></div>
+            <div class="colour-item" style="--c:#e2725b"><code>terracotta</code> <span>baked clay orange‑red</span></div>
+            <div class="colour-item" style="--c:#708238"><code>olive</code> <span>muted green‑yellow</span></div>
+            <div class="colour-item" style="--c:#b7410e"><code>rust</code> <span>oxidized iron red‑orange</span></div>
+            <div class="colour-item" style="--c:#36454f"><code>charcoal</code> <span>deep neutral black‑grey</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Extended Palette</strong> — poetic, atmospheric, symbolic</summary>
+          <div class="colour-grid">
+            <div class="colour-item" style="--c:#e0115f"><code>rose</code> <span>soft romantic pink‑red</span></div>
+            <div class="colour-item" style="--c:#ffd700"><code>gold</code> <span>luminous metallic yellow</span></div>
+            <div class="colour-item" style="--c:#fffff0"><code>ivory</code> <span>warm off‑white</span></div>
+            <div class="colour-item" style="--c:#191970"><code>midnight</code> <span>deep blue‑black night sky</span></div>
+            <div class="colour-item" style="--c:#7f00ff"><code>violet</code> <span>spiritual purple</span></div>
+            <div class="colour-item" style="--c:#dc143c"><code>crimson</code> <span>deep, passionate red</span></div>
+            <div class="colour-item" style="--c:#008080"><code>teal</code> <span>blue‑green like tropical water</span></div>
+            <div class="colour-item" style="--c:#f4c430"><code>saffron</code> <span>warm golden spice tone</span></div>
+            <div class="colour-item" style="--c:#4b3621"><code>dusk</code> <span>twilight brown‑purple</span></div>
+            <div class="colour-item" style="--c:#f0e68c"><code>dawn</code> <span>soft yellow‑pink morning light</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Atmospheric</strong> — elements, weather, light</summary>
+          <div class="colour-grid">
+            <div class="colour-item" style="--c:#87ceeb"><code>sky</code> <span>daytime azure</span></div>
+            <div class="colour-item" style="--c:#b0e0e6"><code>water</code> <span>transparent blue‑green</span></div>
+            <div class="colour-item" style="--c:#9d9d9d"><code>stone</code> <span>neutral grey mineral</span></div>
+            <div class="colour-item" style="--c:#4f7942"><code>leaf</code> <span>fresh green foliage</span></div>
+            <div class="colour-item" style="--c:#8a0303"><code>blood</code> <span>deep organic red</span></div>
+            <div class="colour-item" style="--c:#cf3800"><code>fire</code> <span>glowing orange‑red</span></div>
+            <div class="colour-item" style="--c:#f5f5f5"><code>snow</code> <span>pure white with cool tint</span></div>
+            <div class="colour-item" style="--c:#1a1a1a"><code>shadow</code> <span>deep neutral dark</span></div>
+            <div class="colour-item" style="--c:#4a4e69"><code>gloom</code> <span>moody blue‑grey</span></div>
+            <div class="colour-item" style="--c:#fffacd"><code>glow</code> <span>warm luminous yellow</span></div>
+          </div>
+        </details>
+      </div>
+      
+      <h3>✦ Using Colours</h3>
+      <p>Colours follow the verb. They can be modified by mood, season, or poetic mixing:</p>
+      <pre><code>bloom rose                     // simple rose bloom
+mix cerulean with snow          // pale blue result
+a ghost of gold                 // gold with high transparency
+a memory of vermilion           // vermilion tinted with aged sepia
+the feeling is melancholy       // all colours shift toward cool, muted tones</code></pre>
+    </section>
+  `,
+  
+  modifiers: `
+    <section class="ency-section" id="ency-mods">
+      <h2>✨ Modifier Glossary</h2>
+      <p class="lead">Modifiers refine gesture: opacity, pace, texture, character, ink load, size, and special effects.</p>
+      
+      <div class="mod-families">
+        <details open>
+          <summary><strong>Opacity & Density</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>soft</code> <span>~40% opacity, gentle edges</span></div>
+            <div class="mod-item"><code>faint</code> <span>~15% opacity, barely visible</span></div>
+            <div class="mod-item"><code>dim</code> <span>~30% opacity, subdued</span></div>
+            <div class="mod-item"><code>bold</code> <span>~85% opacity, strong presence</span></div>
+            <div class="mod-item"><code>hard</code> <span>crisp edges, high contrast</span></div>
+            <div class="mod-item"><code>deep</code> <span>rich, saturated tone</span></div>
+            <div class="mod-item"><code>bright</code> <span>high luminance, vivid</span></div>
+            <div class="mod-item"><code>dark</code> <span>low luminance, shadowy</span></div>
+            <div class="mod-item"><code>light</code> <span>high value, airy</span></div>
+            <div class="mod-item"><code>pale</code> <span>low saturation, washed</span></div>
+            <div class="mod-item"><code>sheer</code> <span>very transparent, layered</span></div>
+            <div class="mod-item"><code>dense</code> <span>opaque, heavy pigment load</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Distribution & Flow</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>gathered</code> <span>marks cluster toward center</span></div>
+            <div class="mod-item"><code>clustered</code> <span>tight, organic grouping</span></div>
+            <div class="mod-item"><code>scattered</code> <span>randomized placement</span></div>
+            <div class="mod-item"><code>drift</code> <span>gentle directional flow</span></div>
+            <div class="mod-item"><code>pour</code> <span>fluid, continuous stream</span></div>
+            <div class="mod-item"><code>drip</code> <span>vertical runs with irregular edges</span></div>
+            <div class="mod-item"><code>fall</code> <span>gravity‑influenced placement</span></div>
+            <div class="mod-item"><code>rise</code> <span>upward‑moving marks</span></div>
+            <div class="mod-item"><code>swell</code> <span>expanding, wave‑like pattern</span></div>
+            <div class="mod-item"><code>ebb</code> <span>receding, diminishing pattern</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Pace & Rhythm</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>slowly</code> <span>adds pause between marks in animate mode</span></div>
+            <div class="mod-item"><code>patiently</code> <span>deliberate, measured execution</span></div>
+            <div class="mod-item"><code>gently</code> <span>soft transitions, low force</span></div>
+            <div class="mod-item"><code>quickly</code> <span>rapid execution, energetic</span></div>
+            <div class="mod-item"><code>rapidly</code> <span>very fast, almost frantic</span></div>
+            <div class="mod-item"><code>frantic</code> <span>chaotic, high‑energy marks</span></div>
+            <div class="mod-item"><code>steady</code> <span>consistent rhythm, even spacing</span></div>
+            <div class="mod-item"><code>pulse</code> <span>rhythmic variation in size/opacity</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Character & Texture</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>hushed</code> <span>very small, very faint marks</span></div>
+            <div class="mod-item"><code>trembling</code> <span>slight positional jitter</span></div>
+            <div class="mod-item"><code>decisive</code> <span>confident, clean edges</span></div>
+            <div class="mod-item"><code>hesitant</code> <span>broken, tentative strokes</span></div>
+            <div class="mod-item"><code>firm</code> <span>strong pressure, defined shape</span></div>
+            <div class="mod-item"><code>loose</code> <span>relaxed, expressive gestures</span></div>
+            <div class="mod-item"><code>brittle</code> <span>fragile, cracking texture</span></div>
+            <div class="mod-item"><code>fluid</code> <span>smooth, flowing transitions</span></div>
+            <div class="mod-item"><code>aged</code> <span>weathered, time‑worn appearance</span></div>
+            <div class="mod-item"><code>toothed</code> <span>rough, textured surface interaction</span></div>
+            <div class="mod-item"><code>saturated</code> <span>intense, pure colour</span></div>
+            <div class="mod-item"><code>mottled</code> <span>irregular speckled texture</span></div>
+            <div class="mod-item"><code>ghosted</code> <span>faint duplicate offset slightly</span></div>
+            <div class="mod-item"><code>weathered</code> <span>eroded, sun‑bleached effect</span></div>
+            <div class="mod-item"><code>viscous</code> <span>thick, slow‑moving medium</span></div>
+            <div class="mod-item"><code>lean</code> <span>thin, fast‑drying medium</span></div>
+            <div class="mod-item"><code>crystalline</code> <span>sharp, geometric facets</span></div>
+            <div class="mod-item"><code>foliated</code> <span>layered, leaf‑like structure</span></div>
+            <div class="mod-item"><code>stamped</code> <span>repeated impression pattern</span></div>
+            <div class="mod-item"><code>debossed</code> <span>recessed, indented appearance</span></div>
+            <div class="mod-item"><code>letterpress</code> <span>raised, inked‑edge text effect</span></div>
+            <div class="mod-item"><code>drenched</code> <span>fully saturated, pooling medium</span></div>
+            <div class="mod-item"><code>thirsty</code> <span>absorbent paper interaction</span></div>
+            <div class="mod-item"><code>glossy</code> <span>reflective, smooth finish</span></div>
+            <div class="mod-item"><code>matte</code> <span>non‑reflective, diffuse surface</span></div>
+            <div class="mod-item"><code>woven</code> <span>interlaced, textile‑like pattern</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Ink Load & Size</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>loaded</code> <span>full pigment capacity</span></div>
+            <div class="mod-item"><code>spent</code> <span>nearly empty brush, broken marks</span></div>
+            <div class="mod-item"><code>soaked</code> <span>excess medium, bleeding edges</span></div>
+            <div class="mod-item"><code>parched</code> <span>dry brush, scratchy texture</span></div>
+            <div class="mod-item"><code>tiny</code> <span>~30% default size</span></div>
+            <div class="mod-item"><code>small</code> <span>~60% default size</span></div>
+            <div class="mod-item"><code>medium</code> <span>default size</span></div>
+            <div class="mod-item"><code>large</code> <span>~120% default size</span></div>
+            <div class="mod-item"><code>vast</code> <span>~180% default size</span></div>
+            <div class="mod-item"><code>micro</code> <span>~20% default size, fine detail</span></div>
+            <div class="mod-item"><code>giant</code> <span>~250% default size, dominant</span></div>
+          </div>
+        </details>
+        
+        <details>
+          <summary><strong>Typography & Special</strong></summary>
+          <div class="mod-list">
+            <div class="mod-item"><code>embossed</code> <span>text with shadow offset for 3D effect</span></div>
+            <div class="mod-item"><code>fontsize N</code> <span>set text size in pixels (e.g., <code>fontsize 24</code>)</span></div>
+            <div class="mod-item"><code>cursive</code> <span>use cursive font family for text</span></div>
+            <div class="mod-item"><code>serif</code> <span>use serif font family</span></div>
+            <div class="mod-item"><code>sans</code> <span>use sans‑serif font family</span></div>
+          </div>
+        </details>
+      </div>
+      
+      <h3>✦ Using Modifiers</h3>
+      <p>Modifiers follow colour and count. Chain multiple for nuanced effects:</p>
+      <pre><code>bloom rose 3 gathered soft slowly
+at the heart, scatter gold 5 clustered bold
+print "haiku" gold embossed fontsize 24</code></pre>
+    </section>
+  `,
+  
+  syntax: `
+    <section class="ency-section" id="ency-syntax">
+      <h2>📜 Complete Syntax Reference</h2>
+      <p class="lead">Monoku's grammar is poetic yet precise. Below is the full parsing specification.</p>
+      
+      <h3>✦ Core Grammar</h3>
+      <pre><code>line       ::= [placement ','] gesture [— gesture]*
+gesture    ::= verb colour [count] [modifier]*
+placement  ::= 'at the heart' | 'along the horizon' | 'in the light' | ...
+verb       ::= one of 90+ painting/typography verbs
+colour     ::= one of 100+ named colours or variables
+count      ::= integer (default: 1)
+modifier   ::= one of 60+ opacity/pace/texture/character terms</code></pre>
+      
+      <h3>✦ Parsing Pipeline</h3>
+      <ol>
+        <li><strong>Pre‑pass</strong>: Resolve text‑area meta commands (<code>inscribe</code>, <code>append</code>, <code>recall</code>, etc.)</li>
+        <li><strong>Kenning resolution</strong>: Replace <code>kenning "phrase"</code> aliases with their targets</li>
+        <li><strong>Tokenization</strong>: Split line on whitespace, preserve quoted strings</li>
+        <li><strong>Placement extraction</strong>: If comma present, text before comma is placement</li>
+        <li><strong>Verb identification</strong>: First token must match known verb</li>
+        <li><strong>Colour/noun resolution</strong>: Scan tokens for known colour or noun</li>
+        <li><strong>Modifier collection</strong>: Gather remaining known modifiers</li>
+        <li><strong>Number extraction</strong>: Parse integers as count or fontsize</li>
+        <li><strong>Execution</strong>: Build command object and render on canvas</li>
+      </ol>
+      
+      <h3>✦ Control Structures</h3>
+      <pre><code>// Loops
+for N times, gesture
+while condition, gesture
+until condition, gesture
+
+// Conditionals
+if condition, gesture
+when condition, gesture  
+unless condition, gesture
+
+// Variables
+let name be value          // value: string, number, colour
+set name to number
+deepen name by number      // increment
+fade name by number        // decrement
+halve name                 // divide by 2
+measure name               // store drawn count
+
+// Macros
+define name as:
+  gesture
+  gesture
+end
+invoke name
+
+// Parameterised Functions (v7)
+chant name with param1 and param2:
+  gesture using param1, param2
+end
+cast name with param1 value1 and param2 value2
+
+// Recursion Guard
+// Maximum chant depth: 12. Exceeding adds error: "the recursion is too deep"
+
+// Error Recovery
+attempt:
+  risky gesture
+if the brush falters, fallback gesture
+
+ignore:
+  gesture that might fail
+end</code></pre>
+      
+      <h3>✦ Kenning System</h3>
+      <pre><code>// Define alias
+kenning "sky jewel" as sun
+kenning "slow fire" as dusk
+kenning "gathered light" as bloom gold soft
+
+// Use alias
+bloom "sky jewel" gathered    // renders as: bloom sun gathered
+
+// Remove alias
+unlearn "sky jewel"
+forget the kenning "sky jewel"</code></pre>
+      
+      <h3>✦ Text‑Area Meta Commands (v7)</h3>
+      <pre><code>render / now                    // force repaint, remove self
+inscribe "text" at line N       // insert text at line N (1‑based)
+append "text" to the scroll     // add line to end
+clear the scroll                // empty editor (with warning)
+the canvas whispers "msg"       // add ; msg as comment
+remember this poem as "name"    // save to memory
+recall "name"                   // restore saved poem
+if condition, add "text" to line N  // self‑modifying poetry
+breathe                         // toggle breath mode
+seal                            // save PNG snapshot
+guide me                        // open Encyclopedia to Quick Start
+meditate                        // slow generative evolution mode
+measure bloom count             // introspect: return drawn count
+is the center bright?           // introspect: return true/false</code></pre>
+      
+      <h3>✦ String Operations (v7)</h3>
+      <pre><code>let greeting be "the light"
+append " returns" to greeting      // "the light returns"
+count letters in greeting          // stores 15 in vars.letter_count
+the first word of greeting         // "the"
+shout greeting                     // uppercase: "THE LIGHT"
+whisper greeting                   // lowercase: "the light"
+print greeting gold                // render stored string</code></pre>
+      
+      <h3>✦ Canvas Introspection (v7)</h3>
+      <pre><code>// Query canvas state
+is the center bright?          // true/false based on luminance
+measure the light at the heart // 0‑255 average luminance
+count blooms                   // number of bloom marks drawn
+the colour of the last shape   // hex colour of last rendered mark
+the size of the last bloom     // radius in pixels
+
+// Use in conditionals
+if the center is bright, veil midnight faint
+unless count blooms exceeds 10, scatter rose</code></pre>
+      
+      <h3>✦ Haiku Auto‑Detection</h3>
+      <p>If the poem has exactly three non‑comment lines with syllable counts ≈5‑7‑5, Haiku Mode activates:</p>
+      <ol>
+        <li>Phase 1 (setting): Render first line at 40% opacity</li>
+        <li>Phase 2 (subject): Render second line at 80% opacity</li>
+        <li>Phase 3 (coda): Render third line at 30% opacity with fade</li>
+      </ol>
+      <p>Syllables are counted by vowel‑group heuristic: <code>/[aeiouy]{1,2}/g</code></p>
+      
+      <h3>✦ Workshop Themes</h3>
+      <pre><code>workshop default    // warm paper, neutral ink
+workshop cabin      // rustic, earthy tones
+workshop factory    // industrial, monospaced
+workshop shrine     // dark background, gold ink
+workshop abyss      // deep oceanic darkness
+workshop quarry     // stone texture, high contrast
+workshop apocalypse // dramatic reds, distressed
+workshop terminal   // green‑on‑black, hacker aesthetic
+workshop newspaper  // newsprint texture, serif fonts
+workshop gradient   // soft pastel background
+workshop garden     // verdant, organic palette</code></pre>
+    </section>
+  `,
+  
+  tips: `
+    <section class="ency-section" id="ency-tips">
+      <h2>✨ Creative Tips & Best Practices</h2>
+      
+      <div class="e-grid">
+        <div class="e-card">
+          <h3>🎯 Start Small</h3>
+          <p>One verb, one colour. Render. Then add a modifier. Then placement. Build complexity gradually.</p>
+          <code>bloom rose<br>bloom rose soft<br>at the heart, bloom rose soft</code>
+        </div>
+        
+        <div class="e-card">
+          <h3>🎨 Let Mood Guide Colour</h3>
+          <p><code>the feeling is melancholy</code> subtly shifts all colours toward cool, muted tones. Use mood as a global filter.</p>
+        </div>
+        
+        <div class="e-card">
+          <h3>🌧️ Wet vs Dry</h3>
+          <p><code>the air is humid</code> enables wet‑blending (alla prima). <code>the room is cold</code> dries marks faster. Toggle to change medium behavior.</p>
+        </div>
+        
+        <div class="e-card">
+          <h3>🔄 Reuse with Macros</h3>
+          <p>Wrap a gesture sequence in <code>define…end</code> and <code>invoke</code> it. For parameterised gestures, use <code>chant/cast</code>.</p>
+        </div>
+        
+        <div class="e-card">
+          <h3>🧩 Combine Gestures</h3>
+          <p>Use <code>—</code> to chain multiple gestures on one line. Creates complex, layered marks efficiently.</p>
+          <code>bloom rose gathered — stroke gold soft — veil ivory</code>
+        </div>
+        
+        <div class="e-card">
+          <h3>🔍 Debug with Line Explainer</h3>
+          <p>Right‑click any line or press <code>Ctrl+?</code> to see how it was parsed: verb, colour, count, modifiers, placement.</p>
+        </div>
+        
+        <div class="e-card">
+          <h3>💾 Save Iterations</h3>
+          <p>Use <code>remember this poem as "spring dawn"</code> and <code>recall "spring dawn"</code> to experiment without losing previous versions.</p>
+        </div>
+        
+        <div class="e-card">
+          <h3>🧘 Meditate Mode</h3>
+          <p>Type <code>meditate</code> to enter slow generative evolution. The canvas subtly varies your poem over minutes—ideal for ambient displays.</p>
+        </div>
+      </div>
+      
+      <h3>✦ Advanced Patterns</h3>
+      <pre><code>// Recursive fractal bloom
+chant bloom-fractal with depth and hue:
+  if depth > 0:
+    bloom hue gathered soft
+    fade depth by 1
+    cast bloom-fractal with depth depth and hue hue
+  end
+end
+cast bloom-fractal with depth 4 and hue rose
+
+// Self-modifying poem
+bloom gold
+if count blooms exceeds 5, append "veil silver faint" to the scroll
+
+// Canvas-aware conditional
+measure the light at the heart
+if center_light > 200, veil midnight soft
+
+// Poetic colour mixing
+mix cerulean with snow        // pale blue
+a ghost of rose               // transparent rose
+a memory of gold              // gold tinted with sepia
+a whisper of violet           // faint violet
+a kiss of crimson on gold     // crimson-gold blend</code></pre>
+      
+      <h3>✦ Troubleshooting</h3>
+      <ul>
+        <li><strong>Unknown word</strong>: Appears with wavy red underline. Hover for tooltip suggestion.</li>
+        <li><strong>Brush regex</strong>: Both <code>with the flat brush</code> and <code>with a flat brush</code> work.</li>
+        <li><strong>Quoted text</strong>: Words inside <code>"quotes"</code> are never parsed as modifiers.</li>
+        <li><strong>Error recovery</strong>: Failed lines are skipped; errors appear as poetic critiques in status bar.</li>
+        <li><strong>Performance</strong>: Complex poems with many marks may render slowly. Use <code>≈ breath</code> to watch progress.</li>
+      </ul>
+    </section>
+  `
 };
-function buildEncy(){
-  const tabs=document.getElementById('ency-tabs');tabs.innerHTML='';
-  ['about','quick-start','verbs','colours','modifiers','syntax','tips'].forEach((k,i)=>{const btn=document.createElement('button');btn.className='etab'+(i===0?' on':'');btn.textContent=k==='quick-start'?'Quick Start':k.charAt(0).toUpperCase()+k.slice(1);btn.onclick=()=>{document.querySelectorAll('.etab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');document.getElementById('ency-content').innerHTML=ENCY_DATA[k]||''};tabs.appendChild(btn)});
-  document.getElementById('ency-content').innerHTML=ENCY_DATA.about;
+
+// Build Encyclopedia UI
+function buildEncy() {
+  const tabs = document.getElementById('ency-tabs');
+  tabs.innerHTML = '';
+  const tabOrder = ['about', 'quick-start', 'verbs', 'colours', 'modifiers', 'syntax', 'tips'];
+  
+  tabOrder.forEach((key, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'etab' + (idx === 0 ? ' on' : '');
+    btn.textContent = key === 'quick-start' ? 'Quick Start' : 
+                     key === 'colours' ? 'Colours' :
+                     key.charAt(0).toUpperCase() + key.slice(1);
+    btn.onclick = () => {
+      document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
+      btn.classList.add('on');
+      document.getElementById('ency-content').innerHTML = ENCY_DATA[key] || '';
+      // Re-initialize any interactive elements in the new content
+      initEncyInteractions();
+    };
+    tabs.appendChild(btn);
+  });
+  
+  // Default content
+  document.getElementById('ency-content').innerHTML = ENCY_DATA.about;
+  initEncyInteractions();
 }
-buildEncy();
-function toggleEncy(){const ov=document.getElementById('ency-overlay');ov.classList.toggle('show')}
-function searchEncy(){const q=document.getElementById('ency-search').value.toLowerCase();if(!q){document.getElementById('ency-content').innerHTML=ENCY_DATA.about;return}let html='';Object.entries(ENCY_DATA).forEach(([k,v])=>{if(typeof v==='string'&&v.toLowerCase().includes(q))html+=`<h3>${k}</h3>`+v});if(!html)html='No matches found in the scroll.';document.getElementById('ency-content').innerHTML=html}
-document.getElementById('ency-overlay').querySelector('.ency-backdrop').onclick=toggleEncy;
+
+function initEncyInteractions() {
+  // Make "Try it" buttons work
+  document.querySelectorAll('#ency-content .try-btn').forEach(btn => {
+    btn.onclick = function() {
+      const code = this.getAttribute('onclick').match(/ins\('([^']+)'\)/)?.[1];
+      if (code) {
+        // Unescape newlines
+        const decoded = code.replace(/\\n/g, '\n');
+        ins(decoded);
+        // Close encyclopedia after insertion
+        document.getElementById('ency-overlay').classList.remove('show');
+      }
+    };
+  });
+  
+  // Colour swatch tooltips
+  document.querySelectorAll('#ency-content .colour-item').forEach(item => {
+    item.title = item.querySelector('code').textContent + ': ' + item.querySelector('span').textContent;
+  });
+}
+
+// Search functionality
+function searchEncy() {
+  const q = document.getElementById('ency-search').value.toLowerCase().trim();
+  const content = document.getElementById('ency-content');
+  
+  if (!q) {
+    // Reset to current tab
+    const activeTab = document.querySelector('.etab.on').dataset.tab;
+    content.innerHTML = ENCY_DATA[activeTab] || ENCY_DATA.about;
+    initEncyInteractions();
+    return;
+  }
+  
+  // Search across all sections
+  let results = [];
+  Object.entries(ENCY_DATA).forEach(([key, html]) => {
+    if (typeof html === 'string' && html.toLowerCase().includes(q)) {
+      results.push({key, html});
+    }
+  });
+  
+  if (results.length === 0) {
+    content.innerHTML = `<p class="no-results">No matches found for "<strong>${q}</strong>" in the scroll.</p>`;
+    return;
+  }
+  
+  // Display results with section headers
+  let html = `<h3>Search Results for "${q}"</h3>`;
+  results.forEach(r => {
+    const title = r.key === 'quick-start' ? 'Quick Start' : 
+                 r.key.charAt(0).toUpperCase() + r.key.slice(1);
+    html += `<details open><summary>${title}</summary>${r.html}</details>`;
+  });
+  content.innerHTML = html;
+  initEncyInteractions();
+}
+
+// Toggle encyclopedia overlay
+function toggleEncy() {
+  const ov = document.getElementById('ency-overlay');
+  ov.classList.toggle('show');
+  if (ov.classList.contains('show')) {
+    document.getElementById('ency-search').focus();
+  }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+  buildEncy();
+  document.getElementById('ency-overlay').querySelector('.ency-backdrop').onclick = toggleEncy;
+  document.getElementById('ency-search').addEventListener('input', searchEncy);
+});
 
 // ── WORKSHOP THEMES ──────────────────────────────────────────
 const WORKSHOP_THEMES=['cabin','factory','quarry','apocalypse','terminal','newspaper','gradient','shrine','default'];
