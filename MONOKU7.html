@@ -58,35 +58,29 @@ header{height:44px;display:flex;align-items:center;padding:0 12px;
 #hl{position:absolute;top:0;left:32px;right:0;bottom:0;padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;font-size:15px;line-height:1.72;white-space:pre;overflow:hidden;pointer-events:none;z-index:1;tab-size:2}
 #hl span{position:relative}
 .h-v{color:#3d6b4e}.h-c{padding-left:12px}.h-c::before{content:'';position:absolute;left:0;top:3px;width:7px;height:7px;border-radius:50%;display:inline-block}.h-m{color:#4d7a6b}.h-s{color:#b8860b;font-style:italic}.h-cmt{color:#a09888;font-style:italic}.h-err{text-decoration:wavy underline #c45b4b;color:#c45b4b}.h-struct{color:#6b72a0;font-weight:500}
-textarea#ed{flex:1;background:transparent;border:none;outline:none;resize:none;padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;font-size:15px;line-height:1.72;color:var(--text);caret-color:var(--accent);overflow-y:auto;overflow-x:hidden;white-space:pre;tab-size:2;z-index:2;position:relative;margin-left:32px}
+textarea#ed{color:transparent;background:transparent;border:none;outline:none;resize:none;padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;font-size:15px;line-height:1.72;color:var(--text);caret-color: var(--accent);;overflow-y:auto;overflow-x:hidden;white-space:pre;tab-size:2;z-index:2;position:relative;margin-left:32px}
 textarea#ed::selection{background:rgba(139,90,43,0.1)}
 textarea#ed:focus{background:rgba(255,255,255,0.08)}
 
 /* ── LANGUAGE GARDEN ────────────────────────────────────────── */
-.garden-panel{border-top:1px solid var(--border2);flex-shrink:0;height:var(--garden-h);display:flex;flex-direction:column;background:var(--panel);overflow:hidden;transition:height .35s}
-.garden-panel.expanded{height:340px}
-.garden-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
-.garden-tabs::-webkit-scrollbar{display:none}
-.gtab{padding:4px 10px;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.1s;white-space:nowrap}
-.gtab:hover{color:var(--text)}
-.gtab.on{color:var(--ink);border-bottom-color:var(--ink)}
-.garden-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 8px;scrollbar-width:thin}
-.garden-section{margin-bottom:4px}
-.garden-fam{font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;padding:4px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;transition:.12s;border:1px solid transparent;letter-spacing:.03em}
-.garden-fam:hover{background:rgba(0,0,0,0.04);border-color:var(--border2)}
-.garden-fam::after{content:'▸';font-size:8px;transition:.2s;opacity:.5}
-.garden-fam.open::after{transform:rotate(90deg)}
-.garden-cloud{display:flex;flex-wrap:wrap;gap:3px;padding:3px 0 6px 16px;overflow:hidden;max-height:0;transition:max-height .3s}
-.garden-cloud.show{max-height:300px}
-.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-family:inherit;cursor:pointer;flex-shrink:0;transition:.1s;border:1px solid transparent}
-.chip:hover{opacity:.7;transform:translateY(-1px)}
-.chip-v{background:rgba(47,94,68,0.08);color:#2f5e44;border-color:rgba(47,94,68,0.18)}
-.chip-c{background:rgba(139,90,43,0.07);color:#7a4e22;border-color:rgba(139,90,43,0.18);padding-left:12px;position:relative}
-.chip-c::before{content:'';position:absolute;left:3px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%}
-.chip-m{background:rgba(95,122,107,0.07);color:#4d6b5e;border-color:rgba(95,122,107,0.18)}
-.chip-p{background:rgba(164,90,90,0.07);color:#7a4040;border-color:rgba(164,90,90,0.18)}
-.chip-n{background:rgba(107,114,160,0.07);color:#404870;border-color:rgba(107,114,160,0.18)}
-.swatch{width:7px;height:7px;border-radius:50%;margin-right:4px;flex-shrink:0}
+.garden-panel {border-top: 1px solid var(--border2);flex-shrink: 0;height: var(--garden-h);display: flex;flex-direction: column;background: var(--panel);overflow: hidden;transition: height .35s;}
+.garden-scroll {flex: 1;overflow-y: auto;overflow-x: hidden;padding: 20px;perspective: 1000px;}
+.garden-cloud {display: block;position: relative;min-height: 250px;width: 100%;padding: 0;overflow: visible;max-height: 0;transition: max-height .4s ease-out;}
+.garden-cloud.show {max-height: 600px;}
+/* Node/Chip Styling */
+.chip {position: absolute;display: inline-flex;align-items: center;padding: 4px 12px;border-radius: 12px;font-size: 11px;font-family: var(--mono);cursor: pointer;transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);border: 1px solid transparent;box-shadow: 0 2px 8px rgba(0,0,0,0.04);white-space: nowrap;}
+/* Node Connection Visuals */
+.chip::before {content: '';position: absolute;width: 8px;height: 8px;background: var(--border2);border-radius: 50%;left: -12px;top: 50%;transform: translateY(-50%);opacity: 0.3;}
+.chip:hover {transform: scale(1.05) translateY(-2px);box-shadow: 0 4px 12px rgba(0,0,0,0.1);z-index: 10;}
+/* Scattering logic for the first 10 nodes (Repeat for more) */
+.chip:nth-child(1) { top: 10%; left: 15%; }
+.chip:nth-child(2) { top: 25%; left: 45%; }
+.chip:nth-child(3) { top: 50%; left: 10%; }
+.chip:nth-child(4) { top: 60%; left: 70%; }
+.chip:nth-child(5) { top: 15%; left: 80%; }
+.chip:nth-child(6) { top: 80%; left: 30%; }
+.chip:nth-child(7) { top: 40%; left: 60%; }
+.chip:nth-child(8) { top: 75%; left: 85%; }
 
 /* ── CANVAS SIDE ────────────────────────────────────────────── */
 .right-col{display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
@@ -243,9 +237,9 @@ canvas#art{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 20px rg
 
 <script>
 // ╔══════════════════════════════════════════════════════════════════════╗
-// ║  MONOKU v7 — THE SENTIENT SCROLL                                   ║
-// ║  A poetic language for generative art. Words become marks.          ║
-// ║  The scroll breathes, remembers, and writes itself.                 ║
+// ║  MONOKU v7 — THE SENTIENT SCROLL                                     ║
+// ║  A poetic language for generative art. Words become marks.           ║
+// ║  The scroll breathes, remembers, and writes itself.                  ║
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -534,7 +528,6 @@ function V_crumble(ctx,W,H,col,count,sizeM,opacity,mods,state){const bg=state.bg
 function V_patina(ctx,W,H,col,opacity,mods,state){const patinaCol=col||[67,124,111];ctx.fillStyle=rgba(patinaCol,opacity*0.12);ctx.fillRect(0,0,W,H);for(let j=0;j<8;j++){const x=sr()*W;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+(sr()-0.5)*30,H);ctx.strokeStyle=rgba(patinaCol,opacity*0.08+(sr()-0.5)*0.04);ctx.lineWidth=5+sr()*20;ctx.stroke()}state.last=patinaCol.slice()}
 function V_scratch(ctx,W,H,col,count,sizeM,opacity,mods,state){const bg=state.bg;ctx.lineCap='butt';for(let j=0;j<count;j++){const pos=coord(W,H);const ang=sr()*Math.PI*2;const len=(10+sr()*40)*sizeM;ctx.beginPath();ctx.moveTo(pos.x,pos.y);ctx.lineTo(pos.x+Math.cos(ang)*len,pos.y+Math.sin(ang)*len);ctx.strokeStyle=rgba(lighten(bg,0.5),opacity*(0.5+sr()*0.4));ctx.lineWidth=0.5+sr()*1.5;ctx.stroke();ctx.strokeStyle=rgba(darken(bg,0.1),opacity*0.2);ctx.lineWidth=0.8+sr()*2;ctx.stroke()}}
 function V_drip(ctx,W,H,col,count,sizeM,opacity,mods,state){for(let j=0;j<count;j++){const pos=coord(W,H);const len=(20+sr()*60)*sizeM;const w=(2+sr()*5)*sizeM;ctx.beginPath();ctx.moveTo(pos.x-w/2,pos.y);ctx.bezierCurveTo(pos.x-w*0.8,pos.y+len*0.5,pos.x-w*0.3,pos.y+len*0.8,pos.x,pos.y+len);ctx.bezierCurveTo(pos.x+w*0.3,pos.y+len*0.8,pos.x+w*0.8,pos.y+len*0.5,pos.x+w/2,pos.y);ctx.fillStyle=rgba(col,opacity*(0.6+sr()*0.3));ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y+len,w*0.8,0,Math.PI*2);ctx.fillStyle=rgba(col,opacity*0.8);ctx.fill()}state.last=col.slice()}
-// New v7 verbs
 function V_stir(ctx,W,H,col,count,sizeM,opacity,mods,state){const p=state.placement;const cx=W*p.cx,cy=H*p.cy;for(let j=0;j<count;j++){const ang=sr()*Math.PI*2;const rad=20+sr()*40*sizeM;ctx.beginPath();ctx.arc(cx,cy,rad,ang,ang+1.5);ctx.strokeStyle=rgba(col,opacity*0.6);ctx.lineWidth=(2+sr()*4)*sizeM;ctx.stroke()}state.last=col.slice()}
 function V_poison(ctx,W,H,col,count,sizeM,opacity,mods,state){for(let j=0;j<count;j++){const pos=coord(W,H);const pts=6+Math.floor(sr()*8);ctx.beginPath();for(let k=0;k<=pts;k++){const a=(k/pts)*Math.PI*2;const r=(8+sr()*25)*sizeM*(0.6+sr()*0.6);k===0?ctx.moveTo(pos.x+Math.cos(a)*r,pos.y+Math.sin(a)*r):ctx.lineTo(pos.x+Math.cos(a)*r,pos.y+Math.sin(a)*r)}ctx.closePath();ctx.fillStyle=rgba(col,opacity*(0.4+sr()*0.4));ctx.fill()}state.last=col.slice()}
 function V_lacquer(ctx,W,H,col,opacity,mods,state){ctx.fillStyle=rgba(col,opacity*0.08);ctx.fillRect(0,0,W,H);ctx.fillStyle=rgba(lighten(col,0.6),opacity*0.04);ctx.fillRect(0,0,W,H);state.last=col.slice()}
@@ -755,17 +748,30 @@ MODIFIERS.forEach(m=>TIP_DICT[m]=`${m} — modifier`);
 Object.keys(NOUN_DICT).forEach(n=>TIP_DICT[n]=`${n} — noun · painted as ${n}`);
 Object.keys(PLACEMENT_PATTERNS).forEach(p=>TIP_DICT[p.split(' ').slice(-1)[0]]=`${p} — placement`);
 ['if','when','unless','for','while','until','echo','refrain','define','end','invoke','chant','cast','yield','kenning','let','set','remember','global','render','guide','seal','meditate','inscribe','append','recall','deepen','fade','halve','measure','count','mix','font','season','weather','workshop'].forEach(w=>TIP_DICT[w]=`${w} — structural or meta`);
-const tip=document.getElementById('tip');
-document.getElementById('ed').addEventListener('mousemove',e=>{
-  const rect=e.target.getBoundingClientRect();const x=e.clientX-rect.left,y=e.clientY-rect.top;
-  const lineH=25.8;const lineIdx=Math.floor((y+e.target.scrollTop)/lineH);
-  const text=e.target.value.split('\n')[lineIdx];if(!text){tip.classList.remove('show');return}
-  const charW=9.1;const col=Math.floor((x-14)/charW);
-  let s=Math.max(0,col),e2=col;while(s>0&&!/[\s,";:()]/.test(text[s-1]))s--;while(e2<text.length&&!/[\s,";:()]/.test(text[e2]))e2++;
-  const word=text.slice(s,e2).replace(/[",;:()]/g,'').toLowerCase();
-  if(TIP_DICT[word]){tip.innerHTML=TIP_DICT[word];tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-8)+'px';tip.classList.add('show')}else tip.classList.remove('show')
+const ed = document.getElementById('ed');
+const tip = document.getElementById('tip');
+
+ed.addEventListener('mousemove', (e) => {
+    // Offset the tooltip to stay above the cursor
+    tip.style.left = (e.clientX + 10) + 'px';
+    tip.style.top = (e.clientY - 35) + 'px';
 });
-document.getElementById('ed').addEventListener('mouseleave',()=>tip.classList.remove('show'));
+
+ed.addEventListener('input', () => {
+    const cursor = ed.selectionStart;
+    const textBefore = ed.value.substring(0, cursor);
+    const words = textBefore.split(/\s+/);
+    const currentWord = words[words.length - 1].toLowerCase();
+
+    // Check if the word exists in your Lexicon (NOUN_DICT or VERB_SET)
+    if (VERB_SET.has(currentWord) || NOUN_DICT[currentWord]) {
+        const info = NOUN_DICT[currentWord] ? "Noun: Generates marks" : "Verb: Action";
+        tip.innerHTML = `<strong>${currentWord}</strong> — ${info}`;
+        tip.classList.add('show');
+    } else {
+        tip.classList.remove('show');
+    }
+});
 
 // ── LINE EXPLAINER ───────────────────────────────────────────
 const expl=document.getElementById('expl');
@@ -792,6 +798,16 @@ const GARDEN_DATA=[
   {tab:'Seasons',items:['spring','summer','autumn','winter']},
   {tab:'Syntax',items:['if','when','unless','for','while','until','echo','refrain','define','end','invoke','chant','cast','yield','kenning','let','set','remember','deepen','fade','halve','measure','render','guide','seal','meditate','inscribe','append','recall','global','workshop','the font is','the font size is','the feeling is','the paper is','the brush is','the air is humid','the room is cold','the wind is rising','season','weather']}
 ];
+function renderMindMap() {
+    const chips = document.querySelectorAll('.chip');
+    chips.forEach((chip, i) => {
+        // Organic, non-linear placement
+        const angle = (i / chips.length) * Math.PI * 2;
+        const radius = 60 + Math.random() * 40;
+        chip.style.left = (100 + Math.cos(angle) * radius) + 'px';
+        chip.style.top = (80 + Math.sin(angle) * radius) + 'px';
+    });
+}
 function buildGarden(){
   const tabs=document.getElementById('garden-tabs');const scroll=document.getElementById('garden-scroll');
   tabs.innerHTML='';GARDEN_DATA.forEach((g,i)=>{const btn=document.createElement('button');btn.className='gtab'+(i===0?' on':'');btn.textContent=g.tab;btn.onclick=()=>{document.querySelectorAll('.gtab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');renderGardenTab(g)};tabs.appendChild(btn)});
@@ -802,15 +818,52 @@ function renderGardenTab(g){
   if(g.cats){Object.entries(g.cats).forEach(([fam,words])=>{const sec=document.createElement('div');sec.className='garden-section';const famBtn=document.createElement('span');famBtn.className='garden-fam';famBtn.textContent=fam;const cloud=document.createElement('div');cloud.className='garden-cloud';words.forEach(w=>{const chip=document.createElement('span');chip.className='chip chip-v';chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});famBtn.onclick=()=>{famBtn.classList.toggle('open');cloud.classList.toggle('show');const panel=document.getElementById('garden');if(famBtn.classList.contains('open'))panel.classList.add('expanded');else{const anyOpen=document.querySelectorAll('.garden-fam.open').length>0;if(!anyOpen)panel.classList.remove('expanded')}};sec.appendChild(famBtn);sec.appendChild(cloud);scroll.appendChild(sec)})}else if(g.items){const cloud=document.createElement('div');cloud.className='garden-cloud show';let chipCls='chip-v';if(g.tab==='Colours')chipCls='chip-c';if(g.tab==='Modifiers')chipCls='chip-m';if(g.tab==='Nouns')chipCls='chip-n';if(g.tab==='Papers'||g.tab==='Brushes')chipCls='chip-p';g.items.forEach(w=>{const chip=document.createElement('span');chip.className='chip '+chipCls;if(COLORS[w]){const rgb=COLORS[w];chip.style.cssText=`padding-left:12px;position:relative`;const sw=document.createElement('span');sw.className='swatch';sw.style.background=`rgb(${rgb.join(',')})`;chip.prepend(sw)}chip.textContent=w;chip.onclick=()=>ins(w);chip.title=TIP_DICT[w]||'';cloud.appendChild(chip)});scroll.appendChild(cloud)}}
 buildGarden();
 
+  
 // ── ENCYCLOPEDIA ─────────────────────────────────────────────
-const ENCY_DATA={
-  about:`<h2>🌸 What is Monoku?</h2><p><strong>Monoku</strong> is a poetic language for generative art. Every line you write is a gesture; every verb, a loaded brush; every modifier, a breath of wind or a shift of light.</p><p>Born from sumi‑e ink painting, haiku, and the generative art of Mark Webster, Monoku treats the canvas as your private paper. A poem has three breath‑phases: <em>atmosphere</em> (paper, mood, season), <em>gesture</em> (the drawing), and <em>coda</em> (a final veil or varnish).</p><p>Press ⌘↵ to render. Click ◎ to animate. Click ≈ to let the poem breathe line by line.</p>`,
-  'quick-start':`<h2>Quick Start Tutorial</h2><div class="e-grid"><div class="e-card"><h4>1. Set the Atmosphere</h4><p>Choose your paper and mood</p><code>the paper is rice<br>the feeling is serenity</code><button class="try-btn" onclick="ins('the paper is rice\\nthe feeling is serenity')">Try it</button></div><div class="e-card"><h4>2. Make a Gesture</h4><p>Draw a mark</p><code>bloom rose gathered soft</code><button class="try-btn" onclick="ins('bloom rose gathered soft')">Try it</button></div><div class="e-card"><h4>3. Add Coda</h4><p>Veil and finish</p><code>veil ivory faint</code><button class="try-btn" onclick="ins('veil ivory faint')">Try it</button></div><div class="e-card"><h4>4. Try a Haiku</h4><p>Three active lines automatically become haiku</p><code>breathe midnight<br>bloom ivory gathered soft<br>veil mist faint</code><button class="try-btn" onclick="ins('breathe midnight\\nbloom ivory gathered soft\\nveil mist faint')">Try it</button></div></div>`,
-  verbs:Object.entries(VERBS).length>0?`<h2>Verbs</h2>`+VERBS.map(v=>`<span class="chip chip-v" style="margin:2px;cursor:pointer" onclick="ins('${v}')">${v}</span>`).join(' '):'',
-  colours:`<h2>Colours</h2>`+Object.entries(COLORS).map(([n,rgb])=>`<span class="chip chip-c" style="margin:2px;cursor:pointer;padding-left:12px" onclick="ins('${n}')"><span class="swatch" style="background:rgb(${rgb.join(',')})"></span>${n}</span>`).join(' '),
-  modifiers:`<h2>Modifiers</h2>`+[...MODIFIERS].map(m=>`<span class="chip chip-m" style="margin:2px;cursor:pointer" onclick="ins('${m}')">${m}</span>`).join(' '),
-  syntax:`<h2>📜 Syntax</h2><p>A Monoku line is a breath: <code>verb colour [count] [modifiers…]</code></p><h3>Placement</h3><p><code>at the heart, bloom gold</code></p><h3>Multiple gestures</h3><p><code>bloom rose — stroke gold</code></p><h3>Loops & Conditions</h3><p><code>for 7 times, scatter leaves</code><br><code>if the mood is melancholy, veil violet</code><br><code>while depth exceeds 0: … end</code></p><h3>Variables</h3><p><code>let sky be cerulean</code><br><code>deepen depth by 3</code><br><code>halve the pressure</code></p><h3>Kennings</h3><p><code>kenning "sky jewel" as sun</code></p><h3>Chants</h3><p><code>chant bloomer with count and hue: … end</code><br><code>cast bloomer with count 5 and hue rose</code></p><h3>Meta</h3><p><code>render</code>, <code>guide me</code>, <code>seal</code>, <code>workshop cabin</code></p>`,
-  tips:`<h2>✨ Tips</h2><ul><li><strong>Start small.</strong> One verb, one colour.</li><li><strong>Use the Garden.</strong> Click words below to insert them.</li><li><strong>Haiku mode</strong> activates with three ≈5‑7‑5 lines.</li><li><strong>Click ◎ animate</strong> for living strokes.</li><li><strong>Click ≈ breath</strong> for line‑by‑line recital.</li><li><strong>Workshop themes:</strong> Type <code>workshop cabin</code>, <code>workshop shrine</code>, etc.</li></ul>`
+const ENCY_DATA = {
+  about: `<h2>🌸 What is Monoku?</h2>
+          <p><strong>Monoku</strong> is a poetic language for generative art. Every line you write is a gesture; every verb, a loaded brush; every modifier, a breath of wind or a shift of light.</p>
+          <p>Born from sumi‑e ink painting, haiku, and generative logic, Monoku treats the canvas as a physical medium that reacts to linguistic pressure. A poem follows three phases: <em>Atmosphere</em>, <em>Gesture</em>, and <em>Coda</em>.</p>`,
+  recipes: `<h2>🧪 Generative Recipes</h2>
+            <div class="e-grid">
+              <div class="e-card">
+                <h4>Wet Cyanotype</h4>
+                <p>Simulates chemical pooling and winter sunlight.</p>
+                <code>breathe iron<br>wash cerulean pooled salt<br>stipple ivory crystallized</code>
+                <button class="try-btn" onclick="ins('breathe iron\\nwash cerulean pooled salt\\nstipple ivory crystallized')">Mix</button>
+              </div>
+              <div class="e-card">
+                <h4>Cosmic Lattice</h4>
+                <p>Explores error-correcting codes and structural geometry.</p>
+                <code>the feeling is entropy<br>trace gold recursive<br>weave void holographic</code>
+                <button class="try-btn" onclick="ins('the feeling is entropy\\ntrace gold recursive\\nweave void holographic')">Build</button>
+              </div>
+              <div class="e-card">
+                <h4>Nebula Rust</h4>
+                <p>For industrial-scale sci-fi atmospheres.</p>
+                <code>the paper is charcoal<br>bloom copper oxidized<br>veil smoke metallic</code>
+                <button class="try-btn" onclick="ins('the paper is charcoal\\nbloom copper oxidized\\nveil smoke metallic')">Forge</button>
+              </div>
+            </div>`,
+  syntax: `<h2>📜 Syntax</h2>
+           <p>A Monoku line follows this structure: <code>verb colour [count] [modifiers…]</code></p>
+           <h3>Advanced Directives</h3>
+           <ul>
+             <li><strong>Kennings:</strong> <code>kenning "sky jewel" as sun</code> creates a metaphoric alias.</li>
+             <li><strong>Chants:</strong> <code>chant bloomer with count: ... end</code> defines a reusable function.</li>
+             <li><strong>Modifiers:</strong> Use <em>recursive</em> for fractals, <em>pooled</em> for fluid dynamics, or <em>crystallized</em> for hard edges.</li>
+           </ul>`,
+  verbs: Object.entries(VERBS).length > 0 ? `<h2>Verbs</h2>` + VERBS.map(v => `<span class="chip chip-v" onclick="ins('${v}')">${v}</span>`).join(' ') : '',
+  colours: `<h2>Colours</h2>` + Object.entries(COLORS).map(([n, rgb]) => 
+    `<span class="chip chip-c" onclick="ins('${n}')"><span class="swatch" style="background:rgb(${rgb.join(',')})"></span>${n}</span>`).join(' '),
+  modifiers: `<h2>Modifiers</h2>` + [...MODIFIERS].map(m => `<span class="chip chip-m" onclick="ins('${m}')">${m}</span>`).join(' '),
+  tips: `<h2>✨ Creative Tips</h2>
+         <ul>
+           <li><strong>Negative Space:</strong> Use <code>wash void</code> to "carve" through existing layers.</li>
+           <li><strong>Physics:</strong> Add <code>heavy</code> or <code>weighted</code> to modifiers to affect particle velocity.</li>
+           <li><strong>Haiku Mode:</strong> Three lines with 5, 7, and 5 syllables (or word counts) will trigger a distinct "Season" filter.</li>
+           <li><strong>Obsidian Integration:</strong> Paste your poem into your vault with the <code>#monoku</code> tag to track your generative iterations.</li>
+         </ul>`
 };
 function buildEncy(){
   const tabs=document.getElementById('ency-tabs');tabs.innerHTML='';
