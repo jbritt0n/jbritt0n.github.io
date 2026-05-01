@@ -279,6 +279,9 @@ canvas#art{max-width:100%;max-height:100%;display:block;box-shadow:0 2px 20px rg
   box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   display: flex; flex-direction: column; overflow: hidden;
   border: 1px solid var(--border2);
+  position: relative;
+  z-index: 1; 
+  pointer-events: auto;
 }
 .ency-close {
   position: absolute; top: 10px; right: 14px; background: none;
@@ -1772,7 +1775,8 @@ function buildEncy() {
     btn.textContent = key === 'quick-start' ? 'Quick Start' : 
                      key === 'colours' ? 'Colours' :
                      key.charAt(0).toUpperCase() + key.slice(1);
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       document.querySelectorAll('.etab').forEach(t => t.classList.remove('on'));
       btn.classList.add('on');
       document.getElementById('ency-content').innerHTML = ENCY_DATA[key] || '';
@@ -2076,6 +2080,7 @@ function loadExample(){document.getElementById('ed').value=EXAMPLES[exIdx%EXAMPL
 
 // ── INIT ─────────────────────────────────────────────────────
 document.getElementById('ed').value=EXAMPLES[0];updateLN();updateHL();loadSavedTheme();
+document.getElementById('ency-search').addEventListener('click', (e) => e.stopPropagation());  
 setTimeout(sizeCanvas,100);window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(sizeCanvas,200)});
 </script>
 </body>
