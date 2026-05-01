@@ -1,139 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>墨語 bokugō IDE</title>
+  <style>
+    :root {
+      --bg-primary: #121216;
+      --bg-secondary: #1a1a20;
+      --bg-tertiary: #22222a;
+      --text-primary: #e6e6ea;
+      --text-secondary: #9ca3af;
+      --accent: #6c5ce7;
+      --accent-hover: #8577ed;
+      --border: #2a2a35;
+      --success: #2ecc71;
+      --warning: #f1c40f;
+      --radius: 8px;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-ui: system-ui, -apple-system, sans-serif;
+    }
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-.bw{position:relative;padding-bottom:2px}
-.br{font-family:var(--font-sans);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
-.bh{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);flex-wrap:wrap}
-.bh-logo{font-family:var(--font-serif);font-size:21px;letter-spacing:.12em;color:var(--color-text-primary);line-height:1}
-.bh-sub{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);letter-spacing:.2em;margin-left:4px}
-.bh-tabs{display:flex;gap:2px;margin:0 auto}
-.bt{font-size:11px;padding:4px 11px;border-radius:var(--border-radius-md);border:0.5px solid transparent;color:var(--color-text-tertiary);cursor:pointer;background:transparent;font-family:var(--font-mono);letter-spacing:.07em;transition:all .12s}
-.bt.on{border-color:var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-primary)}
-.bt:hover:not(.on){color:var(--color-text-secondary)}
-.brun{font-size:11px;padding:4px 13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);cursor:pointer;background:var(--color-background-primary);font-family:var(--font-mono);transition:background .12s}
-.brun:hover{background:var(--color-background-secondary)}
-.bp{display:none;flex-direction:column}
-.bp.on{display:flex}
-.bb{display:flex;height:500px}
-.bl{width:52%;border-right:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column}
-.bet{flex:1;display:flex;overflow:hidden}
-.bln{width:34px;padding:11px 5px 0;font-size:11px;line-height:22px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:right;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);overflow:hidden;flex-shrink:0;user-select:none}
-.bsh{width:20px;padding:11px 0 0;font-size:9px;line-height:22px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:center;overflow:hidden;flex-shrink:0;user-select:none}
-.bew{flex:1;position:relative;overflow:hidden}
-.bhl{position:absolute;top:0;left:0;right:0;padding:11px 10px;font-size:13px;line-height:22px;font-family:var(--font-mono);white-space:pre-wrap;word-break:break-all;pointer-events:none;color:var(--color-text-primary);tab-size:2;overflow:hidden}
-.bta{position:absolute;top:0;left:0;width:100%;height:100%;padding:11px 10px;font-size:13px;line-height:22px;font-family:var(--font-mono);background:transparent;border:none;outline:none;color:transparent;caret-color:var(--color-text-primary);resize:none;white-space:pre-wrap;word-break:break-all;overflow:auto;tab-size:2;-webkit-text-fill-color:transparent}
-.bec{height:128px;border-top:0.5px solid var(--color-border-tertiary);overflow-y:auto;padding:8px 10px;background:var(--color-background-secondary)}
-.beh{font-size:10px;letter-spacing:.2em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.bect{font-size:10px;background:var(--color-background-danger);color:var(--color-text-danger);border-radius:3px;padding:1px 6px;display:none}
-.bei{font-size:12px;line-height:1.5;margin-bottom:4px;padding:5px 8px;border-radius:var(--border-radius-md);border-left:2px solid}
-.bei.e{border-color:var(--color-border-danger);background:var(--color-background-danger);color:var(--color-text-danger)}
-.bei.w{border-color:var(--color-border-warning);background:var(--color-background-warning);color:var(--color-text-warning)}
-.bei.n{border-color:var(--color-border-tertiary);background:var(--color-background-tertiary);color:var(--color-text-secondary)}
-.bei-loc{font-family:var(--font-mono);font-size:10px;opacity:.7;margin-right:5px}
-.brp{flex:1;display:flex;flex-direction:column}
-.bcv{flex:1;position:relative;overflow:hidden;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center}
-.bmd{height:26px;display:flex;align-items:center;gap:8px;padding:0 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);flex-shrink:0}
-.bmt{flex:1;height:2px;background:var(--color-border-tertiary);border-radius:2px;overflow:hidden}
-.bmf{height:100%;width:20%;background:var(--color-text-secondary);border-radius:2px;transition:width 1.2s ease}
-.tv{color:var(--color-text-danger)}
-.tn{color:var(--color-text-success)}
-.tk{color:var(--color-text-info)}
-.tm{color:var(--color-text-warning)}
-.tc{color:var(--color-text-tertiary);font-style:italic}
-.ts{color:var(--color-text-secondary)}
-.te{text-decoration:underline wavy var(--color-border-danger);text-decoration-skip-ink:none;text-underline-offset:3px}
-.tw2{text-decoration:underline wavy var(--color-border-warning);text-decoration-skip-ink:none;text-underline-offset:3px}
-.btt{position:absolute;z-index:60;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:12px;line-height:1.55;max-width:210px;pointer-events:none;opacity:0;transition:opacity .12s;min-width:140px;box-shadow:none}
-.btt.show{opacity:1}
-.tt-tp{font-size:10px;letter-spacing:.15em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:3px}
-.tt-nm{font-size:13px;font-weight:500;margin-bottom:4px;font-family:var(--font-mono);color:var(--color-text-primary)}
-.tt-fx{color:var(--color-text-secondary);font-size:11px;line-height:1.5}
-.mb{padding:18px 22px;font-size:14px;line-height:1.75;color:var(--color-text-primary);overflow-y:auto;height:calc(100vh - 60px);max-height:540px}
-.mh2{font-size:15px;font-weight:500;margin:0 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.mh3{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:16px 0 6px;letter-spacing:.15em;font-family:var(--font-mono);text-transform:uppercase}
-.mp{margin-bottom:8px;color:var(--color-text-secondary);font-size:13px;line-height:1.7}
-.ms{margin-bottom:22px}
-.mt{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
-.mt th{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;color:var(--color-text-tertiary);text-align:left;padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.mt td{padding:5px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;vertical-align:top}
-.mt td:first-child{font-family:var(--font-mono);color:var(--color-text-primary);white-space:nowrap}
-.px{border-left:2px solid var(--color-border-tertiary);padding:7px 12px;font-style:italic;font-size:13px;line-height:2.1;margin:8px 0;background:var(--color-background-secondary);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;color:var(--color-text-primary)}
-.tc2{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px;background:var(--color-background-primary)}
-.tn2{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;color:var(--color-text-tertiary);margin-bottom:4px}
-.tt2{font-size:14px;font-weight:500;margin-bottom:8px}
-.tp{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.65}
-.tpo{font-style:italic;font-size:13px;line-height:2;font-family:var(--font-mono);background:var(--color-background-secondary);padding:8px 12px;border-radius:var(--border-radius-md);margin:8px 0;color:var(--color-text-primary)}
-.trb{font-size:12px;padding:4px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);cursor:pointer;font-family:var(--font-mono);color:var(--color-text-primary);transition:background .12s}
-.trb:hover{background:var(--color-background-primary);border-color:var(--color-border-secondary)}
-.syl-g{display:block}
-.syl-5{color:var(--color-text-success)}
-.syl-7{color:var(--color-text-info)}
-.syl-x{color:var(--color-text-warning)}
-</style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      line-height: 1.5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-<div class="bw">
-<div class="br">
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.2rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 1.2rem; font-weight: 600; letter-spacing: 0.5px; }
+    .logo span { color: var(--accent); margin-right: 0.3rem; }
+    .nav { display: flex; gap: 0.5rem; }
+    .nav a {
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .nav a:hover, .nav a.active {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
 
-<div class="bh">
-  <span class="bh-logo">墨語</span>
-  <span class="bh-sub">bokugō</span>
-  <div class="bh-tabs">
-    <button class="bt on" onclick="switchTab('editor')">editor</button>
-    <button class="bt" onclick="switchTab('manual')">manual</button>
-    <button class="bt" onclick="switchTab('tutorial')">tutorial</button>
-  </div>
-  <button class="brun" id="runbtn" onclick="runPoem()">▶ render</button>
-</div>
+    /* Main Layout */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr auto;
+      flex: 1;
+      overflow: hidden;
+    }
 
-<div id="panel-editor" class="bp on">
-  <div class="bb">
-    <div class="bl">
-      <div class="bet">
-        <div class="bln" id="lnums">1</div>
-        <div class="bsh" id="shints"></div>
-        <div class="bew" id="edwrap">
-          <div class="bhl" id="hl"></div>
-          <textarea class="bta" id="ta" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="begin here — let the brush find the form..."></textarea>
-        </div>
+    /* Editor & Preview */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+    .panel:last-child { border-right: none; }
+    .panel-header {
+      padding: 0.6rem 1rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-content {
+      flex: 1;
+      padding: 1rem;
+      overflow: auto;
+      background: var(--bg-primary);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      resize: none;
+      border: none;
+      outline: none;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      grid-column: 1 / -1;
+      padding: 0.8rem 1.2rem;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .control-group label { min-width: 40px; }
+    .control-group input, .control-group select {
+      padding: 0.3rem 0.5rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+    .status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .status .dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr auto; }
+      .panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .panel:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo"><span>墨語</span> bokugō</div>
+    <nav class="nav">
+      <a href="#" class="active">Editor</a>
+      <a href="#">Manual</a>
+      <a href="#">Tutorial</a>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section class="panel">
+      <div class="panel-header">Editor</div>
+      <textarea class="panel-content" placeholder="// Write your bokugō code here..."></textarea>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">Preview / Render</div>
+      <div class="panel-content" id="preview">
+        <!-- Rendered output will appear here -->
+        <p style="color: var(--text-secondary);">Click ▶ Render to preview output.</p>
       </div>
-      <div class="bec">
-        <div class="beh">
-          <span>residue console</span>
-          <span class="bect" id="erct"></span>
-        </div>
-        <div id="erlist"></div>
+    </section>
+
+    <div class="toolbar">
+      <button class="btn" id="renderBtn">▶ Render</button>
+      <div class="control-group">
+        <label>Mood</label>
+        <input type="range" id="mood" min="0" max="1" step="0.01" value="0.20">
+        <span id="moodVal">0.20</span>
       </div>
+      <div class="control-group">
+        <label>Seed</label>
+        <input type="number" id="seed" value="42" min="0">
+      </div>
+      <div class="control-group">
+        <label>Residue</label>
+        <span id="residue">0</span>
+      </div>
+      <div class="status"><span class="dot"></span> Console Ready</div>
     </div>
-    <div class="brp">
-      <div class="bcv">
-        <svg id="cvs" viewBox="0 0 380 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%"></svg>
-      </div>
-      <div class="bmd">
-        <span>mood</span>
-        <div class="bmt"><div class="bmf" id="mfill"></div></div>
-        <span id="mval">0.20</span>
-        <span style="margin-left:8px;opacity:.6">seed</span>
-        <span id="sval" style="color:var(--color-text-secondary);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="panel-manual" class="bp">
-  <div class="mb" id="manbody"></div>
-</div>
-
-<div id="panel-tutorial" class="bp">
-  <div class="mb" id="tutbody"></div>
-</div>
-
-</div>
-<div class="btt" id="btt">
-  <div class="tt-tp" id="tttp"></div>
-  <div class="tt-nm" id="ttnm"></div>
-  <div class="tt-fx" id="ttfx"></div>
-</div>
-</div>
+  </main>
 
 <script>
 const VB={
@@ -684,3 +753,6 @@ ta.value=defaultPoem;
 ta.addEventListener('input',onInput);
 onInput();
 </script>
+</body>
+</html>
+<style>  
