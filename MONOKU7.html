@@ -53,65 +53,95 @@ header{height:44px;display:flex;align-items:center;padding:0 12px;
 .pane-bar .pbl{flex:1}
 
 /* ── EDITOR ─────────────────────────────────────────────────── */
-.editor-wrap{display:flex;flex:1;overflow:hidden;position:relative}
-.line-nums{padding:10px 6px 10px 8px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.72;color:var(--muted2);min-width:32px;text-align:right;user-select:none;overflow:hidden;border-right:1px solid var(--border);flex-shrink:0;white-space:pre;background:var(--panel2);z-index:2}
-#ed, #hl{position:absolute;top:0;left:32px;right:0;bottom:0;padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;font-size:15px;line-height:1.6;white-space:pre;overflow:hidden;pointer-events:none;z-index:1;tab-size:2}
-#hl span{position:relative}
-.h-v{color:#3d6b4e}.h-c{padding-left:12px}.h-c::before{content:'';position:absolute;left:0;top:3px;width:7px;height:7px;border-radius:50%;display:inline-block}.h-m{color:#4d7a6b}.h-s{color:#b8860b;font-style:italic}.h-cmt{color:#a09888;font-style:italic}.h-err{text-decoration:wavy underline #c45b4b;color:#c45b4b}.h-struct{color:#6b72a0;font-weight:500}
-textarea#ed{-webkit-text-fill-color:transparent!important;color:transparent!important;;background:transparent;border:none;outline:none;resize:none;padding:10px 14px;font-family:'Palatino Linotype','Book Antiqua',Palatino,Georgia,serif;font-size:15px;line-height: 1.6;color:var(--text);caret-color: var(--accent);;overflow-y:auto;overflow-x:hidden;white-space:pre;tab-size:2;z-index:2;position:relative;margin-left:32px}
-textarea#ed::selection{background:rgba(139,90,43,0.1)}
-textarea#ed:focus{background:rgba(255,255,255,0.08)}
+textarea#ed {
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  resize: none;
+  caret-color: var(--accent) !important; 
+}
+textarea#ed::selection {
+  background: rgba(var(--accent-rgb, 100, 100, 100), 0.2);
+  -webkit-text-fill-color: transparent; 
+}
+#hl {
+  position: relative;
+  z-index: 1;
+  pointer-events: none; /* Crucial: clicks must pass through to #ed */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
 
 /* ── LANGUAGE GARDEN ────────────────────────────────────────── */
 .garden-panel {
   border-top: 1px solid var(--border2);
   background: var(--panel);
-  height: auto; /* Allow it to breathe */
-  min-height: 200px;
-  max-height: 45vh; /* Larger view for better readability */
+  height: auto;
+  min-height: 250px;
   display: flex;
   flex-direction: column;
 }
-.garden-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 15px;
+.garden-fam {
+  font-family: "EB Garamond", serif; /* Elegant, artistic serif */
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 10px 5px 5px 15px;
+  display: block;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+  border-bottom: 1px double var(--border2);
+  margin-bottom: 10px;
 }
 .garden-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px; /* Tighter gap for readability */
+  gap: 10px;
+  padding: 10px 15px 30px 15px;
   align-items: center;
-  justify-content: flex-start;
-  padding: 10px;
 }
-/* Returning to your preferred chip stylization */
 .chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 6px; /* Squarer, like traditional art labels */
-  font-size: 12px;
+  padding: 5px 12px;
   font-family: var(--mono);
+  font-size: 11px;
+  text-transform: lowercase;
   cursor: pointer;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  transition: all 0.2s ease;
-  /* Organic drift effect */
-  margin: 2px 4px; 
+  background: #ffffff; /* Clean paper white */
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 3px; /* Slightly rounded, like cut paper */
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.05),
+    inset 0 0 0 1px rgba(255,255,255,0.8);
+  transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+  color: #444;
 }
 .chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   border-color: var(--accent);
-  background: var(--panel);
-  transform: translateY(-1px);
+  z-index: 5;
 }
-/* Color-coded categories for quick recognition */
-.chip-v { color: #2f5e44; background: rgba(47,94,68,0.05); }
-.chip-c { color: #7a4e22; background: rgba(139,90,43,0.05); }
-.chip-m { color: #4d6b5e; background: rgba(95,122,107,0.05); }
-/* The "Thought Stream" feel: slight variations in size */
-.chip:nth-child(even) { margin-top: 8px; font-size: 11px; }
-.chip:nth-child(3n) { margin-bottom: 6px; }
+.chip-v { 
+  border-left: 3px solid #2f5e44; /* Verb: Deep Forest */
+  background: linear-gradient(to right, rgba(47,94,68,0.03), #fff);
+}
+.chip-c { 
+  border-left: 3px solid #7a4e22; /* Colour: Umber/Rust */
+  background: linear-gradient(to right, rgba(122,78,34,0.03), #fff);
+}
+.chip-m { 
+  border-left: 3px solid #5f7a6b; /* Modifier: Sage/Sage-Ash */
+  background: linear-gradient(to right, rgba(95,122,107,0.03), #fff);
+}
 
 /* ── CANVAS SIDE ────────────────────────────────────────────── */
 .right-col{display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
