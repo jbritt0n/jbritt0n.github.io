@@ -2382,7 +2382,7 @@ function interpret(canvas, code, frame=0) {
   ctx.fillStyle=`rgb(${defaultPaper.bg.join(',')})`;
   ctx.fillRect(0,0,W,H);
 
-  const lines=code.split('\n');
+  let lines = code.split('\n');
 
   // Filter out workshop lines and apply theme
   const filteredLines = [];
