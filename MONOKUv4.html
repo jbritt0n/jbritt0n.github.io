@@ -612,7 +612,7 @@ const MODIFIERS = new Set([
   'toothed','dusted','saturated','mottled','ghosted','weathered','viscous','lean',
   'drybrush','smudge','rake','decisive','hesitant','firm','loose','heavy','feathered',
   'loaded','spent','soaked','parched','impulsive','measured','wide','narrow','vast',
-  'tiny','small','large','rightward','leftward','upward','downward',
+  'tiny','small','large','rightward','leftward','upward','downward','embossed',
 ]);
 
 const VERBS = [
@@ -632,7 +632,7 @@ const VERBS = [
   'dapple','erode','dissolve','tarnish','tint','shade','prime',
   'underpaint','varnish','alla prima','spiral','constellation',
   'ripple','smoke','nebula','foxing','burnish','glyph','horizon',
-  'web','crumble','patina','linger','hurry',
+  'web','crumble','patina','linger','hurry','print','scrawl','scribble','chicken-scratch',
   // ── Global modifier ──────────────────────────────────────────────
   'global',
 ];
@@ -760,6 +760,8 @@ function makeState() {
     mood: null,        // current mood palette
     paper: 'cold-press',
     brush: 'sable',
+    fontFamily: 'serif',        // current text font
+    embossed: false,            // global embossed modifier active?
     lastShape: null,
     temperature: 'none',
     windRising: false,
@@ -913,7 +915,8 @@ function parseCommand(phrase) {
     return null;
   }
 
-  const tokens = phrase.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+  const rawTokens = phrase.match(/(?:[^\s,"]+|"[^"]*")+/g) || [];
+  const tokens = rawTokens.map(t => t.startsWith('"') ? t.slice(1, -1).toLowerCase() : t.toLowerCase());
   if(!tokens.length) return null;
 
   // Detect multi-word verb
@@ -927,6 +930,13 @@ function parseCommand(phrase) {
   if(!verb) { verb = tokens[0]; remaining = tokens.slice(1); }
   if(!VERB_SET.has(verb)) return null;
 
+    // inside parseCommand, after verb detection
+  let textContent = '';
+  if (['print','scrawl','scribble','chicken-scratch'].includes(verb)) {
+    const match = phrase.match(/"([^"]*)"/);
+    if (match) textContent = match[1].toLowerCase();
+  }
+  
   // Parse remaining tokens for color, count, size, opacity, modifiers
   let colorName = null, count = null, sizeM = 1, opacity = null;
   const mods = [];
@@ -989,7 +999,7 @@ function parseCommand(phrase) {
     STATE.mixedColor = null;
   }
 
-  return { verb, colorName, color: resolvedColor, count, sizeM, opacity, mods, pace, pressure };
+  return { verb, colorName, color: resolvedColor, count, sizeM, opacity, mods, pace, pressure, textContent };
 }
 
 // Pre-pass: extract gesture definitions and variables from lines
@@ -1058,6 +1068,23 @@ function classifyMeta(line) {
   if(weatherM) {
     const wv = resolveNum(weatherM[1]) ?? (weatherM[1]==='windy'?0.6:weatherM[1]==='calm'?0:0.3);
     return { type:'meta', key:'weather', val:Math.min(1,wv/10||wv) };
+  }
+  const fontM = line.trim().match(/^the font is (.+)$/i);
+  if (fontM) {
+    const f = fontM[1].trim().toLowerCase();
+    const validFonts = ['serif', 'sans-serif', 'cursive', 'monospace', 'fantasy'];
+    if (validFonts.includes(f)) {
+      return { type: 'meta', key: 'fontFamily', val: f };
+    }
+  }
+  // also support "font serif" as a command
+  const fontShort = line.trim().match(/^font\s+(.+)$/i);
+  if (fontShort) {
+    const f = fontShort[1].trim().toLowerCase();
+    const validFonts = ['serif', 'sans-serif', 'cursive', 'monospace', 'fantasy'];
+    if (validFonts.includes(f)) {
+      return { type: 'meta', key: 'fontFamily', val: f };
+    }
   }
   return null;
 }
@@ -1976,6 +2003,137 @@ function V_burnish(ctx, W, H, col, count, sizeM, opacity, mods, state) {
   state.last=col.slice();
 }
 
+function applyEmboss(ctx, x, y, text, size, col, opacity, state) {
+  // shadow offset to white (top-left) and dark (bottom-right)
+  ctx.save();
+  ctx.fillStyle = rgba(lighten(col, 0.6), opacity * 0.5);
+  setFont(ctx, state, size);
+  ctx.fillText(text, x-1, y-1); // highlight
+  ctx.fillStyle = rgba(darken(col, 0.5), opacity * 0.5);
+  ctx.fillText(text, x+1, y+1); // shadow
+  ctx.restore();
+}
+  
+// Utility to set font on context
+function setFont(ctx, state, size) {
+  const family = state.fontFamily || 'serif';
+  ctx.font = `${size}px ${family}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+}
+
+function V_print(ctx, W, H, col, sizeM, opacity, mods, state, text) {
+  const pos = coord(W, H);
+  const fontSize = 24 * sizeM;
+  setFont(ctx, state, fontSize);
+  ctx.fillStyle = rgba(col, opacity);
+  ctx.fillText(text, pos.x, pos.y);
+  if (mods.includes('embossed')) applyEmboss(ctx, pos.x, pos.y, text, fontSize, col, opacity, state);
+  state.last = col.slice();
+}
+
+function V_scrawl(ctx, W, H, col, sizeM, opacity, mods, state, text) {
+  // cursive handwriting effect: use a cursive font and add slight per-character rotation & jitter
+  const pos = coord(W, H);
+  const fontSize = 22 * sizeM;
+  const family = state.fontFamily === 'cursive' ? 'cursive' : `${state.fontFamily}, cursive`;
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
+  ctx.font = `${fontSize}px ${family}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = rgba(col, opacity);
+  const chars = text.split('');
+  const spacing = ctx.measureText('m').width * 0.9; // average character width
+  let xOff = - (spacing * (chars.length - 1)) / 2;
+  chars.forEach(ch => {
+    ctx.save();
+    const angle = (sr() - 0.5) * 0.3; // slight tilt
+    ctx.translate(xOff, (sr() - 0.5) * 3);
+    ctx.rotate(angle);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+    xOff += spacing;
+  });
+  ctx.restore();
+  if (mods.includes('embossed')) applyEmboss(ctx, pos.x, pos.y, text, fontSize, col, opacity, state);
+  state.last = col.slice();
+}
+
+function V_scribble(ctx, W, H, col, sizeM, opacity, mods, state, text) {
+  // Scribble is more chaotic: multiple rough passes over each character area
+  const pos = coord(W, H);
+  const fontSize = 26 * sizeM;
+  const family = state.fontFamily === 'cursive' ? 'cursive' : `sans-serif`;
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
+  ctx.font = `${fontSize}px ${family}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  const chars = text.split('');
+  const spacing = ctx.measureText('m').width * 0.9;
+  let xOff = - (spacing * (chars.length - 1)) / 2;
+  chars.forEach(ch => {
+    const metrics = ctx.measureText(ch);
+    const w = metrics.width;
+    const h = fontSize;
+    // draw multiple short scratchy lines around character
+    for (let i = 0; i < 7; i++) {
+      const angle = sr() * Math.PI * 2;
+      const len = w * 0.4 * sr() + 3;
+      const cx = xOff + (sr() - 0.5) * w * 0.8;
+      const cy = (sr() - 0.5) * h * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+      ctx.strokeStyle = rgba(col, opacity * 0.6);
+      ctx.lineWidth = 1.2 * sizeM;
+      ctx.stroke();
+    }
+    xOff += spacing;
+  });
+  ctx.restore();
+  if (mods.includes('embossed')) applyEmboss(ctx, pos.x, pos.y, text, fontSize, col, opacity * 0.3, state);
+  state.last = col.slice();
+}
+
+function V_chickenScratch(ctx, W, H, col, sizeM, opacity, mods, state, text) {
+  // Even more chaotic: sharp short strokes that faintly suggest letters
+  const pos = coord(W, H);
+  const fontSize = 28 * sizeM;
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  const chars = text.split('');
+  const spacing = ctx.measureText('m').width * 0.9;
+  let xOff = - (spacing * (chars.length - 1)) / 2;
+  chars.forEach(ch => {
+    const metrics = ctx.measureText(ch);
+    const w = metrics.width;
+    const h = fontSize;
+    for (let i = 0; i < 12; i++) {
+      const sx = xOff + (sr() - 0.5) * w * 1.2;
+      const sy = (sr() - 0.5) * h * 0.8;
+      const ex = sx + (sr() - 0.5) * w * 0.5;
+      const ey = sy + (sr() - 0.5) * h * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.strokeStyle = rgba(col, opacity * 0.5);
+      ctx.lineWidth = 0.8 * sizeM;
+      ctx.stroke();
+    }
+    xOff += spacing;
+  });
+  ctx.restore();
+  if (mods.includes('embossed')) applyEmboss(ctx, pos.x, pos.y, text, fontSize, col, opacity * 0.2, state);
+  state.last = col.slice();
+}
+
+  
+  
 function V_glyph(ctx, W, H, col, count, sizeM, opacity, mods, state) {
   // Abstract calligraphic mark — not letters, but gestural symbols
   const shapes=[
@@ -2212,6 +2370,10 @@ function executeCmd(ctx, W, H, cmd) {
       case 'hurry':  STATE.globalPace=2.5; break;
       case 'remember': case 'echo': case 'pause': case 'season':
       case 'weather': case 'global': break; // handled elsewhere
+      case 'print': V_print(ctx, W, H, col, c, s, op, m, STATE, cmd.textContent); break;
+      case 'scrawl': V_scrawl(ctx, W, H, col, c, s, op, m, STATE, cmd.textContent); break;
+      case 'scribble': V_scribble(ctx, W, H, col, c, s, op, m, STATE, cmd.textContent); break;
+      case 'chicken-scratch': V_chickenScratch(ctx, W, H, col, c, s, op, m, STATE, cmd.textContent); break;  
       default:
         STATE.errors.push(POETIC_ERRORS.unknown_verb());
     }
@@ -2235,6 +2397,14 @@ function executeLine(ctx, W, H, raw) {
     return;
   }
 
+  const fontSet = raw.match(/^font\s+(.+)$/i);
+  if (fontSet) {
+    const f = fontSet[1].trim().toLowerCase();
+    const validFonts = ['serif', 'sans-serif', 'cursive', 'monospace', 'fantasy'];
+    if (validFonts.includes(f)) STATE.fontFamily = f;
+    return;
+}
+  
   // define/end — skip (pre-processed)
   if(/^define\s+/i.test(raw) || /^end\s*$/i.test(raw)) return;
 
@@ -2771,6 +2941,18 @@ constellation ivory faint
 veil midnight faint
 foxing
 grain`,
+  
+// ── 7. Typographic Study ──────────────────────────────────────────
+`— typographic study —
+the font is cursive
+weather calm
+breathe cream
+at the heart, print "monoku" gold bold embossed
+at the lower edge, scrawl "the living scroll" midnight soft
+scribble "whisper" cobalt faint
+chicken-scratch "chaos" charcoal rapid
+grain`,
+  
 ];
 
 let exIdx=0;
