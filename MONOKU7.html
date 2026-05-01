@@ -469,8 +469,55 @@ function dist(x1,y1,x2,y2){return Math.sqrt((x2-x1)**2+(y2-y1)**2)}
 // ═══════════════════════════════════════════════════════════════════════
 //  II. COLOR SYSTEM
 // ═══════════════════════════════════════════════════════════════════════
-const COLORS={
-  cerulean:[100,149,237],ochre:[204,119,34],vermillion:[220,60,50],ash:[170,165,160],teal:[56,175,168],rose:[215,155,165],indigo:[80,55,160],ember:[255,100,30],moss:[107,142,35],ivory:[238,232,210],charcoal:[54,69,79],dusk:[138,118,175],dawn:[240,200,138],blush:[235,155,138],slate:[112,128,144],umber:[118,88,62],gold:[215,182,55],sage:[140,175,128],mist:[198,208,218],ink:[16,16,30],crimson:[188,30,50],sienna:[158,80,42],cobalt:[38,78,178],jade:[0,152,98],sand:[192,175,125],violet:[138,88,195],coral:[220,100,80],pine:[42,100,70],pewter:[140,138,130],snow:[240,240,248],amber:[210,135,30],lapis:[30,60,175],oxblood:[118,24,34],citrine:[220,195,60],absinthe:[100,155,70],graphite:[88,88,100],cream:[238,228,196],midnight:[22,22,48],copper:[184,115,51],lavender:[182,162,220],peach:[240,175,130],rust:[178,72,42],phthalo:[0,15,85],cadmium:[227,66,52],viridian:[64,130,109],quinacridone:[142,18,55],gamboge:[228,155,15],terreverte:[56,88,66],alizarin:[227,38,54],titanium:[255,255,250],bone:[228,218,196],celeste:[178,218,230],aubergine:[62,28,68],verdigris:[67,124,111],flax:[220,200,140],bisque:[240,218,180],feldgrau:[77,93,83],puce:[160,80,100],sepia:[115,66,34],ecru:[232,222,196],woad:[82,104,165],weld:[218,192,52],void:[8,8,14],light:[250,248,240],shadow:[30,26,40],air:[220,228,238],earth:[110,85,58],water:[80,140,180],fire:[240,80,20],wood:[140,100,55],fuligin:[5,3,6],avern:[10,8,22]
+const COLORS = {
+  // ── Mineral pigments ──────────────────────────────────────────────
+  cerulean:[100,149,237], ochre:[204,119,34],   vermilion:[220,60,50],
+  ash:[170,165,160],      teal:[56,175,168],    rose:[215,155,165],
+  indigo:[80,55,160],     ember:[255,100,30],   moss:[107,142,35],
+  ivory:[238,232,210],    charcoal:[54,69,79],  dusk:[138,118,175],
+  dawn:[240,200,138],     blush:[235,155,138],  slate:[112,128,144],
+  umber:[118,88,62],      gold:[215,182,55],    sage:[140,175,128],
+  mist:[198,208,218],     ink:[16,16,30],       crimson:[188,30,50],
+  sienna:[158,80,42],     cobalt:[38,78,178],   jade:[0,152,98],
+  sand:[192,175,125],     violet:[138,88,195],  coral:[220,100,80],
+  pine:[42,100,70],       pewter:[140,138,130], snow:[240,240,248],
+  amber:[210,135,30],     lapis:[30,60,175],    oxblood:[118,24,34],
+  citrine:[220,195,60],   absinthe:[100,155,70],graphite:[88,88,100],
+  cream:[238,228,196],    midnight:[22,22,48],  copper:[184,115,51],
+  lavender:[182,162,220], peach:[240,175,130],  rust:[178,72,42],
+  // ── Earth pigments ────────────────────────────────────────────────
+  phthalo:[0,15,85],      cadmium:[227,66,52],  viridian:[64,130,109],
+  quinacridone:[142,18,55],gamboge:[228,155,15],terreverte:[56,88,66],
+  alizarin:[227,38,54],   titanium:[255,255,250],
+  // ── Extended palette ──────────────────────────────────────────────
+  bone:[228,218,196],     celeste:[178,218,230],aubergine:[62,28,68],
+  verdigris:[67,124,111], flax:[220,200,140],   bisque:[240,218,180],
+  feldgrau:[77,93,83],    puce:[160,80,100],    sepia:[115,66,34],
+  ecru:[232,222,196],     woad:[82,104,165],    weld:[218,192,52],
+  // ── Atmospheric ───────────────────────────────────────────────────
+  void:[8,8,14],          light:[250,248,240],  shadow:[30,26,40],
+  air:[220,228,238],      earth:[110,85,58],    water:[80,140,180],
+  fire:[240,80,20],       wood:[140,100,55],
+  // ── Newly added (from garden audit) ──────────────────────────────
+  // Mineral
+  ultramarine:[63,0,255], malachite:[11,218,81], azurite:[0,105,148],
+  prussian:[0,49,83],     zinc:[250,250,250],
+  // Earth
+  obsidian:[21,20,20],    onyx:[53,56,57],       clay:[182,106,80],
+  walnut:[119,63,26],     bark:[93,64,55],       loam:[92,64,51],
+  // Extended
+  mauve:[224,176,255],    cyan:[0,255,255],      saffron:[244,196,48],
+  pearl:[240,234,218],    silver:[192,192,192],  orchid:[218,112,214],
+  magenta:[255,0,255],    emerald:[80,200,120],  turquoise:[64,224,208],
+  plum:[142,69,133],      bronze:[205,127,50],
+  // Atmospheric
+  sky:[135,206,235],      stone:[157,157,157],   leaf:[79,121,66],
+  blood:[138,3,3],        wind:[169,186,157],    rain:[119,158,203],
+  dew:[147,233,190],      cloud:[240,240,240],   gloom:[74,78,105],
+  glow:[255,250,205],     frost:[224,255,255],   storm:[74,93,107],
+  thunder:[44,62,80],
+  // Archaic
+  fuligin:[5,3,6],        avern:[10,8,22],       wythe:[62,66,45]
 };
 const SEASON_TINTS={spring:[1.02,1.06,0.98],summer:[1.05,0.96,0.90],autumn:[1.00,0.91,0.80],winter:[0.90,0.91,1.08],none:[1,1,1]};
 const MOOD_PALETTES={
@@ -1004,8 +1051,21 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='?'){const ed=docu
 // ── LANGUAGE GARDEN ──────────────────────────────────────────
 const GARDEN_DATA=[
   {tab:'Verbs',cats:{'Canvas':['breathe','prime','silence','fade'],'Wet Media':['wash','glaze','bleed','dew','rain','haze','veil','sfumato','drip'],'Dry Media':['stipple','scumble','drybrush','etch','scratch','rake'],'Oil & Impasto':['impasto','scrape','smudge','alla prima'],'Organic':['bloom','scatter','petal','branch','dapple','spiral','constellation','ripple','smoke','nebula','web','glyph','pulse','crack','splatter','drift','flow','weave','stroke','flick'],'Transform':['burn','dissolve','erode','tarnish','tint','shade','underpaint','varnish','patina','foxing','burnish','crumble','blush','chiaroscuro','shadow'],'Typography':['print','scrawl','scribble','chicken-scratch','shout','whisper'],'New v7':['stir','poison','lacquer','quench','satisfy','codex','avern','fuligin'],'Structure':['echo','refrain','pause','linger','hurry','global','remember']}},
-  {tab:'Colours',cats:{'Mineral':['cerulean','lapis','cobalt','phthalo','ultramarine','viridian','malachite','azurite','prussian','zinc','titanium'],'Earth':['ochre','umber','sienna','sepia','terreverte','rust','clay','sand','walnut','bark','loam'],'Extended':['rose','gold','ivory','midnight','violet','crimson','teal','saffron','pearl','dusk','dawn','amber','slate','silver','orchid','magenta','emerald','turquoise','coral','plum','jade','bronze','copper','bone','bisque','ecru','flax','weld','woad'],'Atmospheric':['sky','water','stone','wood','leaf','blood','fire','snow','wind','rain','dew','mist','cloud','smoke','ember','shadow','light','gloom','glow','haze','frost','storm','thunder','void','air','earth'],'Archaic':['fuligin','avern','verdigris','aubergine','puce','feldgrau']}},
-  {tab:'Modifiers',cats:{'Opacity':['soft','faint','dim','bold','hard','deep','bright','dark','light','pale','whisper'],'Pace':['slowly','patiently','gently','quickly','rapidly','frantic'],'Texture':['toothed','dusted','saturated','mottled','ghosted','weathered','viscous','lean','crystalline','foliated','stamped','debossed','letterpress','drenched','thirsty','glossy','matte','woven','crisp'],'Character':['hushed','trembling','decisive','hesitant','firm','loose','brittle','fluid','aged','blurred','sharp','delicate'],'Ink':['loaded','spent','soaked','parched','wet','dry'],'Size':['wide','narrow','vast','tiny','small','large'],'Direction':['rightward','leftward','upward','downward','scattered','gathered','clustered']}},
+  {tab:'Colours',cats:{
+  'Mineral':['cerulean','lapis','cobalt','phthalo','ultramarine','viridian','vermilion','malachite','azurite','prussian','zinc','titanium'],
+  'Earth':['ochre','obsidian','umber','onyx','sienna','sepia','terreverte','rust','clay','sand','walnut','bark','loam'],
+  'Extended':['rose','mauve','gold','ivory','midnight','violet','crimson','teal','cyan','saffron','pearl','dusk','dawn','amber','slate','silver','orchid','magenta','emerald','turquoise','coral','plum','jade','bronze','copper','bone','bisque','ecru','flax','weld','woad'],
+  'Atmospheric':['sky','water','stone','wood','leaf','blood','fire','snow','wind','rain','dew','mist','cloud','smoke','ember','shadow','light','gloom','glow','haze','frost','storm','thunder','void','air','earth'],
+  'Archaic':['fuligin','avern','wythe','verdigris','aubergine','puce','feldgrau']
+}},
+  {tab:'Modifiers',cats:{
+  'Opacity':['soft','faint','dim','bold','hard','deep','bright','dark','light','pale','whisper'],
+  'Pace':['slowly','patiently','gently','quickly','rapidly','frantic'],
+  'Texture':['toothed','dusted','saturated','mottled','ghosted','weathered','viscous','lean','crystalline','foliated','stamped','debossed','letterpress','drenched','thirsty','glossy','matte','woven','crisp'],
+  'Character':['hushed','trembling','decisive','hesitant','firm','loose','brittle','fluid','aged','blurred','sharp','delicate'],
+  'Ink':['loaded','spent','soaked','parched','wet','dry'],
+  'Size':['wide','narrow','vast','tiny','small','large'],'Direction':['rightward','leftward','upward','downward','scattered','gathered','clustered']
+}},
   {tab:'Nouns',items:Object.keys(NOUN_DICT)},
   {tab:'Moods',items:Object.keys(MOOD_PALETTES)},
   {tab:'Papers',items:Object.keys(PAPER_PROFILES)},
