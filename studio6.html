@@ -1168,6 +1168,7 @@ select option{background:var(--ink)}
       <div class="mb" data-imode="blocks">Blocks</div>
       <div class="mb" data-imode="stipple">Stipple</div>
       <div class="mb" data-imode="edge">Edge</div>
+      <div class="mb" data-imode="rgbcrt">RGB CRT</div>
     </div>
     <div class="sl2">Color Mapping</div>
     <div class="mg" id="imgColorModeGrid">
@@ -3870,6 +3871,9 @@ function drawImgText(p, t) {
     CTX.textAlign = 'left';
     return;
   }
+  // RGB CRT has its own dedicated renderer — bypass normal grid loop
+  if (S.imgMode === 'rgbcrt') { drawImgRGBCRT(p, t); return; }
+  
   let step = S.spacing || 10;
   let palette = Array.isArray(S.palette) ? S.palette : (PALETTES[S.palette] || PALETTES['site']);
   console.log('Image mode palette:', palette);
@@ -3988,6 +3992,124 @@ function renderImgEdge(p, br, col, t, edgeVal) {
   p.fill(col);
   p.circle(0, 0, sz);
 }  
+
+// ── RGB CRT RENDER — DiPaula sub-pixel decomposition ─────────────────────────
+// Decomposes each image pixel into its R, G, B channels and renders each as a
+// separate colored rectangle — approximating the hand-painted CRT phosphor look.
+//
+// Two styles (S.rgbCrtStyle):
+//   'mosaic' — small isolated R|G|B triplet daubs on black (Image 1 / statue)
+//   'stripe' — tall vertical R|G|B column stripes (Images 2/3 / CRT screen)
+function drawImgRGBCRT(p, t) {
+  if (!imgPix || !imgW || !imgH) {
+    CTX.fillStyle = '#000';
+    CTX.fillRect(0, 0, p.width, p.height);
+    CTX.fillStyle = '#444';
+    CTX.font = '13px ' + S.fontStack;
+    CTX.textAlign = 'center';
+    CTX.fillText('Upload an image for RGB CRT render', p.width / 2, p.height / 2);
+    CTX.textAlign = 'left';
+    return;
+  }
+
+  let style    = S.rgbCrtStyle    || 'mosaic';
+  let strokeW  = Math.max(1, S.rgbCrtStrokeW    !== undefined ? S.rgbCrtStrokeW : 5);
+  let strokeH  = Math.max(2, S.rgbCrtStrokeH    !== undefined ? S.rgbCrtStrokeH : 10);
+  let gap      = Math.max(0, S.rgbCrtGap        !== undefined ? S.rgbCrtGap     : 1);
+  let wobble   =             S.rgbCrtWobble      !== undefined ? S.rgbCrtWobble  : 0.18;
+  let bright   =             S.rgbCrtBrightness  !== undefined ? S.rgbCrtBrightness : 1.0;
+  let blackThr = (S.rgbCrtBlackThresh !== undefined ? S.rgbCrtBlackThresh : 0.04) * 255 * 3;
+
+  let W = p.width, H = p.height;
+
+  // Black CRT off-state background
+  CTX.fillStyle = '#000000';
+  CTX.fillRect(0, 0, W, H);
+
+  // Image → canvas coordinate mapping
+  let scaleX, scaleY, offsetX = 0, offsetY = 0;
+  if (S.imgStretch) {
+    scaleX = imgW / W; scaleY = imgH / H;
+  } else {
+    let sc = Math.min(W / imgW, H / imgH);
+    scaleX = 1 / sc; scaleY = 1 / sc;
+    offsetX = (W - imgW * sc) / 2;
+    offsetY = (H - imgH * sc) / 2;
+  }
+
+  // Sample the source image at canvas coordinate (cx, cy)
+  // Returns [r, g, b] or null if out of bounds
+  function sampleAt(cx, cy) {
+    let ix = Math.floor((cx - offsetX) * scaleX);
+    let iy = Math.floor((cy - offsetY) * scaleY);
+    if (ix < 0 || ix >= imgW || iy < 0 || iy >= imgH) return null;
+    let i = (iy * imgW + ix) * 4;
+    let r = imgPix.data[i], g = imgPix.data[i+1], b = imgPix.data[i+2];
+    if (S.imgInvert) { r = 255-r; g = 255-g; b = 255-b; }
+    return [r, g, b];
+  }
+
+  // Draw one R|G|B triplet at canvas position (x, y).
+  // Each channel stroke height is proportional to that channel's value,
+  // with an optional per-stroke noise wobble for the painterly oil-paint quality.
+  function drawTriplet(x, y, r, g, b, cellH) {
+    let nR = wobble > 0 ? (0.68 + p.noise(x*0.06,      y*0.055, 0.10) * 0.64) : 1.0;
+    let nG = wobble > 0 ? (0.68 + p.noise(x*0.06+7.3,  y*0.055, 0.22) * 0.64) : 1.0;
+    let nB = wobble > 0 ? (0.68 + p.noise(x*0.06+14.6, y*0.055, 0.34) * 0.64) : 1.0;
+
+    let rV = Math.min(255, r * bright) | 0;
+    let gV = Math.min(255, g * bright) | 0;
+    let bV = Math.min(255, b * bright) | 0;
+
+    // Stroke height = full cellH × channel fraction × brightness × painterly noise
+    let hR = Math.max(1, cellH * (r / 255) * bright * nR);
+    let hG = Math.max(1, cellH * (g / 255) * bright * nG);
+    let hB = Math.max(1, cellH * (b / 255) * bright * nB);
+
+    // Centre strokes vertically within their cell
+    let cy = y + cellH * 0.5;
+
+    if (rV > 8) { CTX.fillStyle = `rgb(${rV},0,0)`;   CTX.fillRect(x,                    cy - hR * 0.5, strokeW, hR); }
+    if (gV > 8) { CTX.fillStyle = `rgb(0,${gV},0)`;   CTX.fillRect(x + strokeW + gap,    cy - hG * 0.5, strokeW, hG); }
+    if (bV > 8) { CTX.fillStyle = `rgb(0,0,${bV})`;   CTX.fillRect(x + (strokeW+gap)*2,  cy - hB * 0.5, strokeW, hB); }
+  }
+
+  if (style === 'stripe') {
+    // ── STRIPE MODE: tall vertical R|G|B column stripes ──────────────────
+    // Each horizontal sampling step → one triplet, repeated vertically in
+    // segments with small black gaps between — Images 2 & 3 style.
+    let tripletW = strokeW * 3 + gap * 2 + 1; // total width of one R|G|B group
+    let segH     = strokeH;                    // height of one vertical segment
+    let segGap   = Math.max(0, Math.round(gap * 0.5)); // small vertical gap
+
+    for (let x = 0; x < W; x += tripletW) {
+      for (let y = 0; y < H; y += segH + segGap) {
+        let s = sampleAt(x + tripletW * 0.5, y + segH * 0.5);
+        if (!s) continue;
+        let [r, g, b] = s;
+        if (r + g + b < blackThr) continue;
+        drawTriplet(x, y, r, g, b, segH);
+      }
+    }
+
+  } else {
+    // ── MOSAIC MODE: isolated R|G|B daub clusters on black ───────────────
+    // Each grid position → one compact R|G|B triplet surrounded by black.
+    // This replicates the David statue / small-daub DiPaula look.
+    let tripletW = strokeW * 3 + gap * 2 + 2; // +2 = black margin between clusters
+    let tripletH = strokeH + gap + 1;
+
+    for (let x = 0; x < W; x += tripletW) {
+      for (let y = 0; y < H; y += tripletH) {
+        let s = sampleAt(x + tripletW * 0.5, y + tripletH * 0.5);
+        if (!s) continue;
+        let [r, g, b] = s;
+        if (r + g + b < blackThr) continue;
+        drawTriplet(x, y, r, g, b, strokeH);
+      }
+    }
+  }
+}
   
 function getPaletteColors() {
     // Force a fallback to a known palette if the state is undefined
@@ -14963,6 +15085,14 @@ const DEFAULT_STATE = {
   // ========== IMAGE → TEXT ==========
   imgStretch: false,                 // Stretch image to fill canvas (else fit)
   imgInvert: false,                  // Invert brightness of image
+  // ── Image → Text: RGB CRT sub-mode defaults ─────────────────────────────
+  rgbCrtStyle:        'mosaic',
+  rgbCrtStrokeW:      5,
+  rgbCrtStrokeH:      10,
+  rgbCrtGap:          1,
+  rgbCrtWobble:       0.18,
+  rgbCrtBrightness:   1.0,
+  rgbCrtBlackThresh:  0.04,
   // ========== OVERLAY TEXT STREAMS ==========
   overlayEnabled: false,             // Enable scrolling text overlays
   overlayStreams: [],                // Array of stream objects {text, color, offset, ...}
@@ -15389,7 +15519,27 @@ document.getElementById('btnExpandAll').addEventListener('click', function() {
 const PARAM_REGISTRY = {
 
   // ── Existing mode-specific params, now data-driven ────────────────────────
-  
+  imgtext: [
+    { type:'select', id:'rgbCrtStyle', label:'RGB CRT style', def:'mosaic',
+      options:[
+        {value:'mosaic',  label:'Mosaic daubs  — statue / portrait'},
+        {value:'stripe',  label:'Column stripes — CRT screen'},
+      ],
+      hint:'Mosaic = small isolated triplet daubs (DiPaula David style). Stripe = tall R|G|B columns (CRT screen style).'
+    },
+    { id:'rgbCrtStrokeW',      label:'Sub-pixel width (px)',   min:1,  max:16, step:1, def:5,   scale:1,
+      hint:'Width of each individual R, G, or B stroke. 3–6px is most authentic.' },
+    { id:'rgbCrtStrokeH',      label:'Sub-pixel height (px)',  min:2,  max:80, step:2, def:10,  scale:1,
+      hint:'Height of each stroke. Tall = stripe column feel. Short = compact mosaic daub.' },
+    { id:'rgbCrtGap',          label:'R·G·B spacing (px)',     min:0,  max:8,  step:1, def:1,   scale:1,
+      hint:'Pixel gap between the R, G and B strokes within each triplet.' },
+    { id:'rgbCrtWobble',       label:'Painterly wobble',       min:0,  max:80, step:2, def:18,  scale:0.01,
+      hint:'Stroke height variation per channel. 0 = uniform digital grid. Higher = hand-painted oil feel.' },
+    { id:'rgbCrtBrightness',   label:'Brightness boost',       min:5,  max:50, step:1, def:10,  scale:0.1,
+      hint:'Channel output multiplier. 1.0 = faithful. >1.0 pumps up dark or flat images.' },
+    { id:'rgbCrtBlackThresh',  label:'Black gap threshold',    min:0,  max:80, step:2, def:4,   scale:0.01,
+      hint:'R+G+B sum threshold below which no strokes are drawn. Higher = more visible black canvas gaps.' },
+  ],
   //refactored 4/13
   bloom: [
     { id:'bloomRotMult', label:'Rotation chaos', min:1, max:12, step:1, def:4,  scale:1    },
