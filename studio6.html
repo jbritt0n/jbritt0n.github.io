@@ -3876,7 +3876,7 @@ function drawImgText(p, t) {
   
   let step = S.spacing || 10;
   let palette = Array.isArray(S.palette) ? S.palette : (PALETTES[S.palette] || PALETTES['site']);
-  console.log('Image mode palette:', palette);
+  //console.log('Image mode palette:', palette);
   // Calculate scaling and offset based on stretch mode
   let scaleX, scaleY, offsetX = 0, offsetY = 0;
   if (S.imgStretch) {
@@ -16877,7 +16877,11 @@ if (S.mode === 'calligraphy') {
 }
   // mode parameter registry
   let sec = document.getElementById('mode-extra-sec');
-  if (sec) sec.style.display = (PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length) ? 'block' : 'none';
+  // imgtext: only show the params panel when RGB CRT sub-mode is active
+  let showParams = PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length;
+  if (S.mode === 'imgtext') showParams = (S.imgMode === 'rgbcrt');
+  if (sec) sec.style.display = showParams ? 'block' : 'none';
+  
   if (window._st) {
     window._st.ri();
     window._st.rd();
@@ -17605,6 +17609,43 @@ document.getElementById('btnInvert').addEventListener('click', function() {
   window._st.rd();
 });
 
+// ── IMAGE → TEXT MODE GRID WIRING ────────────────────────────────────────────
+// imgModeGrid — sets S.imgMode (chars / hatch / crosshatch / blocks / stipple / edge / rgbcrt)
+document.getElementById('imgModeGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('[data-imode]');
+  if (!b) return;
+  document.querySelectorAll('#imgModeGrid .mb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  S.imgMode = b.dataset.imode;
+  // Show/hide RGB CRT parameter panel (from PARAM_REGISTRY)
+  let sec = document.getElementById('mode-extra-sec');
+  if (S.mode === 'imgtext' && sec) {
+    sec.style.display = (S.imgMode === 'rgbcrt') ? 'block' : 'none';
+    if (S.imgMode === 'rgbcrt') rebuildModeUI('imgtext');
+  }
+  window._st.rd();
+});
+
+// imgColorModeGrid — sets S.imgColorMode (tonal / random)
+document.getElementById('imgColorModeGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('[data-cm]');
+  if (!b) return;
+  document.querySelectorAll('#imgColorModeGrid .mb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  S.imgColorMode = b.dataset.cm;
+  window._st.rd();
+});
+
+// imgDitherGrid — sets S.imgDither (none / atkinson)
+document.getElementById('imgDitherGrid').addEventListener('click', function(e) {
+  let b = e.target.closest('[data-idither]');
+  if (!b) return;
+  document.querySelectorAll('#imgDitherGrid .mb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  S.imgDither = b.dataset.idither;
+  window._st.rd();
+});
+  
 
 // ── COMPUTE EDGES ──────────────────────────────────
 function computeEdges() {
@@ -18218,7 +18259,12 @@ function ap(cfg){
     let hasParams=PARAM_REGISTRY[cfg.mode]&&PARAM_REGISTRY[cfg.mode].length;
     if(sec) sec.style.display=hasParams?'block':'none';
   }
-  
+  if (cfg.imgMode !== undefined) {
+    S.imgMode = cfg.imgMode;
+    document.querySelectorAll('#imgModeGrid .mb').forEach(b =>
+      b.classList.toggle('active', b.dataset.imode === cfg.imgMode)
+    );
+  }
   if(cfg.font){S.fontKey=cfg.font;S.fontStack=FONTS[cfg.font]||FONTS.courier;let fs=document.getElementById('fontSelect');if(fs) fs.value=cfg.font;}
   function ss(slId,vId,key,val,dv){
     S[key]=val;let sl=document.getElementById(slId),vl=document.getElementById(vId);
