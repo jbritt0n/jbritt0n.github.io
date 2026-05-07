@@ -1169,6 +1169,7 @@ select option{background:var(--ink)}
       <div class="mb" data-imode="stipple">Stipple</div>
       <div class="mb" data-imode="edge">Edge</div>
       <div class="mb" data-imode="rgbcrt">RGB CRT</div>
+      <div class="mb" data-imode="pointillist">Pointillist</div>
     </div>
     <div class="sl2">Color Mapping</div>
     <div class="mg" id="imgColorModeGrid">
@@ -3871,8 +3872,9 @@ function drawImgText(p, t) {
     CTX.textAlign = 'left';
     return;
   }
-  // RGB CRT has its own dedicated renderer — bypass normal grid loop
-  if (S.imgMode === 'rgbcrt') { drawImgRGBCRT(p, t); return; }
+  // RGB CRT / pointillist have dedicated renderers — bypass normal grid loop
+  if (S.imgMode === 'rgbcrt')       { drawImgRGBCRT(p, t);       return; }
+  if (S.imgMode === 'pointillist')  { drawImgPointillist(p, t);  return; }
   
   let step = S.spacing || 10;
   let palette = Array.isArray(S.palette) ? S.palette : (PALETTES[S.palette] || PALETTES['site']);
@@ -3993,6 +3995,186 @@ function renderImgEdge(p, br, col, t, edgeVal) {
   p.circle(0, 0, sz);
 }  
 
+// ── POINTILLIST RENDER — Chromoluminarist dot decomposition ─────────────────
+// Inspired by Seurat, Signac, and contemporary painter Bill Bone.
+// Decomposes each sampled pixel into one of five color variants (faithful,
+// warm, cool, violet, complementary) placed with organic Perlin jitter.
+// Dense overlapping circles optically mix at viewing distance.
+function drawImgPointillist(p, t) {
+  if (!imgPix || !imgW || !imgH) {
+    CTX.fillStyle = S.bg || '#0d0c0a';
+    CTX.fillRect(0, 0, p.width, p.height);
+    CTX.fillStyle = S.palette[0] || '#888';
+    CTX.font = '13px ' + S.fontStack;
+    CTX.textAlign = 'center';
+    CTX.fillText('Upload an image for Pointillist render', p.width / 2, p.height / 2);
+    CTX.textAlign = 'left';
+    return;
+  }
+
+  let W = p.width, H = p.height;
+
+  // ── Parameters ─────────────────────────────────────────────────────────────
+  let dotR      = Math.max(1.5, S.ptlDotSize    !== undefined ? S.ptlDotSize    : 8);
+  let sizeVar   =               S.ptlSizeVar    !== undefined ? S.ptlSizeVar    : 0.38;
+  let overlap   =               S.ptlOverlap    !== undefined ? S.ptlOverlap    : 0.42;
+  let jitterAmt =               S.ptlJitter     !== undefined ? S.ptlJitter     : 0.55;
+  let colorSplit=               S.ptlColorSplit !== undefined ? S.ptlColorSplit : 0.45;
+  let dotAlpha  =               S.ptlAlpha      !== undefined ? S.ptlAlpha      : 0.86;
+  let lumaSize  =               S.ptlLumaSize   !== false;   // shrink dots in dark areas
+  let shape     =               S.ptlShape      || 'circle'; // 'circle' | 'ellipse' | 'daub'
+  let step      = Math.max(2, dotR * 2 * (1 - overlap));
+
+  // ── Image coordinate mapping ───────────────────────────────────────────────
+  let scaleX, scaleY, offsetX = 0, offsetY = 0;
+  if (S.imgStretch) {
+    scaleX = imgW / W; scaleY = imgH / H;
+  } else {
+    let sc = Math.min(W / imgW, H / imgH);
+    scaleX = 1 / sc; scaleY = 1 / sc;
+    offsetX = (W - imgW * sc) / 2;
+    offsetY = (H - imgH * sc) / 2;
+  }
+
+  function sampleAt(cx, cy) {
+    let ix = Math.floor((cx - offsetX) * scaleX);
+    let iy = Math.floor((cy - offsetY) * scaleY);
+    if (ix < 0 || ix >= imgW || iy < 0 || iy >= imgH) return null;
+    let idx = (iy * imgW + ix) * 4;
+    let r = imgPix.data[idx], g = imgPix.data[idx+1], b = imgPix.data[idx+2];
+    if (S.imgInvert) { r = 255-r; g = 255-g; b = 255-b; }
+    return [r, g, b];
+  }
+
+  // ── Chromoluminarist color splitter ────────────────────────────────────────
+  // Five variants anchored to source color, each pushed toward a different
+  // region of the color wheel. This is the core pointillist optical mixing trick.
+  function splitColor(r, g, b, v) {
+    let s = Math.min(1, Math.max(0, colorSplit));
+    if (v < 0.27) {
+      // Faithful primary (27%) — ground truth, anchors the composition
+      return [r, g, b];
+    } else if (v < 0.46) {
+      // Warm accent (19%) — push toward yellow-orange
+      return [
+        Math.min(255, r + (255-r) * s * 0.52) | 0,
+        Math.min(255, g + (215-g) * s * 0.32) | 0,
+        Math.max(0,   b * (1 - s * 0.58))     | 0
+      ];
+    } else if (v < 0.65) {
+      // Cool accent (19%) — push toward cyan-blue
+      return [
+        Math.max(0,   r * (1 - s * 0.52))     | 0,
+        Math.min(255, g + (205-g) * s * 0.26) | 0,
+        Math.min(255, b + (255-b) * s * 0.58) | 0
+      ];
+    } else if (v < 0.80) {
+      // Lavender-violet accent (15%) — the iridescent shimmer in Bone's skin tones
+      return [
+        Math.min(255, r + (205-r) * s * 0.42) | 0,
+        Math.max(0,   g * (1 - s * 0.28))     | 0,
+        Math.min(255, b + (235-b) * s * 0.52) | 0
+      ];
+    } else {
+      // Complementary pop (20%) — invert dominant channel relationship
+      if (r >= g && r >= b) {
+        // Red dominant → cyan-teal fleck
+        return [Math.max(0, r*(1-s*0.52))|0, Math.min(255, g+(205-g)*s*0.50)|0, Math.min(255, b+(235-b)*s*0.62)|0];
+      } else if (b >= r && b >= g) {
+        // Blue dominant → warm orange-gold fleck
+        return [Math.min(255, r+(240-r)*s*0.62)|0, Math.min(255, g+(185-g)*s*0.40)|0, Math.max(0, b*(1-s*0.42))|0];
+      } else {
+        // Green dominant → magenta-pink fleck
+        return [Math.min(255, r+(215-r)*s*0.52)|0, Math.max(0, g*(1-s*0.42))|0, Math.min(255, b+(215-b)*s*0.52)|0];
+      }
+    }
+  }
+
+  // ── Dot renderer ───────────────────────────────────────────────────────────
+  function drawDot(cx, cy, radius, r, g, b) {
+    CTX.fillStyle = `rgb(${r},${g},${b})`;
+    CTX.globalAlpha = dotAlpha;
+
+    if (shape === 'ellipse') {
+      // Slightly stretched and rotated — hand-loaded round brush feel
+      let angle = p.noise(cx * 0.038, cy * 0.038) * Math.PI;
+      let rx    = radius * (0.65 + p.noise(cx * 0.07,   cy * 0.065)      * 0.70);
+      let ry    = radius * (0.65 + p.noise(cx * 0.065 + 3, cy * 0.07 + 3) * 0.70);
+      CTX.save();
+      CTX.translate(cx, cy);
+      CTX.rotate(angle);
+      CTX.beginPath();
+      CTX.ellipse(0, 0, Math.max(0.5, rx), Math.max(0.5, ry), 0, 0, Math.PI * 2);
+      CTX.fill();
+      CTX.restore();
+
+    } else if (shape === 'daub') {
+      // Organic blob — impasto oil paint dab, like the paul-2 close-up
+      // Built from 7 noise-displaced points around a circle
+      let pts = 7;
+      CTX.save();
+      CTX.translate(cx, cy);
+      CTX.beginPath();
+      for (let i = 0; i <= pts; i++) {
+        let angle = (i / pts) * Math.PI * 2;
+        let noiseR = p.noise(
+          cx * 0.055 + Math.cos(angle) * 0.45,
+          cy * 0.055 + Math.sin(angle) * 0.45
+        );
+        let nr = radius * (0.55 + noiseR * 0.90);
+        let px = Math.cos(angle) * nr;
+        let py = Math.sin(angle) * nr;
+        i === 0 ? CTX.moveTo(px, py) : CTX.lineTo(px, py);
+      }
+      CTX.closePath();
+      CTX.fill();
+      CTX.restore();
+
+    } else {
+      // Circle — clean digital pointillism
+      CTX.beginPath();
+      CTX.arc(cx, cy, Math.max(0.5, radius), 0, Math.PI * 2);
+      CTX.fill();
+    }
+  }
+
+  // ── Main dot pass ──────────────────────────────────────────────────────────
+  CTX.save();
+
+  for (let baseY = -dotR; baseY < H + dotR; baseY += step) {
+    for (let baseX = -dotR; baseX < W + dotR; baseX += step) {
+
+      // Perlin jitter — breaks grid regularity without randomness per frame
+      // Using different noise offsets for x and y avoids diagonal bias
+      let jx = (p.noise(baseX * 0.075,       baseY * 0.075)       - 0.5) * step * jitterAmt * 2;
+      let jy = (p.noise(baseX * 0.075 + 150, baseY * 0.075 + 150) - 0.5) * step * jitterAmt * 2;
+      let cx = baseX + jx;
+      let cy = baseY + jy;
+
+      let s = sampleAt(cx, cy);
+      if (!s) continue;
+      let [r, g, b] = s;
+
+      // Luminance-driven size — dark areas get smaller dots (like shadow passage
+      // in Bone's portraits where dots thin out into the dark background)
+      let luma   = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      let nSize  = p.noise(baseX * 0.055 + 30, baseY * 0.055 + 30);
+      let lFactor = lumaSize ? (0.30 + luma * 0.70) : 1.0;
+      let radius  = Math.max(0.8, dotR * lFactor * (1 - sizeVar * 0.5 + nSize * sizeVar));
+
+      // Color split — independent noise channel so split varies across the field
+      let vSplit = p.noise(baseX * 0.065 + 60, baseY * 0.065 + 60);
+      let [dr, dg, db] = splitColor(r, g, b, vSplit);
+
+      drawDot(cx, cy, radius, dr, dg, db);
+    }
+  }
+
+  CTX.globalAlpha = 1;
+  CTX.restore();
+  _lastFill = '';
+}
+  
 // ── RGB CRT RENDER — DiPaula sub-pixel decomposition ─────────────────────────
 // Decomposes each image pixel into its R, G, B channels and renders each as a
 // separate colored rectangle — approximating the hand-painted CRT phosphor look.
@@ -15093,6 +15275,15 @@ const DEFAULT_STATE = {
   rgbCrtWobble:       0.18,
   rgbCrtBrightness:   1.0,
   rgbCrtBlackThresh:  0.04,
+  // ── Image → Text: Pointillist sub-mode defaults ─────────────────────────
+  ptlDotSize:    8,
+  ptlOverlap:    0.42,
+  ptlColorSplit: 0.45,
+  ptlSizeVar:    0.38,
+  ptlJitter:     0.55,
+  ptlAlpha:      0.86,
+  ptlLumaSize:   true,
+  ptlShape:      'circle',
   // ========== OVERLAY TEXT STREAMS ==========
   overlayEnabled: false,             // Enable scrolling text overlays
   overlayStreams: [],                // Array of stream objects {text, color, offset, ...}
@@ -15539,6 +15730,28 @@ const PARAM_REGISTRY = {
       hint:'Channel output multiplier. 1.0 = faithful. >1.0 pumps up dark or flat images.' },
     { id:'rgbCrtBlackThresh',  label:'Black gap threshold',    min:0,  max:80, step:2, def:4,   scale:0.01,
       hint:'R+G+B sum threshold below which no strokes are drawn. Higher = more visible black canvas gaps.' },
+    // ── Pointillist params ───────────────────────────────────────────────────
+    { id:'ptlDotSize',    label:'Dot radius (px)',         min:2,  max:30, step:1,   def:8,    scale:1,    submode:'pointillist',
+      hint:'Base radius of each dot. 6-10 for Bone-style density, 12-18 for looser Seurat feel.' },
+    { id:'ptlOverlap',    label:'Dot overlap',             min:0,  max:80, step:2,   def:42,   scale:0.01, submode:'pointillist',
+      hint:'How much dots overlap each other. 0.4-0.6 gives the packed Bill Bone look.' },
+    { id:'ptlColorSplit', label:'Chromatic split',         min:0,  max:100,step:2,   def:45,   scale:0.01, submode:'pointillist',
+      hint:'Strength of warm/cool/complementary splitting per dot. The core pointillist optical mixing effect.' },
+    { id:'ptlSizeVar',    label:'Size variation',          min:0,  max:80, step:2,   def:38,   scale:0.01, submode:'pointillist',
+      hint:'Noise-driven dot radius variation. Higher = more organic, hand-painted feel.' },
+    { id:'ptlJitter',     label:'Position jitter',         min:0,  max:100,step:2,   def:55,   scale:0.01, submode:'pointillist',
+      hint:'How much each dot drifts from the grid. 0 = strict grid. 0.5 = organic scatter.' },
+    { id:'ptlAlpha',      label:'Dot opacity',             min:20, max:100,step:2,   def:86,   scale:0.01, submode:'pointillist',
+      hint:'Opacity of each dot. Slightly transparent dots blend where they overlap.' },
+    { type:'toggle', id:'ptlLumaSize', label:'Dark areas → smaller dots', def:true,  submode:'pointillist',
+      hint:'Shrink dots in dark areas so they thin toward black — replicates how Bone\'s portraits fade.' },
+    { type:'select', id:'ptlShape', label:'Dot shape', def:'circle',  submode:'pointillist',
+      options:[
+        {value:'circle',  label:'Circle — clean/digital (Seurat)'},
+        {value:'ellipse', label:'Ellipse — rotated brush marks'},
+        {value:'daub',    label:'Daub — organic impasto blob (Bone)'},
+      ],
+      hint:'Daub is most authentic to Bill Bone\'s oil paint feel, circle is fastest.' },
   ],
   //refactored 4/13
   bloom: [
@@ -16560,6 +16773,12 @@ function rebuildModeUI(mode) {
   container.innerHTML = '';
 
   let params = PARAM_REGISTRY[mode];
+  // For imgtext, filter to only the active sub-mode's params
+  if (mode === 'imgtext' && S.imgMode) {
+    params = (params || []).filter(function(p) {
+      return !p.submode || p.submode === S.imgMode;
+    });
+  }
   
       // Filter parameters based on current sub‑mode (if the mode is calligraphy)
     if (mode === 'calligraphy' && S.calligSubMode) {
@@ -16879,7 +17098,7 @@ if (S.mode === 'calligraphy') {
   let sec = document.getElementById('mode-extra-sec');
   // imgtext: only show the params panel when RGB CRT sub-mode is active
   let showParams = PARAM_REGISTRY[S.mode] && PARAM_REGISTRY[S.mode].length;
-  if (S.mode === 'imgtext') showParams = (S.imgMode === 'rgbcrt');
+  if (S.mode === 'imgtext') showParams = (S.imgMode === 'rgbcrt' || S.imgMode === 'pointillist');
   if (sec) sec.style.display = showParams ? 'block' : 'none';
   
   if (window._st) {
@@ -17620,9 +17839,10 @@ document.getElementById('imgModeGrid').addEventListener('click', function(e) {
   // Show/hide RGB CRT parameter panel (from PARAM_REGISTRY)
   let sec = document.getElementById('mode-extra-sec');
   if (S.mode === 'imgtext' && sec) {
-    sec.style.display = (S.imgMode === 'rgbcrt') ? 'block' : 'none';
-    if (S.imgMode === 'rgbcrt') rebuildModeUI('imgtext');
-  }
+      let needsPanel = (S.imgMode === 'rgbcrt' || S.imgMode === 'pointillist');
+      sec.style.display = needsPanel ? 'block' : 'none';
+      if (needsPanel) rebuildModeUI('imgtext');
+    }
   window._st.rd();
 });
 
