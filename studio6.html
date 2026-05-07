@@ -3921,28 +3921,48 @@ function drawImgText(p, t) {
       if (S.imgMode === 'edge' && imgEdgeStrength) {
         edgeVal = imgEdgeStrength[imgY * imgW + imgX] || 0;
       }
-      p.push();
-      p.translate(x, y);
-      if (S.imgMode === 'chars') renderImgChars(p, br, col);
-      else if (S.imgMode === 'hatch') renderImgHatch(p, br, col, t);
-      else if (S.imgMode === 'blocks') renderImgBlocks(p, br, col);
-      else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
-      else if (S.imgMode === 'stipple') renderImgStipple(p, br, col);
-      else if (S.imgMode === 'edge') renderImgEdge(p, br, col, t, edgeVal);
-      p.pop();
+      if (S.imgMode === 'chars') {
+              // chars uses dc() / CTX directly — pass absolute coordinates, no p5 translate needed
+              renderImgChars(p, br, col, x, y);
+            } else {
+              // All other sub-modes use p5 drawing functions and rely on p.translate()
+              p.push();
+              p.translate(x, y);
+              if (S.imgMode === 'hatch')      renderImgHatch(p, br, col, t);
+              else if (S.imgMode === 'blocks')     renderImgBlocks(p, br, col);
+              else if (S.imgMode === 'crosshatch') renderImgCrossHatch(p, br, col, t);
+              else if (S.imgMode === 'stipple')    renderImgStipple(p, br, col);
+              else if (S.imgMode === 'edge')       renderImgEdge(p, br, col, t, edgeVal);
+              p.pop();
+            }
     }
   }
 }
 // ── DRAW IMG TEXT HELPERS ──────────────────────────────────────────────────
-function renderImgChars(p, br, col) {
-  // Set to 1000 for testing to ensure pixels are drawing
-  if (br > 1000) return; 
-  let chars = S.chars || ['#'];
-  let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
-  p.noStroke();
-  p.fill(col);
-  p.textSize(S.spacing * 1.2);
-  p.text(chars[charIdx], 0, 0);
+function renderImgChars(p, br, col, x, y) {
+  // Skip near-black pixels (no meaningful character to draw)
+  if (br < 10) return;
+
+  let ch;
+  if (RAND_UNICODE_MODE) {
+    // Random unicode modes — brightness still gates visibility
+    ch = pickRandUnicode(x, y, S.fc * S.speed);
+  } else if (S.useParticleMode) {
+    // Particle charsets (microbes, filaments, etc.) — treat like circles
+    ch = null; // dc() handles particle rendering internally
+  } else {
+    let chars = S.chars && S.chars.length ? S.chars : ['#', '@', '%', '*', '+', ':', '.', ' '];
+    // Brightness → char index: dark pixels (low br) → dense/last chars, bright → sparse/first
+    // Use inverted map so darker image areas get more complex characters
+    let charIdx = Math.floor(p.map(br, 0, 255, chars.length - 1, 0));
+    charIdx = Math.max(0, Math.min(chars.length - 1, charIdx));
+    ch = chars[charIdx];
+  }
+
+  if (!ch) return;
+  let sz = Math.max(4, S.spacing * 1.05);
+  // dc() uses S.fontStack, S.jitter, S.entropy, S.flipChance etc. — all global modifiers apply
+  dc(x, y, sz, 0, col, ch);
 }
 function renderImgHatch(p, br, col, t) {
   if (br > 220) return;
