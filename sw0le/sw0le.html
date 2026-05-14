@@ -146,10 +146,13 @@
       <div class="checkbox-group" id="muscle-group">
         <label><input type="checkbox" value="chest" checked> CHEST</label>
         <label><input type="checkbox" value="back" checked> BACK</label>
+        <label><input type="checkbox" value="lats" checked> LATS</label>
+        <label><input type="checkbox" value="traps" checked> TRAPS</label>
         <label><input type="checkbox" value="shoulders" checked> SHOULDERS</label>
         <label><input type="checkbox" value="quads" checked> QUADS</label>
         <label><input type="checkbox" value="glutes" checked> GLUTES</label>
         <label><input type="checkbox" value="hamstrings" checked> HAMSTRINGS</label>
+        <label><input type="checkbox" value="calves" checked> CALVES</label>
         <label><input type="checkbox" value="biceps" checked> BICEPS</label>
         <label><input type="checkbox" value="triceps" checked> TRICEPS</label>
         <label><input type="checkbox" value="core" checked> CORE</label>
@@ -809,8 +812,28 @@ const exerciseDB = [
     function getSelectedEquipment() {
       return Array.from(document.querySelectorAll('#equipment-group input:checked')).map(cb=>cb.value);
     }
+    // Each UI checkbox expands to the granular muscleGroups tags used in the exercise DB.
+    const MUSCLE_GROUP_ALIASES = {
+      'chest':     ['chest', 'upper chest', 'lower chest'],
+      'back':      ['back', 'upper back', 'lower back', 'rhomboids'],
+      'lats':      ['lats'],
+      'traps':     ['traps', 'lower traps'],
+      'shoulders': ['shoulders', 'front delts', 'lateral delts', 'rear delts', 'rotator cuff', 'supraspinatus'],
+      'quads':     ['quads'],
+      'glutes':    ['glutes', 'glute med'],
+      'hamstrings':['hamstrings'],
+      'calves':    ['calves'],
+      'biceps':    ['biceps', 'brachialis'],
+      'triceps':   ['triceps'],
+      'core':      ['core', 'abs', 'lower abs', 'obliques']
+    };
     function getSelectedMuscles() {
-      return Array.from(document.querySelectorAll('#muscle-group input:checked')).map(cb=>cb.value);
+      const checked = Array.from(document.querySelectorAll('#muscle-group input:checked')).map(cb=>cb.value);
+      const expanded = new Set();
+      for (const v of checked) {
+        (MUSCLE_GROUP_ALIASES[v] || [v]).forEach(m => expanded.add(m));
+      }
+      return Array.from(expanded);
     }
 
     // ---- PATTERN HELPER ----
